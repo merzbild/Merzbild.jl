@@ -3,27 +3,29 @@ using LinearAlgebra
 
 # iterate over species, then over cells - should be cells x species then
 mutable struct PhysProps
+    n_cells::Int64
+    n_species::Int64
     n::Array{Float64,2}  # cells x species
-    v::Array{Float64,3}  # velocity component x cells x species
+    v::Array{Float64,3}  # cells x species x velocity component
     T::Array{Float64,2}  # cells x species
     n_moments::Vector{Int8}  # which moments we compute
-    moments::Array{Float64,3}  # moment id x cells x species
+    moments::Array{Float64,3}  # cells x species x moment_id
 end
 
 function create_props(n_cells, n_species, moments_list)
     println("Computing $(length(moments_list)) moments")
-    return PhysProps(zeros(n_cells, n_species), zeros(3, n_cells, n_species), zeros(n_cells, n_species),
-    moments_list, zeros(length(moments_list), n_cells, n_species))
+    return PhysProps(n_cells, n_species, zeros(n_cells, n_species), zeros(n_cells, n_species, 3), zeros(n_cells, n_species),
+    moments_list, zeros(n_cells, n_species, length(moments_list)))
 end
 
-function compute_props!(phys_props, particle_indexer_array, particles, n_cells, n_species, species_data)
-    for species in 1:n_species
-        for cell in 1:n_cells
+function compute_props!(phys_props, particle_indexer_array, particles, species_data)
+    for species in 1:phys_props.n_species
+        for cell in 1:phys_props.n_cells
             n = 0.0
             v = MVector{3,Float64}(0.0, 0.0, 0.0)
             E = 0.0
             T = 0.0
-            phys_props.moments[:, cell, species] .= 0.0
+            phys_props.moments[cell, species, :] .= 0.0
 
             for i in particle_indexer_array[species,cell].start1:particle_indexer_array[species,cell].end1
                 n += particles[i].w
@@ -45,7 +47,7 @@ function compute_props!(phys_props, particle_indexer_array, particles, n_cells, 
                     E += particles[i].w * normv^2
 
                     for (n_mom, m) in enumerate(phys_props.n_moments)
-                        phys_props.moments[n_mom] += particles[i].w * normv^m
+                        phys_props.moments[cell,species,n_mom] += particles[i].w * normv^m
                     end
                 end
             
@@ -56,7 +58,7 @@ function compute_props!(phys_props, particle_indexer_array, particles, n_cells, 
                         E += particles[i].w * normv^2
 
                         for (n_mom, m) in enumerate(phys_props.n_moments)
-                            phys_props.moments[n_mom,cell,species] += particles[i].w * normv^m
+                            phys_props.moments[cell,species,n_mom] += particles[i].w * normv^m
                         end
                     end
                 end
@@ -66,7 +68,7 @@ function compute_props!(phys_props, particle_indexer_array, particles, n_cells, 
             end
 
             phys_props.n[cell,species] = n
-            phys_props.v[:,cell,species] = v
+            phys_props.v[cell,species,:] = v
             phys_props.T[cell,species] = T
         end
     end
