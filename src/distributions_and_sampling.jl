@@ -1,4 +1,6 @@
-using .Constants: k_B
+using Random
+
+export tester
 
 struct UnitDVGrid
     nx::Int16
@@ -42,19 +44,40 @@ function generate_noiseless_dvgrid(nx, ny, nz, vx_max, vy_max, vz_max)
     nothing
 end
 
-function maxwellian(m, T, vx, vy, vz)
+function maxwellian(T, m, vx, vy, vz)
     return (m / (2.0 * π * k_B * T))^(1.5) * exp(-m * (vx^2 + vy^2 + vz^2) / (2.0 * k_B * T))
 end
 
-function bkw(m, T, vx, vy, vz)
+function bkw(T, m, vx, vy, vz)
     nothing
 end
 
-function evaluate_distribution(distribution_function, m, T, vx, vy, vz)
-    return distribution_function(m, T, vx, vy, vz)
+function evaluate_distribution(distribution_function, T, m, vx, vy, vz)
+    return distribution_function(T, m, vx, vy, vz)
 end
 
 # compute thermal velocity: sqrt(2kT/m)
 function compute_thermal_velocity(T, m)
     return sqrt(2 * k_B * T / m)
+end
+
+function sample_maxwellian!(rng, v, T, m)
+    vscale = sqrt(2 * k_B * T / m)  # TODO: fix/check!
+    vn = vscale * sqrt(-log(rand(rng, Float64)))
+    vr = vscale * sqrt(-log(rand(rng, Float64)))
+    theta1 = 2 * π * rand(rng, Float64)
+    theta2 = 2 * π * rand(rng, Float64)
+
+    v[1] = vn * cos(theta1)
+    v[2] = vr * cos(theta2)
+    v[3] = vr * sin(theta2)
+end
+
+function sample_particles_equal_weight!(rng, particles, nparticles, T, m, Fnum, xlo, xhi, ylo, yhi, zlo, zhi)
+    for i in 1:nparticles
+        particles[i] = Particle(Fnum , [0.0, 0.0, 0.0], [xlo + rand(rng, Float64) * (xhi - xlo),
+                                                         ylo + rand(rng, Float64) * (yhi - ylo),
+                                                         zlo + rand(rng, Float64) * (zhi - zlo)])
+        sample_maxwellian!(rng, particles[i].v, T, m)
+    end
 end
