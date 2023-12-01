@@ -2,9 +2,16 @@ mutable struct CollisionFactors
     n1::Int64
     n2::Int64
     sigma_g_w_max::Float64  # (σ(g) * g * w)_max
-    n_coll::Int64
-    n_eq_w_coll::Int64  # number of collisions of particles with equal weights (no splitting), for debugging/etc
+    n_coll::Int64  # number of collisions tested
+    n_coll_performed::Int64  # number of collisions performed
+    n_eq_w_coll_performed::Int64  # number of collisions of particles with equal weights (no splitting), for debugging/etc
 end
+
+function create_collision_factors()
+    return CollisionFactors(0, 0.0, 0.0, 0, 0, 0)
+end
+
+# TODO: version to create an array for each species pair
 
 function compute_n_coll_single_species(rng, collision_factors, particle_indexer, Δt, V)
     return Δt * particle_indexer.n_total * (particle_indexer.n_total - 1) * collision_factors.sigma_g_w_max / V +
@@ -17,9 +24,15 @@ function ntc_single_species!(rng, collision_factors, particle_indexer, collision
     # loop over particles
     # update sigma_g_w_max
     # collide
-    collision_factors.n_coll = compute_n_coll_single_species(rng, collision_factors, particle_indexer, Δt, V)
-    n_coll_int = floor(Int64, collision_factors.n_coll)
-    n_eq_w_coll = 0
+    collision_factors.n1 = particle_indexer.n_total
+    collision_factors.n2 = particle_indexer.n_total
+    n_coll_float = compute_n_coll_single_species(rng, collision_factors, particle_indexer, Δt, V)
+    n_coll_int = floor(Int64, n_coll_float)
+    println(n_coll_float, ", ", n_coll_int)
+
+    collision_factors.n_coll = n_coll_int
+    collision_factors.n_coll_performed = 0
+    collision_factors.n_eq_w_coll_performed = 0
 
     for _ in 1:n_coll_int
         # TODO: check if 0 or 1 !!!
@@ -39,20 +52,21 @@ function ntc_single_species!(rng, collision_factors, particle_indexer, collision
         
         compute_g(collision_data, particles[i], particles[k])
 
-        if (collision_data.g > eps)
+        if (collision_data.g > eps())
 
             sigma = sigma_vhs(interaction, collision_data.g)
-            sigma_g_w_max = cs * collision_data.g * max(particles[i].w, particles[k].w)
+            sigma_g_w_max = sigma * collision_data.g * max(particles[i].w, particles[k].w)
 
             # update (σ g w)_max if needed
-            collision_factors.sigma_g_w_max = sigma_g_w_max < collision_factors.sigma_g_w_max ? sigma_g_w_max : collision_factors.sigma_g_w_max
+            collision_factors.sigma_g_w_max = sigma_g_w_max > collision_factors.sigma_g_w_max ? sigma_g_w_max : collision_factors.sigma_g_w_max
             
             if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
+                collision_factors.n_coll_performed += 1
                 compute_com(collision_data, interaction, particles[i], particles[k])
 
                 # do collision
                 if (particles[i].w == particles[k].w)
-                    collision_factors.n_eq_w_coll += 1
+                    collision_factors.n_eq_w_coll_performed += 1
                     scatter_vhs(rng, collision_data, interaction, particles[i], particles[k])
                 elseif (particles[i].w > particles[k].w)
                     # we split particle i, update velocity of i and k (split part remains unchanged)
