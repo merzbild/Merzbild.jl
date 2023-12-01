@@ -7,9 +7,9 @@ function scatter_vhs(rng, collision_data, interaction, p1, p2)
     stheta = sqrt(1.0 - ctheta^2)
 
     collision_data.g_vec_new[1] = collision_data.g * stheta * cphi
-    collision_data.g_vec_new[1] = collision_data.g * stheta * sphi
-    collision_data.g_vec_new[1] = collision_data.g * ctheta
+    collision_data.g_vec_new[2] = collision_data.g * stheta * sphi
+    collision_data.g_vec_new[3] = collision_data.g * ctheta
 
-    p1.v = collision_data.v_com .+ interaction.μ2 * rg
-    p2.v = collision_data.v_com .- interaction.μ1 * rg
+    p1.v = collision_data.v_com .+ interaction.μ2 * collision_data.g_vec_new
+    p2.v = collision_data.v_com .- interaction.μ1 * collision_data.g_vec_new
 end
