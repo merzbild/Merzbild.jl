@@ -11,16 +11,22 @@ mutable struct PhysProps
     T::Array{Float64,2}  # cells x species
     moment_powers::Vector{Int8}  # which moments we compute
     moments::Array{Float64,3}  # cells x species x moment_id
+    Tref::Float64  # used to scale moments
 end
 
-function create_props(n_cells, n_species, moments_list)
+function create_props(n_cells, n_species, moments_list; Tref=300.0)
     println("Computing $(length(moments_list)) moments")
     return PhysProps(n_cells, n_species, length(moments_list), zeros(n_cells, n_species), zeros(n_cells, n_species, 3), zeros(n_cells, n_species),
-    moments_list, zeros(n_cells, n_species, length(moments_list)))
+    moments_list, zeros(n_cells, n_species, length(moments_list)), Tref)
 end
 
 function compute_props!(phys_props, particle_indexer_array, particles, species_data)
     for species in 1:phys_props.n_species
+        if phys_props.n_moments > 0
+            moment_factor = 4 * π * (species_data[species].mass / (2 * π * k_B * phys_props.Tref))^(1.5) * 0.5
+            moment_vref = (species_data[species].mass / (2 * k_B * phys_props.Tref))^0.5
+        end
+
         for cell in 1:phys_props.n_cells
             n = 0.0
             v = MVector{3,Float64}(0.0, 0.0, 0.0)
@@ -67,6 +73,14 @@ function compute_props!(phys_props, particle_indexer_array, particles, species_d
                 E *= 0.5 * species_data[species].mass / (n * k_B)
                 T = (2.0/3.0) * E
             end
+
+            if phys_props.n_moments > 0
+                for (n_mom, m) in enumerate(phys_props.moment_powers)
+                    moment_scaling = moment_factor * moment_vref^(-(3+m)) * gamma((3+m)/2)
+                    phys_props.moments[cell,species,n_mom] /= (moment_scaling * n)
+                end
+            end
+    
 
             phys_props.n[cell,species] = n
             phys_props.v[cell,species,:] = v

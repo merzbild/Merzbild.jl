@@ -22,7 +22,7 @@ sample_particles_equal_weight!(rng, particles, n_particles, T0, species_list[1].
 particle_indexer = Array{ParticleIndexer, 2}(undef, 1, 1)
 particle_indexer[1,1] = create_particle_indexer(n_particles)
 
-phys_props = create_props(1, 1, [2, 4, 6])
+phys_props = create_props(1, 1, [0, 2, 4, 6], Tref=T0)
 compute_props!(phys_props, particle_indexer, particles, species_list)
 println(phys_props.n)
 println(phys_props.v)
