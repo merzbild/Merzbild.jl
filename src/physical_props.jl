@@ -5,16 +5,17 @@ using LinearAlgebra
 mutable struct PhysProps
     n_cells::Int64
     n_species::Int64
+    n_moments::Int64
     n::Array{Float64,2}  # cells x species
     v::Array{Float64,3}  # cells x species x velocity component
     T::Array{Float64,2}  # cells x species
-    n_moments::Vector{Int8}  # which moments we compute
+    moment_powers::Vector{Int8}  # which moments we compute
     moments::Array{Float64,3}  # cells x species x moment_id
 end
 
 function create_props(n_cells, n_species, moments_list)
     println("Computing $(length(moments_list)) moments")
-    return PhysProps(n_cells, n_species, zeros(n_cells, n_species), zeros(n_cells, n_species, 3), zeros(n_cells, n_species),
+    return PhysProps(n_cells, n_species, length(moments_list), zeros(n_cells, n_species), zeros(n_cells, n_species, 3), zeros(n_cells, n_species),
     moments_list, zeros(n_cells, n_species, length(moments_list)))
 end
 
@@ -46,7 +47,7 @@ function compute_props!(phys_props, particle_indexer_array, particles, species_d
                     # TODO: make normv optional, only if we include moments!
                     E += particles[i].w * normv^2
 
-                    for (n_mom, m) in enumerate(phys_props.n_moments)
+                    for (n_mom, m) in enumerate(phys_props.moment_powers)
                         phys_props.moments[cell,species,n_mom] += particles[i].w * normv^m
                     end
                 end
@@ -57,7 +58,7 @@ function compute_props!(phys_props, particle_indexer_array, particles, species_d
                         normv = norm(particles[i].v - v)
                         E += particles[i].w * normv^2
 
-                        for (n_mom, m) in enumerate(phys_props.n_moments)
+                        for (n_mom, m) in enumerate(phys_props.moment_powers)
                             phys_props.moments[cell,species,n_mom] += particles[i].w * normv^m
                         end
                     end
