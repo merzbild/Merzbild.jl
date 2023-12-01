@@ -11,5 +11,9 @@ export load_species_list, Particle, sample_particles_equal_weight!, create_parti
 export create_props, compute_props!, ParticleIndexer
 export create_netcdf_phys_props
 export write_netcdf_phys_props
+export load_interaction_data
+export create_collision_factors, create_collision_data
+export estimate_sigma_g_w_max
+export ntc_single_species!
 
 end # module merging
