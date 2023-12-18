@@ -11,17 +11,23 @@ Equal volume/equal radius?
 
 # TODO
 
-- [ ] NTC collisions
+- [x] NTC collisions
 
-- [ ] Particle generation (equal weights)
+- [x] I/O of particle properties (basic)
 
-- [ ] Properties computation
+- [x] Particle generation (equal weights)
 
-- [ ] I/O
+- [x] Properties computation
 
-- [ ] Maxwellian test case
+    - [x] basic ones
 
-- [ ] BKW test case
+    - [x] moments
+
+- [x] I/O of output
+
+- [x] Maxwellian test case (equal weights)
+
+- [ ] BKW test case (equal weights)
 
 - [ ] Particle generation (variable weight)
 
@@ -29,4 +35,14 @@ Equal volume/equal radius?
 
 - [ ] Octree merging
 
+- [ ] mixing rule VHS creator
+
 - [ ] The science begins
+
+# TODO: tests
+
+- [ ] energy / momentum conservation in scattering
+
+- [ ] correct indexing
+
+- [ ] 1D - no merging, particles don't switch cells during variable weight collisions!!!
