@@ -56,5 +56,6 @@ function load_species_list(species_filename, species_name::String)
 end
 
 function create_particle_indexer(n_particles)
+    # particle_indexer_array[species,cell]
     return ParticleIndexer(n_particles, 1, n_particles, n_particles, 0, 0, 0)
 end
