@@ -43,9 +43,16 @@ function load_interaction_data(interactions_filename, species_list)
                 μ1 = species_list[i].mass / (species_list[i].mass + species_list[k].mass) 
                 μ2 = species_list[i].mass / (species_list[i].mass + species_list[k].mass) 
 
-                interactions_list[i,k] = Interaction(m_r, μ1, μ2, interactions_data[s1s2]["vhs_Tref"],
-                interactions_data[s1s2]["vhs_d"], interactions_data[s1s2]["vhs_o"],
-                compute_vhs_factor(interactions_data[s1s2]["vhs_Tref"], interactions_data[s1s2]["vhs_d"], interactions_data[s1s2]["vhs_o"],
+                interaction_s1s2 = nothing
+                try
+                    interaction_s1s2 = interactions_data[s1s2]
+                catch KeyError
+                    s2s1 = species_name2 * "," * species_name1
+                    interaction_s1s2 = interactions_data[s2s1]
+                end
+                interactions_list[i,k] = Interaction(m_r, μ1, μ2, interaction_s1s2["vhs_Tref"],
+                interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"],
+                compute_vhs_factor(interaction_s1s2["vhs_Tref"], interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"],
                 m_r))
                 interactions_list[k,i] = interactions_list[i,k]
             end
