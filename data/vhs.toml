@@ -3,3 +3,15 @@ vhs_d = 4.17e-10
 vhs_o = 0.81
 vhs_Tref = 273.0
 comment = "Created via (1/2) mixing rule"
+
+["Ar,He"]
+vhs_d = 3.25e-10
+vhs_o = 0.735
+vhs_Tref = 273.0
+comment = "Created via (1/2) mixing rule"
+
+["He,He"]
+vhs_d = 2.33e-10
+vhs_o = 0.66
+vhs_Tref = 273.0
+comment = "Created via (1/2) mixing rule"
