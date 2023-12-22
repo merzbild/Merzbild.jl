@@ -1,6 +1,8 @@
-include("../src/merging.jl")
+# Test that sampling from a Maxwellian and computing physical properties gives reasonable results
 
-using .Merging
+include("../../src/merging.jl")
+
+using ..Merging
 using Random
 
 species_list = load_species_list("data/particles.toml", "Ar")
@@ -9,8 +11,8 @@ rng = Xoshiro(1234)
 
 n_particles = 5000
 
-particles = Vector{Particle}(undef, n_particles)
-sample_particles_equal_weight!(rng, particles, n_particles, 500.0, species_list[1].mass, 1e10, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+particles = [Vector{Particle}(undef, n_particles)]
+sample_particles_equal_weight!(rng, particles[1], n_particles, 500.0, species_list[1].mass, 1e10, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
 
 particle_indexer = Array{ParticleIndexer, 2}(undef, 1, 1)
 particle_indexer[1,1] = create_particle_indexer(n_particles)
