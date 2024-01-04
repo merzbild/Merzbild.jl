@@ -5,18 +5,21 @@ include("../../src/merging.jl")
 using ..Merging
 using Random
 
+seed = 1234
+Random.seed!(seed)
+rng = Xoshiro(seed)
+
 species_list = load_species_list("data/particles.toml", "Ar")
 interaction_data = load_interaction_data("data/vhs.toml", species_list)
 
 println([species.name for species in species_list])
 println(interaction_data)
-rng = Xoshiro(1234)
 
 n_t = 1000
 
 n_particles = 5000
 T0 = 500.0
-Fnum = 1e11
+Fnum = 1e17
 
 particles = [Vector{Particle}(undef, n_particles)]
 sample_particles_equal_weight!(rng, particles[1], n_particles, T0, species_list[1].mass, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
@@ -42,10 +45,10 @@ collision_factors.sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1], 
 V = 1.0
 
 for ts in 1:n_t
-    ntc_single_species!(rng, collision_factors, particle_indexer[1,1], collision_data, interaction_data[1,1], particles[1],
+    ntc!(rng, collision_factors, particle_indexer[1,1], collision_data, interaction_data[1,1], particles[1],
         Δt, V)
 
-    print(collision_factors)
+    println(collision_factors)
     
     compute_props!(phys_props, particle_indexer, particles, species_list)
     write_netcdf_phys_props(ds, phys_props, ts)
