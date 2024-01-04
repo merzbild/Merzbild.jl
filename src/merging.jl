@@ -13,7 +13,7 @@ export create_netcdf_phys_props
 export write_netcdf_phys_props
 export load_interaction_data
 export create_collision_factors, create_collision_data
-export estimate_sigma_g_w_max
-export ntc_single_species!
+export estimate_sigma_g_w_max, estimate_sigma_g_w_max!
+export ntc!
 
 end # module merging
