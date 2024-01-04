@@ -31,7 +31,7 @@ function compute_n_coll_two_species(rng, collision_factors, particle_indexer_1, 
         rand(rng, Float64)
 end
 
-function ntc_single_species!(rng, collision_factors, particle_indexer, collision_data, interaction, particles,
+function ntc!(rng, collision_factors, particle_indexer, collision_data, interaction, particles,
     Δt, V)
     # compute ncoll
     # loop over particles
@@ -41,7 +41,7 @@ function ntc_single_species!(rng, collision_factors, particle_indexer, collision
     collision_factors.n2 = particle_indexer.n_total
     n_coll_float = compute_n_coll_single_species(rng, collision_factors, particle_indexer, Δt, V)
     n_coll_int = floor(Int64, n_coll_float)
-    println(n_coll_float, ", ", n_coll_int)
+    # println(n_coll_float, ", ", n_coll_int)
 
     collision_factors.n_coll = n_coll_int
     collision_factors.n_coll_performed = 0
@@ -111,7 +111,7 @@ end
 
 
 
-function ntc_two_species!(rng, collision_factors, particle_indexer_1, particle_indexer_2,
+function ntc!(rng, collision_factors, particle_indexer_1, particle_indexer_2,
     collision_data, interaction, particles_1, particles_2,
     Δt, V)
     # compute ncoll
@@ -123,7 +123,7 @@ function ntc_two_species!(rng, collision_factors, particle_indexer_1, particle_i
     n_coll_float = compute_n_coll_two_species(rng, collision_factors,
     particle_indexer_1, particle_indexer_2, Δt, V)
     n_coll_int = floor(Int64, n_coll_float)
-    println(n_coll_float, ", ", n_coll_int)
+    # println(n_coll_float, ", ", n_coll_int)
 
     collision_factors.n_coll = n_coll_int
     collision_factors.n_coll_performed = 0
@@ -150,13 +150,12 @@ function ntc_two_species!(rng, collision_factors, particle_indexer_1, particle_i
 
             # update (σ g w)_max if needed
             collision_factors.sigma_g_w_max = sigma_g_w_max > collision_factors.sigma_g_w_max ? sigma_g_w_max : collision_factors.sigma_g_w_max
-            
+
             if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
                 collision_factors.n_coll_performed += 1
                 compute_com(collision_data, interaction, particles_1[i], particles_2[k])
-
                 # do collision
-                if (particles[i].w == particles[k].w)
+                if (particles_1[i].w == particles_2[k].w)
                     collision_factors.n_eq_w_coll_performed += 1
                     scatter_vhs(rng, collision_data, interaction, particles_1[i], particles_2[k])
                 elseif (particles_1[i].w > particles_2[k].w)
