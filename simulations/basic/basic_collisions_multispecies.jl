@@ -1,24 +1,32 @@
 # Test that sampling two different species from a Maxwellian, doing multiple timesteps of collisions and computing physical properties gives reasonable results
 
+# SPARTA: 12k particles 13.29s user 0.08s system 98% cpu 13.539 total
+# this code: 6.90s user 1.78s system 127% cpu 6.829 total
+
 include("../../src/merging.jl")
 
 using ..Merging
 using Random
 
+seed = 1234
+Random.seed!(seed)
+rng = Xoshiro(seed)
+
 species_list = load_species_list("data/particles.toml", ["Ar", "He"])
 interaction_data = load_interaction_data("data/vhs.toml", species_list)
+n_species = length(species_list)
 
 println([species.name for species in species_list])
 println(interaction_data)
-rng = Xoshiro(1234)
 
-# n_t = 1000
+n_t = 5000
 
-n_particles_Ar = 5000
-n_particles_He = 1000
-T0_Ar = 1000.0
-T0_He = 300.0
-Fnum = 1e11
+n_particles_Ar = 2000
+n_particles_He = 10000
+T0_Ar = 300.0
+T0_He = 2000.0
+T0_list = [T0_Ar, T0_He]
+Fnum = 5e11
 
 particles = [Vector{Particle}(undef, n_particles_Ar), Vector{Particle}(undef, n_particles_He)]
 sample_particles_equal_weight!(rng, particles[1], n_particles_Ar, T0_Ar, species_list[1].mass, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
@@ -35,27 +43,37 @@ println(phys_props.n)
 println(phys_props.v)
 println(phys_props.T)
 
-# ds = create_netcdf_phys_props("test_maxwellian.nc", phys_props, species_list)
-# write_netcdf_phys_props(ds, phys_props, 0)
+ds = create_netcdf_phys_props("test_multi_species.nc", phys_props, species_list)
+write_netcdf_phys_props(ds, phys_props, 0)
 
-# collision_factors = create_collision_factors()
-# collision_data = create_collision_data()
+collision_factors = create_collision_factors(n_species)
+collision_data = create_collision_data()
 
-# collision_factors.sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1], species_list[1], T0, Fnum)
+estimate_sigma_g_w_max!(collision_factors, interaction_data, species_list, T0_list, Fnum)
 
-# Δt = 1e-6
-# V = 1.0
+Δt = 2.5e-3
+V = 1.0
 
-# for ts in 1:n_t
-#     ntc_single_species!(rng, collision_factors, particle_indexer[1,1], collision_data, interaction_data[1,1], particles,
-#         Δt, V)
+for ts in 1:n_t
+ 
+    for s2 in 1:n_species
+        for s1 in s2:n_species
+            if (s1 == s2)
+                ntc!(rng, collision_factors[s1,s1], particle_indexer[s1,1], collision_data, interaction_data[s1,s1], particles[s1],
+                Δt, V)
+            else
+                ntc!(rng, collision_factors[s1,s2], particle_indexer[s1,1], particle_indexer[s2,1],
+                collision_data, interaction_data[s1,s2], particles[s1], particles[s2],
+                Δt, V)
+            end
+        end
+    end
 
-#     print(collision_factors)
-    
-#     compute_props!(phys_props, particle_indexer, particles, species_list)
-#     write_netcdf_phys_props(ds, phys_props, ts)
-# end
-# # println(phys_props.n)
-# # println(phys_props.v)
-# # println(phys_props.T)
-# close(ds)
+    compute_props!(phys_props, particle_indexer, particles, species_list)
+    write_netcdf_phys_props(ds, phys_props, ts)
+end
+println(phys_props.n)
+println(phys_props.v)
+println(phys_props.T)
+
+close(ds)
