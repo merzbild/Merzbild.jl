@@ -1,5 +1,5 @@
 ["Ar,Ar"]
-vhs_d = 4.17e-10
+vhs_d = 4.11e-10
 vhs_o = 0.81
 vhs_Tref = 273.0
 comment = "Created via (1/2) mixing rule"
