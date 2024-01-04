@@ -15,5 +15,6 @@ export load_interaction_data
 export create_collision_factors, create_collision_data
 export estimate_sigma_g_w_max, estimate_sigma_g_w_max!
 export ntc!
+export k_B
 
 end # module merging
