@@ -62,7 +62,7 @@ function sample_bkw!(rng, particles, nparticles, T, m, v0)
     vz = v_abs .* cos.(Θ)
 
     for i in 1:nparticles
-        particles[i].v = [vx, vy, vz] + v0
+        particles[i].v = [vx[i], vy[i], vz[i]] .+ v0
     end
 end
 
