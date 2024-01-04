@@ -22,7 +22,9 @@ struct Interaction
 end
 
 function compute_vhs_factor(vhs_Tref, vhs_d, vhs_o, m_r)
-    return π * vhs_d^2 * (2 * vhs_Tref/m_r)^(vhs_o - 0.5) / gamma(2.5 - vhs_o)
+    # println(m_r, ", ", vhs_o, ", ", vhs_Tref, ", ", (2 * k_B * vhs_Tref/m_r)^(vhs_o - 0.5), ", ",
+    # π * vhs_d^2 * ((2 * k_B * vhs_Tref/m_r)^(vhs_o - 0.5)) / gamma(2.5 - vhs_o), ", ", π * vhs_d^2)
+    return π * vhs_d^2 * (2 * k_B * vhs_Tref/m_r)^(vhs_o - 0.5) / gamma(2.5 - vhs_o)
 end
 
 function load_interaction_data(interactions_filename, species_list)
@@ -41,7 +43,7 @@ function load_interaction_data(interactions_filename, species_list)
                 m_r = species_list[i].mass * species_list[k].mass / (species_list[i].mass + species_list[k].mass)
 
                 μ1 = species_list[i].mass / (species_list[i].mass + species_list[k].mass) 
-                μ2 = species_list[i].mass / (species_list[i].mass + species_list[k].mass) 
+                μ2 = species_list[k].mass / (species_list[i].mass + species_list[k].mass) 
 
                 interaction_s1s2 = nothing
                 try
@@ -50,6 +52,7 @@ function load_interaction_data(interactions_filename, species_list)
                     s2s1 = species_name2 * "," * species_name1
                     interaction_s1s2 = interactions_data[s2s1]
                 end
+                println(i, ", ", k)
                 interactions_list[i,k] = Interaction(m_r, μ1, μ2, interaction_s1s2["vhs_Tref"],
                 interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"],
                 compute_vhs_factor(interaction_s1s2["vhs_Tref"], interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"],
@@ -76,7 +79,25 @@ function compute_g(collision_data::CollisionData, p1, p2)
     collision_data.g = norm(collision_data.g_vec)
 end
 
-function estimate_sigma_g_w_max(interaction, species, T, Fnum)
+function estimate_sigma_g_w_max(interaction, species, T, Fnum; mult_factor=1.0)
     g_thermal = sqrt(2 * T * k_B / species.mass)
-    return sigma_vhs(interaction, g_thermal) * g_thermal * Fnum
+    return mult_factor * sigma_vhs(interaction, g_thermal) * g_thermal * Fnum
+end
+
+function estimate_sigma_g_w_max(interaction, species1, species2, T1, T2, Fnum; mult_factor=1.0)
+    g_thermal1 = sqrt(2 * T1 * k_B / species1.mass)
+    g_thermal2 = sqrt(2 * T2 * k_B / species2.mass)
+    g_thermal = 0.5 * (g_thermal1 + g_thermal2)
+    return mult_factor * sigma_vhs(interaction, g_thermal) * g_thermal * Fnum
+end
+
+function estimate_sigma_g_w_max!(collision_factors, interactions, species_list, T_list, Fnum; mult_factor=1.0)
+    for (k, species2) in enumerate(species_list)
+        for (i, species1) in enumerate(species_list)
+            g_thermal1 = sqrt(2 * T_list[1] * k_B / species1.mass)
+            g_thermal2 = sqrt(2 * T_list[2] * k_B / species2.mass)
+            g_thermal = 0.5 * (g_thermal1 + g_thermal2)
+            collision_factors[i,k].sigma_g_w_max = mult_factor * sigma_vhs(interactions[i,k], g_thermal) * g_thermal * Fnum
+        end
+    end
 end
