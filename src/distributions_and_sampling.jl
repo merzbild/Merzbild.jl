@@ -48,13 +48,13 @@ function maxwellian(T, m, vx, vy, vz)
 end
 
 function sample_bkw!(rng, particles, nparticles, T, m, v0)
-    vref = sqrt(2 * k_B * T / m) * sqrt(0.3)  # 0.3 comes from some scaling of the Chi distribution
+    vscale = sqrt(2 * k_B * T / m) * sqrt(0.3)  # 0.3 comes from some scaling of the Chi distribution
 
     v_distribution = Distributions.Chi(5) 
-    v_abs = rand(v_distribution, nparticles) * vref
+    v_abs = rand(v_distribution, nparticles)
 
     Θ = rand(rng, Float64, nparticles) * π
-    ϕ = rand(rng, Float64, nparticles) * 2 * π
+    ϕ = rand(rng, Float64, nparticles) * twopi
     sintheta = sin.(Θ)
 
     vx = v_abs .* sintheta .* cos.(ϕ)
@@ -62,7 +62,7 @@ function sample_bkw!(rng, particles, nparticles, T, m, v0)
     vz = v_abs .* cos.(Θ)
 
     for i in 1:nparticles
-        particles[i].v = [vx[i], vy[i], vz[i]] .+ v0
+        particles[i].v = vscale * SVector{3,Float64}(vx[i], vy[i], vz[i]) .+ v0
     end
 end
 
@@ -79,8 +79,8 @@ function sample_maxwellian_single!(rng, v, T, m, v0)
     vscale = sqrt(2 * k_B * T / m)
     vn = vscale * sqrt(-log(rand(rng, Float64)))
     vr = vscale * sqrt(-log(rand(rng, Float64)))
-    theta1 = 2 * π * rand(rng, Float64)
-    theta2 = 2 * π * rand(rng, Float64)
+    theta1 = twopi * rand(rng, Float64)
+    theta2 = twopi * rand(rng, Float64)
 
     v[1] = vn * cos(theta1) + v0[1]
     v[2] = vr * cos(theta2) + v0[2]
@@ -91,12 +91,12 @@ function sample_maxwellian!(rng, particles, nparticles, T, m, v0)
     vscale = sqrt(2 * k_B * T / m)
 
     for i in 1:nparticles
-        vn = vscale * sqrt(-log(rand(rng, Float64)))
-        vr = vscale * sqrt(-log(rand(rng, Float64)))
-        theta1 = 2 * π * rand(rng, Float64)
-        theta2 = 2 * π * rand(rng, Float64)
+        vn = sqrt(-log(rand(rng, Float64)))
+        vr = sqrt(-log(rand(rng, Float64)))
+        theta1 = twopi * rand(rng, Float64)
+        theta2 = twopi * rand(rng, Float64)
 
-        particles[i].v = [vn * cos(theta1), vr * cos(theta2), vr * sin(theta2)] + v0
+        particles[i].v = vscale * SVector{3,Float64}(vn * cos(theta1), vr * cos(theta2), vr * sin(theta2)) + v0
     end
 end
 
@@ -105,12 +105,12 @@ function sample_particles_equal_weight!(rng, particles, nparticles, T, m, Fnum, 
     # other options: Dirac Delta (T = 0: single point)
     # other options: Dirac Delta (T = N: two points)
     for i in 1:nparticles
-        particles[i] = Particle(Fnum, [0.0, 0.0, 0.0], [xlo + rand(rng, Float64) * (xhi - xlo),
-                                                        ylo + rand(rng, Float64) * (yhi - ylo),
-                                                        zlo + rand(rng, Float64) * (zhi - zlo)])
+        particles[i] = Particle(Fnum,  SVector{3}(0.0, 0.0, 0.0),  SVector{3}(xlo + rand(rng, Float64) * (xhi - xlo),
+                                                                              ylo + rand(rng, Float64) * (yhi - ylo),
+                                                                              zlo + rand(rng, Float64) * (zhi - zlo)))
     end
 
-    v0 = SVector{3}([vx0, vy0, vz0])
+    v0 = SVector{3}(vx0, vy0, vz0)
     if distribution == :Maxwellian
         sample_maxwellian!(rng, particles, nparticles, T, m, v0)
     elseif distribution == :BKW
