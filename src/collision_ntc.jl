@@ -12,7 +12,7 @@ function create_collision_factors()
 end
 
 function create_collision_factors(n_species)
-    coll_factor_array = Array{CollisionFactors}(undef, (n_species, n_species))
+    coll_factor_array = Array{CollisionFactors, 2}(undef, (n_species, n_species))
     for k in 1:n_species
         for i in 1:n_species
             coll_factor_array[i,k] = CollisionFactors(0, 0.0, 0.0, 0, 0, 0)
