@@ -3,21 +3,20 @@ using TOML
 using StaticArrays
 
 mutable struct CollisionData
-    v_com::MVector{3,Float64}
+    v_com::SVector{3,Float64}
     g::Float64
-    g_vec::MVector{3,Float64}
-    g_vec_new::MVector{3,Float64}
+    g_vec::SVector{3,Float64}
+    g_vec_new::SVector{3,Float64}
 end
 
 struct Interaction
     m_r::Float64
     μ1::Float64  # m1 / (m1 + m2)
     μ2::Float64  # m2 / (m1 + m2)
-    vhs_Tref::Float64
+    # vhs_Tref::Float64
     vhs_d::Float64
     vhs_o::Float64
     vhs_factor::Float64
-
     # vhs_factor = π * vhs_d^2 * (2 * vhs_Tref/m_r)^(vhs_o - 0.5) / gamma(2.5 - vhs_o)
 end
 
@@ -53,7 +52,7 @@ function load_interaction_data(interactions_filename, species_list)
                     interaction_s1s2 = interactions_data[s2s1]
                 end
                 println(i, ", ", k)
-                interactions_list[i,k] = Interaction(m_r, μ1, μ2, interaction_s1s2["vhs_Tref"],
+                interactions_list[i,k] = Interaction(m_r, μ1, μ2, # interaction_s1s2["vhs_Tref"],
                 interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"],
                 compute_vhs_factor(interaction_s1s2["vhs_Tref"], interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"],
                 m_r))
@@ -67,7 +66,9 @@ function load_interaction_data(interactions_filename, species_list)
 end
 
 function create_collision_data()
-    return CollisionData([0.0, 0.0, 0.0], 0.0, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0])
+    return CollisionData(SVector{3,Float64}(0.0, 0.0, 0.0), 0.0,
+                         SVector{3,Float64}(0.0, 0.0, 0.0),
+                         SVector{3,Float64}(0.0, 0.0, 0.0))
 end
 
 function compute_com(collision_data::CollisionData, interaction::Interaction, p1, p2)
