@@ -9,12 +9,12 @@ include("../../src/merging.jl")
 using ..Merging
 using Random
 
-seed = 1234
+const seed = 1234
 Random.seed!(seed)
-rng = Xoshiro(seed)
+rng::Xoshiro = Xoshiro(seed)
 
-species_list = load_species_list("data/particles.toml", "Ar")
-interaction_data = load_interaction_data("data/pseudo_maxwell.toml", species_list)
+const species_list::Vector{Species} = load_species_list("data/particles.toml", "Ar")
+const interaction_data::Array{Interaction, 2} = load_interaction_data("data/pseudo_maxwell.toml", species_list)
 
 println([species.name for species in species_list])
 println(interaction_data)
@@ -40,28 +40,28 @@ println(interaction_data)
 #     kk = N // 2
 #     return C**(kk - 1) * (kk - (kk - 1) * C)
 
-dt_scaled = 0.025
-n_t = 500
-n_particles = 200000
+const dt_scaled = 0.025
+const n_t = 500
+const n_particles = 500000
 
-T0 = 273.0
-sigma_ref = π * (interaction_data[1,1].vhs_d^2)
-n_dens = 1e23
+const T0::Float64 = 273.0
+const sigma_ref = π * (interaction_data[1,1].vhs_d^2)
+const n_dens = 1e23
 
-vref = sqrt(2 * k_B * T0 / species_list[1].mass)
-Lref = 1.0 / (n_dens * sigma_ref)
-tref = Lref / vref
+const vref = sqrt(2 * k_B * T0 / species_list[1].mass)
+const Lref = 1.0 / (n_dens * sigma_ref)
+const tref = Lref / vref
 
-Fnum = n_dens / n_particles
+const Fnum::Float64 = n_dens / n_particles
 
-particles = [Vector{Particle}(undef, n_particles)]
+particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, n_particles)]
 sample_particles_equal_weight!(rng, particles[1], n_particles, T0, species_list[1].mass, Fnum,
                                0.0, 1.0, 0.0, 1.0, 0.0, 1.0; distribution=:BKW)
 
-particle_indexer = Array{ParticleIndexer, 2}(undef, 1, 1)
+particle_indexer::Array{ParticleIndexer, 2} = Array{ParticleIndexer, 2}(undef, 1, 1)
 particle_indexer[1,1] = create_particle_indexer(n_particles)
 
-phys_props = create_props(1, 1, [4, 6, 8, 10], Tref=T0)
+phys_props::PhysProps = create_props(1, 1, [4, 6, 8, 10], Tref=T0)
 compute_props!(phys_props, particle_indexer, particles, species_list)
 println(phys_props.n)
 println(phys_props.v)
@@ -70,15 +70,15 @@ println(phys_props.T)
 ds = create_netcdf_phys_props("bkw.nc", phys_props, species_list)
 write_netcdf_phys_props(ds, phys_props, 0)
 
-collision_factors = create_collision_factors()
-collision_data = create_collision_data()
+collision_factors::CollisionFactors = create_collision_factors()
+collision_data::CollisionData = create_collision_data()
 
 collision_factors.sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1], species_list[1], T0, Fnum)
 
-Δt = dt_scaled * tref
-V = 1.0
+const Δt::Float64 = dt_scaled * tref
+const V::Float64 = 1.0
 
-for ts in 1:n_t
+@time for ts in 1:n_t
     ntc!(rng, collision_factors, particle_indexer[1,1], collision_data, interaction_data[1,1], particles[1],
         Δt, V)
 
