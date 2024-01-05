@@ -3,8 +3,8 @@ using TOML
 
 mutable struct Particle
     w::Float64
-    v::MVector{3,Float64}
-    x::MVector{3,Float64}
+    v::SVector{3,Float64}
+    x::SVector{3,Float64}
 end
 
 # species x cells
