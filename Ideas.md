@@ -27,7 +27,9 @@ Equal volume/equal radius?
 
 - [x] Maxwellian test case (equal weights)
 
-- [ ] BKW test case (equal weights)
+- [x] Two species relaxation (equal weights)
+
+- [x] BKW test case (equal weights)
 
 - [ ] Particle generation (variable weight)
 
@@ -38,6 +40,13 @@ Equal volume/equal radius?
 - [ ] mixing rule VHS creator
 
 - [ ] The science begins
+
+
+# TODO: features
+
+- [ ] Add time to output (since we can change dt on the fly)
+
+- [ ] Compute sigma_g_vhs directly (to avoid additional multiplication)
 
 # TODO: tests
 
