@@ -38,7 +38,7 @@ collision_factors.sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1], 
 
 Δt = 1e-6
 V = 1.0
-ntc_single_species!(rng, collision_factors, particle_indexer[1,1], collision_data, interaction_data[1,1], particles[1],
+ntc!(rng, collision_factors, particle_indexer[1,1], collision_data, interaction_data[1,1], particles[1],
     Δt, V)
 
 print(collision_factors)
