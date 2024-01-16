@@ -71,11 +71,11 @@ function create_collision_data()
                          SVector{3,Float64}(0.0, 0.0, 0.0))
 end
 
-function compute_com(collision_data::CollisionData, interaction::Interaction, p1, p2)
+function compute_com!(collision_data::CollisionData, interaction::Interaction, p1, p2)
     collision_data.v_com = interaction.μ1 * p1.v + interaction.μ2 * p2.v
 end
 
-function compute_g(collision_data::CollisionData, p1, p2)
+function compute_g!(collision_data::CollisionData, p1, p2)
     collision_data.g_vec = p1.v - p2.v
     collision_data.g = norm(collision_data.g_vec)
 end

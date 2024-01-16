@@ -63,7 +63,7 @@ function ntc!(rng, collision_factors, particle_indexer, collision_data, interact
         i = map_cont_index(particle_indexer, i)
         k = map_cont_index(particle_indexer, k)
         
-        compute_g(collision_data, particles[i], particles[k])
+        compute_g!(collision_data, particles[i], particles[k])
 
         if (collision_data.g > eps())
 
@@ -75,7 +75,7 @@ function ntc!(rng, collision_factors, particle_indexer, collision_data, interact
             
             if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
                 collision_factors.n_coll_performed += 1
-                compute_com(collision_data, interaction, particles[i], particles[k])
+                compute_com!(collision_data, interaction, particles[i], particles[k])
 
                 # do collision
                 if (particles[i].w == particles[k].w)
@@ -141,7 +141,7 @@ function ntc!(rng, collision_factors, particle_indexer_1, particle_indexer_2,
         i = map_cont_index(particle_indexer_1, i)
         k = map_cont_index(particle_indexer_2, k)
         
-        compute_g(collision_data, particles_1[i], particles_2[k])
+        compute_g!(collision_data, particles_1[i], particles_2[k])
 
         if (collision_data.g > eps())
 
@@ -153,7 +153,7 @@ function ntc!(rng, collision_factors, particle_indexer_1, particle_indexer_2,
 
             if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
                 collision_factors.n_coll_performed += 1
-                compute_com(collision_data, interaction, particles_1[i], particles_2[k])
+                compute_com!(collision_data, interaction, particles_1[i], particles_2[k])
                 # do collision
                 if (particles_1[i].w == particles_2[k].w)
                     collision_factors.n_eq_w_coll_performed += 1
