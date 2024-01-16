@@ -65,6 +65,8 @@
     ref_sol = NCDataset("test/data/bkw_20k_seed1234.nc", "r")
     sol = NCDataset("test/data/tmp_bkw.nc", "r")
 
+    @test length(sol["timestep"]) == n_t + 1
+
     ref_mom = ref_sol["moments"]
     sol_mom = sol["moments"]
 
