@@ -15,7 +15,7 @@ mutable struct PhysProps
 end
 
 function create_props(n_cells, n_species, moments_list; Tref=300.0)
-    println("Computing $(length(moments_list)) moments")
+    # println("Computing $(length(moments_list)) moments")
     return PhysProps(n_cells, n_species, length(moments_list), zeros(n_cells, n_species), zeros(3, n_cells, n_species), zeros(n_cells, n_species),
     moments_list, zeros(length(moments_list), n_cells, n_species), Tref)
 end
@@ -107,13 +107,10 @@ function compute_props_sorted_without_moments!(phys_props, particle_indexer_arra
             if (n > 0.0)
                 v /= n
                 for i in particle_indexer_array[species,cell].start1:particle_indexer_array[species,cell].end1
-                    # normv = norm(particles[species][i].v - v)
-                    # TODO: make normv optional, only if we include moments!
                     E += particles[species][i].w * ((particles[species][i].v[1] - v[1])^2
                                                   + (particles[species][i].v[2] - v[2])^2
                                                   + (particles[species][i].v[3] - v[3])^2)
                 end
-                
                 E *= 0.5 * species_data[species].mass / (n * k_B)
                 T = (2.0/3.0) * E
             end
