@@ -1,4 +1,4 @@
-module Merging
+module Merzbild
 
 include("constants.jl")
 include("particles.jl")
@@ -18,4 +18,4 @@ export estimate_sigma_g_w_max, estimate_sigma_g_w_max!
 export ntc!
 export k_B
 
-end # module merging
+end # module merzbild

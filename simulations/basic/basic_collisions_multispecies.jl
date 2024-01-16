@@ -8,9 +8,9 @@
 # without moments
 # julia --project=. simulations/basic/basic_collisions_multispecies.jl  4.80s user 1.74s system 139% cpu 4.677 total
 
-include("../../src/merging.jl")
+include("../../src/merzbild.jl")
 
-using ..Merging
+using ..Merzbild
 using Random
 
 const seed = 1234

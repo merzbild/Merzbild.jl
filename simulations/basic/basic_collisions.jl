@@ -1,8 +1,8 @@
 # Test that sampling from a Maxwellian, doing 1 timestep of collisions and computing physical properties gives reasonable results
 
-include("../../src/merging.jl")
+include("../../src/merzbild.jl")
 
-using ..Merging
+using ..Merzbild
 using Random
 
 species_list = load_species_list("data/particles.toml", "Ar")

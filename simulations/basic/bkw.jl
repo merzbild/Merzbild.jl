@@ -4,9 +4,9 @@
 # 50k particles, no print julia --project=. simulations/basic/bkw.jl  5.54s user 1.65s system 134% cpu 5.357 total
 # 200k particles, 10 moments, no print julia --project=. simulations/basic/bkw.jl  13.29s user 1.78s system 114% cpu 13.211 total
 
-include("../../src/merging.jl")
+include("../../src/merzbild.jl")
 
-using ..Merging
+using ..Merzbild
 using Random
 
 const seed = 1234

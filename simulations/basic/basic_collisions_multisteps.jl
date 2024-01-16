@@ -1,8 +1,8 @@
 # Test that sampling from a Maxwellian, doing multiple timesteps of collisions and computing physical properties gives reasonable results
 
-include("../../src/merging.jl")
+include("../../src/merzbild.jl")
 
-using ..Merging
+using ..Merzbild
 using Random
 
 seed = 1234
