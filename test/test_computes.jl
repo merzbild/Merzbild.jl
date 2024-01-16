@@ -1,5 +1,3 @@
-using Test
-
 @testset "phys_props compute" begin
 
     species_list::Vector{Species} = load_species_list("data/particles.toml", "Ar")

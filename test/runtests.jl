@@ -1,7 +1,8 @@
-include("../src/merging.jl")
+include("../src/merzbild.jl")
 
 using Test
-using .Merging
+using .Merzbild
+using Random
 
 include("test_computes.jl")  # first we test functions that compute physical properties
 include("test_sampling.jl")  # then we test sampling functions
