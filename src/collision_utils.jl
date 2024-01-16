@@ -51,7 +51,7 @@ function load_interaction_data(interactions_filename, species_list)
                     s2s1 = species_name2 * "," * species_name1
                     interaction_s1s2 = interactions_data[s2s1]
                 end
-                println(i, ", ", k)
+                # println(i, ", ", k)
                 interactions_list[i,k] = Interaction(m_r, μ1, μ2, # interaction_s1s2["vhs_Tref"],
                 interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"],
                 compute_vhs_factor(interaction_s1s2["vhs_Tref"], interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"],
