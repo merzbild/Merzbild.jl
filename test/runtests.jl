@@ -3,6 +3,8 @@ include("../src/merzbild.jl")
 using Test
 using .Merzbild
 using Random
+using NCDatasets
+using SpecialFunctions
 
 include("test_computes.jl")  # first we test functions that compute physical properties
 include("test_sampling.jl")  # then we test sampling functions
