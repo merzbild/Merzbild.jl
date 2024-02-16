@@ -34,13 +34,25 @@ mutable struct VDF
 end
 
 # generate a grid with extent [-1.0,1.0]x[-1.0,1.0]x[-1.0,1.0]
-function generate_unit_dvgrid(nx, ny, nz)
-    nothing
+function create_unit_dvgrid(nx, ny, nz)
+    vx = Vector(LinRange(-1.0, 1.0, nx))
+    vy = Vector(LinRange(-1.0, 1.0, ny))
+    vz = Vector(LinRange(-1.0, 1.0, nz))
+    return UnitDVGrid(nx, ny, nz,
+                      vx[2] - vx[1], vy[2] - vy[1], vz[2] - vz[1],
+                      vx, vy, vz)
 end
 
 # generate a grid [-vx_max, vx_max]x[-vy_max, vy_max]x[-vz_max, vz_max]
-function generate_noiseless_dvgrid(nx, ny, nz, vx_max, vy_max, vz_max)
-    nothing
+function create_noiseless_dvgrid(nx, ny, nz, vx_max, vy_max, vz_max)
+    unitgrid = create_unit_dvgrid(nx, ny, nz)
+    return DVGrid(unitgrid, vx_max, vy_max, vz_max,
+                  unitgrid.dx * vx_max, unitgrid.dy * vy_max, unitgrid.dz * vz_max,
+                  unitgrid.vx_grid * vx_max, unitgrid.vy_grid * vy_max, unitgrid.vz_grid * vz_max)
+end
+
+function create_vdf(nx, ny, nz)
+    return VDF(nx, ny, nz, zeros(nx, ny, nz))
 end
 
 function maxwellian(T, m, vx, vy, vz)
@@ -66,8 +78,57 @@ function sample_bkw!(rng, particles, nparticles, T, m, v0)
     end
 end
 
-function evaluate_distribution(distribution_function, T, m, vx, vy, vz)
-    return distribution_function(T, m, vx, vy, vz)
+function evaluate_distribution_on_grid!(vdf, distribution_function, grid, w_total, cutoff_v; normalize=true)
+    w = 0.0
+    for k in 1:grid.base_grid.nz
+        for j in 1:grid.base_grid.ny
+            for i in 1:grid.base_grid.nx
+                if (sqrt(grid.vx_grid[i]^2 + grid.vy_grid[j]^2 + grid.vz_grid[k]^2) <= cutoff_v)
+                    vdf.w[i,j,k] = distribution_function(grid.vx_grid[i], grid.vy_grid[j], grid.vz_grid[k])
+                    w += vdf.w[i,j,k]
+                end
+            end
+        end
+    end
+    if normalize
+        vdf.w = vdf.w * w_total / w
+    end
+end
+
+function sample_maxwellian_on_grid!(rng, particles, nv, T, m, n_total,
+                                    xlo, xhi, ylo, yhi, zlo, zhi; v_mult=3.5, cutoff_mult=3.5, noise=0.0,
+                                    v_offset=[0.0, 0.0, 0.0])
+
+    vdf = create_vdf(nv, nv, nv)
+    v_thermal = compute_thermal_velocity(T, m)
+    v_grid = create_noiseless_dvgrid(nv, nv, nv, v_thermal * v_mult, v_thermal * v_mult, v_thermal * v_mult)
+
+    maxwell_df = (vx,vy,vz) -> maxwellian(T, m, vx, vy, vz)
+
+    evaluate_distribution_on_grid!(vdf, maxwell_df, v_grid, n_total, v_thermal * cutoff_mult; normalize=true)
+
+    pid = 0
+    n_sampled = 0
+    for k in 1:v_grid.base_grid.nz
+        for j in 1:v_grid.base_grid.ny
+            for i in 1:v_grid.base_grid.nx
+                if vdf.w[i,j,k] > 0.0
+                    pid += 1
+                    n_sampled += 1
+                    particles[pid] = Particle(vdf.w[i,j,k],
+                                            # add random noise to velocity
+                                            SVector{3}(v_grid.vx_grid[i] + noise * v_grid.dx * (0.5 - rand(rng, Float64)) + v_offset[1],
+                                            v_grid.vy_grid[j] + noise * v_grid.dy * (0.5 - rand(rng, Float64)) + v_offset[2],
+                                            v_grid.vz_grid[j] + noise * v_grid.dz * (0.5 - rand(rng, Float64)) + v_offset[3]),
+                                            SVector{3}(xlo + rand(rng, Float64) * (xhi - xlo),
+                                                    ylo + rand(rng, Float64) * (yhi - ylo),
+                                                    zlo + rand(rng, Float64) * (zhi - zlo)))
+                end
+            end
+        end
+    end
+
+    return n_sampled
 end
 
 # compute thermal velocity: sqrt(2kT/m)

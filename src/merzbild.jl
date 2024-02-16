@@ -9,6 +9,7 @@ include("io.jl")
 
 DELTA_PARTICLES::Int32 = 256
 
+export sample_maxwellian_on_grid!
 export load_species_list, Particle, sample_particles_equal_weight!, create_particle_indexer, Species, Interaction
 export create_props, compute_props!, compute_props_sorted_without_moments!
 export ParticleIndexer, PhysProps, CollisionFactors, CollisionData
