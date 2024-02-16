@@ -65,7 +65,7 @@ function ntc!(rng, collision_factors, particle_indexer, collision_data, interact
         k = map_cont_index(particle_indexer, k)
         
         compute_g!(collision_data, particles[i], particles[k])
-
+        # println("NTC: ", particle_indexer.n_total, ", ", length(particles))
         if (collision_data.g > eps())
 
             sigma = sigma_vhs(interaction, collision_data.g)
@@ -86,7 +86,7 @@ function ntc!(rng, collision_factors, particle_indexer, collision_data, interact
                     # we split particle i, update velocity of i and k (split part remains unchanged)
 
                     # first need to grow particle array
-                    if (length(particles) < particle_indexer.n_total)
+                    if (length(particles) <= particle_indexer.n_total)
                         resize!(particles, length(particles)+DELTA_PARTICLES)
                     end
 
@@ -96,11 +96,9 @@ function ntc!(rng, collision_factors, particle_indexer, collision_data, interact
                     Δw = particles[i].w - particles[k].w
                     particles[i].w = particles[k].w
 
-                    particles[particle_indexer.n_total].w = Δw
-                    particles[particle_indexer.n_total].v = particles[i].v
-                    particles[particle_indexer.n_total].x = particles[i].x
+                    particles[particle_indexer.n_total] = Particle(Δw, particles[i].v, particles[i].x)
                 else  # (particles[k].w > particles[i].w)
-                    if (length(particles) < particle_indexer.n_total)
+                    if (length(particles) <= particle_indexer.n_total)
                         resize!(particles, length(particles)+DELTA_PARTICLES)
                     end
 
@@ -109,9 +107,7 @@ function ntc!(rng, collision_factors, particle_indexer, collision_data, interact
                     Δw = particles[k].w - particles[i].w
                     particles[k].w = particles[i].w
 
-                    particles[particle_indexer.n_total].w = Δw
-                    particles[particle_indexer.n_total].v = particles[k].v
-                    particles[particle_indexer.n_total].x = particles[k].x
+                    particles[particle_indexer.n_total] = Particle(Δw, particles[k].v, particles[k].x)
                 end
                 scatter_vhs(rng, collision_data, interaction, particles[i], particles[k])
             end
