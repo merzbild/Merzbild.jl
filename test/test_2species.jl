@@ -45,8 +45,7 @@
     Δt = 2.5e-3
     V = 1.0
 
-    @time for ts in 1:n_t
-    
+    for ts in 1:n_t
         for s2 in 1:n_species
             for s1 in s2:n_species
                 if (s1 == s2)
