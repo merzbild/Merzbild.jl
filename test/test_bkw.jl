@@ -67,6 +67,9 @@
 
     @test length(sol["timestep"]) == n_t + 1
 
+    @test maximum(sol["np"]) == n_particles
+    @test minimum(sol["np"]) == n_particles
+
     ref_mom = ref_sol["moments"]
     sol_mom = sol["moments"]
 
@@ -88,7 +91,7 @@
     analytic_8 = analytic(sol["timestep"] * dt_scaled, magic_factor, 8)
     diff = abs.(analytic_8 .- sol_mom[3, 1, 1, :]) ./ analytic_8
     @test maximum(diff) < 0.15
-    close(sol)
 
+    close(sol)
     rm("test/data/tmp_bkw.nc")
 end

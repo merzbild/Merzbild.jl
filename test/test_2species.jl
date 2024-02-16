@@ -77,6 +77,13 @@
     @test maximum(abs.(ref_sol["ndens"][1, 1, :] .- n_Ar)) / n_Ar < eps()
     @test maximum(abs.(ref_sol["ndens"][1, 2, :] .- n_He)) / n_He < eps()
 
+
+    @test maximum(sol["np"][1,1,:]) == n_particles_Ar
+    @test minimum(sol["np"][1,1,:]) == n_particles_Ar
+
+    @test maximum(sol["np"][1,2,:]) == n_particles_He
+    @test minimum(sol["np"][1,2,:]) == n_particles_He
+
     for species in 1:2
         diff = abs.(ref_T[1, species, :] - sol_T[1, species, :])
         @test maximum(diff) < eps()
