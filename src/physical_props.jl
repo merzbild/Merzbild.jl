@@ -6,9 +6,11 @@ mutable struct PhysProps
     n_cells::Int64
     n_species::Int64
     n_moments::Int64
-    n::Array{Float64,2}  # cells x species
-    v::Array{Float64,3}  # velocity component x cells x species
-    T::Array{Float64,2}  # cells x species
+    lpa::Vector{Int64}  # length of particle array: species
+    np::Array{Int64,2}  # number of particles: cells x species
+    n::Array{Float64,2}  # number density: cells x species
+    v::Array{Float64,3}  # velocity: velocity component x cells x species
+    T::Array{Float64,2}  # temperature: cells x species
     moment_powers::Vector{Int8}  # which moments we compute
     moments::Array{Float64,3}  # moment_id x cells x species
     Tref::Float64  # used to scale moments
@@ -16,7 +18,8 @@ end
 
 function create_props(n_cells, n_species, moments_list; Tref=300.0)
     # println("Computing $(length(moments_list)) moments")
-    return PhysProps(n_cells, n_species, length(moments_list), zeros(n_cells, n_species), zeros(3, n_cells, n_species), zeros(n_cells, n_species),
+    return PhysProps(n_cells, n_species, length(moments_list), zeros(n_species), zeros(n_cells, n_species),
+    zeros(n_cells, n_species), zeros(3, n_cells, n_species), zeros(n_cells, n_species),
     moments_list, zeros(length(moments_list), n_cells, n_species), Tref)
 end
 
@@ -28,6 +31,7 @@ function compute_props!(phys_props, particle_indexer_array, particles, species_d
         end
 
         for cell in 1:phys_props.n_cells
+            np = 0
             n = 0.0
             E = 0.0
             T = 0.0
@@ -37,12 +41,14 @@ function compute_props!(phys_props, particle_indexer_array, particles, species_d
             for i in particle_indexer_array[species,cell].start1:particle_indexer_array[species,cell].end1
                 n += particles[species][i].w
                 v = v + particles[species][i].v * particles[species][i].w
+                np += 1
             end
 
             if particle_indexer_array[species,cell].start2 > 0
                 for i in particle_indexer_array[species,cell].start2:particle_indexer_array[species,cell].end2
                     n += particles[species][i].w
                     v = v + particles[species][i].v * particles[species][i].w
+                    np += 1
                 end
             end
 
@@ -81,7 +87,9 @@ function compute_props!(phys_props, particle_indexer_array, particles, species_d
                     phys_props.moments[n_mom,cell,species] /= (moment_scaling * n)
                 end
             end
-    
+            
+            phys_props.lpa[species] = length(particles[species])
+            phys_props.np[cell,species] = np
             phys_props.n[cell,species] = n
             phys_props.v[:,cell,species] = v
             phys_props.T[cell,species] = T
