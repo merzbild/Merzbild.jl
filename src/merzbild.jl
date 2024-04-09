@@ -6,6 +6,7 @@ include("distributions_and_sampling.jl")
 include("physical_props.jl")
 include("collisions.jl")
 include("io.jl")
+include("merging/merging_grid.jl")
 
 DELTA_PARTICLES::Int32 = 256
 
@@ -20,5 +21,6 @@ export create_collision_factors, create_collision_data
 export estimate_sigma_g_w_max, estimate_sigma_g_w_max!
 export ntc!
 export k_B
+export create_merging_grid
 
 end # module merzbild
