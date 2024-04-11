@@ -18,8 +18,7 @@
         particles[1][i] = Particle(Fnum, v0, x0)
     end
 
-    particle_indexer::Array{ParticleIndexer, 2} = Array{ParticleIndexer, 2}(undef, 1, 1)
-    particle_indexer[1,1] = create_particle_indexer(n_particles)
+    particle_indexer = create_particle_indexer_array(n_particles)
 
     phys_props::PhysProps = create_props(1, 1, [], Tref=1)
     phys_props_no_moments::PhysProps = create_props(1, 1, [], Tref=1)

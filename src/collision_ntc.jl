@@ -21,26 +21,25 @@ function create_collision_factors(n_species)
     return coll_factor_array
 end
 
-function compute_n_coll_single_species(rng, collision_factors, particle_indexer, Δt, V)
-    return 0.5 * Δt * particle_indexer.n_total * (particle_indexer.n_total - 1) * collision_factors.sigma_g_w_max / V +
+function compute_n_coll_single_species(rng, collision_factors, np, Δt, V)
+    return 0.5 * Δt * np * (np - 1) * collision_factors.sigma_g_w_max / V +
         rand(rng, Float64)
 end
 
-function compute_n_coll_two_species(rng, collision_factors, particle_indexer_1, particle_indexer_2, Δt, V)
-    return Δt * particle_indexer_1.n_total * particle_indexer_2.n_total * collision_factors.sigma_g_w_max / V +
-        rand(rng, Float64)
+function compute_n_coll_two_species(rng, collision_factors, np1, np2, Δt, V)
+    return Δt * np1 * np2 * collision_factors.sigma_g_w_max / V + rand(rng, Float64)
 end
 
-function ntc!(rng, collision_factors, particle_indexer, collision_data, interaction, particles,
+function ntc!(species, cell, rng, collision_factors, pia, collision_data, interaction, particles,
     Δt, V)
     # single-species ntc
     # compute ncoll
     # loop over particles
     # update sigma_g_w_max
     # collide
-    collision_factors.n1 = particle_indexer.n_total
-    collision_factors.n2 = particle_indexer.n_total
-    n_coll_float = compute_n_coll_single_species(rng, collision_factors, particle_indexer, Δt, V)
+    collision_factors.n1 = pia.indexer[cell, species].n_local
+    collision_factors.n2 = pia.indexer[cell, species].n_local
+    n_coll_float = compute_n_coll_single_species(rng, collision_factors, pia.indexer[cell, species].n_local, Δt, V)
     n_coll_int = floor(Int64, n_coll_float)
     # println(n_coll_float, ", ", n_coll_int)
 
@@ -50,19 +49,19 @@ function ntc!(rng, collision_factors, particle_indexer, collision_data, interact
 
     for _ in 1:n_coll_int
         # TODO: check if 0 or 1 !!!
-        i = floor(Int64, rand(rng, Float64) * particle_indexer.n_total)
-        k = floor(Int64, rand(rng, Float64) * particle_indexer.n_total)
+        i = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species].n_local)
+        k = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species].n_local)
 
         while (i == k)
-            k = floor(Int64, rand(rng, Float64) * particle_indexer.n_total)
+            k = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species].n_local)
         end
 
         # example: bounds from [1,4], [7,9]; n_total = 7
         # n_group1 = 4, n_group2 = 3
         # i = 0,1,2,3 - [1,4]
         # i = 4,5,6 - [7,9]
-        i = map_cont_index(particle_indexer, i)
-        k = map_cont_index(particle_indexer, k)
+        i = map_cont_index(pia.indexer[cell, species], i)
+        k = map_cont_index(pia.indexer[cell, species], k)
         
         compute_g!(collision_data, particles[i], particles[k])
         # println("NTC: ", particle_indexer.n_total, ", ", length(particles))
@@ -91,7 +90,7 @@ function ntc!(rng, collision_factors, particle_indexer, collision_data, interact
                     end
 
                     # first need to update the particle indexer struct
-                    update_particle_indexer_new_particle(particle_indexer)
+                    update_particle_indexer_new_particle(species, cell, pia)
 
                     Δw = particles[i].w - particles[k].w
                     particles[i].w = particles[k].w
@@ -102,7 +101,7 @@ function ntc!(rng, collision_factors, particle_indexer, collision_data, interact
                         resize!(particles, length(particles)+DELTA_PARTICLES)
                     end
 
-                    update_particle_indexer_new_particle(particle_indexer)
+                    update_particle_indexer_new_particle(species, cell, pia)
 
                     Δw = particles[k].w - particles[i].w
                     particles[k].w = particles[i].w
@@ -117,17 +116,17 @@ end
 
 
 
-function ntc!(rng, collision_factors, particle_indexer_1, particle_indexer_2,
+function ntc!(species1, species2, cell, rng, collision_factors, pia,
     collision_data, interaction, particles_1, particles_2,
     Δt, V)
     # compute ncoll
     # loop over particles
     # update sigma_g_w_max
     # collide
-    collision_factors.n1 = particle_indexer_1.n_total
-    collision_factors.n2 = particle_indexer_2.n_total
+    collision_factors.n1 = pia.indexer[cell, species1].n_local
+    collision_factors.n2 = pia.indexer[cell, species2].n_local
     n_coll_float = compute_n_coll_two_species(rng, collision_factors,
-    particle_indexer_1, particle_indexer_2, Δt, V)
+                                              pia.indexer[cell, species1].n_local, pia.indexer[cell, species2].n_local, Δt, V)
     n_coll_int = floor(Int64, n_coll_float)
     # println(n_coll_float, ", ", n_coll_int)
 
@@ -137,15 +136,15 @@ function ntc!(rng, collision_factors, particle_indexer_1, particle_indexer_2,
 
     for _ in 1:n_coll_int
         # TODO: check if 0 or 1 !!!
-        i = floor(Int64, rand(rng, Float64) * particle_indexer_1.n_total)
-        k = floor(Int64, rand(rng, Float64) * particle_indexer_2.n_total)
+        i = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species1].n_local)
+        k = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species2].n_local)
 
         # example: bounds from [1,4], [7,9]; n_total = 7
         # n_group1 = 4, n_group2 = 3
         # i = 0,1,2,3 - [1,4]
         # i = 4,5,6 - [7,9]
-        i = map_cont_index(particle_indexer_1, i)
-        k = map_cont_index(particle_indexer_2, k)
+        i = map_cont_index(pia.indexer[cell, species1], i)
+        k = map_cont_index(pia.indexer[cell, species2], k)
         
         compute_g!(collision_data, particles_1[i], particles_2[k])
 
@@ -168,7 +167,7 @@ function ntc!(rng, collision_factors, particle_indexer_1, particle_indexer_2,
                     # we split particle i, update velocity of i and k (split part remains unchanged)
 
                     # first need to update the particle indexer struct
-                    update_particle_indexer_new_particle(particle_indexer)
+                    update_particle_indexer_new_particle(species1, cell, pia)
 
                     Δw = particles_1[i].w - particles_2[k].w
                     particles_1[i].w = particles_2[k].w
@@ -177,7 +176,7 @@ function ntc!(rng, collision_factors, particle_indexer_1, particle_indexer_2,
                     particles_1[n_total].v = particles_1[i].v
                     particles_1[n_total].x = particles_1[i].x
                 else  # (particles[k].w > particles[i].w)
-                    update_particle_indexer_new_particle(particle_indexer)
+                    update_particle_indexer_new_particle(species2, cell, pia)
 
                     Δw = particles_2[k].w - particles_1[i].w
                     particles_2[k].w = particles_1[i].w

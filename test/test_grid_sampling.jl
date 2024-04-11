@@ -22,8 +22,7 @@
         n_sampled = sample_maxwellian_on_grid!(rng, particles[1], nv, T0, species_list[1].mass, n_dens,
         0.0, 1.0, 0.0, 1.0, 0.0, 1.0; v_mult=3.5, cutoff_mult=3.5, noise=0.0, v_offset=v0)
         
-        particle_indexer::Array{ParticleIndexer, 2} = Array{ParticleIndexer, 2}(undef, 1, 1)
-        particle_indexer[1,1] = create_particle_indexer(n_sampled)
+        particle_indexer = create_particle_indexer_array(n_sampled)
 
         phys_props::PhysProps = create_props(1, 1, [], Tref=1)
         phys_props_no_moments::PhysProps = create_props(1, 1, [], Tref=1)

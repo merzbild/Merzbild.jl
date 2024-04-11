@@ -27,9 +27,7 @@
     sample_particles_equal_weight!(rng, particles[1], n_particles_Ar, T0_Ar, species_list[1].mass, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
     sample_particles_equal_weight!(rng, particles[2], n_particles_He, T0_He, species_list[2].mass, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
 
-    particle_indexer::Array{ParticleIndexer, 2} = Array{ParticleIndexer, 2}(undef, 2, 1)
-    particle_indexer[1,1] = create_particle_indexer(n_particles_Ar)
-    particle_indexer[2,1] = create_particle_indexer(n_particles_He)
+    particle_indexer = create_particle_indexer_array([n_particles_Ar, n_particles_He])
 
     phys_props::PhysProps = create_props(1, 2, [], Tref=T0_Ar)
     compute_props!(phys_props, particle_indexer, particles, species_list)
@@ -49,10 +47,10 @@
         for s2 in 1:n_species
             for s1 in s2:n_species
                 if (s1 == s2)
-                    ntc!(rng, collision_factors[s1,s1], particle_indexer[s1,1], collision_data, interaction_data[s1,s1], particles[s1],
+                    ntc!(s1, 1, rng, collision_factors[s1,s1], particle_indexer, collision_data, interaction_data[s1,s1], particles[s1],
                     Δt, V)
                 else
-                    ntc!(rng, collision_factors[s1,s2], particle_indexer[s1,1], particle_indexer[s2,1],
+                    ntc!(s1, s2, 1, rng, collision_factors[s1,s2], particle_indexer,
                     collision_data, interaction_data[s1,s2], particles[s1], particles[s2],
                     Δt, V)
                 end

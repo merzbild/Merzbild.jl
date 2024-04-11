@@ -20,8 +20,7 @@
         sample_particles_equal_weight!(rng, particles[1], n_particles, T0, species_list[1].mass, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0,
         vx0=v0[1], vy0=v0[2], vz0=v0[3])
 
-        particle_indexer::Array{ParticleIndexer, 2} = Array{ParticleIndexer, 2}(undef, 1, 1)
-        particle_indexer[1,1] = create_particle_indexer(n_particles)
+        particle_indexer = create_particle_indexer_array(n_particles)
 
         phys_props::PhysProps = create_props(1, 1, [], Tref=1)
         phys_props_no_moments::PhysProps = create_props(1, 1, [], Tref=1)

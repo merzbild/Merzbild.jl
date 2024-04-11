@@ -36,11 +36,10 @@
     sample_particles_equal_weight!(rng, particles[1], n_particles, T0, species_list[1].mass, Fnum,
                                 0.0, 1.0, 0.0, 1.0, 0.0, 1.0; distribution=:BKW)
 
-    particle_indexer::Array{ParticleIndexer, 2} = Array{ParticleIndexer, 2}(undef, 1, 1)
-    particle_indexer[1,1] = create_particle_indexer(n_particles)
+    pia = create_particle_indexer_array(n_particles)
 
     phys_props::PhysProps = create_props(1, 1, moments_list, Tref=T0)
-    compute_props!(phys_props, particle_indexer, particles, species_list)
+    compute_props!(phys_props, pia, particles, species_list)
 
     ds = create_netcdf_phys_props("test/data/tmp_bkw.nc", phys_props, species_list)
     write_netcdf_phys_props(ds, phys_props, 0)
@@ -54,10 +53,10 @@
     V::Float64 = 1.0
 
     for ts in 1:n_t
-        ntc!(rng, collision_factors, particle_indexer[1,1], collision_data, interaction_data[1,1], particles[1],
+        ntc!(1, 1, rng, collision_factors, pia, collision_data, interaction_data[1,1], particles[1],
             Δt, V)
         
-        compute_props!(phys_props, particle_indexer, particles, species_list)
+        compute_props!(phys_props, pia, particles, species_list)
         write_netcdf_phys_props(ds, phys_props, ts)
     end
     close(ds)

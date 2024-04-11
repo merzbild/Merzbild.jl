@@ -81,8 +81,7 @@
     vx0=vx0, vy0=vy0, vz0=vz0)
 
 
-    particle_indexer::Array{ParticleIndexer, 2} = Array{ParticleIndexer, 2}(undef, 1, 1)
-    particle_indexer[1,1] = create_particle_indexer(n_particles)
+    particle_indexer = create_particle_indexer_array(n_particles)
 
     compute_props!(phys_props, particle_indexer, particles, species_list)
     mg2 = create_merging_grid(Nx, Ny, Nz, 3.5)

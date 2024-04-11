@@ -23,7 +23,7 @@ function create_props(n_cells, n_species, moments_list; Tref=300.0)
     moments_list, zeros(length(moments_list), n_cells, n_species), Tref)
 end
 
-function compute_props!(phys_props, particle_indexer_array, particles, species_data)
+function compute_props!(phys_props, pia, particles, species_data)
     for species in 1:phys_props.n_species
         if phys_props.n_moments > 0
             moment_factor = 4 * π * (species_data[species].mass / (twopi * k_B * phys_props.Tref))^(1.5) * 0.5
@@ -38,14 +38,14 @@ function compute_props!(phys_props, particle_indexer_array, particles, species_d
             v = SVector{3,Float64}(0.0, 0.0, 0.0)
             phys_props.moments[:, cell, species] .= 0.0
 
-            for i in particle_indexer_array[species,cell].start1:particle_indexer_array[species,cell].end1
+            for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
                 n += particles[species][i].w
                 v = v + particles[species][i].v * particles[species][i].w
                 np += 1
             end
 
-            if particle_indexer_array[species,cell].start2 > 0
-                for i in particle_indexer_array[species,cell].start2:particle_indexer_array[species,cell].end2
+            if pia.indexer[cell,species].start2 > 0
+                for i in pia.indexer[cell,species].start2:pia.indexer[cell,species].end2
                     n += particles[species][i].w
                     v = v + particles[species][i].v * particles[species][i].w
                     np += 1
@@ -54,7 +54,7 @@ function compute_props!(phys_props, particle_indexer_array, particles, species_d
 
             if (n > 0.0)
                 v /= n
-                for i in particle_indexer_array[species,cell].start1:particle_indexer_array[species,cell].end1
+                for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
                     normv = norm(particles[species][i].v - v)
                     # TODO: make normv optional, only if we include moments!
                     E += particles[species][i].w * normv^2
@@ -64,8 +64,8 @@ function compute_props!(phys_props, particle_indexer_array, particles, species_d
                     end
                 end
             
-                if particle_indexer_array[species,cell].start2 > 0
-                    for i in particle_indexer_array[species,cell].start2:particle_indexer_array[species,cell].end2
+                if pia.indexer[cell,species].start2 > 0
+                    for i in pia.indexer[cell,species].start2:pia.indexer[cell,species].end2
                         # TODO: make normv optional, only if we include moments!
                         normv = norm(particles[species][i].v - v)
                         E += particles[species][i].w * normv^2
@@ -99,7 +99,7 @@ end
 
 
 
-function compute_props_sorted_without_moments!(phys_props, particle_indexer_array, particles, species_data)
+function compute_props_sorted_without_moments!(phys_props, pia, particles, species_data)
     for species in 1:phys_props.n_species
         for cell in 1:phys_props.n_cells
             n = 0.0
@@ -107,14 +107,14 @@ function compute_props_sorted_without_moments!(phys_props, particle_indexer_arra
             T = 0.0
             v = SVector{3,Float64}(0.0, 0.0, 0.0)
 
-            for i in particle_indexer_array[species,cell].start1:particle_indexer_array[species,cell].end1
+            for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
                 n += particles[species][i].w
                 v = v + particles[species][i].v * particles[species][i].w
             end
 
             if (n > 0.0)
                 v /= n
-                for i in particle_indexer_array[species,cell].start1:particle_indexer_array[species,cell].end1
+                for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
                     E += particles[species][i].w * ((particles[species][i].v[1] - v[1])^2
                                                   + (particles[species][i].v[2] - v[2])^2
                                                   + (particles[species][i].v[3] - v[3])^2)
