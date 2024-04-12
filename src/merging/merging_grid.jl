@@ -220,20 +220,20 @@ function compute_new_particles!(cell, species, merging_grid, particles, particle
     curr_particle_index = 0
     for index in 1:merging_grid.Ntotal
         if (merging_grid.cells[index].np >= 2)
-            curr_particle_index += 1
             i = map_cont_index(particle_indexer_array.indexer[cell,species], curr_particle_index)
+            curr_particle_index += 1
             particles[species][i].w = merging_grid.cells[index].w1
             particles[species][i].v = merging_grid.cells[index].v1
             particles[species][i].x = merging_grid.cells[index].x1
 
-            curr_particle_index += 1
             i = map_cont_index(particle_indexer_array.indexer[cell,species], curr_particle_index)
+            curr_particle_index += 1
             particles[species][i].w = merging_grid.cells[index].w2
             particles[species][i].v = merging_grid.cells[index].v2
             particles[species][i].x = merging_grid.cells[index].x2
         elseif (merging_grid.cells[index].np == 1)
-            curr_particle_index += 1
             i = map_cont_index(particle_indexer_array.indexer[cell,species], curr_particle_index)
+            curr_particle_index += 1
             particles[species][i].w = merging_grid.cells[index].w1
             particles[species][i].v = merging_grid.cells[index].v1
             particles[species][i].x = merging_grid.cells[index].x1
