@@ -39,17 +39,29 @@ end
 function map_cont_index(species, cell, pia, i)
     # map a continuous index in [0, n_local-1]
     # to a index in the particle array given particle_indexer struct describing the split
-    return map_cont_index(species, cell, pia.indexer[cell, species], i)
+    return map_cont_index(pia.indexer[cell, species], i)
 end
 
-# function update_particle_indexer_new_lower_count(particle_indexer, new_lower_count)
-#     # update particle indexer when we reduced the particle count
-#     particle_indexer.n_total += 1
-#     particle_indexer.n_group2 += 1
+function update_particle_indexer_new_lower_count(species, cell, pia, new_lower_count)
+    # update particle indexer when we reduced the particle count
+    diff = pia.indexer[cell, species].n_local - new_lower_count
+    pia.indexer[cell, species].n_local = new_lower_count
 
-#     particle_indexer.start2 = particle_indexer.start2 > 0 ? particle_indexer.start2 : particle_indexer.n_total 
-#     particle_indexer.end2 = particle_indexer.n_total
-# end
+    pia.n_total[species] -= diff
+
+    if (new_lower_count > pia.indexer[cell, species].n_group1)
+        pia.indexer[cell, species].end2 -= diff
+        pia.indexer[cell, species].n_group2 -= diff
+    else
+        diff -= pia.indexer[cell, species].n_group2
+        pia.indexer[cell, species].start2 = 0
+        pia.indexer[cell, species].end2 = 0
+        pia.indexer[cell, species].n_group2 = 0
+
+        pia.indexer[cell, species].end1 -= diff
+        pia.indexer[cell, species].n_group1 -= diff
+    end
+end
 
 function update_particle_indexer_new_particle(species, cell, pia)
     # update particle indexer when we add a new particle
