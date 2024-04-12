@@ -31,7 +31,7 @@ Equal volume/equal radius?
 
 - [x] BKW test case (equal weights)
 
-- [ ] Particle generation (variable weight)
+- [x] Particle generation (variable weight)
 
 - [ ] Grid merging
 
@@ -47,6 +47,8 @@ Equal volume/equal radius?
 - [ ] Add time to output (since we can change dt on the fly)
 
 - [ ] Compute sigma_g_vhs directly (to avoid additional multiplication)
+
+- [ ] Avoid duplicate computation of particle indices in grid-based merging? Avoid second loop? Use Welford's algorithm + initial estimate of mean as middle of box? Or just shift data?
 
 # TODO: tests
 
