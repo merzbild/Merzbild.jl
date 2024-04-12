@@ -6,7 +6,8 @@ using Random
 using NCDatasets
 using SpecialFunctions
 
-include("test_computes.jl")  # first we test functions that compute physical properties
+include("test_indexing.jl")  # first we test indexing routines
+include("test_computes.jl")  # we test functions that compute physical properties
 include("test_sampling.jl")  # then we test sampling functions
 include("test_grid_sampling.jl")  # then we test grid sampling functions
 include("test_collision_utils.jl")  # then we test some collision utilities
