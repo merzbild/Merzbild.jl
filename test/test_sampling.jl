@@ -22,13 +22,15 @@
 
         particle_indexer = create_particle_indexer_array(n_particles)
 
-        phys_props::PhysProps = create_props(1, 1, [], Tref=1)
-        phys_props_no_moments::PhysProps = create_props(1, 1, [], Tref=1)
+        phys_props::PhysProps = create_props(1, 1, [4, 6, 8], Tref=T0)
         compute_props!(phys_props, particle_indexer, particles, species_list)
         @test abs((phys_props.n[1,1] - n_dens) / n_dens) < eps()
         @test abs((phys_props.v[1,1,1] - v0[1])) < Δlarge
         @test abs((phys_props.v[2,1,1] - v0[2])) < Δlarge
         @test abs((phys_props.v[3,1,1] - v0[3])) < Δlarge
         @test abs((phys_props.T[1,1] - T0) / T0) < Δsmall
+        @test abs(phys_props.moments[1,1,1] .- 1.0) < 0.05  # test 4th moment
+        @test abs(phys_props.moments[2,1,1] .- 1.0) < 0.05  # test 6th moment
+        @test abs(phys_props.moments[3,1,1] .- 1.0) < 0.12  # test 8th moment
     end
 end
