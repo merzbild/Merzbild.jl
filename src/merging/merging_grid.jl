@@ -116,6 +116,9 @@ function clear_merging_grid!(merging_grid)
         merging_grid.cells[index].v_std_sq = SVector{3,Float64}(0.0, 0.0, 0.0)
         merging_grid.cells[index].x_mean = SVector{3,Float64}(0.0, 0.0, 0.0)
         merging_grid.cells[index].x_std_sq = SVector{3,Float64}(0.0, 0.0, 0.0)
+        merging_grid.cells[index].np = 0
+        merging_grid.cells[index].particle_index1 = 0
+        merging_grid.cells[index].particle_index2 = 0
     end
 end
 
