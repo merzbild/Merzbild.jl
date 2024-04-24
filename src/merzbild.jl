@@ -10,7 +10,7 @@ include("merging/merging_grid.jl")
 
 DELTA_PARTICLES::Int32 = 256
 
-export sample_maxwellian_on_grid!
+export sample_maxwellian_on_grid!, sample_on_grid!, bkw, maxwellian
 export load_species_list, Particle, sample_particles_equal_weight!, create_particle_indexer, create_particle_indexer_array
 export Species, Interaction
 export create_props, compute_props!, compute_props_sorted_without_moments!
