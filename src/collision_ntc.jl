@@ -85,7 +85,7 @@ function ntc!(species, cell, rng, collision_factors, pia, collision_data, intera
                     # we split particle i, update velocity of i and k (split part remains unchanged)
 
                     # first need to grow particle array
-                    if (length(particles) <= particle_indexer.n_total)
+                    if (length(particles) <= pia.n_total[species])
                         resize!(particles, length(particles)+DELTA_PARTICLES)
                     end
 
@@ -95,9 +95,9 @@ function ntc!(species, cell, rng, collision_factors, pia, collision_data, intera
                     Δw = particles[i].w - particles[k].w
                     particles[i].w = particles[k].w
 
-                    particles[particle_indexer.n_total] = Particle(Δw, particles[i].v, particles[i].x)
+                    particles[pia.n_total[species]] = Particle(Δw, particles[i].v, particles[i].x)
                 else  # (particles[k].w > particles[i].w)
-                    if (length(particles) <= particle_indexer.n_total)
+                    if (length(particles) <= pia.n_total[species])
                         resize!(particles, length(particles)+DELTA_PARTICLES)
                     end
 
@@ -106,7 +106,7 @@ function ntc!(species, cell, rng, collision_factors, pia, collision_data, intera
                     Δw = particles[k].w - particles[i].w
                     particles[k].w = particles[i].w
 
-                    particles[particle_indexer.n_total] = Particle(Δw, particles[k].v, particles[k].x)
+                    particles[pia.n_total[species]] = Particle(Δw, particles[k].v, particles[k].x)
                 end
                 scatter_vhs(rng, collision_data, interaction, particles[i], particles[k])
             end
