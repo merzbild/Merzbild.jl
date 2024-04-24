@@ -146,6 +146,12 @@ function compute_grid!(cell, species, merging_grid, particles, particle_indexer_
             merging_grid.cells[index].v_mean = merging_grid.cells[index].v_mean + particles[species][i].v * particles[species][i].w
             merging_grid.cells[index].x_mean = merging_grid.cells[index].x_mean + particles[species][i].x * particles[species][i].w
         end
+
+        if (merging_grid.cells[index].np == 1)
+            merging_grid.cells[index].particle_index1 = i
+        elseif (merging_grid.cells[index].np == 2)
+            merging_grid.cells[index].particle_index2 = i
+        end
     end
 
     for index in 1:merging_grid.Ntotal
@@ -239,6 +245,8 @@ function compute_new_particles!(cell, species, merging_grid, particles, particle
             particles[species][i].x = merging_grid.cells[index].x1
         end
     end
+
+    update_particle_indexer_new_lower_count(species, cell, particle_indexer_array, curr_particle_index)
 end
 
 function merge_grid_based!(cell, species, merging_grid, phys_props, species_data, particles, particle_indexer_array)
