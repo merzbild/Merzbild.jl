@@ -1,5 +1,27 @@
 @testset "bkw" begin
 
+
+    # Important!
+    # The time scaling in the analytical solution is different
+    # Tref = 273.0
+    # mref = 66.3e-27 
+    # mcd = mref / 2.0
+    # dref = 4.11e-10
+    # nref = 1e23
+    # Lref = 1.0 / (nref * constants.pi * dref**2)
+    # vref = ((2 * constants.k * Tref) / mref)**0.5
+    # time_ref = Lref / vref
+
+    # kappa_mult = constants.pi * dref**2 * (mcd / (2 * constants.k * tref))**(-0.5) / gamma(5/2 - 1.0)
+    # ttt_bkw = 1 / (4 * constants.pi * n * kappa_mult)
+    # magic_factor = time_ref / ttt_bkw / (4 * constants.pi)
+    # print(magic_factor)  # approximately 1.59577 for Argon, 1.5963 for N
+        
+    # def analytic(time, N):    
+    #     C = 1. - 0.4 * np.exp(-time * magic_factor / 6)
+    #     kk = N // 2
+    #     return C**(kk - 1) * (kk - (kk - 1) * C)
+
     function analytic(time, magic_factor, N)
         C = 1.0 .- 0.4 * exp.(-time * magic_factor / 6)
         kk = N / 2
