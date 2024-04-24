@@ -93,7 +93,7 @@ function compute_grid_index(merging_grid, v)
 
         index = floor(Int64, i_x) * merging_grid.NyNz + floor(Int64, i_y) * merging_grid.Nz + floor(Int64, i_z) + 1
     else
-        index = merging_grid.Ntotal + 1
+        index = merging_grid.Ntotal - 7
 
         if (v[1] > merging_grid.extent_v_mid[1])
             index += 1
