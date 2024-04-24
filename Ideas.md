@@ -33,7 +33,7 @@ Equal volume/equal radius?
 
 - [x] Particle generation (variable weight)
 
-- [ ] Grid merging
+- [x] Grid merging
 
 - [ ] Octree merging
 
@@ -54,6 +54,8 @@ Equal volume/equal radius?
 
 - [ ] energy / momentum conservation in scattering
 
-- [ ] correct indexing
+- [x] correct indexing
+
+- [ ] BKW var weight reference solution
 
 - [ ] 1D - no merging, particles don't switch cells during variable weight collisions!!!
