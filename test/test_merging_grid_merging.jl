@@ -36,7 +36,6 @@
 
     mg = create_merging_grid(Nx, Ny, Nz, 3.5)
 
-    Merzbild.compute_velocity_extent!(1, 1, mg, phys_props, species_list)
     merge_grid_based!(1, 1, mg, phys_props, species_list, particles, particle_indexer)
 
     @test particle_indexer.n_total[1] < n_particles

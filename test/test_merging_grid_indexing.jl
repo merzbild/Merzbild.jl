@@ -41,31 +41,31 @@
  
     v0 = [-2.0, -0.5, -0.5]
     index = Merzbild.compute_grid_index(mg, v0)
-    @test index == mg.Ntotal + 1
+    @test index == mg.Ntotal + 1 - 8
     v0 = [2.0, -0.5, -0.5]
     index = Merzbild.compute_grid_index(mg, v0)
-    @test index == mg.Ntotal + 2  # y, z < middle
+    @test index == mg.Ntotal + 2 - 8  # y, z < middle
 
     v0 = [-2.0, 0.5, -0.5]
     index = Merzbild.compute_grid_index(mg, v0)
-    @test index == mg.Ntotal + 3
+    @test index == mg.Ntotal + 3 - 8
     v0 = [2.0, 1.5, -0.5]
     index = Merzbild.compute_grid_index(mg, v0)
-    @test index == mg.Ntotal + 4  # y > middle, z < middle
+    @test index == mg.Ntotal + 4 - 8  # y > middle, z < middle
 
     v0 = [-2.0, -0.5, 3.5]
     index = Merzbild.compute_grid_index(mg, v0)
-    @test index == mg.Ntotal + 5
+    @test index == mg.Ntotal + 5 - 8
     v0 = [2.0, -0.5, 10.5]
     index = Merzbild.compute_grid_index(mg, v0)
-    @test index == mg.Ntotal + 6  # y < middle, z > middle
+    @test index == mg.Ntotal + 6 - 8  # y < middle, z > middle
 
     v0 = [-1.1, 0.5, 0.7]
     index = Merzbild.compute_grid_index(mg, v0)
-    @test index == mg.Ntotal + 7
+    @test index == mg.Ntotal + 7 - 8
     v0 = [30.0, 0.7, 0.9]
     index = Merzbild.compute_grid_index(mg, v0)
-    @test index == mg.Ntotal + 8  # y, z > middle
+    @test index == mg.Ntotal + 8 - 8 # y, z > middle
 
     Δabs = 2.5
     Δrel_xsmall = 5e-13
