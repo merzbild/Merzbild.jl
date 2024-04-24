@@ -145,12 +145,12 @@ function compute_grid!(cell, species, merging_grid, particles, particle_indexer_
             merging_grid.cells[index].w += particles[species][i].w
             merging_grid.cells[index].v_mean = merging_grid.cells[index].v_mean + particles[species][i].v * particles[species][i].w
             merging_grid.cells[index].x_mean = merging_grid.cells[index].x_mean + particles[species][i].x * particles[species][i].w
-        end
 
-        if (merging_grid.cells[index].np == 1)
-            merging_grid.cells[index].particle_index1 = i
-        elseif (merging_grid.cells[index].np == 2)
-            merging_grid.cells[index].particle_index2 = i
+            if (merging_grid.cells[index].np == 1)
+                merging_grid.cells[index].particle_index1 = i
+            elseif (merging_grid.cells[index].np == 2)
+                merging_grid.cells[index].particle_index2 = i
+            end
         end
     end
 
