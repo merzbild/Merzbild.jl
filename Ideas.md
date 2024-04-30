@@ -56,6 +56,6 @@ Equal volume/equal radius?
 
 - [x] correct indexing
 
-- [ ] BKW var weight reference solution
+- [x] BKW var weight reference solution
 
 - [ ] 1D - no merging, particles don't switch cells during variable weight collisions!!!
