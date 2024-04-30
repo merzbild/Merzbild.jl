@@ -6,7 +6,7 @@ include("distributions_and_sampling.jl")
 include("physical_props.jl")
 include("collisions.jl")
 include("io.jl")
-include("merging/merging_grid.jl")
+include("merging/merging.jl")
 
 DELTA_PARTICLES::Int32 = 256
 
