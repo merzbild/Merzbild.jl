@@ -1,6 +1,6 @@
 using StaticArrays
 
-mutable struct Grid
+mutable struct MergingGrid
     Nx::Int8
     Ny::Int8
     Nz::Int8
@@ -27,7 +27,7 @@ function create_merging_grid(Nx, Ny, Nz, extent_multiplier::T) where T <: Abstra
                             0.0, 0.0, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0])
     end
 
-    return Grid(Nx, Ny, Nz, Ny*Nz, Ntotal, extent_multiplier, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0],
+    return MergingGrid(Nx, Ny, Nz, Ny*Nz, Ntotal, extent_multiplier, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0],
                 [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], cells)
 end
 
@@ -104,7 +104,7 @@ function clear_merging_grid!(merging_grid)
     end
 end
 
-function compute_grid!(cell, species, merging_grid, particles, particle_indexer_array)
+function compute_grid!(cell, species, merging_grid::MergingGrid, particles, particle_indexer_array)
     clear_merging_grid!(merging_grid)
 
     for i in particle_indexer_array.indexer[cell,species].start1:particle_indexer_array.indexer[cell,species].end1
