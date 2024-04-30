@@ -17,3 +17,23 @@ mutable struct OctreeN2
 
     split::OctreeMergeSplit
 end
+
+function create_merging_octree()
+    nothing
+end
+
+function clear_octree!()
+    nothing
+end
+
+function split_bin!()
+    nothing
+end
+
+function compute_new_particles!()
+    nothing
+end
+
+function merge_octree_N2_based!(target_np)
+    nothing
+end
