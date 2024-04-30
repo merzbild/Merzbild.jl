@@ -102,20 +102,20 @@
     @test abs(phys_props.n[1,1] / n_dens - 1.0) < 1e-11
     @test phys_props.np[1,1] < threshold
 
-    # ref_sol = NCDataset("test/data/bkw_20k_seed1234.nc", "r")
+    ref_sol = NCDataset("test/data/bkw_vw_grid_seed1234.nc", "r")
     sol = NCDataset("test/data/tmp_bkw.nc", "r")
 
     @test length(sol["timestep"]) == n_t + 1
 
-    # ref_mom = ref_sol["moments"]
+    ref_mom = ref_sol["moments"]
     sol_mom = sol["moments"]
 
-    # for mom_no in 1:length(moments_list)
-    #     diff = abs.(ref_mom[mom_no, 1, 1, :] - sol_mom[mom_no, 1, 1, :])
-    #     @test maximum(diff) <= 2 * eps()
-    # end
+    for mom_no in 1:length(moments_list)
+        diff = abs.(ref_mom[mom_no, 1, 1, :] - sol_mom[mom_no, 1, 1, :])
+        @test maximum(diff) <= 2 * eps()
+    end
 
-    # close(ref_sol)
+    close(ref_sol)
 
     analytic_4 = analytic(sol["timestep"] * dt_scaled, magic_factor, 4)
     diff = abs.(analytic_4 .- sol_mom[1, 1, 1, :]) ./ analytic_4
