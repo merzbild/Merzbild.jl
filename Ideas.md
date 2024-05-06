@@ -50,6 +50,8 @@ Equal volume/equal radius?
 
 - [ ] Avoid duplicate computation of particle indices in grid-based merging? Avoid second loop? Use Welford's algorithm + initial estimate of mean as middle of box? Or just shift data?
 
+- [ ] Logging struct? (Union of nothing/actual logging struct, write out stuff like "increased octree merging buffer", "increase particle array size")
+
 # TODO: tests
 
 - [ ] energy / momentum conservation in scattering
