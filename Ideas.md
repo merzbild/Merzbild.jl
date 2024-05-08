@@ -61,3 +61,6 @@ Equal volume/equal radius?
 - [x] BKW var weight reference solution
 
 - [ ] 1D - no merging, particles don't switch cells during variable weight collisions!!!
+
+# Misc thoughts
+Best to do octree merging in reverse order? So that less shifting around of particle indices?
