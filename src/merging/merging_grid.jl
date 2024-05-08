@@ -235,6 +235,7 @@ function compute_new_particles!(cell, species, merging_grid, particles, particle
 end
 
 function merge_grid_based!(cell, species, merging_grid, phys_props, species_data, particles, particle_indexer_array)
+    # 0-D, no grid, particles in single cell
     compute_velocity_extent!(cell, species, merging_grid, phys_props, species_data)
     compute_grid!(cell, species, merging_grid, particles, particle_indexer_array)
     compute_new_particles!(cell, species, merging_grid, particles, particle_indexer_array)
