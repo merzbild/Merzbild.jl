@@ -30,6 +30,7 @@ mutable struct OctreeN2
     max_Nbins::Int64
     Nbins::Int64  # actual bins computed
     bins::OctreeCell
+    n_particles::Int64  # particles being sorted
 
     # particles in bins[i] have indices in particle_index_buffer[bin_start[i]:bin_end[i]]
     bin_start::Vector{Int64}
@@ -43,6 +44,7 @@ mutable struct OctreeN2
     particle_octants::Vector{Int64}
 
     # used to store sorted particle indices
+    # in case particles don't fit it's increase to length(particles) + DELTA_PARTICLES
     particles_sort_output::Vector{Int64}
 
 
@@ -64,8 +66,16 @@ function clear_octree!()
     nothing
 end
 
+function resize_octree_buffers!(octree, n_particles)
+    nothing
+end
+
 function split_bin!(octree, bin_id, particles)
-    particle_in_bin_counter .= 0 # reset counter
+    octree.particle_in_bin_counter .= 0 # reset counter
+
+    n_nonempty_bins = 0
+    bs = bin_start[bin_id]
+    be = bin_end[bin_id]
 
     if (octree.split == OctreeBinMidSplit)
         octree.vel_middle = 0.5 * (octree.bins[bin_id].v_min + octree.bins[bin_id].v_max)
@@ -75,31 +85,39 @@ function split_bin!(octree, bin_id, particles)
         octree.vel_middle = SVector{3, Float64}(0.0, 0.0, 0.0)
     end
 
-    for (i, pi) in enumerate(particle_indexes_sorted[bin_start[bin_id]:bin_end[bin_id]])
+    for (i, pi) in enumerate(octree.particle_indexes_sorted[bin_start[bin_id]:bin_end[bin_id]])
         oct = compute_octant(particles[pi], octree.bins[bin_id], vel_middle)
         octree.particle_in_bin_counter[oct] += 1
         octree.particle_octants[i] = oct
     end
 
+    if (octree.particle_in_bin_counter[1] > 0)
+        n_nonempty_bins += 1
+    end
+
     for i in 2:8
+        if (octree.particle_in_bin_counter[i] > 0)
+            n_nonempty_bins += 1
+        end
+
         octree.particle_in_bin_counter[i] += octree.particle_in_bin_counter[i-1]
     end
 
-    #TODO: shift_val = 
+    # shift bins around to accomodate the new non-empty bins we have
+    octree.bin_start[bin_id+n_nonempty_bins:octree.Nbins+n_nonempty_bins-1] .= octree.bin_start[bin_id+1:octree.Nbins]
+    octree.bin_end[bin_id+n_nonempty_bins:octree.Nbins+n_nonempty_bins-1] .= octree.bin_end[bin_id+1:octree.Nbins]
+    octree.bins[bin_id+n_nonempty_bins:octree.Nbins+n_nonempty_bins-1] .= octree.bins[bin_id+1:octree.Nbins]
 
-    # TODO: split bin, compute props
+    # TODO: compute props
 
-    for (i, pi) in enumerate(particle_indexes_sorted[bin_end[bin_id]:-1:bin_start[bin_id]])
-        j = particle_octants[i]
-        particles_sort_output[octree.particle_in_bin_counter[j]] = pi
+    for (i, pi) in enumerate(particle_indexes_sorted[be:-1:bs])
+        j = octree.particle_octants[i]
+        octree.particles_sort_output[octree.particle_in_bin_counter[j]] = pi
         octree.particle_in_bin_counter[j] -= 1
     end
 
-    # write back to main array
-    # TODO: add proper shifting, so we overwrite this 1 bin with 1 from the 8 other ones
-    # shift all other bins by count(of particles in the 7 other bins)
-    # and tack on the 7 bins onto the end
-    particle_indexes_sorted[bin_start[bin_id]:bin_end[bin_id]] .= particles_sort_output[1:bin_end[bin_id]-bin_start[bin_id]+1]
+    # write sorted indices
+    octree.particle_indexes_sorted[bs:be] = octree.particles_sort_output[1:be-bs+1]
 end
 
 function compute_new_particles!()
@@ -109,6 +127,9 @@ end
 
 function merge_octree_N2_based!(target_np)
     clear_octree!()
+    
+    # loop until reached target
+    # inner loop - choose bin to refine, refine, exit inner loop
 
     compute_new_particles!()
 end
