@@ -64,3 +64,9 @@ Equal volume/equal radius?
 
 # Misc thoughts
 Best to do octree merging in reverse order? So that less shifting around of particle indices?
+
+# Comparisons
+
+- [ ] Merging grid-based: pass slice/without species? is that any different?
+
+- [ ] Make more structs immutable - is that better?
