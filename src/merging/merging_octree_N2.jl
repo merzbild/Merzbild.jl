@@ -58,6 +58,9 @@ mutable struct OctreeN2
     # count how many particles in each bin, used for radix sort
     particle_in_bin_counter::MVector{8, Int64}
 
+    # this stores # of particle in each non-empty bin sequentially (without knowledge of which bin this belongs to)
+    nonempty_counter::MVector{8, Int64}
+
     split::OctreeBinSplit
     vel_middle::SVector{3,Float64}  # defines how we split octant
 
@@ -76,6 +79,7 @@ function create_merging_octree(split::OctreeBinSplit; init_bin_bounds=OctreeInit
     return OctreeN2(max_Nbins, 0, fill_bins(max_Nbins), 0,
                     zeros(max_Nbins), zeros(max_Nbins),  # bin_start, bin_end
                     zeros(8192), zeros(8192), zeros(8192),
+                    MVector{8, Int64}(0, 0, 0, 0, 0, 0, 0, 0),
                     MVector{8, Int64}(0, 0, 0, 0, 0, 0, 0, 0),
                     split, SVector{3,Float64}(0.0, 0.0, 0.0), init_bin_bounds, max_depth)
 end
@@ -148,13 +152,18 @@ function split_bin!(octree, bin_id, particles)
         octree.particle_octants[i] = oct
     end
 
+    n_eb = 0
     if (octree.particle_in_bin_counter[1] > 0)
         n_nonempty_bins += 1
+        n_eb += 1
+        octree.nonempty_counter[n_eb] = octree.particle_in_bin_counter[1]
     end
 
     for i in 2:8
         if (octree.particle_in_bin_counter[i] > 0)
             n_nonempty_bins += 1
+            n_eb += 1
+            octree.nonempty_counter[n_eb] = octree.particle_in_bin_counter[i]
         end
 
         octree.particle_in_bin_counter[i] += octree.particle_in_bin_counter[i-1]
@@ -166,6 +175,14 @@ function split_bin!(octree, bin_id, particles)
     octree.bin_start[bin_id+n_nonempty_bins:octree.Nbins+n_nonempty_bins-1] .= octree.bin_start[bin_id+1:octree.Nbins]
     octree.bin_end[bin_id+n_nonempty_bins:octree.Nbins+n_nonempty_bins-1] .= octree.bin_end[bin_id+1:octree.Nbins]
     octree.bins[bin_id+n_nonempty_bins:octree.Nbins+n_nonempty_bins-1] .= octree.bins[bin_id+1:octree.Nbins]
+
+    # first bin - we change nothing for the start
+    octree.bin_end[bin_id] = octree.bin_start[bin_id] + octree.nonempty_counter[1] - 1
+    
+    for i in 1:n_nonempty_bins-1
+        octree.bin_start[bin_id+i] = octree.bin_end[bin_id+i-1] + 1
+        octree.bin_end[bin_id+i] = octree.bin_start[bin_id+i] + octree.nonempty_counter[i+1] - 1
+    end
 
     # TODO: compute props
 
