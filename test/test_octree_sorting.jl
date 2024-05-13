@@ -22,6 +22,40 @@
         return Particle(1.0, [v_x, v_y, v_z], [0.0, 0.0, 0.0])
     end
 
+    function create_15particles_nested()
+        # suboctant symmetric around -2.0, 2.0, -2.0: that is octant # 3
+        # so there particles have velocities as some combination of (-1.0, 1.0, -1.0), (-3.0, 3.0, -3.0)
+
+        # mixed index array, created using Random.shuffle(1:15)
+        # octants are
+        #      3,  3,  3, 3,  3,  3, 3, 3, 8, 7,  6, 5, 4, 2, 1
+        # or sorted:
+        #      11, 3, 12, 15, 2, 14, 13, 7, 8, 10, 4, 9, 1, 6, 5
+        mia = [12, 15, 2, 14, 13, 7, 8, 10, 5, 6, 1, 9, 4, 3, 11]
+
+        vp = Vector{Particle}(undef, 15)
+        i = 1
+        for v_x in [-1.0, -3.0]
+            for v_y in [1.0, 3.0]
+                for v_z in [-3.0, -1.0]
+                    vp[mia[i]] = Particle(1.0, [v_x, v_y, v_z], [0.0, 0.0, 0.0])
+                    i += 1
+                end
+            end
+        end
+
+        rr = 8:-1:1
+
+        for octant in rr
+            if octant != 3
+                vp[mia[i]] = create_particle_in_octant(octant, 1.0)
+                i += 1
+            end
+        end
+
+        return vp
+    end
+
     function create_9particles(extra_octant, reverse)
         # create 1 particle per octant, plus one extra particle in specified octant
 
@@ -109,7 +143,7 @@
     pia = create_particle_indexer_array(9)
     octree = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
 
-    Merzbild.init_octree!(1, 1, octree, pia)
+    Merzbild.init_octree!(1, 1, octree, particles9[1], pia)
     for i in 1:9
         @test i in octree.particle_indexes_sorted[1:9]
     end
@@ -131,7 +165,7 @@
     # end results should be 9, 8, 7, 6, 1, 2, 3, 4, 5
     particles9[1][1:5] = create_9particles(3, false)[5:9]
     particles9[1][6:9] = create_9particles(3, true)[6:9]
-    Merzbild.init_octree!(1, 1, octree, pia)
+    Merzbild.init_octree!(1, 1, octree, particles9[1], pia)
     Merzbild.split_bin!(octree, 1, particles9[1])
     @test octree.Nbins == 8
     expected = [9, 8, 7, 6, 1, 2, 3, 4, 5]
@@ -153,7 +187,7 @@
     pia2.indexer[1,1].end2 = 9
     pia2.indexer[1,1].n_group2 = 6
 
-    Merzbild.init_octree!(1, 1, octree, pia2)
+    Merzbild.init_octree!(1, 1, octree, particles9[1], pia2)
     Merzbild.split_bin!(octree, 1, particles9[1])
 
     @test octree.Nbins == 8
@@ -168,7 +202,7 @@
     particles7::Vector{Vector{Particle}} = [create_7particles(5, true)]
     pia3 = create_particle_indexer_array(7)
 
-    Merzbild.init_octree!(1, 1, octree, pia3)
+    Merzbild.init_octree!(1, 1, octree, particles7[1], pia3)
     Merzbild.split_bin!(octree, 1, particles7[1])
     @test octree.Nbins == 7
     expected = [7, 6, 5, 4, 3, 2, 1]
@@ -176,6 +210,52 @@
     @test octree.bin_start[1:7] == [1, 2, 3, 4, 5, 6, 7]
     @test octree.bin_end[1:7] == [1, 2, 3, 4, 5, 6, 7]
 
-    # TODO: test double-splitting, i.e. we have 1 p/bin in 7 bins, the 8th bin has 4 particles
+
+    # test double-splitting, i.e. we have 1 p/bin in 7 bins, the 8th bin has 4 particles
     # we do splitting of the main 0 bin, and then do a second split
+    
+    particles15::Vector{Vector{Particle}} = [create_15particles_nested()]
+    pia4 = create_particle_indexer_array(15)
+
+    octree2 = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVelSym)
+
+
+    Merzbild.init_octree!(1, 1, octree2, particles15[1], pia4)
+
+    # test bounds, symmetric octree bin
+    @test maximum(abs.(octree2.bins[1].v_min + octree2.bins[1].v_max)) < 1e-12  # check that init bin is symmetric
+    @test maximum(abs.(octree2.bins[1].v_max - [3.0, 3.0, 3.0])) < 1e-12  # check bin bounds
+    @test octree2.bin_start[1] == 1
+    @test octree2.bin_end[1] == 15
+
+    Merzbild.split_bin!(octree2, 1, particles15[1])
+    @test octree2.Nbins == 8
+
+
+    # we take the following octants and assign them to corresponding particle indices from mia
+    #        3,  3,  3, 3,  3,  3, 3, 3,  1, 2, 4, 5, 6, 7, 8
+    # mia = [12, 15, 2, 14, 13, 7, 8, 10, 5, 6, 1, 9, 4, 3, 11]
+    # 
+    # so sorted array would be:
+    #      11, 3, 12, 15, 2, 14, 13, 7, 8, 10, 4, 9, 1, 6, 5
+    expected12 = [11, 3] # in octants 1/2
+    expected1115 = [4, 9, 1, 6, 5] # in octants 1/2
+
+    @test octree2.particle_indexes_sorted[1:2] == expected12
+
+    octind3 = sort(copy(octree2.particle_indexes_sorted[3:10]))  # sort for easier comparison
+    @test octind3 == [2, 7, 8, 10, 12, 13, 14, 15]
+    
+    @test octree2.particle_indexes_sorted[11:15] == expected1115
+
+
+    # Merzbild.split_bin!(octree, 3, particles15[1])
+    # @test octree.Nbins == 15
+
+
+    # test bounds, non-symmetric octree bin
+    octree3 = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel)
+    Merzbild.init_octree!(1, 1, octree3, particles15[1], pia4)
+    @test maximum(abs.(octree3.bins[1].v_min - [-3.0, -1.0, -3.0])) < 1e-11  # check bin bounds, non-symmetrized octree bin
+    @test maximum(abs.(octree3.bins[1].v_max - [1.0, 3.0, 1.0])) < 1e-11  # check bin bounds, non-symmetrized octree bin
 end
