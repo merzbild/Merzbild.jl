@@ -25,7 +25,7 @@ export ntc!
 export k_B
 export create_merging_grid, merge_grid_based!
 export OctreeBinMidSplit, OctreeBinMeanSplit, OctreeBinMedianSplit
-export  OctreeInitBinMinMaxVel, OctreeInitBinMinMaxVelSym, OctreeInitBinC
+export OctreeInitBinMinMaxVel, OctreeInitBinMinMaxVelSym, OctreeInitBinC
 export create_merging_octree, merge_octree_N2_based!
 
 end # module merzbild
