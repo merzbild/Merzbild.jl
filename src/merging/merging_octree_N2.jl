@@ -203,7 +203,7 @@ function compute_new_particles!()
 end
 
 # initialize first bin with all the particles - set number of bins to 1, copy over particle indices
-function init_octree!(cell, species, octree, pia)
+function init_octree!(cell, species, octree, particles, pia)
     octree.Nbins = 1
     octree.particle_indexes_sorted[1:pia.indexer[cell,species].n_group1] = pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
 
@@ -217,12 +217,46 @@ function init_octree!(cell, species, octree, pia)
     octree.bin_end[1] = octree.n_particles
 
     if (octree.init_bin_bounds == OctreeInitBinC)
-        octree.bins[1].v_min = SVector{3, Float64}(-299_792_458.0, -299_792_458.0, -299_792_458.0)
+        octree.bins[1].v_min = SVector{3, Float64}(-299_792_458.0, -299_792_458.0, -299_792_458.0)  # speed of light
         octree.bins[1].v_max = SVector{3, Float64}(299_792_458.0, 299_792_458.0, 299_792_458.0)
     else
-        # TODO: compute min/max velocities
+        minvx = 9_299_792_458.0  # speed of light + 9e9
+        minvy = 9_299_792_458.0
+        minvz = 9_299_792_458.0
+
+        maxvx = -9_299_792_458.0
+        maxvy = -9_299_792_458.0
+        maxvz = -9_299_792_458.0
+
+        for pi in octree.particle_indexes_sorted[1:octree.n_particles]
+            if (particles[pi].v[1] < minvx)
+                minvx = particles[pi].v[1]
+            elseif (particles[pi].v[1] > maxvx)
+                maxvx = particles[pi].v[1]
+            end
+
+            if (particles[pi].v[2] < minvy)
+                minvy = particles[pi].v[2]
+            elseif (particles[pi].v[2] > maxvy)
+                maxvy = particles[pi].v[2]
+            end
+
+            if (particles[pi].v[3] < minvz)
+                minvz = particles[pi].v[3]
+            elseif (particles[pi].v[3] > maxvz)
+                maxvz = particles[pi].v[3]
+            end
+
+            octree.bins[1].v_min = SVector{3, Float64}(minvx, minvy, minvz)
+            octree.bins[1].v_max = SVector{3, Float64}(maxvx, maxvy, maxvz)
+        end
         if (octree.init_bin_bounds == OctreeInitBinMinMaxVelSym)
-            nothing # TODO: symmetrize
+            maxvx = max(abs(minvx), abs(maxvx))
+            maxvy = max(abs(minvy), abs(maxvy))
+            maxvz = max(abs(minvz), abs(maxvz))
+
+            octree.bins[1].v_min = SVector{3, Float64}(-maxvx, -maxvy, -maxvz)
+            octree.bins[1].v_max = SVector{3, Float64}(maxvx, maxvy, maxvz)
         end
     end
 end
@@ -230,7 +264,7 @@ end
 function merge_octree_N2_based!(cell, species, octree, particles, particle_indexer_array, target_np)
     clear_octree!(octree)
     resize_octree_buffers!(octree, particle_indexer_array.indexer[cell,species].n_local)
-    init_octree!(cell, species, octree, particle_indexer_array)
+    init_octree!(cell, species, octree, particles, particle_indexer_array)
     # loop until reached target
     # inner loop - choose bin to refine, refine, exit inner loop
 
