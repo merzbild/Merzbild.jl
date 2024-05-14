@@ -8,6 +8,10 @@ using StaticArrays
 # 3) speed of light
 @enum OctreeInitBin  OctreeInitBinMinMaxVel=1 OctreeInitBinMinMaxVelSym=2 OctreeInitBinC=3
 
+# how bounds of split bins are computed: using splitting velocity and bounds of bounding bin
+# or using min/max velocities of particles in sub-bin
+@enum OctreeBinBounds OctreeBinBoundsInherit=1 OctreeBinBoundsRecompute=2
+
 mutable struct OctreeCell
     np::Int64
     w::Float64
@@ -61,8 +65,11 @@ mutable struct OctreeN2
     # this stores # of particle in each non-empty bin sequentially (without knowledge of which bin this belongs to)
     nonempty_counter::MVector{8, Int64}
 
+    bin_bounds_compute::OctreeBinBounds
     split::OctreeBinSplit
     vel_middle::SVector{3,Float64}  # defines how we split octant
+    v_min_parent::SVector{3,Float64}  # used in splitting
+    v_max_parent::SVector{3,Float64}
 
     init_bin_bounds::OctreeInitBin
 
@@ -75,13 +82,16 @@ function fill_bins(Nbins)
             SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0), 0) for i in 1:Nbins]
 end
 
-function create_merging_octree(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=4096, max_depth=10)
+function create_merging_octree(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit,
+                               max_Nbins=4096, max_depth=10)
     return OctreeN2(max_Nbins, 0, fill_bins(max_Nbins), 0,
                     zeros(max_Nbins), zeros(max_Nbins),  # bin_start, bin_end
                     zeros(8192), zeros(8192), zeros(8192),
                     MVector{8, Int64}(0, 0, 0, 0, 0, 0, 0, 0),
                     MVector{8, Int64}(0, 0, 0, 0, 0, 0, 0, 0),
-                    split, SVector{3,Float64}(0.0, 0.0, 0.0), init_bin_bounds, max_depth)
+                    bin_bounds_compute, split,
+                    SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0),
+                    init_bin_bounds, max_depth)
 end
 
 function clear_octree!(octree)
@@ -131,12 +141,93 @@ function median_vel()
     nothing
 end
 
+function bin_bounds_inherit!(octree, bin_id, v_min_parent, v_max_parent, v_middle, octant)
+    # TODO: TEST
+    # inherit bin bounds based on parent
+    # octants order:
+    # - - -
+    # + - -
+    # - + -
+    # + + -
+    # - - +
+    # + - +
+    # - + +
+    # + + +
+    if octant == 1
+        octree.bins[bin_id].v_min = v_min_parent
+        octree.bins[bin_id].v_max = v_middle
+    elseif octant == 2
+        octree.bins[bin_id].v_min = SVector{3,Float64}(v_middle[1], v_min_parent[2], v_min_parent[3])
+        octree.bins[bin_id].v_max = SVector{3,Float64}(v_max_parent[1], v_middle[2], v_middle[3])
+    elseif octant == 3
+        octree.bins[bin_id].v_min = SVector{3,Float64}(v_min_parent[1], v_middle[2], v_min_parent[3])
+        octree.bins[bin_id].v_max = SVector{3,Float64}(v_middle[1], v_max_parent[2], v_middle[3])
+    elseif octant == 4
+        octree.bins[bin_id].v_min = SVector{3,Float64}(v_middle[1], v_middle[2], v_min_parent[3])
+        octree.bins[bin_id].v_max = SVector{3,Float64}(v_max_parent[1], v_max_parent[2], v_middle[3])
+    elseif octant == 5
+        octree.bins[bin_id].v_min = SVector{3,Float64}(v_min_parent[1], v_min_parent[2], v_middle[3])
+        octree.bins[bin_id].v_max = SVector{3,Float64}(v_middle[1], v_middle[2], v_max_parent[3])
+    elseif octant == 6
+        octree.bins[bin_id].v_min = SVector{3,Float64}(v_middle[1], v_min_parent[2], v_middle[3])
+        octree.bins[bin_id].v_max = SVector{3,Float64}(v_max_parent[1], v_middle[2], v_max_parent[3])
+    elseif octant == 7
+        octree.bins[bin_id].v_min = SVector{3,Float64}(v_min_parent[1], v_middle[2], v_middle[3])
+        octree.bins[bin_id].v_max = SVector{3,Float64}(v_middle[1], v_max_parent[2], v_max_parent[3])
+    else
+        octree.bins[bin_id].v_min = v_middle
+        octree.bins[bin_id].v_max = v_max_parent
+    end
+end
+
+function bin_bounds_recompute!(octree, bin_id, bs, be, particles)
+    # compute bin bounds based on the particles in the bin
+    # TODO: TEST
+    minvx = 9_299_792_458.0  # speed of light + 9e9
+    minvy = 9_299_792_458.0
+    minvz = 9_299_792_458.0
+
+    maxvx = -9_299_792_458.0
+    maxvy = -9_299_792_458.0
+    maxvz = -9_299_792_458.0
+
+    for pi in octree.particle_indexes_sorted[bs:be]
+        if (particles[pi].v[1] < minvx)
+            minvx = particles[pi].v[1]
+        elseif (particles[pi].v[1] > maxvx)
+            maxvx = particles[pi].v[1]
+        end
+
+        if (particles[pi].v[2] < minvy)
+            minvy = particles[pi].v[2]
+        elseif (particles[pi].v[2] > maxvy)
+            maxvy = particles[pi].v[2]
+        end
+
+        if (particles[pi].v[3] < minvz)
+            minvz = particles[pi].v[3]
+        elseif (particles[pi].v[3] > maxvz)
+            maxvz = particles[pi].v[3]
+        end
+
+        octree.bins[bin_id].v_min = SVector{3, Float64}(minvx, minvy, minvz)
+        octree.bins[bin_id].v_max = SVector{3, Float64}(maxvx, maxvy, maxvz)
+    end
+end
+
 function split_bin!(octree, bin_id, particles)
     octree.particle_in_bin_counter .= 0 # reset counter
 
     n_nonempty_bins = 0
     bs = octree.bin_start[bin_id]
     be = octree.bin_end[bin_id]
+
+    # if we compute bin bounds based on particle velocities, we need to actually iterate through particles
+    # and compute
+    # if not, we can do it later directly for the sub-bins
+    if (octree.bin_bounds_compute == OctreeBinBoundsRecompute)
+        bin_bounds_recompute!(octree, bin_id, bs, be, particles)
+    end
 
     if (octree.split == OctreeBinMidSplit)
         octree.vel_middle = 0.5 * (octree.bins[bin_id].v_min + octree.bins[bin_id].v_max)
@@ -184,6 +275,18 @@ function split_bin!(octree, bin_id, particles)
         octree.bin_end[bin_id+i] = octree.bin_start[bin_id+i] + octree.nonempty_counter[i+1] - 1
     end
 
+    if (octree.bin_bounds_compute == OctreeBinBoundsInherit)
+        n_eb = 0
+        octree.v_min_parent = octree.bins[bin_id].v_min
+        octree.v_max_parent = octree.bins[bin_id].v_max
+        for i in 1:8
+            if (octree.particle_in_bin_counter[i] > 0)
+                bin_bounds_inherit!(octree, bin_id + n_eb, octree.v_min_parent, octree.v_max_parent, octree.vel_middle, i)
+                n_eb += 1
+            end
+        end
+    end
+
     # TODO: compute props
 
     # for (i, pi) in enumerate(octree.particle_indexes_sorted[be:-1:bs])
@@ -220,45 +323,19 @@ function init_octree!(cell, species, octree, particles, pia)
         octree.bins[1].v_min = SVector{3, Float64}(-299_792_458.0, -299_792_458.0, -299_792_458.0)  # speed of light
         octree.bins[1].v_max = SVector{3, Float64}(299_792_458.0, 299_792_458.0, 299_792_458.0)
     else
-        minvx = 9_299_792_458.0  # speed of light + 9e9
-        minvy = 9_299_792_458.0
-        minvz = 9_299_792_458.0
-
-        maxvx = -9_299_792_458.0
-        maxvy = -9_299_792_458.0
-        maxvz = -9_299_792_458.0
-
-        for pi in octree.particle_indexes_sorted[1:octree.n_particles]
-            if (particles[pi].v[1] < minvx)
-                minvx = particles[pi].v[1]
-            elseif (particles[pi].v[1] > maxvx)
-                maxvx = particles[pi].v[1]
-            end
-
-            if (particles[pi].v[2] < minvy)
-                minvy = particles[pi].v[2]
-            elseif (particles[pi].v[2] > maxvy)
-                maxvy = particles[pi].v[2]
-            end
-
-            if (particles[pi].v[3] < minvz)
-                minvz = particles[pi].v[3]
-            elseif (particles[pi].v[3] > maxvz)
-                maxvz = particles[pi].v[3]
-            end
-
-            octree.bins[1].v_min = SVector{3, Float64}(minvx, minvy, minvz)
-            octree.bins[1].v_max = SVector{3, Float64}(maxvx, maxvy, maxvz)
-        end
+        bin_bounds_recompute!(octree, 1, 1, octree.n_particles, particles)
         if (octree.init_bin_bounds == OctreeInitBinMinMaxVelSym)
-            maxvx = max(abs(minvx), abs(maxvx))
-            maxvy = max(abs(minvy), abs(maxvy))
-            maxvz = max(abs(minvz), abs(maxvz))
+            maxvx = max(abs(octree.bins[1].v_min[1]), abs(octree.bins[1].v_max[1]))
+            maxvy = max(abs(octree.bins[1].v_min[2]), abs(octree.bins[1].v_max[2]))
+            maxvz = max(abs(octree.bins[1].v_min[3]), abs(octree.bins[1].v_max[3]))
 
             octree.bins[1].v_min = SVector{3, Float64}(-maxvx, -maxvy, -maxvz)
             octree.bins[1].v_max = SVector{3, Float64}(maxvx, maxvy, maxvz)
         end
     end
+
+    # TODO: compute v_mean if needed!
+    # TODO: could do it in the same pass as computing the bounds
 end
 
 function merge_octree_N2_based!(cell, species, octree, particles, particle_indexer_array, target_np)
