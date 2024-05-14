@@ -242,6 +242,8 @@
     expected1115 = [4, 9, 1, 6, 5] # in octants 1/2
 
     @test octree2.particle_indexes_sorted[1:2] == expected12
+    @test octree2.bin_start[3] == 3 
+    @test octree2.bin_end[3] == 10
 
     octind3 = sort(copy(octree2.particle_indexes_sorted[3:10]))  # sort for easier comparison
     @test octind3 == [2, 7, 8, 10, 12, 13, 14, 15]
@@ -254,6 +256,17 @@
     Merzbild.split_bin!(octree2, 3, particles15[1])
     @test octree2.Nbins == 15
 
+    # particle indices stayed in the same order
+    @test octree2.particle_indexes_sorted[1:2] == expected12
+    octind3 = sort(copy(octree2.particle_indexes_sorted[3:10]))  # sort for easier comparison
+    @test octind3 == [2, 7, 8, 10, 12, 13, 14, 15]
+
+    @test octree2.particle_indexes_sorted[11:15] == expected1115
+    
+    # 1 particle per bin
+    for i in 1:15
+        @test octree2.bin_start[i] == i
+    end
 
     # test bounds, non-symmetric octree bin
     octree3 = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel)
