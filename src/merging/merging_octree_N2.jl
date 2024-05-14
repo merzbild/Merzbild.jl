@@ -215,6 +215,20 @@ function bin_bounds_recompute!(octree, bin_id, bs, be, particles)
     end
 end
 
+function compute_v_mean!(octree, bs, be, particles)
+    # TODO: test
+    n_tot = 0.0
+    for pi in octree.particle_indexes_sorted[bs:be]
+        n_tot += particles[pi].w
+        octree.vel_middle = octree.vel_middle + particles[pi].w * particles[pi].v
+    end
+    octree.vel_middle = octree.vel_middle / n_tot
+end
+
+function bin_bounds_recompute_and_v_mean!(octree, bin_id, bs, be, particles)
+    # do everything in 1 pass over the particles
+end
+
 function split_bin!(octree, bin_id, particles)
     octree.particle_in_bin_counter .= 0 # reset counter
 
@@ -232,8 +246,10 @@ function split_bin!(octree, bin_id, particles)
     if (octree.split == OctreeBinMidSplit)
         octree.vel_middle = 0.5 * (octree.bins[bin_id].v_min + octree.bins[bin_id].v_max)
     elseif (octree.split == OctreeBinMeanSplit)
-        octree.vel_middle = octree.bins[bin_id].v_mean
+        # TODO: test
+        compute_v_mean!(octree, bs, be, particles) # octree.vel_middle = octree.bins[bin_id].v_mean
     elseif (octree.split == OctreeBinMedianSplit)
+        # TODO
         octree.vel_middle = SVector{3, Float64}(0.0, 0.0, 0.0)
     end
 
@@ -287,8 +303,6 @@ function split_bin!(octree, bin_id, particles)
         end
     end
 
-    # TODO: compute props
-
     # for (i, pi) in enumerate(octree.particle_indexes_sorted[be:-1:bs])
     for (i, pi) in enumerate(octree.particle_indexes_sorted[bs:be])
         j = octree.particle_octants[i]
@@ -296,11 +310,16 @@ function split_bin!(octree, bin_id, particles)
         octree.particle_in_bin_counter[j] -= 1
     end
 
+    # TODO: compute sub-octant number density in loops above
+    # and particle count
+    # these are the only things we need for refinement, the rest we compute at the very end
+
     # write sorted indices
     octree.particle_indexes_sorted[bs:be] = octree.particles_sort_output[1:be-bs+1]
 end
 
 function compute_new_particles!()
+    # TODO: compute props
     # given computed Octree, create new particles instead of the old ones
     nothing
 end
@@ -333,9 +352,6 @@ function init_octree!(cell, species, octree, particles, pia)
             octree.bins[1].v_max = SVector{3, Float64}(maxvx, maxvy, maxvz)
         end
     end
-
-    # TODO: compute v_mean if needed!
-    # TODO: could do it in the same pass as computing the bounds
 end
 
 function merge_octree_N2_based!(cell, species, octree, particles, particle_indexer_array, target_np)
