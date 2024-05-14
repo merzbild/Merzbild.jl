@@ -219,7 +219,7 @@
 
     octree2 = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVelSym)
 
-
+    # the initial bin will have bounds [-3.0, -3.0, -3.0], [3.0, 3.0, 3.0] 
     Merzbild.init_octree!(1, 1, octree2, particles15[1], pia4)
 
     # test bounds, symmetric octree bin
@@ -245,12 +245,14 @@
 
     octind3 = sort(copy(octree2.particle_indexes_sorted[3:10]))  # sort for easier comparison
     @test octind3 == [2, 7, 8, 10, 12, 13, 14, 15]
-    
+
     @test octree2.particle_indexes_sorted[11:15] == expected1115
 
-
-    # Merzbild.split_bin!(octree, 3, particles15[1])
-    # @test octree.Nbins == 15
+    # the sub-bin will have bounds [-3.0, 0.0], [0.0, 3.0], [-3.0, 0.0]
+    # and will be split along velocity of [-1.5, 1.5, 1.5]
+    # each sub-bin will have 1 particle
+    Merzbild.split_bin!(octree2, 3, particles15[1])
+    @test octree2.Nbins == 15
 
 
     # test bounds, non-symmetric octree bin
