@@ -17,4 +17,5 @@ include("test_2species.jl")  # then we test 2-species elastic collisions
 include("test_merging_grid_indexing.jl")  # then we test basic indexing in grid-based merging
 include("test_merging_grid_merging.jl")  # then we test grid-based merging in 0D
 include("test_bkw_varweight_grid.jl")  # then we test variable-weight NTC collisions+grid-based merging in 0D (BKW relaxation)
+include("test_octree_bounds_and_splitting.jl")  # then we test bin bounds and splitting in octree merging
 include("test_octree_sorting.jl")  # then we test sorting in octree merging

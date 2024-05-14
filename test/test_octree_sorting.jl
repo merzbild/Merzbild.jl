@@ -149,7 +149,6 @@
     end
     
     Merzbild.split_bin!(octree, 1, particles9[1])
-    @test maximum(abs.(octree.vel_middle)) < 1e-12  # should be almost 0 since everything is symmetric
     @test octree.Nbins == 8
     for i in 1:9
         @test i in octree.particle_indexes_sorted[1:9]
@@ -223,8 +222,6 @@
     Merzbild.init_octree!(1, 1, octree2, particles15[1], pia4)
 
     # test bounds, symmetric octree bin
-    @test maximum(abs.(octree2.bins[1].v_min + octree2.bins[1].v_max)) < 1e-12  # check that init bin is symmetric
-    @test maximum(abs.(octree2.bins[1].v_max - [3.0, 3.0, 3.0])) < 1e-12  # check bin bounds
     @test octree2.bin_start[1] == 1
     @test octree2.bin_end[1] == 15
 
@@ -267,10 +264,4 @@
     for i in 1:15
         @test octree2.bin_start[i] == i
     end
-
-    # test bounds, non-symmetric octree bin
-    octree3 = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel)
-    Merzbild.init_octree!(1, 1, octree3, particles15[1], pia4)
-    @test maximum(abs.(octree3.bins[1].v_min - [-3.0, -1.0, -3.0])) < 1e-11  # check bin bounds, non-symmetrized octree bin
-    @test maximum(abs.(octree3.bins[1].v_max - [1.0, 3.0, 1.0])) < 1e-11  # check bin bounds, non-symmetrized octree bin
 end
