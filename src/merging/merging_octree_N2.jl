@@ -13,8 +13,18 @@ using StaticArrays
 @enum OctreeBinBounds OctreeBinBoundsInherit=1 OctreeBinBoundsRecompute=2
 
 mutable struct OctreeCell
+    # this holds only the data needed for refinement
     np::Int64
     w::Float64
+    
+    v_min::SVector{3,Float64}
+    v_max::SVector{3,Float64}
+
+    depth::Int64
+end
+
+mutable struct OctreeFullCell
+    # this holds the additional data needed for actual merging
     v_mean::SVector{3,Float64}
     v_std_sq::SVector{3,Float64}
     x_mean::SVector{3,Float64}
@@ -28,11 +38,6 @@ mutable struct OctreeCell
     v2::SVector{3,Float64}
     x1::SVector{3,Float64}
     x2::SVector{3,Float64}
-
-    v_min::SVector{3,Float64}
-    v_max::SVector{3,Float64}
-
-    depth::Int64
 end
 
 # struct for N:2 merge
@@ -65,6 +70,12 @@ mutable struct OctreeN2
     # this stores # of particle in each non-empty bin sequentially (without knowledge of which bin this belongs to)
     nonempty_counter::MVector{8, Int64}
 
+    # a sequential list of non-empty octants
+    nonempty_bins::MVector{8, Int64}
+
+    # this stores number density in each non-empty bin 
+    ndens_counter::MVector{8, Float64}
+
     bin_bounds_compute::OctreeBinBounds
     split::OctreeBinSplit
     vel_middle::SVector{3,Float64}  # defines how we split octant
@@ -77,9 +88,7 @@ mutable struct OctreeN2
 end
 
 function fill_bins(Nbins)
-    return [OctreeCell(0, 0.0, SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0),
-            0, 0, 0.0, 0.0, SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0),
-            SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0), 0) for i in 1:Nbins]
+    return [OctreeCell(0, 0.0, SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0), 0) for i in 1:Nbins]
 end
 
 function create_merging_octree(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit,
@@ -89,6 +98,8 @@ function create_merging_octree(split::OctreeBinSplit; init_bin_bounds=OctreeInit
                     zeros(8192), zeros(8192), zeros(8192),
                     MVector{8, Int64}(0, 0, 0, 0, 0, 0, 0, 0),
                     MVector{8, Int64}(0, 0, 0, 0, 0, 0, 0, 0),
+                    MVector{8, Int64}(0, 0, 0, 0, 0, 0, 0, 0),
+                    MVector{8, Float64}(0, 0, 0, 0, 0, 0, 0, 0),
                     bin_bounds_compute, split,
                     SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0),
                     init_bin_bounds, max_depth)
@@ -182,7 +193,6 @@ end
 
 function bin_bounds_recompute!(octree, bin_id, bs, be, particles)
     # compute bin bounds based on the particles in the bin
-    # TODO: TEST
     minvx = 9_299_792_458.0  # speed of light + 9e9
     minvy = 9_299_792_458.0
     minvz = 9_299_792_458.0
@@ -216,7 +226,6 @@ function bin_bounds_recompute!(octree, bin_id, bs, be, particles)
 end
 
 function compute_v_mean!(octree, bs, be, particles)
-    # TODO: test
     n_tot = 0.0
     for pi in octree.particle_indexes_sorted[bs:be]
         n_tot += particles[pi].w
@@ -231,6 +240,9 @@ end
 
 function split_bin!(octree, bin_id, particles)
     octree.particle_in_bin_counter .= 0 # reset counter
+    octree.ndens_counter .= 0.0
+    octree.nonempty_bins .= 0
+    octree.nonempty_counter .= 0
 
     n_nonempty_bins = 0
     bs = octree.bin_start[bin_id]
@@ -246,7 +258,6 @@ function split_bin!(octree, bin_id, particles)
     if (octree.split == OctreeBinMidSplit)
         octree.vel_middle = 0.5 * (octree.bins[bin_id].v_min + octree.bins[bin_id].v_max)
     elseif (octree.split == OctreeBinMeanSplit)
-        # TODO: test
         compute_v_mean!(octree, bs, be, particles) # octree.vel_middle = octree.bins[bin_id].v_mean
     elseif (octree.split == OctreeBinMedianSplit)
         # TODO
@@ -257,6 +268,7 @@ function split_bin!(octree, bin_id, particles)
         oct = compute_octant(particles[pi].v, octree.vel_middle)
         octree.particle_in_bin_counter[oct] += 1
         octree.particle_octants[i] = oct
+        octree.ndens_counter[oct] += particles[pi].w
     end
 
     n_eb = 0
@@ -264,6 +276,7 @@ function split_bin!(octree, bin_id, particles)
         n_nonempty_bins += 1
         n_eb += 1
         octree.nonempty_counter[n_eb] = octree.particle_in_bin_counter[1]
+        octree.nonempty_bins[n_eb] = 1
     end
 
     for i in 2:8
@@ -271,6 +284,7 @@ function split_bin!(octree, bin_id, particles)
             n_nonempty_bins += 1
             n_eb += 1
             octree.nonempty_counter[n_eb] = octree.particle_in_bin_counter[i]
+            octree.nonempty_bins[n_eb] = i
         end
 
         octree.particle_in_bin_counter[i] += octree.particle_in_bin_counter[i-1]
@@ -281,7 +295,9 @@ function split_bin!(octree, bin_id, particles)
     # shift bins around to accomodate the new non-empty bins we have
     octree.bin_start[bin_id+n_nonempty_bins:octree.Nbins+n_nonempty_bins-1] .= octree.bin_start[bin_id+1:octree.Nbins]
     octree.bin_end[bin_id+n_nonempty_bins:octree.Nbins+n_nonempty_bins-1] .= octree.bin_end[bin_id+1:octree.Nbins]
-    octree.bins[bin_id+n_nonempty_bins:octree.Nbins+n_nonempty_bins-1] .= octree.bins[bin_id+1:octree.Nbins]
+
+    # TODO: loop instead of deepcopy? would that be faster?
+    octree.bins[bin_id+n_nonempty_bins:octree.Nbins+n_nonempty_bins-1] .= deepcopy(octree.bins[bin_id+1:octree.Nbins])
 
     # first bin - we change nothing for the start
     octree.bin_end[bin_id] = octree.bin_start[bin_id] + octree.nonempty_counter[1] - 1
@@ -292,13 +308,25 @@ function split_bin!(octree, bin_id, particles)
     end
 
     if (octree.bin_bounds_compute == OctreeBinBoundsInherit)
-        n_eb = 0
         octree.v_min_parent = octree.bins[bin_id].v_min
         octree.v_max_parent = octree.bins[bin_id].v_max
-        for i in 1:8
-            if (octree.particle_in_bin_counter[i] > 0)
-                bin_bounds_inherit!(octree, bin_id + n_eb, octree.v_min_parent, octree.v_max_parent, octree.vel_middle, i)
-                n_eb += 1
+
+        # iterate over non-empty bins and inherit parent bin bounds + split around middle velocity
+        for i in 1:n_nonempty_bins
+            if (octree.nonempty_counter[i] > 0)
+                bin_bounds_inherit!(octree, bin_id + i - 1,
+                                    octree.v_min_parent, octree.v_max_parent,
+                                    octree.vel_middle, octree.nonempty_bins[i])
+                octree.bins[bin_id + i - 1].np = octree.nonempty_counter[i]
+                octree.bins[bin_id + i - 1].w = octree.ndens_counter[i]
+            end
+        end
+    else
+        # still need to fill out info on number of particles and total weight
+        for i in 1:n_nonempty_bins
+            if (octree.nonempty_counter[i] > 0)
+                octree.bins[bin_id + i - 1].np = octree.nonempty_counter[i]
+                octree.bins[bin_id + i - 1].w = octree.ndens_counter[i]
             end
         end
     end
@@ -309,10 +337,6 @@ function split_bin!(octree, bin_id, particles)
         octree.particles_sort_output[octree.particle_in_bin_counter[j]] = pi
         octree.particle_in_bin_counter[j] -= 1
     end
-
-    # TODO: compute sub-octant number density in loops above
-    # and particle count
-    # these are the only things we need for refinement, the rest we compute at the very end
 
     # write sorted indices
     octree.particle_indexes_sorted[bs:be] = octree.particles_sort_output[1:be-bs+1]
@@ -337,6 +361,9 @@ function init_octree!(cell, species, octree, particles, pia)
     octree.bins[1].depth = 0
     octree.bin_start[1] = 1
     octree.bin_end[1] = octree.n_particles
+
+    octree.bins[1].np = octree.n_particles
+    octree.bins[1].w = 1e50  # just do a large estimate, we will be splitting this bin anyway
 
     if (octree.init_bin_bounds == OctreeInitBinC)
         octree.bins[1].v_min = SVector{3, Float64}(-299_792_458.0, -299_792_458.0, -299_792_458.0)  # speed of light
