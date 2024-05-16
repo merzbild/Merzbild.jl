@@ -313,21 +313,17 @@ function split_bin!(octree, bin_id, particles)
 
         # iterate over non-empty bins and inherit parent bin bounds + split around middle velocity
         for i in 1:n_nonempty_bins
-            if (octree.nonempty_counter[i] > 0)
-                bin_bounds_inherit!(octree, bin_id + i - 1,
-                                    octree.v_min_parent, octree.v_max_parent,
-                                    octree.vel_middle, octree.nonempty_bins[i])
-                octree.bins[bin_id + i - 1].np = octree.nonempty_counter[i]
-                octree.bins[bin_id + i - 1].w = octree.ndens_counter[i]
-            end
+            bin_bounds_inherit!(octree, bin_id + i - 1,
+                                octree.v_min_parent, octree.v_max_parent,
+                                octree.vel_middle, octree.nonempty_bins[i])
+            octree.bins[bin_id + i - 1].np = octree.nonempty_counter[i]
+            octree.bins[bin_id + i - 1].w = octree.ndens_counter[octree.nonempty_bins[i]]
         end
     else
         # still need to fill out info on number of particles and total weight
         for i in 1:n_nonempty_bins
-            if (octree.nonempty_counter[i] > 0)
-                octree.bins[bin_id + i - 1].np = octree.nonempty_counter[i]
-                octree.bins[bin_id + i - 1].w = octree.ndens_counter[i]
-            end
+            octree.bins[bin_id + i - 1].np = octree.nonempty_counter[i]
+            octree.bins[bin_id + i - 1].w = octree.ndens_counter[octree.nonempty_bins[i]]
         end
     end
 
