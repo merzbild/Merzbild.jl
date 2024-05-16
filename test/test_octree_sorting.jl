@@ -1,6 +1,6 @@
 @testset "octree_sorting" begin
 
-    function create_particle_in_octant(octant, v_val)
+    function create_particle_in_octant(octant, v_val; w=1.0)
         # assume octants symmetric around (0, 0, 0)
         # v_val > 0
         if octant >= 5
@@ -19,7 +19,7 @@
             v_y = -v_val
         end
 
-        return Particle(1.0, [v_x, v_y, v_z], [0.0, 0.0, 0.0])
+        return Particle(w, [v_x, v_y, v_z], [0.0, 0.0, 0.0])
     end
 
     function create_15particles_nested()
@@ -38,7 +38,7 @@
         for v_x in [-1.0, -3.0]
             for v_y in [1.0, 3.0]
                 for v_z in [-3.0, -1.0]
-                    vp[mia[i]] = Particle(1.0, [v_x, v_y, v_z], [0.0, 0.0, 0.0])
+                    vp[mia[i]] = Particle(0.5, [v_x, v_y, v_z], [0.0, 0.0, 0.0])
                     i += 1
                 end
             end
@@ -70,10 +70,10 @@
         end
 
         for octant in rr
-            vp[i] = create_particle_in_octant(octant, 1.0)
+            vp[i] = create_particle_in_octant(octant, 1.0, w=octant)
             i += 1
             if octant == extra_octant
-                vp[i] = create_particle_in_octant(octant, 2.0)
+                vp[i] = create_particle_in_octant(octant, 2.0, w=octant)
                 i += 1
             end
         end
@@ -96,7 +96,7 @@
 
         for octant in rr
             if octant != missing_octant
-                vp[i] = create_particle_in_octant(octant, 1.0)
+                vp[i] = create_particle_in_octant(octant, 1.0, w=octant)
                 i += 1
             end
         end
@@ -195,6 +195,13 @@
     @test octree.bin_start[1:8] == [1, 2, 3, 5, 6, 7, 8, 9]
     @test octree.bin_end[1:8] == [1, 2, 4, 5, 6, 7, 8, 9]
 
+    num_per_bin = [1, 1, 2, 1, 1, 1, 1, 1]
+    w_per_bin = [1, 2, 6, 4, 5, 6, 7, 8]
+    for i in 1:8
+        @test octree.bins[i].np == num_per_bin[i]
+        @test octree.bins[i].w == w_per_bin[i]
+    end
+
     # now we test for 7 particles, i.e. with one empty octree bin
     # particles:  1, 2, 3, 4, 5, 6, 7
     # octants are 8, 7, 6, 4, 3, 2, 1
@@ -208,6 +215,13 @@
     @test octree.particle_indexes_sorted[1:7] == expected
     @test octree.bin_start[1:7] == [1, 2, 3, 4, 5, 6, 7]
     @test octree.bin_end[1:7] == [1, 2, 3, 4, 5, 6, 7]
+
+    num_per_bin = [1, 1, 1, 1, 1, 1, 1]
+    w_per_bin = [1, 2, 3, 4, 6, 7, 8]
+    for i in 1:7
+        @test octree.bins[i].np == num_per_bin[i]
+        @test octree.bins[i].w == w_per_bin[i]
+    end
 
 
     # test double-splitting, i.e. we have 1 p/bin in 7 bins, the 8th bin has 4 particles
@@ -247,6 +261,12 @@
 
     @test octree2.particle_indexes_sorted[11:15] == expected1115
 
+    num_per_bin = [1, 1, 8, 1, 1, 1, 1, 1]
+    w_per_bin = [1, 1, 4.0, 1, 1, 1, 1, 1]
+    for i in 1:8
+        @test octree2.bins[i].np == num_per_bin[i]
+        @test octree2.bins[i].w == w_per_bin[i]
+    end
     # the sub-bin will have bounds [-3.0, 0.0], [0.0, 3.0], [-3.0, 0.0]
     # and will be split along velocity of [-1.5, 1.5, 1.5]
     # each sub-bin will have 1 particle
@@ -263,5 +283,12 @@
     # 1 particle per bin
     for i in 1:15
         @test octree2.bin_start[i] == i
+    end
+
+    num_per_bin = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    w_per_bin = [1, 1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 1, 1, 1, 1]
+    for i in 1:15
+        @test octree2.bins[i].np == num_per_bin[i]
+        @test octree2.bins[i].w == w_per_bin[i]
     end
 end
