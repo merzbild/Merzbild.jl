@@ -101,4 +101,39 @@
     Merzbild.init_octree!(1, 1, octree3, particles2[1], pia2)
     @test maximum(abs.(octree3.bins[1].v_min - [-3.0, -1.0, -3.0])) < 1e-11  # check bin bounds, non-symmetrized octree bin
     @test maximum(abs.(octree3.bins[1].v_max - [1.0, 3.0, 1.0])) < 1e-11  # check bin bounds, non-symmetrized octree bin
+
+
+    # Test: refine bin in 3rd octant
+    # test that the new suboctant bin bounds make sense
+
+
+    octree4 = create_merging_octree(OctreeBinMeanSplit; init_bin_bounds=OctreeInitBinMinMaxVel)
+    v_mean = SVector{3, Float64}(0.0, 0.0, 0.0)
+    for i in 1:15
+        v_mean = v_mean + particles2[1][i].v
+    end
+    v_mean = v_mean / 15.0
+
+    Merzbild.init_octree!(1, 1, octree4, particles2[1], pia2)
+    Merzbild.compute_v_mean!(octree4, 1, 15, particles2[1])
+    @test maximum(abs.(octree4.vel_middle - v_mean)) < 1e-11  # check computation of v_mean
+
+    particles2[1][15].v = SVector{3, Float64}(120_000.0, -440_000.0, 920_000.0)
+
+    vx_previous = octree4.bins[1].v_min[1]
+    vy_previous = octree4.bins[1].v_max[2]
+    vz_previous = octree4.bins[1].v_min[3]
+    Merzbild.bin_bounds_recompute!(octree4, 1, 1, 15, particles2[1])
+
+    @test octree4.bins[1].v_min[1] == vx_previous
+    @test octree4.bins[1].v_max[1] == particles2[1][15].v[1]
+
+    @test octree4.bins[1].v_min[2] == particles2[1][15].v[2]
+    @test octree4.bins[1].v_max[2] == vy_previous
+
+    @test octree4.bins[1].v_min[3] == vz_previous
+    @test octree4.bins[1].v_max[3] == particles2[1][15].v[3]
+
+
+    # Test: Merzbild.bin_bounds_inherit!
 end
