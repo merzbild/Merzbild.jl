@@ -37,6 +37,20 @@ Equal volume/equal radius?
 
 - [ ] Octree merging
 
+    - [ ] Final tests for bin splitting
+
+    - [x] Basic compute (ndens, nparticles) for refinement 
+    
+        - [x] Tests
+
+    - [ ] Bin property computation
+    
+        - [ ] Tests
+
+    - [ ] New particle computes
+    
+        - [ ] Tests
+
 - [ ] mixing rule VHS creator
 
 - [ ] The science begins
@@ -64,6 +78,7 @@ Equal volume/equal radius?
 
 # Misc thoughts
 Best to do octree merging in reverse order? So that less shifting around of particle indices?
+Loop of copying instead of deepcopy of slice in octree merging - would that allocate less?
 
 # Comparisons
 
