@@ -129,3 +129,27 @@ function compute_props_sorted_without_moments!(phys_props, pia, particles, speci
         end
     end
 end
+
+function compute_mixed_moment(pia, particles, cell, species, powers; sum_scaler=1.0, res_scaler=1.0)
+    # sum scaler is used inside the particle summation loops to potentially reduce round-off issues
+    # res_scaler can be used as inverse of sum_scaler (e.g. to get the full moment)
+    # or set to any other quantity to get scaling of result as well
+    # e.g. sum_scaler=ndens (computed separately), res_scaler=1.0 would compute normalized moment
+    result = 0.0
+
+    for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
+        result += particles[species][i].w * sum_scaler * (particles[species][i].v[1]^powers[1]) *
+                  (particles[species][i].v[2]^powers[2]) *
+                  (particles[species][i].v[3]^powers[3])
+    end
+
+    if pia.indexer[cell,species].start2 > 0
+        for i in pia.indexer[cell,species].start2:pia.indexer[cell,species].end2
+            result += particles[species][i].w * sum_scaler * (particles[species][i].v[1]^powers[1]) *
+                      (particles[species][i].v[2]^powers[2]) *
+                      (particles[species][i].v[3]^powers[3])
+        end
+    end
+
+    return result * res_scaler
+end
