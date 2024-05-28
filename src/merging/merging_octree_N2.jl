@@ -45,6 +45,7 @@ mutable struct OctreeN2
     max_Nbins::Int32
     Nbins::Int32  # actual bins computed
     bins::Vector{OctreeCell}
+    full_bins::Vector{OctreeFullCell}
     n_particles::Int64  # particles being sorted
 
     # particles in bins[i] have indices in particle_index_buffer[bin_start[i]:bin_end[i]]
@@ -91,9 +92,17 @@ function fill_bins(Nbins)
     return [OctreeCell(0, 0.0, SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0), 0) for i in 1:Nbins]
 end
 
+function fill_full_bins(Nbins)
+    return [OctreeFullCell(SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0),
+                           SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0),
+                           0, 0, 0.0, 0.0, 
+                           SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0),
+                           SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0)) for i in 1:Nbins]
+end
+
 function create_merging_octree(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit,
                                max_Nbins=4096, max_depth=10)
-    return OctreeN2(max_Nbins, 0, fill_bins(max_Nbins), 0,
+    return OctreeN2(max_Nbins, 0, fill_bins(max_Nbins), fill_full_bins(max_Nbins), 0,
                     zeros(max_Nbins), zeros(max_Nbins),  # bin_start, bin_end
                     zeros(8192), zeros(8192), zeros(8192),
                     MVector{8, Int64}(0, 0, 0, 0, 0, 0, 0, 0),
@@ -321,6 +330,7 @@ function split_bin!(octree, bin_id, particles)
         end
     else
         # still need to fill out info on number of particles and total weight
+        # will recompute bin bounds if we do next round of refinement
         for i in 1:n_nonempty_bins
             octree.bins[bin_id + i - 1].np = octree.nonempty_counter[i]
             octree.bins[bin_id + i - 1].w = octree.ndens_counter[octree.nonempty_bins[i]]
@@ -336,6 +346,20 @@ function split_bin!(octree, bin_id, particles)
 
     # write sorted indices
     octree.particle_indexes_sorted[bs:be] = octree.particles_sort_output[1:be-bs+1]
+end
+
+function compute_bin_props!(octree, bin_id, particles)
+    # TODO: test
+    bs = octree.bin_start[bin_id]
+    be = octree.bin_end[bin_id]
+
+    for (i, pi) in enumerate(octree.particle_indexes_sorted[bs:be])
+        octree.full_bins[bin_id].v = octree.full_bins[bin_id].v + particles[pi].w * particles[pi].v
+        octree.full_bins[bin_id].x = octree.full_bins[bin_id].x + particles[pi].w * particles[pi].x
+    end
+
+    octree.full_bins[bin_id].v = octree.full_bins[bin_id].v / octree.bins[bin_id].w
+    octree.full_bins[bin_id].x = octree.full_bins[bin_id].x / octree.bins[bin_id].w
 end
 
 function compute_new_particles!()
