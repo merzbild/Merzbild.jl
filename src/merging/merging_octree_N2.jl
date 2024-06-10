@@ -386,7 +386,7 @@ function compute_bin_props!(octree, bin_id, particles)
     for pi in octree.particle_indexes_sorted[bs:be]
         octree.full_bins[bin_id].v_std_sq = octree.full_bins[bin_id].v_std_sq +
                                             particles[pi].w * (particles[pi].v - octree.full_bins[bin_id].v_mean).^2
-        octree.full_bins[bin_id].x_std_sq = octree.full_bins[bin_id].x_mean +
+        octree.full_bins[bin_id].x_std_sq = octree.full_bins[bin_id].x_std_sq +
                                             particles[pi].w * (particles[pi].x - octree.full_bins[bin_id].x_mean).^2
     end
     octree.full_bins[bin_id].v_std_sq = octree.full_bins[bin_id].v_std_sq / octree.bins[bin_id].w
@@ -416,8 +416,8 @@ function compute_new_particles!(cell, species, octree::OctreeN2, particles, part
             octree.full_bins[bin_id].v2 = octree.full_bins[bin_id].v_mean - octree.direction_vec .* octree.full_bins[bin_id].v_std_sq
 
             octree.direction_vec = @SVector rand(direction_signs, 3)
-            octree.full_bins[bin_id].x1 = octree.full_bins[bin_id].x_mean + merging_grid.direction_vec .* merging_grid.cells[index].x_std_sq
-            octree.full_bins[bin_id].x2 = octree.full_bins[bin_id].x_mean - merging_grid.direction_vec .* merging_grid.cells[index].x_std_sq
+            octree.full_bins[bin_id].x1 = octree.full_bins[bin_id].x_mean + octree.direction_vec .* octree.full_bins[bin_id].x_std_sq
+            octree.full_bins[bin_id].x2 = octree.full_bins[bin_id].x_mean - octree.direction_vec .* octree.full_bins[bin_id].x_std_sq
         elseif (octree.bins[bin_id].np == 2)
             # get the particle indices we saved and just write data based on them
             i = merging_grid.cells[index].particle_index1
@@ -501,8 +501,35 @@ function merge_octree_N2_based!(cell, species, octree, particles, particle_index
     clear_octree!(octree)
     resize_octree_buffers!(octree, particle_indexer_array.indexer[cell,species].n_local)
     init_octree!(cell, species, octree, particles[species], particle_indexer_array)
-    # loop until reached target
-    # inner loop - choose bin to refine, refine, exit inner loop
 
+    # refine = true
+    while true
+        total_np = 0
+        refine_id = -1
+        max_w = -1
+        for bin_id in 1:octree.Nbins
+            total_np += get_bin_post_merge_np(octree, bin_id)
+            if ((octree.bins[bin_id].w > max_w) && (octree.bins[bin_id].np > 2))
+                max_w = octree.bins[bin_id].w
+                refine_id = bin_id
+            end
+        end
+
+        if refine_id == -1
+            # found no bin to refine, i.e. ran out of particles
+            break
+        elseif (total_np + 14 > target_np)
+            # refining a bin can produce up to 16 particles, so we don't do it if threshold exceeded
+            # but if we have a bin it has potentially 2 particles already, so refinement increases count
+            # only by 14
+            break
+        else
+            split_bin!(octree, refine_id, particles[species])
+        end
+    end
+    
+    for bin_id in 1:octree.Nbins
+        compute_bin_props!(octree, bin_id, particles[species])
+    end
     compute_new_particles!(cell, species, octree, particles, particle_indexer_array)
 end
