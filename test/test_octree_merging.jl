@@ -19,7 +19,7 @@
             v_y = -v_val
         end
 
-        return Particle(w, [v_x, v_y, v_z], [0.0, 0.0, 0.0])
+        return Particle(w, [v_x, v_y, v_z], [1.0, -10.0, 3.0])
     end
     
     function create_24_3particles_in_octant()
@@ -55,12 +55,43 @@
 
     Merzbild.init_octree!(1, 1, octree, particles24[1], pia)
     
-    
     Merzbild.split_bin!(octree, 1, particles24[1])
     @test octree.Nbins == 8
     
     for i in 1:8
         @test octree.bins[i].np == 3
         @test octree.bins[i].w == 3 * i
+    end
+
+    for i in 1:8
+        Merzbild.compute_bin_props!(octree, i, particles24[1])
+    end
+
+    for i in 1:8
+
+        # compute signs
+        if i >= 5
+            v_zs = 1
+        else
+            v_zs = -1
+        end
+        if i % 2 == 1
+            v_xs = -1
+        else
+            v_xs = 1
+        end
+        if (i == 3) || (i == 4) || (i == 7) || (i == 8)
+            v_ys = 1
+        else
+            v_ys = -1
+        end
+
+        @test abs(octree.full_bins[i].v_mean[1] - (9.0 - i) * v_xs) < 1e-14 
+        @test abs(octree.full_bins[i].v_mean[2] - (9.0 - i) * v_ys) < 1e-14 
+        @test abs(octree.full_bins[i].v_mean[3] - (9.0 - i) * v_zs) < 1e-14 
+
+        @test abs(octree.full_bins[i].x_mean[1] - (1.0)) < 1e-14
+        @test abs(octree.full_bins[i].x_mean[2] - (-10.0)) < 1e-14
+        @test abs(octree.full_bins[i].x_mean[3] - (3.0)) < 1e-14
     end
 end
