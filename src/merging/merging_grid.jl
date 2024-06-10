@@ -170,13 +170,13 @@ function compute_grid!(cell, species, merging_grid::MergingGrid, particles, part
     end
 end
 
-function compute_new_particles!(cell, species, merging_grid, particles, particle_indexer_array)
+function compute_new_particles!(cell, species, merging_grid::MergingGrid, particles, particle_indexer_array)
     # no limits on particle location, i.e. 0-D
 
     for index in 1:merging_grid.Ntotal
         if (merging_grid.cells[index].np > 2)
             merging_grid.cells[index].w1 = 0.5 * merging_grid.cells[index].w
-            merging_grid.cells[index].w2 = 0.5 * merging_grid.cells[index].w
+            merging_grid.cells[index].w2 = merging_grid.cells[index].w1
 
             merging_grid.cells[index].v_std_sq = sqrt.(merging_grid.cells[index].v_std_sq)
             merging_grid.cells[index].x_std_sq = sqrt.(merging_grid.cells[index].x_std_sq)
