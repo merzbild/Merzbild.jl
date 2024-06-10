@@ -93,5 +93,7 @@
         @test abs(octree.full_bins[i].x_mean[1] - (1.0)) < 1e-14
         @test abs(octree.full_bins[i].x_mean[2] - (-10.0)) < 1e-14
         @test abs(octree.full_bins[i].x_mean[3] - (3.0)) < 1e-14
+
+        @test Merzbild.get_bin_post_merge_np(octree, i) == 2
     end
 end

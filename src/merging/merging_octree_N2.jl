@@ -375,6 +375,13 @@ function compute_bin_props!(octree, bin_id, particles)
     octree.full_bins[bin_id].x_std_sq = octree.full_bins[bin_id].x_std_sq / octree.bins[bin_id].w
 end
 
+function get_bin_post_merge_np(octree, bin_id)
+    # how many particles will we get after merging in the bin:
+    # 2 if np >= 2
+    # np otherwise (0 or 1)
+    return octree.bins[bin_id].np >= 2 ? 2 : octree.bins[bin_id].np
+end
+
 function compute_new_particles!()
     # given computed Octree, create new particles instead of the old ones
     nothing
