@@ -66,6 +66,8 @@ Equal volume/equal radius?
 
 - [ ] Logging struct? (Union of nothing/actual logging struct, write out stuff like "increased octree merging buffer", "increase particle array size")
 
+- [ ] Subsplit into two groups based on energy and merge. Find x s.t. Vol(particles in sphere but not in cube + particles in cube but not in sphere) is minimal. Plus we shift it by the velocity of the neutrals? Plus we can weight by Maxwellian distribution?
+
 # TODO: tests
 
 - [ ] energy / momentum conservation in scattering
@@ -85,3 +87,7 @@ Loop of copying instead of deepcopy of slice in octree merging - would that allo
 - [ ] Merging grid-based: pass slice/without species? is that any different?
 
 - [ ] Make more structs immutable - is that better?
+
+# Merging tests:
+
+- [ ] BKW - preserve production term?
