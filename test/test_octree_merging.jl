@@ -46,6 +46,7 @@
     seed = 1234
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)
+    phys_props::PhysProps = create_props(1, 1, [], Tref=1)
     
     particles24::Vector{Vector{Particle}} = [create_24_3particles_in_octant()]
     pia = create_particle_indexer_array(24)
@@ -96,4 +97,37 @@
 
         @test Merzbild.get_bin_post_merge_np(octree, i) == 2
     end
+
+
+    compute_props!(phys_props, pia, particles24, species_list)
+
+    n0_computed = phys_props.n[1,1]
+    np0_computed = phys_props.np[1,1]
+    T0_computed = phys_props.T[1,1]
+    v0_computed = phys_props.v[:,1,1]
+
+    octree2 = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
+    merge_octree_N2_based!(1, 1, octree2, particles24, pia, 16)
+
+    @test pia.n_total[1] == 16
+    @test pia.n_total[1] == pia.indexer[1,1].n_local
+
+    compute_props!(phys_props, pia, particles24, species_list)
+    @test pia.n_total[1] == phys_props.np[1,1]
+    @test abs(phys_props.n[1,1] - n0_computed) < eps()
+    @test abs(phys_props.T[1,1] - T0_computed) < 1e-14
+    @test abs(v0_computed[1] - phys_props.v[1,1,1]) < 1e-14
+    @test abs(v0_computed[2] - phys_props.v[2,1,1]) < 1e-14
+    @test abs(v0_computed[3] - phys_props.v[3,1,1]) < 1e-14
+
+    merge_octree_N2_based!(1, 1, octree2, particles24, pia, 2)
+    @test pia.n_total[1] == 2
+
+    compute_props!(phys_props, pia, particles24, species_list)
+    @test pia.n_total[1] == phys_props.np[1,1]
+    @test abs(phys_props.n[1,1] - n0_computed) < eps()
+    @test abs(phys_props.T[1,1] - T0_computed) < 1e-14
+    @test abs(v0_computed[1] - phys_props.v[1,1,1]) < 1e-14
+    @test abs(v0_computed[2] - phys_props.v[2,1,1]) < 1e-14
+    @test abs(v0_computed[3] - phys_props.v[3,1,1]) < 1e-14
 end
