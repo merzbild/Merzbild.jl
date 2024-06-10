@@ -83,6 +83,8 @@ mutable struct OctreeN2
     v_min_parent::SVector{3,Float64}  # used in splitting
     v_max_parent::SVector{3,Float64}
 
+    direction_vec::SVector{3,Float64}
+
     init_bin_bounds::OctreeInitBin
 
     max_depth::Int32
@@ -111,6 +113,7 @@ function create_merging_octree(split::OctreeBinSplit; init_bin_bounds=OctreeInit
                     MVector{8, Float64}(0, 0, 0, 0, 0, 0, 0, 0),
                     bin_bounds_compute, split,
                     SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0),
+                    SVector{3,Float64}(0.0, 0.0, 0.0),
                     init_bin_bounds, max_depth)
 end
 
@@ -358,6 +361,21 @@ function compute_bin_props!(octree, bin_id, particles)
     octree.full_bins[bin_id].x_mean = SVector{3, Float64}(0.0, 0.0, 0.0)
     octree.full_bins[bin_id].x_std_sq = SVector{3, Float64}(0.0, 0.0, 0.0)
 
+    # store indices of the first 1/2 particles in octree bin so that we
+    # have somewhere to write post-merge data
+    # but also so that we don't do unnecessary merging (2:2, 1:2)
+    if (octree.bins[bin_id].np == 1)
+        octree.full_bins[bin_id].particle_index1 = octree.particle_indexes_sorted[bs]
+    elseif (octree.bins[bin_id].np >= 2)
+        octree.full_bins[bin_id].particle_index1 = octree.particle_indexes_sorted[bs]
+        octree.full_bins[bin_id].particle_index2 = octree.particle_indexes_sorted[bs + 1]
+    end
+
+    # if only 2 or fewer particles in bin then we don't need to compute any properties
+    if (octree.bins[bin_id].np <= 2)
+        return
+    end
+
     for pi in octree.particle_indexes_sorted[bs:be]
         octree.full_bins[bin_id].v_mean = octree.full_bins[bin_id].v_mean + particles[pi].w * particles[pi].v
         octree.full_bins[bin_id].x_mean = octree.full_bins[bin_id].x_mean + particles[pi].w * particles[pi].x
@@ -382,9 +400,68 @@ function get_bin_post_merge_np(octree, bin_id)
     return octree.bins[bin_id].np >= 2 ? 2 : octree.bins[bin_id].np
 end
 
-function compute_new_particles!()
+function compute_new_particles!(cell, species, octree::OctreeN2, particles, particle_indexer_array)
     # given computed Octree, create new particles instead of the old ones
-    nothing
+    
+    for bin_id in 1:octree.Nbins
+        if (octree.bins[bin_id].np > 2)
+            octree.full_bins[bin_id].w1 = 0.5 * octree.bins[bin_id].w
+            octree.full_bins[bin_id].w2 = octree.full_bins[bin_id].w1
+
+            octree.full_bins[bin_id].v_std_sq = sqrt.(octree.full_bins[bin_id].v_std_sq)
+            octree.full_bins[bin_id].x_std_sq = sqrt.(octree.full_bins[bin_id].x_std_sq)
+            
+            octree.direction_vec = @SVector rand(direction_signs, 3)
+            octree.full_bins[bin_id].v1 = octree.full_bins[bin_id].v_mean + octree.direction_vec .* octree.full_bins[bin_id].v_std_sq
+            octree.full_bins[bin_id].v2 = octree.full_bins[bin_id].v_mean - octree.direction_vec .* octree.full_bins[bin_id].v_std_sq
+
+            octree.direction_vec = @SVector rand(direction_signs, 3)
+            octree.full_bins[bin_id].x1 = octree.full_bins[bin_id].x_mean + merging_grid.direction_vec .* merging_grid.cells[index].x_std_sq
+            octree.full_bins[bin_id].x2 = octree.full_bins[bin_id].x_mean - merging_grid.direction_vec .* merging_grid.cells[index].x_std_sq
+        elseif (octree.bins[bin_id].np == 2)
+            # get the particle indices we saved and just write data based on them
+            i = merging_grid.cells[index].particle_index1
+            octree.full_bins[bin_id].w1 = particles[species][i].w
+            octree.full_bins[bin_id].v1 = particles[species][i].v
+            octree.full_bins[bin_id].x1 = particles[species][i].x
+
+            i = merging_grid.cells[index].particle_index2
+            octree.full_bins[bin_id].w2 = particles[species][i].w
+            octree.full_bins[bin_id].v2 = particles[species][i].v
+            octree.full_bins[bin_id].x2 = particles[species][i].x
+        elseif (octree.bins[bin_id].np == 1)
+            # get the particle indices we saved and just write data based on them
+            i = merging_grid.cells[index].particle_index1
+            octree.full_bins[bin_id].w1 = particles[species][i].w
+            octree.full_bins[bin_id].v1 = particles[species][i].v
+            octree.full_bins[bin_id].x1 = particles[species][i].x
+        end
+    end
+
+    curr_particle_index = 0
+    for bin_id in 1:octree.Nbins
+        if (octree.bins[bin_id].np >= 2)
+            i = map_cont_index(particle_indexer_array.indexer[cell,species], curr_particle_index)
+            curr_particle_index += 1
+            particles[species][i].w = octree.full_bins[bin_id].w1
+            particles[species][i].v = octree.full_bins[bin_id].v1
+            particles[species][i].x = octree.full_bins[bin_id].x1
+
+            i = map_cont_index(particle_indexer_array.indexer[cell,species], curr_particle_index)
+            curr_particle_index += 1
+            particles[species][i].w = octree.full_bins[bin_id].w2
+            particles[species][i].v = octree.full_bins[bin_id].v2
+            particles[species][i].x = octree.full_bins[bin_id].x2
+        elseif (octree.bins[bin_id].np == 1)
+            i = map_cont_index(particle_indexer_array.indexer[cell,species], curr_particle_index)
+            curr_particle_index += 1
+            particles[species][i].w = octree.full_bins[bin_id].w1
+            particles[species][i].v = octree.full_bins[bin_id].v1
+            particles[species][i].x = octree.full_bins[bin_id].x1
+        end
+    end
+
+    update_particle_indexer_new_lower_count(species, cell, particle_indexer_array, curr_particle_index)
 end
 
 # initialize first bin with all the particles - set number of bins to 1, copy over particle indices
@@ -427,5 +504,5 @@ function merge_octree_N2_based!(cell, species, octree, particles, particle_index
     # loop until reached target
     # inner loop - choose bin to refine, refine, exit inner loop
 
-    compute_new_particles!()
+    compute_new_particles!(cell, species, octree, particles, particle_indexer_array)
 end
