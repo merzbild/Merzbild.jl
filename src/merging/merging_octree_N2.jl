@@ -353,17 +353,30 @@ function compute_bin_props!(octree, bin_id, particles)
     bs = octree.bin_start[bin_id]
     be = octree.bin_end[bin_id]
 
-    for (i, pi) in enumerate(octree.particle_indexes_sorted[bs:be])
-        octree.full_bins[bin_id].v = octree.full_bins[bin_id].v + particles[pi].w * particles[pi].v
-        octree.full_bins[bin_id].x = octree.full_bins[bin_id].x + particles[pi].w * particles[pi].x
-    end
+    octree.full_bins[bin_id].v_mean = SVector{3, Float64}(0.0, 0.0, 0.0)
+    octree.full_bins[bin_id].v_std_sq = SVector{3, Float64}(0.0, 0.0, 0.0)
 
-    octree.full_bins[bin_id].v = octree.full_bins[bin_id].v / octree.bins[bin_id].w
-    octree.full_bins[bin_id].x = octree.full_bins[bin_id].x / octree.bins[bin_id].w
+    octree.full_bins[bin_id].x_mean = SVector{3, Float64}(0.0, 0.0, 0.0)
+    octree.full_bins[bin_id].x_std_sq = SVector{3, Float64}(0.0, 0.0, 0.0)
+
+    for pi in octree.particle_indexes_sorted[bs:be]
+        octree.full_bins[bin_id].v_mean = octree.full_bins[bin_id].v_mean + particles[pi].w * particles[pi].v
+        octree.full_bins[bin_id].x_mean = octree.full_bins[bin_id].x_mean + particles[pi].w * particles[pi].x
+    end
+    octree.full_bins[bin_id].v_mean = octree.full_bins[bin_id].v_mean / octree.bins[bin_id].w
+    octree.full_bins[bin_id].x_mean = octree.full_bins[bin_id].x_mean / octree.bins[bin_id].w
+
+    for pi in octree.particle_indexes_sorted[bs:be]
+        octree.full_bins[bin_id].v_std_sq = octree.full_bins[bin_id].v_std_sq +
+                                            particles[pi].w * (particles[pi].v - octree.full_bins[bin_id].v_mean)^2
+        octree.full_bins[bin_id].x_std_sq = octree.full_bins[bin_id].x_mean +
+                                            particles[pi].w * (particles[pi].x - octree.full_bins[bin_id].x_mean)^2
+    end
+    octree.full_bins[bin_id].v_std_sq = octree.full_bins[bin_id].v_std_sq / octree.bins[bin_id].w
+    octree.full_bins[bin_id].x_std_sq = octree.full_bins[bin_id].x_std_sq / octree.bins[bin_id].w
 end
 
 function compute_new_particles!()
-    # TODO: compute props
     # given computed Octree, create new particles instead of the old ones
     nothing
 end
@@ -404,7 +417,7 @@ end
 function merge_octree_N2_based!(cell, species, octree, particles, particle_indexer_array, target_np)
     clear_octree!(octree)
     resize_octree_buffers!(octree, particle_indexer_array.indexer[cell,species].n_local)
-    init_octree!(cell, species, octree, particles, particle_indexer_array)
+    init_octree!(cell, species, octree, particles[species], particle_indexer_array)
     # loop until reached target
     # inner loop - choose bin to refine, refine, exit inner loop
 
