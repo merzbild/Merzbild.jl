@@ -309,8 +309,21 @@ function split_bin!(octree, bin_id, particles)
     octree.bin_start[bin_id+n_nonempty_bins:octree.Nbins+n_nonempty_bins-1] .= octree.bin_start[bin_id+1:octree.Nbins]
     octree.bin_end[bin_id+n_nonempty_bins:octree.Nbins+n_nonempty_bins-1] .= octree.bin_end[bin_id+1:octree.Nbins]
 
-    # TODO: loop instead of deepcopy? would that be faster?
-    octree.bins[bin_id+n_nonempty_bins:octree.Nbins+n_nonempty_bins-1] .= deepcopy(octree.bins[bin_id+1:octree.Nbins])
+    # slow original approach was to use deepcopy
+    # octree.bins[bin_id+n_nonempty_bins:octree.Nbins+n_nonempty_bins-1] .= deepcopy(octree.bins[bin_id+1:octree.Nbins])
+    # we go from highest index to lowest
+    # start of loop: i = 1: octree.bins[octree.Nbins+n_nonempty_bins-i]
+    for i in 1:octree.Nbins - bin_id
+        j = octree.Nbins + n_nonempty_bins - i
+        k = octree.Nbins + 1 - i
+
+        # octree.bins[octree.Nbins+n_nonempty_bins-i] = octree.bins[octree.Nbins + 1 - i]
+        octree.bins[j].np = octree.bins[k].np
+        octree.bins[j].w = octree.bins[k].w
+        octree.bins[j].v_min = octree.bins[k].v_min
+        octree.bins[j].v_max = octree.bins[k].v_max
+        octree.bins[j].depth = octree.bins[k].depth
+    end
 
     # first bin - we change nothing for the start
     octree.bin_end[bin_id] = octree.bin_start[bin_id] + octree.nonempty_counter[1] - 1
