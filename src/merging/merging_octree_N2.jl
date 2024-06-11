@@ -213,7 +213,9 @@ function bin_bounds_recompute!(octree, bin_id, bs, be, particles)
     maxvy = -9_299_792_458.0
     maxvz = -9_299_792_458.0
 
-    for pi in octree.particle_indexes_sorted[bs:be]
+    # for pi in octree.particle_indexes_sorted[bs:be]
+    for i in bs:be
+        pi = octree.particle_indexes_sorted[i]
         if (particles[pi].v[1] < minvx)
             minvx = particles[pi].v[1]
         elseif (particles[pi].v[1] > maxvx)
@@ -239,7 +241,8 @@ end
 
 function compute_v_mean!(octree, bs, be, particles)
     n_tot = 0.0
-    for pi in octree.particle_indexes_sorted[bs:be]
+    for i in bs:be
+        pi = octree.particle_indexes_sorted[i]
         n_tot += particles[pi].w
         octree.vel_middle = octree.vel_middle + particles[pi].w * particles[pi].v
     end
