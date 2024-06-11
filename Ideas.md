@@ -35,25 +35,25 @@ Equal volume/equal radius?
 
 - [x] Grid merging
 
-- [ ] Octree merging
+- [x] Octree merging
 
-    - [ ] Final tests for bin splitting
+    - [x] Final tests for bin splitting
 
     - [x] Basic compute (ndens, nparticles) for refinement 
     
         - [x] Tests
 
-    - [ ] Bin property computation
+    - [x] Bin property computation
     
-        - [ ] Tests
+        - [x] Tests
 
-    - [ ] New particle computes
+    - [x] New particle computes
     
-        - [ ] Tests
+        - [x] Tests
+
+    - [ ] Refine based on average particle weight not on bin weight
 
 - [ ] mixing rule VHS creator
-
-- [ ] The science begins
 
 
 # TODO: features
@@ -80,7 +80,6 @@ Equal volume/equal radius?
 
 # Misc thoughts
 Best to do octree merging in reverse order? So that less shifting around of particle indices?
-Loop of copying instead of deepcopy of slice in octree merging - would that allocate less?
 Do without shifting of bins at all - it's not needed since we're looping anyway? Overwrite current + fill remaining
 
 # Comparisons
