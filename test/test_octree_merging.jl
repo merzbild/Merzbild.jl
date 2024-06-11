@@ -59,6 +59,7 @@
     Merzbild.split_bin!(octree, 1, particles24[1])
     @test octree.Nbins == 8
     
+    total_w = sum([3 * i for i in 1:8])
     for i in 1:8
         @test octree.bins[i].np == 3
         @test octree.bins[i].w == 3 * i
@@ -98,17 +99,18 @@
         @test Merzbild.get_bin_post_merge_np(octree, i) == 2
     end
 
-
     compute_props!(phys_props, pia, particles24, species_list)
 
     n0_computed = phys_props.n[1,1]
     np0_computed = phys_props.np[1,1]
     T0_computed = phys_props.T[1,1]
     v0_computed = phys_props.v[:,1,1]
+    @test n0_computed == total_w
 
     octree2 = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
     merge_octree_N2_based!(1, 1, octree2, particles24, pia, 16)
 
+    @test octree2.Nbins == 8
     @test pia.n_total[1] == 16
     @test pia.n_total[1] == pia.indexer[1,1].n_local
 
@@ -121,10 +123,14 @@
     @test abs(v0_computed[3] - phys_props.v[3,1,1]) < 1e-14
 
     merge_octree_N2_based!(1, 1, octree2, particles24, pia, 2)
+
+    @test octree2.Nbins == 1
     @test pia.n_total[1] == 2
 
     compute_props!(phys_props, pia, particles24, species_list)
     @test pia.n_total[1] == phys_props.np[1,1]
+    @test particles24[1][1].w == 0.5 * total_w
+    @test particles24[1][1].w == particles24[1][2].w
     @test abs(phys_props.n[1,1] - n0_computed) < eps()
     @test abs(phys_props.T[1,1] - T0_computed) < 1e-14
     @test abs(v0_computed[1] - phys_props.v[1,1,1]) < 1e-14

@@ -502,7 +502,6 @@ function merge_octree_N2_based!(cell, species, octree, particles, particle_index
     resize_octree_buffers!(octree, particle_indexer_array.indexer[cell,species].n_local)
     init_octree!(cell, species, octree, particles[species], particle_indexer_array)
 
-    # refine = true
     while true
         total_np = 0
         refine_id = -1
@@ -525,6 +524,13 @@ function merge_octree_N2_based!(cell, species, octree, particles, particle_index
             break
         else
             split_bin!(octree, refine_id, particles[species])
+        end
+    end
+
+    if octree.Nbins == 1
+        octree.bins[1].w = 0.0
+        for pi in octree.particle_indexes_sorted[1:octree.n_particles]
+            octree.bins[1].w += particles[species][pi].w
         end
     end
     
