@@ -113,6 +113,9 @@
     @test octree2.Nbins == 8
     @test pia.n_total[1] == 16
     @test pia.n_total[1] == pia.indexer[1,1].n_local
+    for i in 1:8
+        @test octree2.bins[i].depth == 1
+    end
 
     compute_props!(phys_props, pia, particles24, species_list)
     @test pia.n_total[1] == phys_props.np[1,1]
@@ -126,6 +129,9 @@
 
     @test octree2.Nbins == 1
     @test pia.n_total[1] == 2
+    for i in 1:1
+        @test octree2.bins[i].depth == 0
+    end
 
     compute_props!(phys_props, pia, particles24, species_list)
     @test pia.n_total[1] == phys_props.np[1,1]

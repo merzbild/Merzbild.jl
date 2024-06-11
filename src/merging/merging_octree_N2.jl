@@ -255,6 +255,7 @@ function split_bin!(octree, bin_id, particles)
     octree.ndens_counter .= 0.0
     octree.nonempty_bins .= 0
     octree.nonempty_counter .= 0
+    current_depth = octree.bins[bin_id].depth
 
     n_nonempty_bins = 0
     bs = octree.bin_start[bin_id]
@@ -330,6 +331,7 @@ function split_bin!(octree, bin_id, particles)
                                 octree.vel_middle, octree.nonempty_bins[i])
             octree.bins[bin_id + i - 1].np = octree.nonempty_counter[i]
             octree.bins[bin_id + i - 1].w = octree.ndens_counter[octree.nonempty_bins[i]]
+            octree.bins[bin_id + i - 1].depth = current_depth + 1
         end
     else
         # still need to fill out info on number of particles and total weight
@@ -337,6 +339,7 @@ function split_bin!(octree, bin_id, particles)
         for i in 1:n_nonempty_bins
             octree.bins[bin_id + i - 1].np = octree.nonempty_counter[i]
             octree.bins[bin_id + i - 1].w = octree.ndens_counter[octree.nonempty_bins[i]]
+            octree.bins[bin_id + i - 1].depth = current_depth + 1
         end
     end
 
@@ -508,7 +511,10 @@ function merge_octree_N2_based!(cell, species, octree, particles, particle_index
         max_w = -1
         for bin_id in 1:octree.Nbins
             total_np += get_bin_post_merge_np(octree, bin_id)
-            if ((octree.bins[bin_id].w > max_w) && (octree.bins[bin_id].np > 2))
+
+            # find bin with largest number density, needs to have > 2 particles, and not too deep
+            if ((octree.bins[bin_id].w > max_w) && (octree.bins[bin_id].np > 2)
+                 && (octree.bins[bin_id].depth < octree.max_depth))
                 max_w = octree.bins[bin_id].w
                 refine_id = bin_id
             end
