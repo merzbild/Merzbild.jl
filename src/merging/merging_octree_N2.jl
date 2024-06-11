@@ -277,10 +277,11 @@ function split_bin!(octree, bin_id, particles)
         octree.vel_middle = SVector{3, Float64}(0.0, 0.0, 0.0)
     end
 
-    for (i, pi) in enumerate(octree.particle_indexes_sorted[bs:be])
+    for i in bs:be
+        pi = octree.particle_indexes_sorted[i]
         oct = compute_octant(particles[pi].v, octree.vel_middle)
         octree.particle_in_bin_counter[oct] += 1
-        octree.particle_octants[i] = oct
+        octree.particle_octants[i-bs+1] = oct
         octree.ndens_counter[oct] += particles[pi].w
     end
 
@@ -359,8 +360,14 @@ function split_bin!(octree, bin_id, particles)
     end
 
     # for (i, pi) in enumerate(octree.particle_indexes_sorted[be:-1:bs])
-    for (i, pi) in enumerate(octree.particle_indexes_sorted[bs:be])
-        j = octree.particle_octants[i]
+    # for (i, pi) in enumerate(octree.particle_indexes_sorted[bs:be])
+    #     j = octree.particle_octants[i]
+    #     octree.particles_sort_output[octree.particle_in_bin_counter[j]] = pi
+    #     octree.particle_in_bin_counter[j] -= 1
+    # end
+    for i in bs:be
+        pi = octree.particle_indexes_sorted[i]
+        j = octree.particle_octants[i - bs + 1]
         octree.particles_sort_output[octree.particle_in_bin_counter[j]] = pi
         octree.particle_in_bin_counter[j] -= 1
     end
@@ -397,14 +404,17 @@ function compute_bin_props!(octree, bin_id, particles)
         return
     end
 
-    for pi in octree.particle_indexes_sorted[bs:be]
+    # for pi in octree.particle_indexes_sorted[bs:be]
+    for i in bs:be
+        pi = octree.particle_indexes_sorted[i]
         octree.full_bins[bin_id].v_mean = octree.full_bins[bin_id].v_mean + particles[pi].w * particles[pi].v
         octree.full_bins[bin_id].x_mean = octree.full_bins[bin_id].x_mean + particles[pi].w * particles[pi].x
     end
     octree.full_bins[bin_id].v_mean = octree.full_bins[bin_id].v_mean / octree.bins[bin_id].w
     octree.full_bins[bin_id].x_mean = octree.full_bins[bin_id].x_mean / octree.bins[bin_id].w
 
-    for pi in octree.particle_indexes_sorted[bs:be]
+    for i in bs:be
+        pi = octree.particle_indexes_sorted[i]
         octree.full_bins[bin_id].v_std_sq = octree.full_bins[bin_id].v_std_sq +
                                             particles[pi].w * (particles[pi].v - octree.full_bins[bin_id].v_mean).^2
         octree.full_bins[bin_id].x_std_sq = octree.full_bins[bin_id].x_std_sq +
