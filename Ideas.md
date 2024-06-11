@@ -81,6 +81,7 @@ Equal volume/equal radius?
 # Misc thoughts
 Best to do octree merging in reverse order? So that less shifting around of particle indices?
 Loop of copying instead of deepcopy of slice in octree merging - would that allocate less?
+Do without shifting of bins at all - it's not needed since we're looping anyway? Overwrite current + fill remaining
 
 # Comparisons
 
