@@ -423,18 +423,18 @@ function compute_new_particles!(cell, species, octree::OctreeN2, particles, part
             octree.full_bins[bin_id].x2 = octree.full_bins[bin_id].x_mean - octree.direction_vec .* octree.full_bins[bin_id].x_std_sq
         elseif (octree.bins[bin_id].np == 2)
             # get the particle indices we saved and just write data based on them
-            i = merging_grid.cells[index].particle_index1
+            i = octree.full_bins[bin_id].particle_index1
             octree.full_bins[bin_id].w1 = particles[species][i].w
             octree.full_bins[bin_id].v1 = particles[species][i].v
             octree.full_bins[bin_id].x1 = particles[species][i].x
 
-            i = merging_grid.cells[index].particle_index2
+            i = octree.full_bins[bin_id].particle_index2
             octree.full_bins[bin_id].w2 = particles[species][i].w
             octree.full_bins[bin_id].v2 = particles[species][i].v
             octree.full_bins[bin_id].x2 = particles[species][i].x
         elseif (octree.bins[bin_id].np == 1)
             # get the particle indices we saved and just write data based on them
-            i = merging_grid.cells[index].particle_index1
+            i = octree.full_bins[bin_id].particle_index1
             octree.full_bins[bin_id].w1 = particles[species][i].w
             octree.full_bins[bin_id].v1 = particles[species][i].v
             octree.full_bins[bin_id].x1 = particles[species][i].x
