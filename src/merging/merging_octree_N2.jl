@@ -305,17 +305,19 @@ function split_bin!(octree, bin_id, particles)
 
     octree.Nbins += n_nonempty_bins - 1
 
-    # shift bins around to accomodate the new non-empty bins we have
-    octree.bin_start[bin_id+n_nonempty_bins:octree.Nbins+n_nonempty_bins-1] .= octree.bin_start[bin_id+1:octree.Nbins]
-    octree.bin_end[bin_id+n_nonempty_bins:octree.Nbins+n_nonempty_bins-1] .= octree.bin_end[bin_id+1:octree.Nbins]
 
+    # shift bins around to accomodate the new non-empty bins we have
     # slow original approach was to use deepcopy
+    # octree.bin_start[bin_id+n_nonempty_bins:octree.Nbins+n_nonempty_bins-1] .= octree.bin_start[bin_id+1:octree.Nbins]
+    # octree.bin_end[bin_id+n_nonempty_bins:octree.Nbins+n_nonempty_bins-1] .= octree.bin_end[bin_id+1:octree.Nbins]
     # octree.bins[bin_id+n_nonempty_bins:octree.Nbins+n_nonempty_bins-1] .= deepcopy(octree.bins[bin_id+1:octree.Nbins])
     # we go from highest index to lowest
     # start of loop: i = 1: octree.bins[octree.Nbins+n_nonempty_bins-i]
     for i in 1:octree.Nbins - bin_id
         j = octree.Nbins + n_nonempty_bins - i
         k = octree.Nbins + 1 - i
+        octree.bin_start[j] = octree.bin_start[k]
+        octree.bin_end[j] = octree.bin_end[k]
 
         # octree.bins[octree.Nbins+n_nonempty_bins-i] = octree.bins[octree.Nbins + 1 - i]
         octree.bins[j].np = octree.bins[k].np
@@ -364,7 +366,10 @@ function split_bin!(octree, bin_id, particles)
     end
 
     # write sorted indices
-    octree.particle_indexes_sorted[bs:be] = octree.particles_sort_output[1:be-bs+1]
+    # octree.particle_indexes_sorted[bs:be] = octree.particles_sort_output[1:be-bs+1]
+    for i in bs:be
+        octree.particle_indexes_sorted[i] = octree.particles_sort_output[i-bs+1]
+    end
 end
 
 function compute_bin_props!(octree, bin_id, particles)
