@@ -1,4 +1,5 @@
 using StaticArrays
+using TimerOutputs
 
 @enum OctreeBinSplit OctreeBinMidSplit=1 OctreeBinMeanSplit=2 OctreeBinMedianSplit=3
 
@@ -20,7 +21,8 @@ mutable struct OctreeCell
     v_min::SVector{3,Float64}
     v_max::SVector{3,Float64}
 
-    depth::Int64
+    depth::Int32
+    can_be_refined::Bool
 end
 
 mutable struct OctreeFullCell
@@ -88,10 +90,11 @@ mutable struct OctreeN2
     init_bin_bounds::OctreeInitBin
 
     max_depth::Int32
+    total_post_merge_np::Int64 # used to keep track of number of post-merge particles
 end
 
 function fill_bins(Nbins)
-    return [OctreeCell(0, 0.0, SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0), 0) for i in 1:Nbins]
+    return [OctreeCell(0, 0.0, SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0), 0, true) for i in 1:Nbins]
 end
 
 function fill_full_bins(Nbins)
@@ -114,7 +117,7 @@ function create_merging_octree(split::OctreeBinSplit; init_bin_bounds=OctreeInit
                     bin_bounds_compute, split,
                     SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0),
                     SVector{3,Float64}(0.0, 0.0, 0.0),
-                    init_bin_bounds, max_depth)
+                    init_bin_bounds, max_depth, 0)
 end
 
 function clear_octree!(octree)
@@ -267,11 +270,11 @@ function split_bin!(octree, bin_id, particles)
     # if we compute bin bounds based on particle velocities, we need to actually iterate through particles
     # and compute
     # if not, we can do it later directly for the sub-bins
-    if (octree.bin_bounds_compute == OctreeBinBoundsRecompute)
+    @timeit "bounds1" if (octree.bin_bounds_compute == OctreeBinBoundsRecompute)
         bin_bounds_recompute!(octree, bin_id, bs, be, particles)
     end
 
-    if (octree.split == OctreeBinMidSplit)
+    @timeit "ifsplit" if (octree.split == OctreeBinMidSplit)
         octree.vel_middle = 0.5 * (octree.bins[bin_id].v_min + octree.bins[bin_id].v_max)
     elseif (octree.split == OctreeBinMeanSplit)
         compute_v_mean!(octree, bs, be, particles) # octree.vel_middle = octree.bins[bin_id].v_mean
@@ -280,7 +283,7 @@ function split_bin!(octree, bin_id, particles)
         octree.vel_middle = SVector{3, Float64}(0.0, 0.0, 0.0)
     end
 
-    for i in bs:be
+    @timeit "loop 1" for i in bs:be
         pi = octree.particle_indexes_sorted[i]
         oct = compute_octant(particles[pi].v, octree.vel_middle)
         octree.particle_in_bin_counter[oct] += 1
@@ -296,7 +299,7 @@ function split_bin!(octree, bin_id, particles)
         octree.nonempty_bins[n_eb] = 1
     end
 
-    for i in 2:8
+    @timeit "loop 2" for i in 2:8
         if (octree.particle_in_bin_counter[i] > 0)
             n_nonempty_bins += 1
             n_eb += 1
@@ -317,7 +320,7 @@ function split_bin!(octree, bin_id, particles)
     # octree.bins[bin_id+n_nonempty_bins:octree.Nbins+n_nonempty_bins-1] .= deepcopy(octree.bins[bin_id+1:octree.Nbins])
     # we go from highest index to lowest
     # start of loop: i = 1: octree.bins[octree.Nbins+n_nonempty_bins-i]
-    for i in 1:octree.Nbins - bin_id
+    @timeit "loop 3" for i in 1:octree.Nbins - bin_id
         j = octree.Nbins + n_nonempty_bins - i
         k = octree.Nbins + 1 - i
         octree.bin_start[j] = octree.bin_start[k]
@@ -329,17 +332,21 @@ function split_bin!(octree, bin_id, particles)
         octree.bins[j].v_min = octree.bins[k].v_min
         octree.bins[j].v_max = octree.bins[k].v_max
         octree.bins[j].depth = octree.bins[k].depth
+        octree.bins[j].can_be_refined = octree.bins[k].can_be_refined
     end
 
     # first bin - we change nothing for the start
     octree.bin_end[bin_id] = octree.bin_start[bin_id] + octree.nonempty_counter[1] - 1
     
-    for i in 1:n_nonempty_bins-1
+    @timeit "loop 4" for i in 1:n_nonempty_bins-1
         octree.bin_start[bin_id+i] = octree.bin_end[bin_id+i-1] + 1
         octree.bin_end[bin_id+i] = octree.bin_start[bin_id+i] + octree.nonempty_counter[i+1] - 1
     end
 
-    if (octree.bin_bounds_compute == OctreeBinBoundsInherit)
+    # we had a bin that would've produced 2 particles
+    # now we replaced ith with n_nonempty_bins bins that each produce 1 or 2 particles
+    octree.total_post_merge_np -= 2
+    @timeit "ifbounds" if (octree.bin_bounds_compute == OctreeBinBoundsInherit)
         octree.v_min_parent = octree.bins[bin_id].v_min
         octree.v_max_parent = octree.bins[bin_id].v_max
 
@@ -351,6 +358,14 @@ function split_bin!(octree, bin_id, particles)
             octree.bins[bin_id + i - 1].np = octree.nonempty_counter[i]
             octree.bins[bin_id + i - 1].w = octree.ndens_counter[octree.nonempty_bins[i]]
             octree.bins[bin_id + i - 1].depth = current_depth + 1
+
+            octree.total_post_merge_np += get_bin_post_merge_np(octree, bin_id + i - 1)
+            # octree.bins[bin_id + i - 1].post_merge_np = get_bin_post_merge_np(octree, bin_id + i - 1)
+            if (octree.bins[bin_id + i - 1].np > 2) && (octree.bins[bin_id + i - 1].depth < octree.max_depth)
+                octree.bins[bin_id + i - 1].can_be_refined = true
+            else
+                octree.bins[bin_id + i - 1].can_be_refined = false
+            end
         end
     else
         # still need to fill out info on number of particles and total weight
@@ -359,16 +374,19 @@ function split_bin!(octree, bin_id, particles)
             octree.bins[bin_id + i - 1].np = octree.nonempty_counter[i]
             octree.bins[bin_id + i - 1].w = octree.ndens_counter[octree.nonempty_bins[i]]
             octree.bins[bin_id + i - 1].depth = current_depth + 1
+
+            # we had a bin that would've produced 2 particles
+            # now we replaced ith with n_nonempty_bins bins that each produce 1 or 2 particles
+            octree.total_post_merge_np += get_bin_post_merge_np(octree, bin_id + i - 1)
+            if (octree.bins[bin_id + i - 1].np > 2) && (octree.bins[bin_id + i - 1].depth < octree.max_depth)
+                octree.bins[bin_id + i - 1].can_be_refined = true
+            else
+                octree.bins[bin_id + i - 1].can_be_refined = false
+            end
         end
     end
 
-    # for (i, pi) in enumerate(octree.particle_indexes_sorted[be:-1:bs])
-    # for (i, pi) in enumerate(octree.particle_indexes_sorted[bs:be])
-    #     j = octree.particle_octants[i]
-    #     octree.particles_sort_output[octree.particle_in_bin_counter[j]] = pi
-    #     octree.particle_in_bin_counter[j] -= 1
-    # end
-    for i in bs:be
+    @timeit "loop 5" for i in bs:be
         pi = octree.particle_indexes_sorted[i]
         j = octree.particle_octants[i - bs + 1]
         octree.particles_sort_output[octree.particle_in_bin_counter[j]] = pi
@@ -377,7 +395,7 @@ function split_bin!(octree, bin_id, particles)
 
     # write sorted indices
     # octree.particle_indexes_sorted[bs:be] = octree.particles_sort_output[1:be-bs+1]
-    for i in bs:be
+    @timeit "loop 6" for i in bs:be
         octree.particle_indexes_sorted[i] = octree.particles_sort_output[i-bs+1]
     end
 end
@@ -515,6 +533,13 @@ function init_octree!(cell, species, octree, particles, pia)
     octree.bins[1].np = octree.n_particles
     octree.bins[1].w = 1e50  # just do a large estimate, we will be splitting this bin anyway
 
+    octree.total_post_merge_np = get_bin_post_merge_np(octree, 1)
+    if (octree.bins[1].np > 2) && (octree.max_depth > 0)
+        octree.bins[1].can_be_refined = true
+    else
+        octree.bins[1].can_be_refined = false
+    end
+
     if (octree.init_bin_bounds == OctreeInitBinC)
         octree.bins[1].v_min = SVector{3, Float64}(-299_792_458.0, -299_792_458.0, -299_792_458.0)  # speed of light
         octree.bins[1].v_max = SVector{3, Float64}(299_792_458.0, 299_792_458.0, 299_792_458.0)
@@ -532,35 +557,31 @@ function init_octree!(cell, species, octree, particles, pia)
 end
 
 function merge_octree_N2_based!(cell, species, octree, particles, particle_indexer_array, target_np)
-    clear_octree!(octree)
-    resize_octree_buffers!(octree, particle_indexer_array.indexer[cell,species].n_local)
-    init_octree!(cell, species, octree, particles[species], particle_indexer_array)
+    @timeit "clear" clear_octree!(octree)
+    @timeit "resize" resize_octree_buffers!(octree, particle_indexer_array.indexer[cell,species].n_local)
+    @timeit "init" init_octree!(cell, species, octree, particles[species], particle_indexer_array)
 
     while true
-        total_np = 0
         refine_id = -1
         max_w = -1
-        for bin_id in 1:octree.Nbins
-            total_np += get_bin_post_merge_np(octree, bin_id)
-
-            # find bin with largest number density, needs to have > 2 particles, and not too deep
-            if ((octree.bins[bin_id].w > max_w) && (octree.bins[bin_id].np > 2)
-                 && (octree.bins[bin_id].depth < octree.max_depth))
-                max_w = octree.bins[bin_id].w
-                refine_id = bin_id
-            end
+        @timeit "condition" for bin_id in 1:octree.Nbins
+            # find bin with largest number density, needs to be refine-able
+            if ((octree.bins[bin_id].w > max_w) && octree.bins[bin_id].can_be_refined)
+               max_w = octree.bins[bin_id].w
+               refine_id = bin_id
+           end
         end
 
         if refine_id == -1
             # found no bin to refine, i.e. ran out of particles
             break
-        elseif (total_np + 14 > target_np)
+        elseif (octree.total_post_merge_np + 14 > target_np)
             # refining a bin can produce up to 16 particles, so we don't do it if threshold exceeded
             # but if we have a bin it has potentially 2 particles already, so refinement increases count
             # only by 14
             break
         else
-            split_bin!(octree, refine_id, particles[species])
+            @timeit "split" split_bin!(octree, refine_id, particles[species])
         end
     end
 
@@ -572,7 +593,7 @@ function merge_octree_N2_based!(cell, species, octree, particles, particle_index
     end
     
     for bin_id in 1:octree.Nbins
-        compute_bin_props!(octree, bin_id, particles[species])
+        @timeit "binprops" compute_bin_props!(octree, bin_id, particles[species])
     end
-    compute_new_particles!(cell, species, octree, particles, particle_indexer_array)
+    @timeit "newparticles" compute_new_particles!(cell, species, octree, particles, particle_indexer_array)
 end
