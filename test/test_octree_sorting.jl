@@ -281,12 +281,22 @@
     @test octree2.particle_indexes_sorted[11:15] == expected1115
     
     # 1 particle per bin
-    for i in 1:15
+    # first 3 octants/suboctants remain in place
+    for i in 1:3
         @test octree2.bin_start[i] == i
+    end
+    # the old octant pointers skip the particles in suboctant 3 (1 particle in 3, 7 in next suboctants)
+    for i in 4:8
+        @test octree2.bin_start[i] == i + 7
+    end
+    # the new suboctants are tacked on to the end
+    # so the indices point backwards to where the particles in octant 3 were/are
+    for i in 9:15
+        @test octree2.bin_start[i] == i - 5
     end
 
     num_per_bin = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    w_per_bin = [1, 1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 1, 1, 1, 1]
+    w_per_bin = [1, 1, 0.5, 1, 1, 1, 1, 1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
     for i in 1:15
         @test octree2.bins[i].np == num_per_bin[i]
         @test octree2.bins[i].w == w_per_bin[i]
