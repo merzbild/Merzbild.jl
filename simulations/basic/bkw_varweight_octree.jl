@@ -37,10 +37,10 @@ function run(seed)
     nv = 40
     np_base = 40^3  # some initial guess on # of particle in simulation
 
-    threshold = 4500
-    Ntarget = 4000
+    threshold = 10000
+    Ntarget = 8000
 
-    oc = create_merging_octree(OctreeBinMeanSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
     T0::Float64 = 273.0
     sigma_ref = π * (interaction_data[1,1].vhs_d^2)
