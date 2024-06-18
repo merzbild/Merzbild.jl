@@ -68,6 +68,10 @@ Equal volume/equal radius?
 
 - [ ] Subsplit into two groups based on energy and merge. Find x s.t. Vol(particles in sphere but not in cube + particles in cube but not in sphere) is minimal. Plus we shift it by the velocity of the neutrals? Plus we can weight by Maxwellian distribution?
 
+- [ ] NNLS with ResizeableArrays
+
+- [ ] NNLS: a lot of effort spent on first large merge, so maybe run that separately and time the rest?
+
 # TODO: tests
 
 - [ ] energy / momentum conservation in scattering

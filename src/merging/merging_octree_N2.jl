@@ -1,5 +1,4 @@
 using StaticArrays
-using TimerOutputs
 
 @enum OctreeBinSplit OctreeBinMidSplit=1 OctreeBinMeanSplit=2 OctreeBinMedianSplit=3
 
@@ -274,11 +273,11 @@ function split_bin!(octree, bin_id, particles)
     # if we compute bin bounds based on particle velocities, we need to actually iterate through particles
     # and compute
     # if not, we can do it later directly for the sub-bins
-    @timeit "bounds1" if (octree.bin_bounds_compute == OctreeBinBoundsRecompute)
+    if (octree.bin_bounds_compute == OctreeBinBoundsRecompute)
         bin_bounds_recompute!(octree, bin_id, bs, be, particles)
     end
 
-    @timeit "ifsplit" if (octree.split == OctreeBinMidSplit)
+    if (octree.split == OctreeBinMidSplit)
         octree.vel_middle = 0.5 * (octree.bins[bin_id].v_min + octree.bins[bin_id].v_max)
     elseif (octree.split == OctreeBinMeanSplit)
         compute_v_mean!(octree, bs, be, particles) # octree.vel_middle = octree.bins[bin_id].v_mean
@@ -287,7 +286,7 @@ function split_bin!(octree, bin_id, particles)
         octree.vel_middle = SVector{3, Float64}(0.0, 0.0, 0.0)
     end
 
-    @timeit "loop 1" for i in bs:be
+    for i in bs:be
         pi = octree.particle_indexes_sorted[i]
         oct = compute_octant(particles[pi].v, octree.vel_middle)
         octree.particle_in_bin_counter[oct] += 1
@@ -303,7 +302,7 @@ function split_bin!(octree, bin_id, particles)
         octree.nonempty_bins[n_eb] = 1
     end
 
-    @timeit "loop 2" for i in 2:8
+    for i in 2:8
         if (octree.particle_in_bin_counter[i] > 0)
             n_nonempty_bins += 1
             n_eb += 1
@@ -319,7 +318,7 @@ function split_bin!(octree, bin_id, particles)
     
     # new bins will point to the sorted particles, but are not contiguous
     # first bin is in the old place and the new ones are tacked on
-    @timeit "loop 4" for i in 2:n_nonempty_bins
+    for i in 2:n_nonempty_bins
         bi = get_new_bin_id(i, bin_id, octree.Nbins)
         bim1 = get_new_bin_id(i-1, bin_id, octree.Nbins)
         octree.bin_start[bi] = octree.bin_end[bim1] + 1
@@ -329,7 +328,7 @@ function split_bin!(octree, bin_id, particles)
     # we had a bin that would've produced 2 particles
     # now we replaced ith with n_nonempty_bins bins that each produce 1 or 2 particles
     octree.total_post_merge_np -= 2
-    @timeit "ifbounds" if (octree.bin_bounds_compute == OctreeBinBoundsInherit)
+    if (octree.bin_bounds_compute == OctreeBinBoundsInherit)
         octree.v_min_parent = octree.bins[bin_id].v_min
         octree.v_max_parent = octree.bins[bin_id].v_max
 
@@ -371,7 +370,7 @@ function split_bin!(octree, bin_id, particles)
         end
     end
 
-    @timeit "loop 5" for i in bs:be
+    for i in bs:be
         pi = octree.particle_indexes_sorted[i]
         j = octree.particle_octants[i - bs + 1]
         octree.particles_sort_output[octree.particle_in_bin_counter[j]] = pi
@@ -380,7 +379,7 @@ function split_bin!(octree, bin_id, particles)
 
     # write sorted indices
     # octree.particle_indexes_sorted[bs:be] = octree.particles_sort_output[1:be-bs+1]
-    @timeit "loop 6" for i in bs:be
+    for i in bs:be
         octree.particle_indexes_sorted[i] = octree.particles_sort_output[i-bs+1]
     end
 
@@ -544,14 +543,14 @@ function init_octree!(cell, species, octree, particles, pia)
 end
 
 function merge_octree_N2_based!(cell, species, octree, particles, particle_indexer_array, target_np)
-    @timeit "clear" clear_octree!(octree)
-    @timeit "resize" resize_octree_buffers!(octree, particle_indexer_array.indexer[cell,species].n_local)
-    @timeit "init" init_octree!(cell, species, octree, particles[species], particle_indexer_array)
+    clear_octree!(octree)
+    resize_octree_buffers!(octree, particle_indexer_array.indexer[cell,species].n_local)
+    init_octree!(cell, species, octree, particles[species], particle_indexer_array)
 
     while true
         refine_id = -1
         max_w = -1.0
-        @timeit "condition" for bin_id in 1:octree.Nbins
+        for bin_id in 1:octree.Nbins
             # find bin with largest number density, needs to be refine-able
             if ((octree.bins[bin_id].w > max_w) && octree.bins[bin_id].can_be_refined)
                max_w = octree.bins[bin_id].w
@@ -568,7 +567,7 @@ function merge_octree_N2_based!(cell, species, octree, particles, particle_index
             # only by 14
             break
         else
-            @timeit "split" split_bin!(octree, refine_id, particles[species])
+            split_bin!(octree, refine_id, particles[species])
         end
     end
 
@@ -580,7 +579,7 @@ function merge_octree_N2_based!(cell, species, octree, particles, particle_index
     end
     
     for bin_id in 1:octree.Nbins
-        @timeit "binprops" compute_bin_props!(octree, bin_id, particles[species])
+        compute_bin_props!(octree, bin_id, particles[species])
     end
-    @timeit "newparticles" compute_new_particles!(cell, species, octree, particles, particle_indexer_array)
+    compute_new_particles!(cell, species, octree, particles, particle_indexer_array)
 end

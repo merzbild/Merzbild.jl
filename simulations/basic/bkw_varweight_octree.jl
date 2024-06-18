@@ -99,5 +99,7 @@ run(1234)
 
 # @time run(1234) # 0.250579 seconds (892.24 k allocations: 35.134 MiB, 6.29% gc time)
 
+# 30^3, 400 threshold, 90 particles, 0.164385 seconds (538.60 k allocations: 23.414 MiB, 5.85% gc time)
+
 # set_zero_subnormals(true)
 # @time run(1234) # 0.238377 seconds (892.24 k allocations: 35.134 MiB)
