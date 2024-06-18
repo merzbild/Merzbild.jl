@@ -9,6 +9,11 @@ particle sampling and indexing, collisions, merging, computation of physical pro
 
 Some usage examples can be found in the `simulations` directory.
 
+### Usage notes
+
+For now, bound checking is not turned off (via the `@inbounds` macro), so simulations may benefit from running with `--check-bounds=no`.
+Running with `-O3` might also speed up things.
+
 ## Testing
 
 The tests try to cover most of the functionality implemented in the code. They can be run by invoking `julia --project=. test/runtests.jl`.
