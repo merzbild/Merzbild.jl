@@ -15,3 +15,57 @@ vhs_d = 2.33e-10
 vhs_o = 0.66
 vhs_Tref = 273.0
 comment = "Created via (1/2) mixing rule"
+
+["Ar,e-"]
+vhs_d = 1e-10
+vhs_o = 1.0
+vhs_Tref = 273.0
+comment = "Dummy data"
+
+["He,e-"]
+vhs_d = 1e-10
+vhs_o = 1.0
+vhs_Tref = 273.0
+comment = "Dummy data"
+
+["e-,e-"]
+vhs_d = 1e-10
+vhs_o = 1.0
+vhs_Tref = 273.0
+comment = "Dummy data"
+
+["He,He+"]
+vhs_d = 1e-10
+vhs_o = 1.0
+vhs_Tref = 273.0
+comment = "Dummy data"
+
+["He+,He+"]
+vhs_d = 1e-10
+vhs_o = 1.0
+vhs_Tref = 273.0
+comment = "Dummy data"
+
+["He+,e-"]
+vhs_d = 1e-10
+vhs_o = 1.0
+vhs_Tref = 273.0
+comment = "Dummy data"
+
+["Ar,Ar+"]
+vhs_d = 1e-10
+vhs_o = 1.0
+vhs_Tref = 273.0
+comment = "Dummy data"
+
+["Ar+,Ar+"]
+vhs_d = 1e-10
+vhs_o = 1.0
+vhs_Tref = 273.0
+comment = "Dummy data"
+
+["Ar+,e-"]
+vhs_d = 1e-10
+vhs_o = 1.0
+vhs_Tref = 273.0
+comment = "Dummy data"

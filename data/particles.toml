@@ -1,5 +1,19 @@
 ["Ar"]
 mass = 66.3e-27
+charge = 0.0
+
+["Ar+"]
+mass = 66.3e-27
+charge = 1.0
 
 ["He"]
 mass = 6.65e-27
+charge = 0.0
+
+["He+"]
+mass = 6.65e-27
+charge = 1.0
+
+["e-"]
+mass = 9.109383632e-31
+charge = -1.0

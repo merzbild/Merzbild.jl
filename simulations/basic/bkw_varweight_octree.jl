@@ -24,7 +24,7 @@ using ..Merzbild
 using Random
 using InteractiveUtils
 
-function run(seed)
+function run(seed::Int64, threshold::Int64, Ntarget::Int64)
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)
 
@@ -37,10 +37,12 @@ function run(seed)
     nv = 40
     np_base = 40^3  # some initial guess on # of particle in simulation
 
-    threshold = 10000
-    Ntarget = 8000
+    # threshold = 10000
+    # Ntarget = 8000
 
-    oc = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    # oc = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    # oc = create_merging_octree(OctreeBinMeanSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = create_merging_octree(OctreeBinMedianSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
     T0::Float64 = 273.0
     sigma_ref = π * (interaction_data[1,1].vhs_d^2)
@@ -65,7 +67,7 @@ function run(seed)
     phys_props::PhysProps = create_props(1, 1, moments_list, Tref=T0)
     compute_props!(phys_props, pia, particles, species_list)
 
-    ds = create_netcdf_phys_props("test.nc",phys_props, species_list)
+    ds = create_netcdf_phys_props("../../Data/PIC_DSMC/NNLS_merging/BKW/octree_median/octree_$(threshold)_$(Ntarget)_$(seed).nc",phys_props, species_list)
     write_netcdf_phys_props(ds, phys_props, 0)
 
     collision_factors::CollisionFactors = create_collision_factors()
@@ -85,7 +87,7 @@ function run(seed)
             merge_octree_N2_based!(1, 1, oc, particles, pia, Ntarget)
             # println(oc.Nbins)
         end
-        if ts % 10 == 0
+        if ts % 100 == 0
             println(ts)
         end
         
@@ -95,7 +97,14 @@ function run(seed)
     close(ds)
 end
 # @code_warntype run(1234)
-run(1234)
+# run(1234)
+
+const thr_nn =  [[50, 30], [75, 50], [100, 70], [150, 100], [300, 200], [500, 300]]
+for (thr, nn) in thr_nn
+    for seed in 1:400
+        run(seed, thr, nn)
+    end
+end
 
 # @time run(1234) # 0.250579 seconds (892.24 k allocations: 35.134 MiB, 6.29% gc time)
 

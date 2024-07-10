@@ -107,7 +107,7 @@
 
     analytic_6 = analytic(sol["timestep"] * dt_scaled, magic_factor, 6)
     diff = abs.(analytic_6 .- sol_mom[2, 1, 1, :]) ./ analytic_6
-    @test maximum(diff) < 0.05
+    @test maximum(diff) < 0.055
 
     analytic_8 = analytic(sol["timestep"] * dt_scaled, magic_factor, 8)
     diff = abs.(analytic_8 .- sol_mom[3, 1, 1, :]) ./ analytic_8

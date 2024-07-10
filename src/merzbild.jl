@@ -1,12 +1,14 @@
 module Merzbild
 
 include("constants.jl")
+include("utils.jl")
 include("particles.jl")
 include("distributions_and_sampling.jl")
 include("physical_props.jl")
 include("collisions.jl")
 include("io.jl")
 include("merging/merging.jl")
+include("pic/pic.jl")
 
 const OCTREE_DEFAULT_BUFFER_SIZE::Int32 = 8192
 const DELTA_PARTICLES::Int32 = 256
@@ -28,5 +30,11 @@ export OctreeBinMidSplit, OctreeBinMeanSplit, OctreeBinMedianSplit
 export OctreeInitBinMinMaxVel, OctreeInitBinMinMaxVelSym, OctreeInitBinC
 export create_merging_octree, merge_octree_N2_based!
 export create_nnls_merging, compute_multi_index_moments, merge_nnls_based!
+export create_nnls_merging_rate_conserving, merge_nnls_based_rate_preserving!
+export load_electron_neutral_interactions, create_computed_crosssections, DataMissingException
+export ScatteringIsotropic, ScatteringOkhrimovskyy
+export ElectronEnergySplitEqual, ElectronEnergySplitZeroE
+export accelerate_constant_field_x!
+export estimate_sigma_g_w_max_ntc_n_e!, ntc_n_e!, ntc_n_e_es!
 
 end # module merzbild

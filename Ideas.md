@@ -55,6 +55,12 @@ Equal volume/equal radius?
 
 - [ ] mixing rule VHS creator
 
+- [ ] Load dummy data if not found in interactions.toml
+
+- [ ] Fix indexing (as for now it is assumed that neutral species always come first!) in computed_crosssections: overloading getindex? Or just store empty structs
+
+- [ ] Fix random pairs! (Because for now 0 columns don't get filled, if i==k need to choose again; also add check that n_rand_pairs is possible!)
+
 
 # TODO: features
 
@@ -68,9 +74,15 @@ Equal volume/equal radius?
 
 - [ ] Subsplit into two groups based on energy and merge. Find x s.t. Vol(particles in sphere but not in cube + particles in cube but not in sphere) is minimal. Plus we shift it by the velocity of the neutrals? Plus we can weight by Maxwellian distribution?
 
+- [ ] Skip variables in netCDF output
+
 - [ ] NNLS with ResizeableArrays
 
-- [ ] NNLS: a lot of effort spent on first large merge, so maybe run that separately and time the rest?
+- [ ] Store and write PhysProps in chunks
+
+- [ ] Change netCDF library
+
+- [x] NNLS: a lot of effort spent on first large merge, so maybe run that separately and time the rest?
 
 # TODO: tests
 

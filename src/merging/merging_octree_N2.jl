@@ -160,12 +160,6 @@ function compute_octant(particle_v, v_middle)
     return oct
 end
 
-function median_vel()
-    # https://rcoh.me/posts/linear-time-median-finding/
-    # https://en.wikipedia.org/wiki/Weighted_median
-    nothing
-end
-
 function bin_bounds_inherit!(octree, bin_id, v_min_parent, v_max_parent, v_middle, octant)
     # TODO: TEST
     # inherit bin bounds based on parent
@@ -251,6 +245,21 @@ function compute_v_mean!(octree, bs, be, particles)
     octree.vel_middle = octree.vel_middle / n_tot
 end
 
+function compute_v_median!(octree, bs, be, particles)
+    # https://rcoh.me/posts/linear-time-median-finding/
+    # https://en.wikipedia.org/wiki/Weighted_median
+    w_vec = [particles[octree.particle_indexes_sorted[i]].w for i in bs:be]
+    w_vec = w_vec ./ sum(w_vec)
+
+    vx_vec = [particles[octree.particle_indexes_sorted[i]].v[1] for i in bs:be]
+    vy_vec = [particles[octree.particle_indexes_sorted[i]].v[2] for i in bs:be]
+    vz_vec = [particles[octree.particle_indexes_sorted[i]].v[3] for i in bs:be]
+
+    octree.vel_middle = SVector{3, Float64}(weighted_percentile_interpolated(vx_vec, w_vec),
+                                            weighted_percentile_interpolated(vy_vec, w_vec),
+                                            weighted_percentile_interpolated(vz_vec, w_vec))                                  
+end
+
 function bin_bounds_recompute_and_v_mean!(octree, bin_id, bs, be, particles)
     # do everything in 1 pass over the particles
 end
@@ -282,8 +291,7 @@ function split_bin!(octree, bin_id, particles)
     elseif (octree.split == OctreeBinMeanSplit)
         compute_v_mean!(octree, bs, be, particles) # octree.vel_middle = octree.bins[bin_id].v_mean
     elseif (octree.split == OctreeBinMedianSplit)
-        # TODO
-        octree.vel_middle = SVector{3, Float64}(0.0, 0.0, 0.0)
+        compute_v_median!(octree, bs, be, particles)
     end
 
     for i in bs:be
