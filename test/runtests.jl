@@ -22,3 +22,5 @@ include("test_octree_sorting.jl")  # then we test sorting in octree merging
 include("test_octree_merging.jl")  # then we test computation of props and octree merging
 include("test_bkw_varweight_octree.jl")  # then we test variable-weight NTC collisions+octree merging in 0D (BKW relaxation)
 include("test_nnls_merging.jl")  # test NNLS-based merging
+include("test_electron_neutral_data.jl")  # test loading of XML LXCat-like data
+include("test_acceleration.jl")  # test acceleration of charge particles

@@ -25,7 +25,7 @@ using Random
 using InteractiveUtils
 using TimerOutputs
 
-function run(seed)
+function run(seed, n_up_to_total, n_full_up_to_total, threshold, ntarget_octree)
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)
 
@@ -41,20 +41,18 @@ function run(seed)
     n_moms = 6
 
     mim = []
+    n_moms = n_full_up_to_total
     for i in 1:n_moms
         append!(mim, compute_multi_index_moments(i))
     end
-    # append!(mim, [[4, 0, 0], [0, 4, 0], [0, 0, 4]])
-    append!(mim, [[7, 0, 0], [0, 7, 0], [0, 0, 7]])
-    append!(mim, [[8, 0, 0], [0, 8, 0], [0, 0, 8]])
-    # append!(mim, [[10, 0, 0], [0, 10, 0], [0, 0, 10]])
-    # append!(mim, )
-    # append!(mim, )
+
+    for i in n_full_up_to_total+1:n_up_to_total
+        append!(mim, [[i, 0, 0], [0, i, 0], [0, 0, i]])
+    end
     println(length(mim))
 
-    threshold = 200
-    ntarget = 300
-    ntarget_octree = length(mim) + 16
+    # threshold = 200
+    # ntarget_octree = length(mim) + 16
 
     # nbins * length(mim) ~ ntarget
     # Nmerging = 16  # ~8000 after merging
@@ -90,7 +88,8 @@ function run(seed)
     #     compute_props!(phys_props, pia, particles, species_list)
     # end
 
-    ds = create_netcdf_phys_props("test.nc",phys_props, species_list)
+    ds = create_netcdf_phys_props("../../Data/PIC_DSMC/NNLS_merging/BKW/NNLS/nnls_$(n_full_up_to_total)full_upto$(n_up_to_total)_$(threshold)_$(seed).nc", phys_props, species_list)
+    # ds = create_netcdf_phys_props("test.nc",phys_props, species_list)
     write_netcdf_phys_props(ds, phys_props, 0)
 
     collision_factors::CollisionFactors = create_collision_factors()
@@ -106,7 +105,7 @@ function run(seed)
     nnls_success_flag = 1
 
     for ts in 1:n_t
-        if ts % 10 == 0
+        if ts % 100 == 0
             println(ts)
         end
 
@@ -115,10 +114,10 @@ function run(seed)
 
         if phys_props.np[1,1] > threshold
             if firstm
-                @timeit "NNLSmerge: 1st time" nnls_success_flag = merge_nnls_based!(rng, mnnls, vref, particles, 1, 1, pia, 10)
+                @timeit "NNLSmerge: 1st time" nnls_success_flag = merge_nnls_based!(rng, mnnls, vref, particles, 1, 1, pia, 0)
                 firstm = false
             else
-                @timeit "NNLSmerge" nnls_success_flag = merge_nnls_based!(rng, mnnls, vref, particles, 1, 1, pia, 10)
+                @timeit "NNLSmerge" nnls_success_flag = merge_nnls_based!(rng, mnnls, vref, particles, 1, 1, pia, 0)
             end
 
             if nnls_success_flag == -1
@@ -133,9 +132,12 @@ function run(seed)
     close(ds)
     print_timer()
 end
-# @code_warntype run(1234)
-run(1234)
 
-run(1234)   # 30^3, 400 threshold, 6 moments, 0.965364 seconds (528.50 k allocations: 53.510 MiB, 1.01% gc time)
-# 0.968882 seconds (528.28 k allocations: 52.935 MiB, 0.82% gc time)
-# 0.940580 seconds (527.77 k allocations: 52.930 MiB, 0.61% gc time)
+
+const params = [[5, 3, 50, 30], [6, 4, 75, 50], [7, 5, 100, 70], [8, 6, 150, 100], [9, 7, 200, 140], [10, 8, 250, 170]]
+
+for paramset in params
+    for seed in 101:400
+        run(seed, paramset[1], paramset[2], paramset[3], paramset[4])
+    end
+end

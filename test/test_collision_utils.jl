@@ -30,7 +30,7 @@
     @test abs(interaction_data_2[1,1].μ2 - 0.5) < eps()
     @test abs(interaction_data_2[2,2].μ1 - 0.5) < eps()
     @test abs(interaction_data_2[2,2].μ2 - 0.5) < eps()
-    @test abs(interaction_data_2[1,2].μ1 - interaction_data_2[2,1].μ1) < eps()
-    @test abs(interaction_data_2[1,2].μ2 - interaction_data_2[2,1].μ2) < eps()
+    @test abs(interaction_data_2[1,2].μ1 - interaction_data_2[2,1].μ2) < eps()
+    @test abs(interaction_data_2[1,2].μ2 - interaction_data_2[2,1].μ1) < eps()
     @test abs(interaction_data_2[1,2].μ1 + interaction_data_2[1,2].μ2 - 1.0) < eps()
 end

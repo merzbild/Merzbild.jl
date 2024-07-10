@@ -45,3 +45,24 @@ function write_netcdf_phys_props(ds, phys_props, timestep)
     end
     # println(currtimesteps)
 end
+
+function write_netcdf_phys_props_nov(ds, phys_props, timestep)
+    currtimesteps = ds.dim["time"] + 1
+
+    ds["timestep"][currtimesteps] = timestep
+    for species in 1:phys_props.n_species
+        for cell in 1:phys_props.n_cells
+            ds["length_particle_array"][species, currtimesteps] = phys_props.lpa[species]
+            ds["np"][cell, species, currtimesteps] = phys_props.np[cell, species]
+            ds["ndens"][cell, species, currtimesteps] = phys_props.n[cell, species]
+            # ds["v"][:, cell, species, currtimesteps] = phys_props.v[:,cell, species]
+            # ds["T"][cell, species, currtimesteps] = phys_props.T[cell, species, 1]
+
+            if (phys_props.n_moments > 0)
+                ds["moments"][:, cell, species, currtimesteps] = phys_props.moments[:,cell, species]
+            end
+            # end
+        end
+    end
+    # println(currtimesteps)
+end

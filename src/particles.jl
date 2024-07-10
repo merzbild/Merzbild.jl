@@ -28,6 +28,8 @@ end
 struct Species
     name::String
     mass::Float64
+    charge::Float64  # in terms of elemenary charge
+    charge_div_mass::Float64  # q/m, C/kg
 end
 
 function map_cont_index(particle_indexer, i)
@@ -79,7 +81,8 @@ function load_species_list(species_filename, species_names)
     species_list = Vector{Species}()
 
     for species_name in species_names
-        push!(species_list, Species(species_name, species_data[species_name]["mass"]))
+        push!(species_list, Species(species_name, species_data[species_name]["mass"], species_data[species_name]["charge"],
+                                    q_e * species_data[species_name]["charge"] / species_data[species_name]["mass"]))
     end
 
     return species_list

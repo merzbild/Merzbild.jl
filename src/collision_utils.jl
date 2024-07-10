@@ -5,8 +5,13 @@ using StaticArrays
 mutable struct CollisionData
     v_com::SVector{3,Float64}
     g::Float64
+    E_coll::Float64  # in case we also need to store the collision energy
+    E_coll_eV::Float64  # in case we also need to store the collision energy in eV
+    E_coll_electron_eV::Float64  # collision energy of impacting electron in eV
     g_vec::SVector{3,Float64}
     g_vec_new::SVector{3,Float64}
+    g_new_1::Float64
+    g_new_2::Float64  # to store post-collision energies of multiple particles (i.e. during chemical reactions)
 end
 
 struct Interaction
@@ -51,12 +56,15 @@ function load_interaction_data(interactions_filename, species_list)
                     s2s1 = species_name2 * "," * species_name1
                     interaction_s1s2 = interactions_data[s2s1]
                 end
-                # println(i, ", ", k)
+                # println(i, ", ", k, ", ", μ1, ", ", μ2, ", ", species_name1, ", ", species_name2)
                 interactions_list[i,k] = Interaction(m_r, μ1, μ2, # interaction_s1s2["vhs_Tref"],
                 interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"],
                 compute_vhs_factor(interaction_s1s2["vhs_Tref"], interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"],
                 m_r))
-                interactions_list[k,i] = interactions_list[i,k]
+                interactions_list[k,i] = Interaction(m_r, μ2, μ1, # interaction_s1s2["vhs_Tref"],
+                interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"],
+                compute_vhs_factor(interaction_s1s2["vhs_Tref"], interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"],
+                m_r))
             end
             # push!(species_list, Species(species_name, species_data[species_name]["mass"]))
         end
@@ -66,9 +74,9 @@ function load_interaction_data(interactions_filename, species_list)
 end
 
 function create_collision_data()
-    return CollisionData(SVector{3,Float64}(0.0, 0.0, 0.0), 0.0,
+    return CollisionData(SVector{3,Float64}(0.0, 0.0, 0.0), 0.0, 0.0, 0.0, 0.0,
                          SVector{3,Float64}(0.0, 0.0, 0.0),
-                         SVector{3,Float64}(0.0, 0.0, 0.0))
+                         SVector{3,Float64}(0.0, 0.0, 0.0), 0.0, 0.0)
 end
 
 function compute_com!(collision_data::CollisionData, interaction::Interaction, p1, p2)
@@ -100,5 +108,17 @@ function estimate_sigma_g_w_max!(collision_factors, interactions, species_list, 
             g_thermal = 0.5 * (g_thermal1 + g_thermal2)
             collision_factors[i,k].sigma_g_w_max = mult_factor * sigma_vhs(interactions[i,k], g_thermal) * g_thermal * Fnum
         end
+    end
+end
+
+function compute_g_new_ionization(coll_data, interaction, E_i, energy_splitting)
+    E_new_coll = coll_data.E_coll_electron_eV - E_i
+
+    if (energy_splitting == ElectronEnergySplitEqual)
+        coll_data.g_new_1 = sqrt(E_new_coll / e_mass_div_electron_volt)
+        coll_data.g_new_2 = coll_data.g_new_1
+    else
+        coll_data.g_new_1 = sqrt(2 * E_new_coll / e_mass_div_electron_volt)
+        coll_data.g_new_2 = 0.0
     end
 end
