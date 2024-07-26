@@ -24,13 +24,15 @@ to equilibrium.
 # assuming the simulation file is directly in the simulations directory
 include("../src/merzbild.jl")
 using ..Merzbild
+using Random
 
 function run(seed)
     Random.seed!(seed)
     rng = Xoshiro(seed)
 
     # load species and interaction data
-    species_list = load_species_list("path/to/data/particles.toml", ["Ar", "He"])
+    # path is correct if run from root directory of the Merzbild repo
+    species_list = load_species_list("data/particles.toml", ["Ar", "He"])
     interaction_data = load_interaction_data("data/vhs.toml", species_list)
     n_species = length(species_list)
 
@@ -82,9 +84,9 @@ function run(seed)
             # collide particles
             for s1 in s2:n_species
                 if (s1 == s2)
-                    ntc!(rng, collision_factors[s1,s1], collision_data, interaction_data, particles[s1], pia, 1, s1, Δt, V)
+                    ntc!(rng, collision_factors[s1,s1,1], collision_data, interaction_data, particles[s1], pia, 1, s1, Δt, V)
                 else
-                    ntc!(rng, collision_factors[s1,s2], collision_data, interaction_data, particles[s1], particles[s2],
+                    ntc!(rng, collision_factors[s1,s2,1], collision_data, interaction_data, particles[s1], particles[s2],
                          pia, 1, s1, s2, Δt, V)
                 end
             end
@@ -95,8 +97,13 @@ function run(seed)
         write_netcdf_phys_props(ds, phys_props, ts)
     end
 
+    # print properties at last timestep
+    println(phys_props.n)
+    println(phys_props.v)
+    println(phys_props.T)
+
     # close output file
-    close(ds)
+    close_netcdf(ds)
 end
 
 run(1234)
