@@ -446,7 +446,7 @@ function get_bin_post_merge_np(octree, bin_id)
     return octree.bins[bin_id].np >= 2 ? 2 : octree.bins[bin_id].np
 end
 
-function compute_new_particles!(cell, species, octree::OctreeN2, particles, particle_indexer_array)
+function compute_new_particles!(octree::OctreeN2, particles, pia, cell, species)
     # given computed Octree, create new particles instead of the old ones
     
     for bin_id in 1:octree.Nbins
@@ -467,51 +467,51 @@ function compute_new_particles!(cell, species, octree::OctreeN2, particles, part
         elseif (octree.bins[bin_id].np == 2)
             # get the particle indices we saved and just write data based on them
             i = octree.full_bins[bin_id].particle_index1
-            octree.full_bins[bin_id].w1 = particles[species][i].w
-            octree.full_bins[bin_id].v1 = particles[species][i].v
-            octree.full_bins[bin_id].x1 = particles[species][i].x
+            octree.full_bins[bin_id].w1 = particles[i].w
+            octree.full_bins[bin_id].v1 = particles[i].v
+            octree.full_bins[bin_id].x1 = particles[i].x
 
             i = octree.full_bins[bin_id].particle_index2
-            octree.full_bins[bin_id].w2 = particles[species][i].w
-            octree.full_bins[bin_id].v2 = particles[species][i].v
-            octree.full_bins[bin_id].x2 = particles[species][i].x
+            octree.full_bins[bin_id].w2 = particles[i].w
+            octree.full_bins[bin_id].v2 = particles[i].v
+            octree.full_bins[bin_id].x2 = particles[i].x
         elseif (octree.bins[bin_id].np == 1)
             # get the particle indices we saved and just write data based on them
             i = octree.full_bins[bin_id].particle_index1
-            octree.full_bins[bin_id].w1 = particles[species][i].w
-            octree.full_bins[bin_id].v1 = particles[species][i].v
-            octree.full_bins[bin_id].x1 = particles[species][i].x
+            octree.full_bins[bin_id].w1 = particles[i].w
+            octree.full_bins[bin_id].v1 = particles[i].v
+            octree.full_bins[bin_id].x1 = particles[i].x
         end
     end
 
     curr_particle_index = 0
     for bin_id in 1:octree.Nbins
         if (octree.bins[bin_id].np >= 2)
-            i = map_cont_index(particle_indexer_array.indexer[cell,species], curr_particle_index)
+            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
             curr_particle_index += 1
-            particles[species][i].w = octree.full_bins[bin_id].w1
-            particles[species][i].v = octree.full_bins[bin_id].v1
-            particles[species][i].x = octree.full_bins[bin_id].x1
+            particles[i].w = octree.full_bins[bin_id].w1
+            particles[i].v = octree.full_bins[bin_id].v1
+            particles[i].x = octree.full_bins[bin_id].x1
 
-            i = map_cont_index(particle_indexer_array.indexer[cell,species], curr_particle_index)
+            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
             curr_particle_index += 1
-            particles[species][i].w = octree.full_bins[bin_id].w2
-            particles[species][i].v = octree.full_bins[bin_id].v2
-            particles[species][i].x = octree.full_bins[bin_id].x2
+            particles[i].w = octree.full_bins[bin_id].w2
+            particles[i].v = octree.full_bins[bin_id].v2
+            particles[i].x = octree.full_bins[bin_id].x2
         elseif (octree.bins[bin_id].np == 1)
-            i = map_cont_index(particle_indexer_array.indexer[cell,species], curr_particle_index)
+            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
             curr_particle_index += 1
-            particles[species][i].w = octree.full_bins[bin_id].w1
-            particles[species][i].v = octree.full_bins[bin_id].v1
-            particles[species][i].x = octree.full_bins[bin_id].x1
+            particles[i].w = octree.full_bins[bin_id].w1
+            particles[i].v = octree.full_bins[bin_id].v1
+            particles[i].x = octree.full_bins[bin_id].x1
         end
     end
 
-    update_particle_indexer_new_lower_count(species, cell, particle_indexer_array, curr_particle_index)
+    update_particle_indexer_new_lower_count(pia, cell, species, curr_particle_index)
 end
 
 # initialize first bin with all the particles - set number of bins to 1, copy over particle indices
-function init_octree!(cell, species, octree, particles, pia)
+function init_octree!(octree, particles, pia, cell, species)
     octree.Nbins = 1
     octree.particle_indexes_sorted[1:pia.indexer[cell,species].n_group1] = pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
 
@@ -550,10 +550,10 @@ function init_octree!(cell, species, octree, particles, pia)
     end
 end
 
-function merge_octree_N2_based!(cell, species, octree, particles, particle_indexer_array, target_np)
+function merge_octree_N2_based!(octree, particles, pia, cell, species, target_np)
     clear_octree!(octree)
-    resize_octree_buffers!(octree, particle_indexer_array.indexer[cell,species].n_local)
-    init_octree!(cell, species, octree, particles[species], particle_indexer_array)
+    resize_octree_buffers!(octree, pia.indexer[cell,species].n_local)
+    init_octree!(octree, particles, pia, cell, species)
 
     while true
         refine_id = -1
@@ -575,19 +575,19 @@ function merge_octree_N2_based!(cell, species, octree, particles, particle_index
             # only by 14
             break
         else
-            split_bin!(octree, refine_id, particles[species])
+            split_bin!(octree, refine_id, particles)
         end
     end
 
     if octree.Nbins == 1
         octree.bins[1].w = 0.0
         for pi in octree.particle_indexes_sorted[1:octree.n_particles]
-            octree.bins[1].w += particles[species][pi].w
+            octree.bins[1].w += particles[pi].w
         end
     end
     
     for bin_id in 1:octree.Nbins
-        compute_bin_props!(octree, bin_id, particles[species])
+        compute_bin_props!(octree, bin_id, particles)
     end
-    compute_new_particles!(cell, species, octree, particles, particle_indexer_array)
+    compute_new_particles!(octree, particles, pia, cell, species)
 end

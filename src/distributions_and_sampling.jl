@@ -55,11 +55,11 @@ function create_vdf(nx, ny, nz)
     return VDF(nx, ny, nz, zeros(nx, ny, nz))
 end
 
-function maxwellian(T, m, vx, vy, vz)
+function maxwellian(vx, vy, vz, m, T)
     return (m / (2.0 * π * k_B * T))^(1.5) * exp(-m * (vx^2 + vy^2 + vz^2) / (2.0 * k_B * T))
 end
 
-function bkw(T, scaled_time, m, vx, vy, vz)
+function bkw(vx, vy, vz, m, T, scaled_time)
     xk = 1.0 - 0.4 * exp(-scaled_time / 6.0)
 
     # bkw = norm * ( 5.d0 * xk - 3.d0 + 2.d0 * ( 1.d0 - xk ) * Csq * mass / ( xk * temp ) ) * &
@@ -70,7 +70,7 @@ function bkw(T, scaled_time, m, vx, vy, vz)
     return (5 * xk - 3 + 2 * (1.0 - xk) * Csq * m / (2 * k_B * xk * T)) * exp(-Csq * m / (2 * k_B * xk * T))
 end
 
-function sample_bkw!(rng, particles, nparticles, T, m, v0)
+function sample_bkw!(rng, particles, nparticles, m, T, v0)
     # BKW at t=0
     vscale = sqrt(2 * k_B * T / m) * sqrt(0.3)  # 0.3 comes from some scaling of the Chi distribution
 
@@ -107,12 +107,12 @@ function evaluate_distribution_on_grid!(vdf, distribution_function, grid, w_tota
     end
 end
 
-function sample_on_grid!(rng, vdf_func, particles, nv, T, m, n_total,
+function sample_on_grid!(rng, vdf_func, particles, nv, m, T, n_total,
                          xlo, xhi, ylo, yhi, zlo, zhi; v_mult=3.5, cutoff_mult=3.5, noise=0.0,
                          v_offset=[0.0, 0.0, 0.0])
 
     vdf = create_vdf(nv, nv, nv)
-    v_thermal = compute_thermal_velocity(T, m)
+    v_thermal = compute_thermal_velocity(m, T)
     v_grid = create_noiseless_dvgrid(nv, nv, nv, v_thermal * v_mult, v_thermal * v_mult, v_thermal * v_mult)
 
     # maxwell_df = (vx,vy,vz) -> vdf_func(T, m, vx, vy, vz)
@@ -143,15 +143,15 @@ function sample_on_grid!(rng, vdf_func, particles, nv, T, m, n_total,
     return n_sampled
 end
 
-function sample_maxwellian_on_grid!(rng, particles, nv, T, m, n_total,
+function sample_maxwellian_on_grid!(rng, particles, nv, m, T, n_total,
                                     xlo, xhi, ylo, yhi, zlo, zhi; v_mult=3.5, cutoff_mult=3.5, noise=0.0,
                                     v_offset=[0.0, 0.0, 0.0])
 
     vdf = create_vdf(nv, nv, nv)
-    v_thermal = compute_thermal_velocity(T, m)
+    v_thermal = compute_thermal_velocity(m, T)
     v_grid = create_noiseless_dvgrid(nv, nv, nv, v_thermal * v_mult, v_thermal * v_mult, v_thermal * v_mult)
 
-    maxwell_df = (vx,vy,vz) -> maxwellian(T, m, vx, vy, vz)
+    maxwell_df = (vx,vy,vz) -> maxwellian(vx, vy, vz, m, T)
 
     evaluate_distribution_on_grid!(vdf, maxwell_df, v_grid, n_total, v_thermal * cutoff_mult; normalize=true)
 
@@ -180,11 +180,11 @@ function sample_maxwellian_on_grid!(rng, particles, nv, T, m, n_total,
 end
 
 # compute thermal velocity: sqrt(2kT/m)
-function compute_thermal_velocity(T, m)
+function compute_thermal_velocity(m, T)
     return sqrt(2 * k_B * T / m)
 end
 
-function sample_maxwellian_single!(rng, v, T, m, v0)
+function sample_maxwellian_single!(rng, v, m, T, v0)
     vscale = sqrt(2 * k_B * T / m)
     vn = vscale * sqrt(-log(rand(rng, Float64)))
     vr = vscale * sqrt(-log(rand(rng, Float64)))
@@ -196,8 +196,8 @@ function sample_maxwellian_single!(rng, v, T, m, v0)
     v[3] = vr * sin(theta2) + v0[3]
 end
 
-function sample_maxwellian!(rng, particles, nparticles, T, m, v0)
-    vscale = sqrt(2 * k_B * T / m)
+function sample_maxwellian!(rng, particles, nparticles, m, T, v0)
+    vscale = compute_thermal_velocity(m, T)
 
     for i in 1:nparticles
         vn = sqrt(-log(rand(rng, Float64)))
@@ -209,7 +209,7 @@ function sample_maxwellian!(rng, particles, nparticles, T, m, v0)
     end
 end
 
-function sample_particles_equal_weight!(rng, particles, nparticles, T, m, Fnum, xlo, xhi, ylo, yhi, zlo, zhi;
+function sample_particles_equal_weight!(rng, particles, nparticles, m, T, Fnum, xlo, xhi, ylo, yhi, zlo, zhi;
                                         distribution=:Maxwellian, vx0=0.0, vy0=0.0, vz0=0.0)
     # other options: Dirac Delta (T = 0: single point)
     # other options: Dirac Delta (T = N: two points)
@@ -221,8 +221,8 @@ function sample_particles_equal_weight!(rng, particles, nparticles, T, m, Fnum, 
 
     v0 = SVector{3}(vx0, vy0, vz0)
     if distribution == :Maxwellian
-        sample_maxwellian!(rng, particles, nparticles, T, m, v0)
+        sample_maxwellian!(rng, particles, nparticles, m, T, v0)
     elseif distribution == :BKW
-        sample_bkw!(rng, particles, nparticles, T, m, v0)
+        sample_bkw!(rng, particles, nparticles, m, T, v0)
     end
 end

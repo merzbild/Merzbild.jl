@@ -32,8 +32,11 @@
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)
 
-    species_list::Vector{Species} = load_species_list("data/particles.toml", "Ar")
-    interaction_data::Array{Interaction, 2} = load_interaction_data("data/pseudo_maxwell.toml", species_list)
+    particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
+    species_list::Vector{Species} = load_species_list(particles_data_path, "Ar")
+
+    interaction_data_path = joinpath(@__DIR__, "..", "data", "pseudo_maxwell.toml")
+    interaction_data::Array{Interaction, 2} = load_interaction_data(interaction_data_path, species_list)
 
     dt_scaled = 0.025
     n_t = 500
@@ -61,9 +64,9 @@
 
     particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, np_base)]
 
-    vdf0 = (vx, vy, vz) -> bkw(T0, 0.0, species_list[1].mass, vx, vy, vz)
+    vdf0 = (vx, vy, vz) -> bkw(vx, vy, vz, species_list[1].mass, T0, 0.0)
 
-    n_sampled = sample_on_grid!(rng, vdf0, particles[1], nv, T0, species_list[1].mass, n_dens,
+    n_sampled = sample_on_grid!(rng, vdf0, particles[1], nv, species_list[1].mass, T0, n_dens,
                                 0.0, 1.0, 0.0, 1.0, 0.0, 1.0;
                                 v_mult=3.5, cutoff_mult=3.5, noise=0.0, v_offset=[0.0, 0.0, 0.0])
     # println(n_sampled)
@@ -71,9 +74,10 @@
     pia = create_particle_indexer_array(n_sampled)
 
     phys_props::PhysProps = create_props(1, 1, moments_list, Tref=T0)
-    compute_props!(phys_props, pia, particles, species_list)
+    compute_props!(particles, pia, species_list, phys_props)
 
-    ds = create_netcdf_phys_props("test/data/tmp_bkw_octree.nc", phys_props, species_list)
+    sol_path = joinpath(@__DIR__, "data", "tmp_bkw_octree.nc")
+    ds = create_netcdf_phys_props(sol_path, species_list, phys_props)
     write_netcdf_phys_props(ds, phys_props, 0)
 
     collision_factors::CollisionFactors = create_collision_factors()
@@ -86,25 +90,25 @@
     V::Float64 = 1.0
 
     for ts in 1:n_t
-        ntc!(1, 1, rng, collision_factors, pia, collision_data, interaction_data[1,1], particles[1],
-            Δt, V)
+        ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
 
         if phys_props.np[1,1] > threshold
-            merge_octree_N2_based!(1, 1, oc, particles, pia, Ntarget)
+            merge_octree_N2_based!(oc, particles[1], pia, 1, 1, Ntarget)
             # println(oc.Nbins)
         end
         
-        compute_props!(phys_props, pia, particles, species_list)
+        compute_props!(particles, pia, species_list, phys_props)
         write_netcdf_phys_props(ds, phys_props, ts)
     end
-    close(ds)
+    close_netcdf(ds)
 
     @test abs(phys_props.T[1,1] - T0) < 5e-4
     @test abs(phys_props.n[1,1] / n_dens - 1.0) < 1e-11
     @test phys_props.np[1,1] < threshold
 
-    ref_sol = NCDataset("test/data/bkw_vw_octree_seed1234.nc", "r")
-    sol = NCDataset("test/data/tmp_bkw_octree.nc", "r")
+    ref_sol_path = joinpath(@__DIR__, "data", "bkw_vw_octree_seed1234.nc")
+    ref_sol = NCDataset(ref_sol_path, "r")
+    sol = NCDataset(sol_path, "r")
 
     @test length(sol["timestep"]) == n_t + 1
 
@@ -131,5 +135,5 @@
     @test maximum(diff) < 0.13
 
     close(sol)
-    rm("test/data/tmp_bkw_octree.nc")
+    rm(sol_path)
 end

@@ -5,7 +5,7 @@ include("utils.jl")
 include("particles.jl")
 include("distributions_and_sampling.jl")
 include("physical_props.jl")
-include("collisions.jl")
+include("collisions/collisions.jl")
 include("io.jl")
 include("merging/merging.jl")
 include("pic/pic.jl")
@@ -18,9 +18,10 @@ export load_species_list, Particle, sample_particles_equal_weight!, create_parti
 export Species, Interaction
 export create_props, compute_props!, compute_props_sorted_without_moments!
 export ParticleIndexer, PhysProps, CollisionFactors, CollisionData
-export create_netcdf_phys_props
+export create_netcdf_phys_props, create_IO_skip_list
 export write_netcdf_phys_props
-export load_interaction_data
+export close_netcdf
+export load_interaction_data, load_interaction_data_with_dummy
 export create_collision_factors, create_collision_data
 export estimate_sigma_g_w_max, estimate_sigma_g_w_max!
 export ntc!

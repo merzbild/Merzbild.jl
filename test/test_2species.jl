@@ -5,8 +5,11 @@
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)
 
-    species_list::Vector{Species} = load_species_list("data/particles.toml", ["Ar", "He"])
-    interaction_data::Array{Interaction, 2} = load_interaction_data("data/vhs.toml", species_list)
+    particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
+    species_list::Vector{Species} = load_species_list(particles_data_path, ["Ar", "He"])
+
+    interaction_data_path = joinpath(@__DIR__, "..", "data", "vhs.toml")
+    interaction_data::Array{Interaction, 2} = load_interaction_data(interaction_data_path, species_list)
     n_species = length(species_list)
 
     n_t = 800
@@ -24,18 +27,19 @@
     T_eq = (n_Ar * T0_Ar + n_He * T0_He) / (n_Ar + n_He)
 
     particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, n_particles_Ar), Vector{Particle}(undef, n_particles_He)]
-    sample_particles_equal_weight!(rng, particles[1], n_particles_Ar, T0_Ar, species_list[1].mass, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
-    sample_particles_equal_weight!(rng, particles[2], n_particles_He, T0_He, species_list[2].mass, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+    sample_particles_equal_weight!(rng, particles[1], n_particles_Ar, species_list[1].mass, T0_Ar, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+    sample_particles_equal_weight!(rng, particles[2], n_particles_He, species_list[2].mass, T0_He, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
 
-    particle_indexer = create_particle_indexer_array([n_particles_Ar, n_particles_He])
+    pia = create_particle_indexer_array([n_particles_Ar, n_particles_He])
 
     phys_props::PhysProps = create_props(1, 2, [], Tref=T0_Ar)
-    compute_props!(phys_props, particle_indexer, particles, species_list)
+    compute_props!(particles, pia, species_list, phys_props)
     
-    ds = create_netcdf_phys_props("test/data/tmp_2species_elastic.nc", phys_props, species_list)
+    sol_path = joinpath(@__DIR__, "data", "tmp_2species_elastic.nc")
+    ds = create_netcdf_phys_props(sol_path, species_list, phys_props)
     write_netcdf_phys_props(ds, phys_props, 0)
 
-    collision_factors::Array{CollisionFactors, 2} = create_collision_factors(n_species)
+    collision_factors::Array{CollisionFactors, 3} = create_collision_factors(n_species)
     collision_data::CollisionData = create_collision_data()
 
     estimate_sigma_g_w_max!(collision_factors, interaction_data, species_list, T0_list, Fnum)
@@ -47,26 +51,24 @@
         for s2 in 1:n_species
             for s1 in s2:n_species
                 if (s1 == s2)
-                    ntc!(s1, 1, rng, collision_factors[s1,s1], particle_indexer, collision_data, interaction_data[s1,s1], particles[s1],
-                    Δt, V)
+                    ntc!(rng, collision_factors[s1,s1,1], collision_data, interaction_data, particles[s1], pia, 1, s1, Δt, V)
                 else
-                    ntc!(s1, s2, 1, rng, collision_factors[s1,s2], particle_indexer,
-                    collision_data, interaction_data[s1,s2], particles[s1], particles[s2],
-                    Δt, V)
+                    ntc!(rng, collision_factors[s1,s2,1], collision_data, interaction_data, particles[s1], particles[s2],
+                         pia, 1, s1, s2, Δt, V)
                 end
             end
         end
 
         # compute_props!(phys_props, particle_indexer, particles, species_list)
-        compute_props_sorted_without_moments!(phys_props, particle_indexer, particles, species_list)
+        compute_props_sorted_without_moments!(particles, pia, species_list, phys_props)
         write_netcdf_phys_props(ds, phys_props, ts)
     end
 
-    close(ds)
+    close_netcdf(ds)
 
-
-    ref_sol = NCDataset("test/data/2species_seed1234.nc", "r")
-    sol = NCDataset("test/data/tmp_2species_elastic.nc", "r")
+    ref_sol_path = joinpath(@__DIR__, "data", "2species_seed1234.nc")
+    ref_sol = NCDataset(ref_sol_path, "r")
+    sol = NCDataset(sol_path, "r")
 
     ref_T = ref_sol["T"]
     sol_T = sol["T"]
@@ -93,5 +95,5 @@
     close(sol)
     close(ref_sol)
 
-    rm("test/data/tmp_2species_elastic.nc")
+    rm(sol_path)
 end

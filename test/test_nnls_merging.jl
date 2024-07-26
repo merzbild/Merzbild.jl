@@ -32,7 +32,8 @@
         return vp
     end
 
-    species_list::Vector{Species} = load_species_list("data/particles.toml", "Ar")
+    particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
+    species_list::Vector{Species} = load_species_list(particles_data_path, "Ar")
 
     seed = 1234
     Random.seed!(seed)
@@ -50,7 +51,7 @@
     particles::Vector{Vector{Particle}} = [create_particles()]
     pia = create_particle_indexer_array(length(particles[1]))
 
-    compute_props!(phys_props, pia, particles, species_list)
+    compute_props!(particles, pia, species_list, phys_props)
 
     mim = []
     n_moms = 4
@@ -60,7 +61,7 @@
 
     mnnls = create_nnls_merging(mim, 30)
     vref = sqrt(2 * k_B * 300.0 / species_list[1].mass)
-    result = merge_nnls_based!(rng, mnnls, vref, particles, 1, 1, pia, 0)
+    result = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1, vref)
     
     n0 = phys_props.n[1, 1]
     np0 = phys_props.np[1, 1]
@@ -72,7 +73,7 @@
     moms3 = zeros(length(mixed_order_3))
 
     for (i, mim) in enumerate(mixed_order_3)
-        moms3[i] = Merzbild.compute_mixed_moment(pia, particles, 1, 1, mim)
+        moms3[i] = Merzbild.compute_mixed_moment(particles, pia, 1, 1, mim)
     end
 
     # test some internal computes used in the merging
@@ -86,7 +87,7 @@
     @test abs(mnnls.minvz + v0[3] - (-100 + 0.25)) < eps()
     @test abs(mnnls.maxvz + v0[3] - (-100 + 0.25 * 2500)) < eps()
 
-    compute_props!(phys_props, pia, particles, species_list)
+    compute_props!(particles, pia, species_list, phys_props)
     # test that merging conserves mass / momentum / energy
     @test phys_props.np[1, 1] < np0
     @test abs(n0 - phys_props.n[1, 1]) < 1.5e-14
@@ -100,7 +101,7 @@
     moms3_post = zeros(length(mixed_order_3))
     
     for (i, mim) in enumerate(mixed_order_3)
-        moms3_post[i] = Merzbild.compute_mixed_moment(pia, particles, 1, 1, mim)
+        moms3_post[i] = Merzbild.compute_mixed_moment(particles, pia, 1, 1, mim)
     end
 
     @test sum(abs.(moms3_post - moms3))/length(moms3_post) < 1e-14
@@ -117,7 +118,7 @@
     pia2 = create_particle_indexer_array(length(particles2[1]))
     vref = 1.0
 
-    result = merge_nnls_based!(rng, mnnls2, vref, particles2, 1, 1, pia2, 0)
+    result = merge_nnls_based!(rng, mnnls2, particles2[1], pia2, 1, 1, vref)
     @test abs(mnnls2.rhs_vector[1] - 1.0) < eps()
 
     # mean velocity is 0.0

@@ -1,6 +1,7 @@
 @testset "acceleration" begin
 
-    species_list::Vector{Species} = load_species_list("data/particles.toml", ["He", "He+", "e-"])
+    particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
+    species_list::Vector{Species} = load_species_list(particles_data_path, ["He", "He+", "e-"])
 
     seed = 1234
     Random.seed!(seed)
@@ -23,17 +24,17 @@
                                            Vector{Particle}(undef, n_particles)]
 
     for (n_dens, v0, T0) in zip(n_dens_arr, v0_arr, T0_arr)
-        n_sampled[index] = sample_maxwellian_on_grid!(rng, particles[index], nv, T0, species_list[index].mass, n_dens,
+        n_sampled[index] = sample_maxwellian_on_grid!(rng, particles[index], nv, species_list[index].mass, T0, n_dens,
                                                       0.0, 1.0, 0.0, 1.0, 0.0, 1.0; v_mult=3.5, cutoff_mult=8.0, noise=0.0, v_offset=v0)
 
         index += 1
     end
 
-    particle_indexer = create_particle_indexer_array(n_sampled)
+    pia = create_particle_indexer_array(n_sampled)
 
     phys_props::PhysProps = create_props(1, 3, [4, 6, 8], Tref=273.0)
 
-    compute_props!(phys_props, particle_indexer, particles, species_list)
+    compute_props!(particles, pia, species_list, phys_props)
 
     n0_computed = phys_props.n[1,:]
     T0_computed = phys_props.T[1,:]
@@ -49,13 +50,13 @@
     Δt = 1e-3
 
     for species in 1:3
-        accelerate_constant_field_x!(particles[species], particle_indexer, species_list, species, 1, E, Δt)
+        accelerate_constant_field_x!(particles[species], pia, 1, species, species_list, E, Δt)
     end
 
     # acceleration should not affect temperature/density/moments and y/z velocities
     # we will have some changes in T, M4/M6/M8 due to acceleration changing the x velocity
     # and subsequent change in round-off errors
-    compute_props!(phys_props, particle_indexer, particles, species_list)
+    compute_props!(particles, pia, species_list, phys_props)
     
     @test maximum(abs.(n0_computed - phys_props.n[1,:])) < eps()
     @test maximum(abs.(T0_computed - phys_props.T[1,:]) ./ T0_computed) < 1.5e-10

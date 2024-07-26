@@ -12,7 +12,17 @@ function create_collision_factors()
 end
 
 function create_collision_factors(n_species)
-    coll_factor_array = Array{CollisionFactors, 2}(undef, (n_species, n_species))
+    coll_factor_array = Array{CollisionFactors, 3}(undef, (n_species, n_species, 1))
+    for k in 1:n_species
+        for i in 1:n_species
+            coll_factor_array[i,k] = CollisionFactors(0, 0.0, 0.0, 0, 0, 0)
+        end
+    end
+    return coll_factor_array
+end
+
+function create_collision_factors(n_species, n_cells)
+    coll_factor_array = Array{CollisionFactors, 3}(undef, (n_species, n_species, n_cells))
     for k in 1:n_species
         for i in 1:n_species
             coll_factor_array[i,k] = CollisionFactors(0, 0.0, 0.0, 0, 0, 0)
@@ -30,8 +40,8 @@ function compute_n_coll_two_species(rng, collision_factors, np1, np2, Δt, V)
     return Δt * np1 * np2 * collision_factors.sigma_g_w_max / V + rand(rng, Float64)
 end
 
-function ntc!(species, cell, rng, collision_factors, pia, collision_data, interaction, particles,
-    Δt, V)
+function ntc!(rng, collision_factors, collision_data, interaction, particles, pia,
+              cell, species, Δt, V)
     # single-species ntc
     # compute ncoll
     # loop over particles
@@ -67,7 +77,7 @@ function ntc!(species, cell, rng, collision_factors, pia, collision_data, intera
         # println("NTC: ", particle_indexer.n_total, ", ", length(particles))
         if (collision_data.g > eps())
 
-            sigma = sigma_vhs(interaction, collision_data.g)
+            sigma = sigma_vhs(interaction[species, species], collision_data.g)
             sigma_g_w_max = sigma * collision_data.g * max(particles[i].w, particles[k].w)
 
             # update (σ g w)_max if needed
@@ -75,7 +85,7 @@ function ntc!(species, cell, rng, collision_factors, pia, collision_data, intera
             
             if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
                 collision_factors.n_coll_performed += 1
-                compute_com!(collision_data, interaction, particles[i], particles[k])
+                compute_com!(collision_data, interaction[species, species], particles[i], particles[k])
                 # do collision
                 if (particles[i].w == particles[k].w)
                     collision_factors.n_eq_w_coll_performed += 1
@@ -88,7 +98,7 @@ function ntc!(species, cell, rng, collision_factors, pia, collision_data, intera
                     end
 
                     # first need to update the particle indexer struct
-                    update_particle_indexer_new_particle(species, cell, pia)
+                    update_particle_indexer_new_particle(pia, cell, species)
 
                     Δw = particles[i].w - particles[k].w
                     particles[i].w = particles[k].w
@@ -99,22 +109,22 @@ function ntc!(species, cell, rng, collision_factors, pia, collision_data, intera
                         resize!(particles, length(particles)+DELTA_PARTICLES)
                     end
 
-                    update_particle_indexer_new_particle(species, cell, pia)
+                    update_particle_indexer_new_particle(pia, cell, species)
 
                     Δw = particles[k].w - particles[i].w
                     particles[k].w = particles[i].w
 
                     particles[pia.n_total[species]] = Particle(Δw, particles[k].v, particles[k].x)
                 end
-                scatter_vhs(rng, collision_data, interaction, particles[i], particles[k])
+                scatter_vhs(rng, collision_data, interaction[species, species], particles[i], particles[k])
             end
         end
     end
 end
 
-function ntc!(species1, species2, cell, rng, collision_factors, pia,
-    collision_data, interaction, particles_1, particles_2,
-    Δt, V)
+function ntc!(rng, collision_factors, collision_data, interaction,
+              particles_1, particles_2, pia,
+              cell, species1, species2, Δt, V)
     # compute ncoll
     # loop over particles
     # update sigma_g_w_max
@@ -146,7 +156,7 @@ function ntc!(species1, species2, cell, rng, collision_factors, pia,
 
         if (collision_data.g > eps())
 
-            sigma = sigma_vhs(interaction, collision_data.g)
+            sigma = sigma_vhs(interaction[species1, species2], collision_data.g)
             sigma_g_w_max = sigma * collision_data.g * max(particles_1[i].w, particles_2[k].w)
 
             # update (σ g w)_max if needed
@@ -154,7 +164,7 @@ function ntc!(species1, species2, cell, rng, collision_factors, pia,
 
             if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
                 collision_factors.n_coll_performed += 1
-                compute_com!(collision_data, interaction, particles_1[i], particles_2[k])
+                compute_com!(collision_data, interaction[species1, species2], particles_1[i], particles_2[k])
                 # do collision
                 if (particles_1[i].w == particles_2[k].w)
                     collision_factors.n_eq_w_coll_performed += 1
@@ -164,7 +174,7 @@ function ntc!(species1, species2, cell, rng, collision_factors, pia,
                         resize!(particles_1, length(particles_1)+DELTA_PARTICLES)
                     end
                     # first need to update the particle indexer struct
-                    update_particle_indexer_new_particle(species1, cell, pia)
+                    update_particle_indexer_new_particle(pia, cell, species1)
 
                     Δw = particles_1[i].w - particles_2[k].w
                     particles_1[i].w = particles_2[k].w
@@ -174,22 +184,23 @@ function ntc!(species1, species2, cell, rng, collision_factors, pia,
                     if (length(particles_2) <= pia.n_total[species_2])
                         resize!(particles_2, length(particles_2)+DELTA_PARTICLES)
                     end
-                    update_particle_indexer_new_particle(species2, cell, pia)
+                    update_particle_indexer_new_particle(pia, cell, species2)
 
                     Δw = particles_2[k].w - particles_1[i].w
                     particles_2[k].w = particles_1[i].w
 
                     particles_2[pia.n_total[species_2]] = Particle(Δw, particles_2[i].v, particles_2[i].x)
                 end
-                scatter_vhs(rng, collision_data, interaction, particles_1[i], particles_2[k])
+                scatter_vhs(rng, collision_data, interaction[species1, species2], particles_1[i], particles_2[k])
             end
         end
     end
 end
 
-function estimate_sigma_g_w_max_ntc_n_e!(species_n, species_e, cell, rng, collision_factors, pia,
-    collision_data, interaction, n_e_interactions, n_e_cs, particles_n, particles_e,
-    Δt, V; min_coll=5, n_loops=3)
+
+function estimate_sigma_g_w_max_ntc_n_e!(rng, collision_factors, collision_data, interaction,
+                                         n_e_interactions, n_e_cs, particles_n, particles_e,
+                                         pia, cell, species_n, species_e, Δt, V; min_coll=5, n_loops=3)
     # compute ncoll
     # loop over particles
     # update sigma_g_w_max
@@ -223,7 +234,7 @@ function estimate_sigma_g_w_max_ntc_n_e!(species_n, species_e, cell, rng, collis
 
 
             if (collision_data.g > eps())
-                collision_data.E_coll_eV = compute_cross_sections!(n_e_cs, interaction, collision_data.g, n_e_interactions, species_n)
+                collision_data.E_coll_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n)
                 sigma_g_w_max = n_e_cs[species_n].cs_total * collision_data.g * max(particles_n[i].w, particles_e[k].w)
 
                 # update (σ g w)_max if needed
@@ -233,9 +244,9 @@ function estimate_sigma_g_w_max_ntc_n_e!(species_n, species_e, cell, rng, collis
     end
 end
 
-function ntc_n_e!(species_n, species_e, species_ion, cell, rng, collision_factors, pia,
-    collision_data, interaction, n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion,
-    Δt, V)
+function ntc_n_e!(rng, collision_factors, collision_data, interaction,
+                  n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion,
+                  pia, cell, species_n, species_e, species_ion, Δt, V)
     # no event splitting
     # compute ncoll
     # loop over particles
@@ -267,8 +278,8 @@ function ntc_n_e!(species_n, species_e, species_ion, cell, rng, collision_factor
 
         if (collision_data.g > eps())
 
-            collision_data.E_coll_electron_eV = compute_cross_sections!(n_e_cs, interaction, collision_data.g, n_e_interactions, species_n)
-            sigma_g_w_max = get_cs_total(n_e_cs, species_n, n_e_interactions) * collision_data.g * max(particles_n[i].w, particles_e[k].w)
+            collision_data.E_coll_electron_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n)
+            sigma_g_w_max = get_cs_total(n_e_interactions, n_e_cs, species_n) * collision_data.g * max(particles_n[i].w, particles_e[k].w)
 
             # update (σ g w)_max if needed
             collision_factors.sigma_g_w_max = sigma_g_w_max > collision_factors.sigma_g_w_max ? sigma_g_w_max : collision_factors.sigma_g_w_max
@@ -279,7 +290,7 @@ function ntc_n_e!(species_n, species_e, species_ion, cell, rng, collision_factor
 
             if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
                 collision_factors.n_coll_performed += 1
-                compute_com!(collision_data, interaction, particles_n[i], particles_e[k])
+                compute_com!(collision_data, interaction[species_n, species_e], particles_n[i], particles_e[k])
 
                 # do collision
 
@@ -289,7 +300,7 @@ function ntc_n_e!(species_n, species_e, species_ion, cell, rng, collision_factor
                         resize!(particles_n, length(particles_n)+DELTA_PARTICLES)
                     end
                     # first need to update the particle indexer struct
-                    update_particle_indexer_new_particle(species_n, cell, pia)
+                    update_particle_indexer_new_particle(pia, cell, species_n)
 
                     Δw = particles_n[i].w - particles_e[k].w
                     particles_n[i].w = particles_e[k].w
@@ -301,7 +312,7 @@ function ntc_n_e!(species_n, species_e, species_ion, cell, rng, collision_factor
                     if (length(particles_e) <= pia.n_total[species_e])
                         resize!(particles_e, length(particles_e)+DELTA_PARTICLES)
                     end
-                    update_particle_indexer_new_particle(species_e, cell, pia)
+                    update_particle_indexer_new_particle(pia, cell, species_e)
 
                     Δw = particles_e[k].w - particles_n[i].w
                     particles_e[k].w = particles_n[i].w
@@ -315,35 +326,28 @@ function ntc_n_e!(species_n, species_e, species_ion, cell, rng, collision_factor
                 # println(n_e_cs[species_n].prob_vec, ", ", n_e_cs[species_n].cs_total, ", ", n_e_cs[species_n].cs_elastic)
                 if (R < n_e_cs[species_n].prob_vec[1])  # TODO: fix indexing! 
                     # elastic collision
-                    scatter_vhs(rng, collision_data, interaction, particles_n[i], particles_e[k])
+                    scatter_vhs(rng, collision_data, interaction[species_n, species_e], particles_n[i], particles_e[k])
                 else
                     # perform the ionization: 
                     if (length(particles_ion) <= pia.n_total[species_ion])
                         resize!(particles_ion, length(particles_ion)+DELTA_PARTICLES)
                     end
                     # create the ion particle
-                    update_particle_indexer_new_particle(species_ion, cell, pia)
-                    # particles_ion[pia.n_total[species_ion]].w = particles_n[i].w
-                    # particles_ion[pia.n_total[species_ion]].v = particles_n[i].v
-                    # particles_ion[pia.n_total[species_ion]].x = particles_n[i].x
+                    update_particle_indexer_new_particle(pia, cell, species_ion)
                     particles_ion[pia.n_total[species_ion]] = Particle(particles_n[i].w, particles_n[i].v, particles_n[i].x)
 
                     # add a second electron
                     if (length(particles_e) <= pia.n_total[species_e])
                         resize!(particles_e, length(particles_e)+DELTA_PARTICLES)
                     end
-                    update_particle_indexer_new_particle(species_e, cell, pia)
-
-                    # particles_e[pia.n_total[species_e]].w = particles_n[i].w
-                    # particles_e[pia.n_total[species_e]].v = particles_e[k].v
-                    # particles_e[pia.n_total[species_e]].x = particles_e[k].x
+                    update_particle_indexer_new_particle(pia, cell, species_e)
                     particles_e[pia.n_total[species_e]] = Particle(particles_n[i].w, particles_e[k].v, particles_e[k].x)
 
                     # set neutral particle weight to 0
                     particles_n[i].w = 0.0
 
                     # compute energy split across the primare and secondary electrons
-                    compute_g_new_ionization(collision_data, interaction,
+                    compute_g_new_ionization(collision_data, interaction[species_n, species_e],
                                              get_ionization_threshold(n_e_interactions, species_n), get_electron_energy_split(n_e_interactions, species_n))
 
                     scatter_ionization_electrons!(rng, collision_data, particles_e, k, pia.n_total[species_e])
@@ -353,12 +357,10 @@ function ntc_n_e!(species_n, species_e, species_ion, cell, rng, collision_factor
     end
 end
 
-
-
-function ntc_n_e_es!(species_n, species_e, species_ion, cell, rng, collision_factors, pia,
-    collision_data, interaction, n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion,
-    Δt, V)
-    # no event splitting
+function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
+    n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion, 
+    pia, cell, species_n, species_e, species_ion, Δt, V)
+    # event splitting
     # compute ncoll
     # loop over particles
     # update sigma_g_w_max
@@ -389,8 +391,8 @@ function ntc_n_e_es!(species_n, species_e, species_ion, cell, rng, collision_fac
 
         if (collision_data.g > eps())
 
-            collision_data.E_coll_electron_eV = compute_cross_sections!(n_e_cs, interaction, collision_data.g, n_e_interactions, species_n)
-            sigma_g_w_max = get_cs_total(n_e_cs, species_n, n_e_interactions) * collision_data.g * max(particles_n[i].w, particles_e[k].w)
+            collision_data.E_coll_electron_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n)
+            sigma_g_w_max = get_cs_total(n_e_interactions, n_e_cs, species_n) * collision_data.g * max(particles_n[i].w, particles_e[k].w)
 
             # update (σ g w)_max if needed
             collision_factors.sigma_g_w_max = sigma_g_w_max > collision_factors.sigma_g_w_max ? sigma_g_w_max : collision_factors.sigma_g_w_max
@@ -401,7 +403,7 @@ function ntc_n_e_es!(species_n, species_e, species_ion, cell, rng, collision_fac
 
             if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
                 collision_factors.n_coll_performed += 1
-                compute_com!(collision_data, interaction, particles_n[i], particles_e[k])
+                compute_com!(collision_data, interaction[species_n, species_e], particles_n[i], particles_e[k])
 
                 # do collision
 
@@ -411,7 +413,7 @@ function ntc_n_e_es!(species_n, species_e, species_ion, cell, rng, collision_fac
                         resize!(particles_n, length(particles_n)+DELTA_PARTICLES)
                     end
                     # first need to update the particle indexer struct
-                    update_particle_indexer_new_particle(species_n, cell, pia)
+                    update_particle_indexer_new_particle(pia, cell, species_n)
 
                     Δw = particles_n[i].w - particles_e[k].w
                     particles_n[i].w = particles_e[k].w
@@ -423,7 +425,7 @@ function ntc_n_e_es!(species_n, species_e, species_ion, cell, rng, collision_fac
                     if (length(particles_e) <= pia.n_total[species_e])
                         resize!(particles_e, length(particles_e)+DELTA_PARTICLES)
                     end
-                    update_particle_indexer_new_particle(species_e, cell, pia)
+                    update_particle_indexer_new_particle(pia, cell, species_e)
 
                     Δw = particles_e[k].w - particles_n[i].w
                     particles_e[k].w = particles_n[i].w
@@ -434,7 +436,7 @@ function ntc_n_e_es!(species_n, species_e, species_ion, cell, rng, collision_fac
                 # now we collide the 2 equal-weight particles
                 
                 if (n_e_cs[species_n].prob_vec[2] == 0.0)
-                    scatter_vhs(rng, collision_data, interaction, particles_n[i], particles_e[k])
+                    scatter_vhs(rng, collision_data, interaction[species_n, species_e], particles_n[i], particles_e[k])
                 else
                     w_ionized = particles_e[k].w * n_e_cs[species_n].prob_vec[2]
     
@@ -445,24 +447,24 @@ function ntc_n_e_es!(species_n, species_e, species_ion, cell, rng, collision_fac
                         resize!(particles_ion, length(particles_ion)+DELTA_PARTICLES)
                     end
                     # create the ion particle
-                    update_particle_indexer_new_particle(species_ion, cell, pia)
+                    update_particle_indexer_new_particle(pia, cell, species_ion)
                     particles_ion[pia.n_total[species_ion]] = Particle(w_ionized, particles_n[i].v, particles_n[i].x)
 
                     # add 2 electrons (split + secondary)
                     if (length(particles_e) < pia.n_total[species_e] + 2)
                         resize!(particles_e, length(particles_e)+DELTA_PARTICLES)
                     end
-                    update_particle_indexer_new_particle(species_e, cell, pia)
+                    update_particle_indexer_new_particle(pia, cell, species_e)
                     particles_e[pia.n_total[species_e]] = Particle(w_ionized, particles_e[k].v, particles_e[k].x)
                     k1 = pia.n_total[species_e]
-                    update_particle_indexer_new_particle(species_e, cell, pia)
+                    update_particle_indexer_new_particle(pia, cell, species_e)
                     particles_e[pia.n_total[species_e]] = Particle(w_ionized, particles_e[k].v, particles_e[k].x)
                     k2 = pia.n_total[species_e]
 
                     # elastic scattering
-                    scatter_vhs(rng, collision_data, interaction, particles_n[i], particles_e[k])
+                    scatter_vhs(rng, collision_data, interaction[species_n, species_e], particles_n[i], particles_e[k])
 
-                    compute_g_new_ionization(collision_data, interaction,
+                    compute_g_new_ionization(collision_data, interaction[species_n, species_e],
                                              get_ionization_threshold(n_e_interactions, species_n), get_electron_energy_split(n_e_interactions, species_n))
 
                     scatter_ionization_electrons!(rng, collision_data, particles_e, k1, k2)

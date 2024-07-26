@@ -104,7 +104,8 @@
         return vp
     end
 
-    species_list::Vector{Species} = load_species_list("data/particles.toml", "Ar")
+    particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
+    species_list::Vector{Species} = load_species_list(particles_data_path, "Ar")
 
     seed = 1234
     Random.seed!(seed)
@@ -143,7 +144,7 @@
     pia = create_particle_indexer_array(9)
     octree = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
 
-    Merzbild.init_octree!(1, 1, octree, particles9[1], pia)
+    Merzbild.init_octree!(octree, particles9[1], pia, 1, 1)
     for i in 1:9
         @test i in octree.particle_indexes_sorted[1:9]
     end
@@ -164,7 +165,7 @@
     # end results should be 9, 8, 7, 6, 1, 2, 3, 4, 5
     particles9[1][1:5] = create_9particles(3, false)[5:9]
     particles9[1][6:9] = create_9particles(3, true)[6:9]
-    Merzbild.init_octree!(1, 1, octree, particles9[1], pia)
+    Merzbild.init_octree!(octree, particles9[1], pia, 1, 1)
     Merzbild.split_bin!(octree, 1, particles9[1])
     @test octree.Nbins == 8
     expected = [9, 8, 7, 6, 1, 2, 3, 4, 5]
@@ -186,7 +187,7 @@
     pia2.indexer[1,1].end2 = 9
     pia2.indexer[1,1].n_group2 = 6
 
-    Merzbild.init_octree!(1, 1, octree, particles9[1], pia2)
+    Merzbild.init_octree!(octree, particles9[1], pia2, 1, 1)
     Merzbild.split_bin!(octree, 1, particles9[1])
 
     @test octree.Nbins == 8
@@ -208,7 +209,7 @@
     particles7::Vector{Vector{Particle}} = [create_7particles(5, true)]
     pia3 = create_particle_indexer_array(7)
 
-    Merzbild.init_octree!(1, 1, octree, particles7[1], pia3)
+    Merzbild.init_octree!(octree, particles7[1], pia3, 1, 1)
     Merzbild.split_bin!(octree, 1, particles7[1])
     @test octree.Nbins == 7
     expected = [7, 6, 5, 4, 3, 2, 1]
@@ -233,7 +234,7 @@
     octree2 = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVelSym)
 
     # the initial bin will have bounds [-3.0, -3.0, -3.0], [3.0, 3.0, 3.0] 
-    Merzbild.init_octree!(1, 1, octree2, particles15[1], pia4)
+    Merzbild.init_octree!(octree2, particles15[1], pia4, 1, 1)
 
     # test bounds, symmetric octree bin
     @test octree2.bin_start[1] == 1

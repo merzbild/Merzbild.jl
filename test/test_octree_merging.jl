@@ -40,8 +40,8 @@
         return vp
     end
 
-
-    species_list::Vector{Species} = load_species_list("data/particles.toml", "Ar")
+    particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
+    species_list::Vector{Species} = load_species_list(particles_data_path, "Ar")
 
     seed = 1234
     Random.seed!(seed)
@@ -54,7 +54,7 @@
     # symmetric octree with split at v0 = (0.0, 0.0, 0.0)
     octree = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
 
-    Merzbild.init_octree!(1, 1, octree, particles24[1], pia)
+    Merzbild.init_octree!(octree, particles24[1], pia, 1, 1)
     
     Merzbild.split_bin!(octree, 1, particles24[1])
     @test octree.Nbins == 8
@@ -99,7 +99,7 @@
         @test Merzbild.get_bin_post_merge_np(octree, i) == 2
     end
 
-    compute_props!(phys_props, pia, particles24, species_list)
+    compute_props!(particles24, pia, species_list, phys_props)
 
     n0_computed = phys_props.n[1,1]
     np0_computed = phys_props.np[1,1]
@@ -108,7 +108,7 @@
     @test n0_computed == total_w
 
     octree2 = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
-    merge_octree_N2_based!(1, 1, octree2, particles24, pia, 16)
+    merge_octree_N2_based!(octree2, particles24[1], pia, 1, 1, 16)
 
     @test octree2.Nbins == 8
     @test pia.n_total[1] == 16
@@ -117,7 +117,7 @@
         @test octree2.bins[i].depth == 1
     end
 
-    compute_props!(phys_props, pia, particles24, species_list)
+    compute_props!(particles24, pia, species_list, phys_props)
     @test pia.n_total[1] == phys_props.np[1,1]
     @test abs(phys_props.n[1,1] - n0_computed) < eps()
     @test abs(phys_props.T[1,1] - T0_computed) < 1e-14
@@ -125,7 +125,7 @@
     @test abs(v0_computed[2] - phys_props.v[2,1,1]) < 1e-14
     @test abs(v0_computed[3] - phys_props.v[3,1,1]) < 1e-14
 
-    merge_octree_N2_based!(1, 1, octree2, particles24, pia, 2)
+    merge_octree_N2_based!(octree2, particles24[1], pia, 1, 1, 2)
 
     @test octree2.Nbins == 1
     @test pia.n_total[1] == 2
@@ -133,7 +133,7 @@
         @test octree2.bins[i].depth == 0
     end
 
-    compute_props!(phys_props, pia, particles24, species_list)
+    compute_props!(particles24, pia, species_list, phys_props)
     @test pia.n_total[1] == phys_props.np[1,1]
     @test particles24[1][1].w == 0.5 * total_w
     @test particles24[1][1].w == particles24[1][2].w
