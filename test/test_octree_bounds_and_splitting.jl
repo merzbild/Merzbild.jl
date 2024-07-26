@@ -69,7 +69,8 @@
         return vp
     end
 
-    species_list::Vector{Species} = load_species_list("data/particles.toml", "Ar")
+    particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
+    species_list::Vector{Species} = load_species_list(particles_data_path, "Ar")
 
     seed = 1234
     Random.seed!(seed)
@@ -80,7 +81,7 @@
     octree1 = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
 
     # test bounds that are from -speed of light to +speed of light
-    Merzbild.init_octree!(1, 1, octree1, particles1[1], pia1)
+    Merzbild.init_octree!(octree1, particles1[1], pia1, 1, 1)
     @test maximum(abs.(octree1.bins[1].v_min - [-299_792_458.0, -299_792_458.0, -299_792_458.0])) < 1e-12
     @test maximum(abs.(octree1.bins[1].v_max - [299_792_458.0, 299_792_458.0, 299_792_458.0])) < 1e-12
     # various tests for bin splitting, computing mean velocities, etc.
@@ -92,13 +93,13 @@
     octree2 = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVelSym)
     particles2::Vector{Vector{Particle}} = [create_15particles_nested()]
     pia2 = create_particle_indexer_array(15)
-    Merzbild.init_octree!(1, 1, octree2, particles2[1], pia2)
+    Merzbild.init_octree!(octree2, particles2[1], pia2, 1, 1)
     @test maximum(abs.(octree2.bins[1].v_min + octree2.bins[1].v_max)) < 1e-12  # check that init bin is symmetric
     @test maximum(abs.(octree2.bins[1].v_max - [3.0, 3.0, 3.0])) < 1e-12  # check bin bounds
 
     # test bounds, non-symmetric octree bin
     octree3 = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel)
-    Merzbild.init_octree!(1, 1, octree3, particles2[1], pia2)
+    Merzbild.init_octree!(octree3, particles2[1], pia2, 1, 1)
     @test maximum(abs.(octree3.bins[1].v_min - [-3.0, -1.0, -3.0])) < 1e-11  # check bin bounds, non-symmetrized octree bin
     @test maximum(abs.(octree3.bins[1].v_max - [1.0, 3.0, 1.0])) < 1e-11  # check bin bounds, non-symmetrized octree bin
 
@@ -114,7 +115,7 @@
     end
     v_mean = v_mean / 15.0
 
-    Merzbild.init_octree!(1, 1, octree4, particles2[1], pia2)
+    Merzbild.init_octree!(octree4, particles2[1], pia2, 1, 1)
     Merzbild.compute_v_mean!(octree4, 1, 15, particles2[1])
     @test maximum(abs.(octree4.vel_middle - v_mean)) < 1e-11  # check computation of v_mean
 

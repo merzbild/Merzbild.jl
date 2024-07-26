@@ -47,7 +47,7 @@ function create_merging_grid(N, extent_multiplier::Float64)
     return create_merging_grid(N, N, N, extent_multiplier)
 end
 
-function compute_velocity_extent!(cell, species, merging_grid, phys_props, species_data)
+function compute_velocity_extent!(merging_grid, cell, species, species_data, phys_props)
     dv = merging_grid.extent_multiplier .* sqrt.(2 * phys_props.T[cell, species] * k_B / species_data[species].mass)
     merging_grid.extent_v_lower = phys_props.v[:, cell, species] .- dv
     merging_grid.extent_v_upper = phys_props.v[:, cell, species] .+ dv
@@ -104,16 +104,16 @@ function clear_merging_grid!(merging_grid)
     end
 end
 
-function compute_grid!(cell, species, merging_grid::MergingGrid, particles, particle_indexer_array)
+function compute_grid!(merging_grid::MergingGrid, particles, pia, cell, species)
     clear_merging_grid!(merging_grid)
 
-    for i in particle_indexer_array.indexer[cell,species].start1:particle_indexer_array.indexer[cell,species].end1
-        index = compute_grid_index(merging_grid, particles[species][i].v)
+    for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
+        index = compute_grid_index(merging_grid, particles[i].v)
 
         merging_grid.cells[index].np += 1
-        merging_grid.cells[index].w += particles[species][i].w
-        merging_grid.cells[index].v_mean = merging_grid.cells[index].v_mean + particles[species][i].v * particles[species][i].w
-        merging_grid.cells[index].x_mean = merging_grid.cells[index].x_mean + particles[species][i].x * particles[species][i].w
+        merging_grid.cells[index].w += particles[i].w
+        merging_grid.cells[index].v_mean = merging_grid.cells[index].v_mean + particles[i].v * particles[i].w
+        merging_grid.cells[index].x_mean = merging_grid.cells[index].x_mean + particles[i].x * particles[i].w
 
         if (merging_grid.cells[index].np == 1)
             merging_grid.cells[index].particle_index1 = i
@@ -122,14 +122,14 @@ function compute_grid!(cell, species, merging_grid::MergingGrid, particles, part
         end
     end
 
-    if particle_indexer_array.indexer[cell,species].start2 > 0
-        for i in particle_indexer_array.indexer[cell,species].start2:particle_indexer_array.indexer[cell,species].end2
-            index = compute_grid_index(merging_grid, particles[species][i].v)
+    if pia.indexer[cell,species].start2 > 0
+        for i in pia.indexer[cell,species].start2:pia.indexer[cell,species].end2
+            index = compute_grid_index(merging_grid, particles[i].v)
 
             merging_grid.cells[index].np += 1
-            merging_grid.cells[index].w += particles[species][i].w
-            merging_grid.cells[index].v_mean = merging_grid.cells[index].v_mean + particles[species][i].v * particles[species][i].w
-            merging_grid.cells[index].x_mean = merging_grid.cells[index].x_mean + particles[species][i].x * particles[species][i].w
+            merging_grid.cells[index].w += particles[i].w
+            merging_grid.cells[index].v_mean = merging_grid.cells[index].v_mean + particles[i].v * particles[i].w
+            merging_grid.cells[index].x_mean = merging_grid.cells[index].x_mean + particles[i].x * particles[i].w
 
             if (merging_grid.cells[index].np == 1)
                 merging_grid.cells[index].particle_index1 = i
@@ -146,19 +146,19 @@ function compute_grid!(cell, species, merging_grid::MergingGrid, particles, part
         end
     end
 
-    for i in particle_indexer_array.indexer[cell,species].start1:particle_indexer_array.indexer[cell,species].end1
-        index = compute_grid_index(merging_grid, particles[species][i].v)
+    for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
+        index = compute_grid_index(merging_grid, particles[i].v)
 
-        merging_grid.cells[index].v_std_sq = merging_grid.cells[index].v_std_sq + (particles[species][i].v - merging_grid.cells[index].v_mean).^2 * particles[species][i].w
-        merging_grid.cells[index].x_std_sq = merging_grid.cells[index].x_std_sq + (particles[species][i].x - merging_grid.cells[index].x_mean).^2 * particles[species][i].w
+        merging_grid.cells[index].v_std_sq = merging_grid.cells[index].v_std_sq + (particles[i].v - merging_grid.cells[index].v_mean).^2 * particles[i].w
+        merging_grid.cells[index].x_std_sq = merging_grid.cells[index].x_std_sq + (particles[i].x - merging_grid.cells[index].x_mean).^2 * particles[i].w
     end
 
-    if particle_indexer_array.indexer[cell,species].start2 > 0
-        for i in particle_indexer_array.indexer[cell,species].start2:particle_indexer_array.indexer[cell,species].end2
-            index = compute_grid_index(merging_grid, particles[species][i].v)
+    if pia.indexer[cell,species].start2 > 0
+        for i in pia.indexer[cell,species].start2:pia.indexer[cell,species].end2
+            index = compute_grid_index(merging_grid, particles[i].v)
 
-            merging_grid.cells[index].v_std_sq = merging_grid.cells[index].v_std_sq + (particles[species][i].v - merging_grid.cells[index].v_mean).^2 * particles[species][i].w
-            merging_grid.cells[index].x_std_sq = merging_grid.cells[index].x_std_sq + (particles[species][i].x - merging_grid.cells[index].x_mean).^2 * particles[species][i].w
+            merging_grid.cells[index].v_std_sq = merging_grid.cells[index].v_std_sq + (particles[i].v - merging_grid.cells[index].v_mean).^2 * particles[i].w
+            merging_grid.cells[index].x_std_sq = merging_grid.cells[index].x_std_sq + (particles[i].x - merging_grid.cells[index].x_mean).^2 * particles[i].w
         end
     end
 
@@ -170,7 +170,7 @@ function compute_grid!(cell, species, merging_grid::MergingGrid, particles, part
     end
 end
 
-function compute_new_particles!(cell, species, merging_grid::MergingGrid, particles, particle_indexer_array)
+function compute_new_particles!(merging_grid::MergingGrid, particles, pia, cell, species)
     # no limits on particle location, i.e. 0-D
 
     for index in 1:merging_grid.Ntotal
@@ -191,52 +191,52 @@ function compute_new_particles!(cell, species, merging_grid::MergingGrid, partic
         elseif (merging_grid.cells[index].np == 2)
             # get the particle indices we saved and just write data based on them
             i = merging_grid.cells[index].particle_index1
-            merging_grid.cells[index].w1 = particles[species][i].w
-            merging_grid.cells[index].v1 = particles[species][i].v
-            merging_grid.cells[index].x1 = particles[species][i].x
+            merging_grid.cells[index].w1 = particles[i].w
+            merging_grid.cells[index].v1 = particles[i].v
+            merging_grid.cells[index].x1 = particles[i].x
 
             i = merging_grid.cells[index].particle_index2
-            merging_grid.cells[index].w2 = particles[species][i].w
-            merging_grid.cells[index].v2 = particles[species][i].v
-            merging_grid.cells[index].x2 = particles[species][i].x
+            merging_grid.cells[index].w2 = particles[i].w
+            merging_grid.cells[index].v2 = particles[i].v
+            merging_grid.cells[index].x2 = particles[i].x
         elseif (merging_grid.cells[index].np == 1)
             # get the particle indices we saved and just write data based on them
             i = merging_grid.cells[index].particle_index1
-            merging_grid.cells[index].w1 = particles[species][i].w
-            merging_grid.cells[index].v1 = particles[species][i].v
-            merging_grid.cells[index].x1 = particles[species][i].x
+            merging_grid.cells[index].w1 = particles[i].w
+            merging_grid.cells[index].v1 = particles[i].v
+            merging_grid.cells[index].x1 = particles[i].x
         end
     end
 
     curr_particle_index = 0
     for index in 1:merging_grid.Ntotal
         if (merging_grid.cells[index].np >= 2)
-            i = map_cont_index(particle_indexer_array.indexer[cell,species], curr_particle_index)
+            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
             curr_particle_index += 1
-            particles[species][i].w = merging_grid.cells[index].w1
-            particles[species][i].v = merging_grid.cells[index].v1
-            particles[species][i].x = merging_grid.cells[index].x1
+            particles[i].w = merging_grid.cells[index].w1
+            particles[i].v = merging_grid.cells[index].v1
+            particles[i].x = merging_grid.cells[index].x1
 
-            i = map_cont_index(particle_indexer_array.indexer[cell,species], curr_particle_index)
+            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
             curr_particle_index += 1
-            particles[species][i].w = merging_grid.cells[index].w2
-            particles[species][i].v = merging_grid.cells[index].v2
-            particles[species][i].x = merging_grid.cells[index].x2
+            particles[i].w = merging_grid.cells[index].w2
+            particles[i].v = merging_grid.cells[index].v2
+            particles[i].x = merging_grid.cells[index].x2
         elseif (merging_grid.cells[index].np == 1)
-            i = map_cont_index(particle_indexer_array.indexer[cell,species], curr_particle_index)
+            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
             curr_particle_index += 1
-            particles[species][i].w = merging_grid.cells[index].w1
-            particles[species][i].v = merging_grid.cells[index].v1
-            particles[species][i].x = merging_grid.cells[index].x1
+            particles[i].w = merging_grid.cells[index].w1
+            particles[i].v = merging_grid.cells[index].v1
+            particles[i].x = merging_grid.cells[index].x1
         end
     end
 
-    update_particle_indexer_new_lower_count(species, cell, particle_indexer_array, curr_particle_index)
+    update_particle_indexer_new_lower_count(pia, cell, species, curr_particle_index)
 end
 
-function merge_grid_based!(cell, species, merging_grid, phys_props, species_data, particles, particle_indexer_array)
+function merge_grid_based!(merging_grid, particles, pia, cell, species, species_data, phys_props)
     # 0-D, no grid, particles in single cell
-    compute_velocity_extent!(cell, species, merging_grid, phys_props, species_data)
-    compute_grid!(cell, species, merging_grid, particles, particle_indexer_array)
-    compute_new_particles!(cell, species, merging_grid, particles, particle_indexer_array)
+    compute_velocity_extent!(merging_grid, cell, species, species_data, phys_props)
+    compute_grid!(merging_grid, particles, pia, cell, species)
+    compute_new_particles!(merging_grid, particles, pia, cell, species)
 end

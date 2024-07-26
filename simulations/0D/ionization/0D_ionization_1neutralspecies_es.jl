@@ -1,4 +1,5 @@
 # Simulate electrons accelerated by a constant electric field collding and ionizing neutrals
+# With or without event splitting
 # The ions are merged away (very coarsely)
 # Electrons and neutrals are merged using octree merging
 
@@ -9,7 +10,7 @@ using ..Merzbild
 using Random
 using TimerOutputs
 
-function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons, merging_bin_split; adds=0)
+function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons, merging_bin_split; adds=0, do_es=true)
     T0 = 300.0
     T0_e = Merzbild.eV * 2.0  # T_e(t=0) = 2eV
     n_dens_neutrals = 1e23
@@ -21,32 +22,27 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons, merging_
     Δt = 5e-14
     V = 1.0
 
-    # threshold_neutrals = 500
-    # threshold_ion = 100
-    # threshold_electrons = 1100
-
-    # np_target_neutrals = 400
-    # Nmerging_ions = 1  # 8-16 after merging
-    # np_target_electrons = 1000
-
-
     threshold_neutrals = 200
     threshold_ion = 100
-    # threshold_electrons = 150
 
     np_target_neutrals = 100
     Nmerging_ions = 1  # 8-16 after merging
-    # np_target_electrons = 100
 
     Efield_int = round(Int64, E_Tn)
 
     fname = ""
+    addstr = ""
+
+    if do_es
+        addstr = "_es"
+    end
+
     if merging_bin_split == OctreeBinMidSplit
-        fname = "../../Data/PIC_DSMC/NNLS_merging/0D_ionization/Ar_e/octree_mid_macc_es/Ar_$(Efield_int)Tn_octree_mid_$(threshold_electrons)_to_$(np_target_electrons)"
+        fname = "../../Data/PIC_DSMC/NNLS_merging/0D_ionization/Ar_e/octree_mid_macc$(addstr)/Ar_$(Efield_int)Tn_octree_mid_$(threshold_electrons)_to_$(np_target_electrons)"
     elseif merging_bin_split == OctreeBinMeanSplit
-        fname = "../../Data/PIC_DSMC/NNLS_merging/0D_ionization/Ar_e/octree_mean_macc_es/Ar_$(Efield_int)Tn_octree_mean_$(threshold_electrons)_to_$(np_target_electrons)"
+        fname = "../../Data/PIC_DSMC/NNLS_merging/0D_ionization/Ar_e/octree_mean_macc$(addstr)/Ar_$(Efield_int)Tn_octree_mean_$(threshold_electrons)_to_$(np_target_electrons)"
     elseif merging_bin_split == OctreeBinMedianSplit
-        fname = "../../Data/PIC_DSMC/NNLS_merging/0D_ionization/Ar_e/octree_median_macc_es/Ar_$(Efield_int)Tn_octree_median_$(threshold_electrons)_to_$(np_target_electrons)"
+        fname = "../../Data/PIC_DSMC/NNLS_merging/0D_ionization/Ar_e/octree_median_macc$(addstr)/Ar_$(Efield_int)Tn_octree_median_$(threshold_electrons)_to_$(np_target_electrons)"
     end
 
     if adds == 0
@@ -61,7 +57,7 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons, merging_
     reset_timer!()
 
     species_list::Vector{Species} = load_species_list("data/particles.toml", ["Ar", "Ar+", "e-"])
-    interaction_data::Array{Interaction, 2} = load_interaction_data("data/vhs.toml", species_list)
+    interaction_data::Array{Interaction, 2} = load_interaction_data_with_dummy("data/vhs.toml", species_list)
 
 
     n_e_interactions = load_electron_neutral_interactions(species_list, "../../Data/cross_sections/Ar_IST_Lisbon.xml",
@@ -70,8 +66,6 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons, merging_
                                                           Dict("Ar" => ElectronEnergySplitEqual))
 
     n_e_cs = create_computed_crosssections(n_e_interactions)
-    charged_species_indices = [2, 3]
-    n_charged = 2
 
     index_neutral = 1
     index_ion = 2
@@ -96,19 +90,20 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons, merging_
     for (index, (n_dens, T0, nv)) in enumerate(zip([n_dens_neutrals, n_dens_ions, n_dens_e],
                                                    [T0, T0, T0_e],
                                                    [nv_heavy, nv_heavy, nv_electrons]))
-        n_sampled[index] = sample_maxwellian_on_grid!(rng, particles[index], nv, T0, species_list[index].mass, n_dens,
+        n_sampled[index] = sample_maxwellian_on_grid!(rng, particles[index], nv, species_list[index].mass, T0, n_dens,
                                                       0.0, 1.0, 0.0, 1.0, 0.0, 1.0;
                                                       v_mult=3.5, cutoff_mult=8.0, noise=0.0, v_offset=[0.0, 0.0, 0.0])
     end
 
     # println(n_sampled)
+    skip_list = create_IO_skip_list(["v", "moments"])
 
     pia = create_particle_indexer_array(n_sampled)
 
     phys_props::PhysProps = create_props(1, 3, [], Tref=T0)
-    compute_props!(phys_props, pia, particles, species_list)
+    compute_props!(particles, pia, species_list, phys_props)
 
-    ds = create_netcdf_phys_props(fname, phys_props, species_list)
+    ds = create_netcdf_phys_props(fname, species_list, phys_props)
     write_netcdf_phys_props(ds, phys_props, 0)
 
     collision_factors = create_collision_factors(3)
@@ -124,11 +119,9 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons, merging_
     s2 = index_electron
     s3 = index_ion
     # neutral-electron
-    estimate_sigma_g_w_max_ntc_n_e!(s1, s2, 1, rng, collision_factors[s1,s2],
-                                    pia,
-                                    collision_data, interaction_data[s1,s2], n_e_interactions, n_e_cs,
-                                    particles[s1], particles[s2],
-                                    Δt, V, min_coll=15, n_loops=6)
+    estimate_sigma_g_w_max_ntc_n_e!(rng, collision_factors[s1,s2], collision_data, interaction_data,
+                                    n_e_interactions, n_e_cs,
+                                    particles[s1], particles[s2], pia, 1, s1, s2, Δt, V, min_coll=15, n_loops=6)
 
     for ts in 1:n_t
 
@@ -136,79 +129,42 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons, merging_
             println(ts)
         end
         # collide neutrals and neutrals
-        s1 = index_neutral
-        @timeit "coll n-n" ntc!(s1, 1, rng, collision_factors[s1,s1], pia, collision_data, interaction_data[s1,s1], particles[s1],
-             Δt, V)
+        @timeit "coll n-n" ntc!(rng, collision_factors[s1,s1,1], collision_data, interaction_data, particles[s1], pia, 1, s1, Δt, V)
 
-        s1 = index_neutral
-        s2 = index_electron
-        s3 = index_ion
-
-        @timeit "coll n-e" ntc_n_e_es!(s1, s2, s3, 1, rng, collision_factors[s1,s2], pia,
-                 collision_data, interaction_data[s1,s2], n_e_interactions, n_e_cs,
-                 particles[s1], particles[s2], particles[s3],
-                 Δt, V)
+        if do_es
+            @timeit "coll n-e ES" ntc_n_e_es!(rng, collision_factors[s1,s2,1], collision_data, interaction_data,
+                                            n_e_interactions, n_e_cs,
+                                            particles[s1], particles[s2], particles[s3], pia, 1, s1, s2, s3, Δt, V)
+        else
+            @timeit "coll n-e" ntc_n_e!(rng, collision_factors[s1,s2,1], collision_data, interaction_data,
+                                        n_e_interactions, n_e_cs,
+                                        particles[s1], particles[s2], particles[s3], pia, 1, s1, s2, s3, Δt, V)
+        end
 
 
         if pia.n_total[1] > threshold_neutrals
-            @timeit "merge n" merge_octree_N2_based!(1, 1, oc, particles, pia, np_target_neutrals)
+            @timeit "merge n" merge_octree_N2_based!(oc, particles[1], pia, 1, 1, np_target_neutrals)
         end
 
         if pia.n_total[2] > threshold_ion
-            @timeit "merge i" merge_grid_based!(1, 2, mg_ions, phys_props, species_list, particles, pia)
+            @timeit "merge i" merge_grid_based!(mg_ions, particles[2], pia, 1, 2, species_list, phys_props)
         end
 
         if pia.n_total[3] > threshold_electrons
-            @timeit "merge e" merge_octree_N2_based!(1, 3, oc_electrons, particles, pia, np_target_electrons)
+            @timeit "merge e" merge_octree_N2_based!(oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
         end
 
         @timeit "acc e" accelerate_constant_field_x!(particles[index_electron],
-                                     pia, species_list, index_electron, 1,
+                                     pia, 1, index_electron, species_list,
                                      E_field, Δt)
         
-        @timeit "props" compute_props!(phys_props, pia, particles, species_list)
-
-        # println(phys_props.n[1,:])
-        # @timeit "I/O" write_netcdf_phys_props(ds, phys_props, ts)
-        @timeit "I/O" Merzbild.write_netcdf_phys_props_nov(ds, phys_props, ts)
+        @timeit "props" compute_props!(particles, pia, species_list, phys_props)
+        @timeit "I/O" write_netcdf_phys_props(ds, skip_list, phys_props, ts, sync_freq=1000)
 
     end
     print_timer()
-    close(ds)
+    close_netcdf(ds)
 end
 
-# @time run(1234, 100.0, 3, "Ar_warmup.nc", 100, 10)
-# @time run(1234, 400.0, 500000, "../../Data/PIC_DSMC/NNLS_merging/0D_ionization/Ar_e/octree_mid/Ar_400Tn_octree_mid_200_to_100.nc")
-# @time run(1234, 200.0, 1500000, "../../Data/PIC_DSMC/NNLS_merging/0D_ionization/Ar_e/octree_mid/Ar_200Tn_octree_mid_150_to_100.nc")
-# @time run(1234, 400.0, 500000, "../../Data/PIC_DSMC/NNLS_merging/0D_ionization/Ar_e/octree_mean/Ar_400Tn_octree_mid_50_to_30.nc", 50, 30)
-# @time run(1234, 400.0, 500000, "../../Data/PIC_DSMC/NNLS_merging/0D_ionization/Ar_e/octree_mean/Ar_400Tn_octree_mid_75_to_50.nc", 75, 50)
-# @time run(1234, 400.0, 500000, "../../Data/PIC_DSMC/NNLS_merging/0D_ionization/Ar_e/octree_mean/Ar_400Tn_octree_mid_100_to_70.nc", 100, 70)
-# @time run(1234, 400.0, 500000, "../../Data/PIC_DSMC/NNLS_merging/0D_ionization/Ar_e/octree_mean/Ar_400Tn_octree_mid_150_to_100.nc", 150, 100)
-# @time run(1234, 400.0, 500000, "../../Data/PIC_DSMC/NNLS_merging/0D_ionization/Ar_e/octree_mean/Ar_400Tn_octree_mid_300_to_200.nc", 300, 200)
-
-# # # const thr_npt =  [[10000, 7000]]
-
-# for sadd in seeds
-#     for (thr, npt) in thr_npt
-#         # run(1234, 400.0, 500000, thr, npt, OctreeBinMidSplit, adds=sadd)
-#         run(1234, 400.0, 500000, thr, npt, OctreeBinMeanSplit, adds=sadd)
-#     end
-# end
-
-# const thr_npt2 = [[100, 70]]
-# const thr_npt2 =  [[6000, 4000]]
-
-const thr_npt = [[50, 30], [75, 50], [100, 70], [150, 100], [250,170], [300, 200], [500, 300]]
-const seeds = [0, 1, 2, 3, 4, 5, 6, 7]
-# const seeds = [0]
-for sadd in seeds
-    for (thr, npt) in thr_npt
-        run(1234, 400.0, 500000, thr, npt, OctreeBinMedianSplit, adds=sadd)
-        # run(1234, 400.0, 500000, thr, npt, OctreeBinMeanSplit, adds=sadd)
-        # run(1234, 400.0, 500000, thr, npt, OctreeBinMidSplit, adds=sadd)
-        # run(1234, 400.0, 500000, thr, npt, OctreeBinMeanSplit, adds=sadd)
-    end
-end
-
-
-# run(1234, 400.0, 500000, 250, 170, OctreeBinMidSplit, adds=0)
+run(1234, 400.0, 500000, 300, 200, OctreeBinMidSplit, adds=0, do_es=false)
+run(1234, 400.0, 500000, 300, 200, OctreeBinMidSplit, adds=0, do_es=true)

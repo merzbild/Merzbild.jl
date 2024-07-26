@@ -1,6 +1,7 @@
 @testset "merging_grid_indexing" begin
 
-    species_list::Vector{Species} = load_species_list("data/particles.toml", "Ar")
+    particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
+    species_list::Vector{Species} = load_species_list(particles_data_path, "Ar")
 
     seed = 1234
     Random.seed!(seed)
@@ -18,7 +19,7 @@
     @test mg.Ntotal == 32  # Nx * Ny * Nz + 8
     @test mg.NyNz == 6  # Ny * Nz
 
-    Merzbild.compute_velocity_extent!(1, 1, mg, phys_props, species_list)
+    Merzbild.compute_velocity_extent!(mg, 1, 1, species_list, phys_props)
 
     for i in 1:3
         @test abs(mg.extent_v_lower[i] - (-1)) <= eps(Float64)
@@ -77,21 +78,21 @@
     vx0 = 2000.0
     vy0 = 500.0
     vz0 = -400.0
-    sample_particles_equal_weight!(rng, particles[1], n_particles, T0, species_list[1].mass, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0,
+    sample_particles_equal_weight!(rng, particles[1], n_particles, species_list[1].mass, T0, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0,
     vx0=vx0, vy0=vy0, vz0=vz0)
 
 
-    particle_indexer = create_particle_indexer_array(n_particles)
+    pia = create_particle_indexer_array(n_particles)
 
-    compute_props!(phys_props, particle_indexer, particles, species_list)
+    compute_props!(particles, pia, species_list, phys_props)
     mg2 = create_merging_grid(Nx, Ny, Nz, 3.5)
 
-    Merzbild.compute_velocity_extent!(1, 1, mg2, phys_props, species_list)
+    Merzbild.compute_velocity_extent!(mg2, 1, 1, species_list, phys_props)
 
     @test abs(vx0 - mg2.extent_v_mid[1]) <= Δabs
     @test abs(vy0 - mg2.extent_v_mid[2]) <= Δabs
     @test abs(vz0 - mg2.extent_v_mid[3]) <= Δabs
-    Merzbild.compute_grid!(1, 1, mg2, particles, particle_indexer)
+    Merzbild.compute_grid!(mg2, particles[1], pia, 1, 1)
 
     ntot = 0.0
     nptot = 0
@@ -104,8 +105,8 @@
     @test abs((ntot - n_particles * Fnum)) / (n_particles * Fnum) < Δrel_xsmall
 
     mg3 = create_merging_grid(1, 1, 1, 500.0)
-    Merzbild.compute_velocity_extent!(1, 1, mg3, phys_props, species_list)
-    Merzbild.compute_grid!(1, 1, mg3, particles, particle_indexer)
+    Merzbild.compute_velocity_extent!(mg3, 1, 1, species_list, phys_props)
+    Merzbild.compute_grid!(mg3, particles[1], pia, 1, 1)
 
     @test mg3.cells[1].np == n_particles
     @test abs((mg3.cells[1].w - n_particles * Fnum)) / (n_particles * Fnum) < Δrel_xsmall

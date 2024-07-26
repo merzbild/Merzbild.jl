@@ -1,10 +1,14 @@
 @testset "electron_neutral_data" begin
     # test loading of data from XML file and linear interpolation thereof
 
-    species_list = load_species_list("data/particles.toml", ["He", "e-"])
-    interaction_data = load_interaction_data("data/vhs.toml", species_list)
+    particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
+    species_list = load_species_list(particles_data_path, ["He", "e-"])
 
-    n_e_interactions = load_electron_neutral_interactions(species_list, "data/test_neutral_electron_data.xml",
+    interaction_data_path = joinpath(@__DIR__, "..", "data", "vhs.toml")
+    interaction_data = load_interaction_data(interaction_data_path, species_list, 1e-10, 1.0, 273.0)
+
+    e_n_data_path = joinpath(@__DIR__, "..", "data", "test_neutral_electron_data.xml")
+    n_e_interactions = load_electron_neutral_interactions(species_list, e_n_data_path,
                                                           Dict("He" => "LinearDB"),
                                                           Dict("He" => ScatteringIsotropic),
                                                           Dict("He" => ElectronEnergySplitEqual))

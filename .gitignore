@@ -3,3 +3,7 @@ Manifest.toml
 *.nc
 plots/
 .DS_Store
+Private_*
+simulations/tests
+*.sh
+scratch/

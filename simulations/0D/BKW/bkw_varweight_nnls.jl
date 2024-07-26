@@ -1,3 +1,4 @@
+# BKW with NNLS merging + timing outputs
 # Important!
 # The time scaling in the analytical solution is different
 # Tref = 273.0
@@ -18,11 +19,10 @@
 #     C = 1. - 0.4 * np.exp(-time * magic_factor / 6)
 #     kk = N // 2
 #     return C**(kk - 1) * (kk - (kk - 1) * C)
-include("../../src/merzbild.jl")
+include("../../../src/merzbild.jl")
 
 using ..Merzbild
 using Random
-using InteractiveUtils
 using TimerOutputs
 
 function run(seed, n_up_to_total, n_full_up_to_total, threshold, ntarget_octree)
@@ -36,9 +36,8 @@ function run(seed, n_up_to_total, n_full_up_to_total, threshold, ntarget_octree)
     dt_scaled = 0.025
     n_t = 500
 
-    nv = 30
+    nv = 32
     np_base = 40^3  # some initial guess on # of particle in simulation
-    n_moms = 6
 
     mim = []
     n_moms = n_full_up_to_total
@@ -50,12 +49,6 @@ function run(seed, n_up_to_total, n_full_up_to_total, threshold, ntarget_octree)
         append!(mim, [[i, 0, 0], [0, i, 0], [0, 0, i]])
     end
     println(length(mim))
-
-    # threshold = 200
-    # ntarget_octree = length(mim) + 16
-
-    # nbins * length(mim) ~ ntarget
-    # Nmerging = 16  # ~8000 after merging
 
     @timeit "NNLSinit" mnnls = create_nnls_merging(mim, threshold)
     @timeit "OctreeInit" ocm = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
@@ -71,25 +64,19 @@ function run(seed, n_up_to_total, n_full_up_to_total, threshold, ntarget_octree)
 
     particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, np_base)]
 
-    vdf0 = (vx, vy, vz) -> bkw(T0, 0.0, species_list[1].mass, vx, vy, vz)
+    vdf0 = (vx, vy, vz) -> bkw(vx, vy, vz, species_list[1].mass, T0, 0.0)
 
-    n_sampled = sample_on_grid!(rng, vdf0, particles[1], nv, T0, species_list[1].mass, n_dens,
+    n_sampled = sample_on_grid!(rng, vdf0, particles[1], nv, species_list[1].mass, T0, n_dens,
                                 0.0, 1.0, 0.0, 1.0, 0.0, 1.0;
                                 v_mult=3.5, cutoff_mult=3.5, noise=0.0, v_offset=[0.0, 0.0, 0.0])
-    # println(n_sampled)
 
     pia = create_particle_indexer_array(n_sampled)
 
     phys_props::PhysProps = create_props(1, 1, moments_list, Tref=T0)
-    compute_props!(phys_props, pia, particles, species_list)
-    
-    # if phys_props.np[1,1] > threshold
-    #     @timeit "t=0 NNLSmerge" merge_nnls_based!(rng, mnnls, vref, particles, 1, 1, pia, 0)
-    #     compute_props!(phys_props, pia, particles, species_list)
-    # end
+    compute_props!(particles, pia, species_list, phys_props)
 
-    ds = create_netcdf_phys_props("../../Data/PIC_DSMC/NNLS_merging/BKW/NNLS/nnls_$(n_full_up_to_total)full_upto$(n_up_to_total)_$(threshold)_$(seed).nc", phys_props, species_list)
-    # ds = create_netcdf_phys_props("test.nc",phys_props, species_list)
+    ds = create_netcdf_phys_props("scratch/data/tmp_nnls_$(n_full_up_to_total)full_upto$(n_up_to_total)_$(threshold)_$(seed).nc", species_list, phys_props)
+
     write_netcdf_phys_props(ds, phys_props, 0)
 
     collision_factors::CollisionFactors = create_collision_factors()
@@ -109,35 +96,36 @@ function run(seed, n_up_to_total, n_full_up_to_total, threshold, ntarget_octree)
             println(ts)
         end
 
-        ntc!(1, 1, rng, collision_factors, pia, collision_data, interaction_data[1,1], particles[1],
-            Δt, V)
+        ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
 
         if phys_props.np[1,1] > threshold
             if firstm
-                @timeit "NNLSmerge: 1st time" nnls_success_flag = merge_nnls_based!(rng, mnnls, vref, particles, 1, 1, pia, 0)
+                @timeit "NNLSmerge: 1st time" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1, vref)
                 firstm = false
             else
-                @timeit "NNLSmerge" nnls_success_flag = merge_nnls_based!(rng, mnnls, vref, particles, 1, 1, pia, 0)
+                @timeit "NNLSmerge" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1, vref)
             end
 
             if nnls_success_flag == -1
-                println("Resorting to octree merging")
-                @timeit "Octreemerge" merge_octree_N2_based!(1, 1, ocm, particles, pia, ntarget_octree)
+                println("Resorting to octree merging on timestep $ts")
+                @timeit "Octreemerge" merge_octree_N2_based!(ocm, particles[1], pia, 1, 1, ntarget_octree)
             end
         end
         
-        compute_props!(phys_props, pia, particles, species_list)
+        compute_props!(particles, pia, species_list, phys_props)
         write_netcdf_phys_props(ds, phys_props, ts)
     end
-    close(ds)
+    close_netcdf(ds)
     print_timer()
 end
 
+# run(1, 5, 3, 50, 30)
+run(0, 8, 6, 150, 100)
 
-const params = [[5, 3, 50, 30], [6, 4, 75, 50], [7, 5, 100, 70], [8, 6, 150, 100], [9, 7, 200, 140], [10, 8, 250, 170]]
-
-for paramset in params
-    for seed in 101:400
-        run(seed, paramset[1], paramset[2], paramset[3], paramset[4])
-    end
-end
+# multiple runs with ensembling if needed
+# const params = [[5, 3, 50, 30], [6, 4, 75, 50], [7, 5, 100, 70], [8, 6, 150, 100], [9, 7, 200, 140], [10, 8, 250, 170]]
+# for paramset in params
+#     for seed in 101:400
+#         run(seed, paramset[1], paramset[2], paramset[3], paramset[4])
+#     end
+# end

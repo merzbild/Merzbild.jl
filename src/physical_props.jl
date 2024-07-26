@@ -23,7 +23,7 @@ function create_props(n_cells, n_species, moments_list; Tref=300.0)
     moments_list, zeros(length(moments_list), n_cells, n_species), Tref)
 end
 
-function compute_props!(phys_props, pia, particles, species_data)
+function compute_props!(particles, pia, species_data, phys_props)
     for species in 1:phys_props.n_species
         if phys_props.n_moments > 0
             moment_factor = 4 * π * (species_data[species].mass / (twopi * k_B * phys_props.Tref))^(1.5) * 0.5
@@ -99,7 +99,7 @@ end
 
 
 
-function compute_props_sorted_without_moments!(phys_props, pia, particles, species_data)
+function compute_props_sorted_without_moments!(particles, pia, species_data, phys_props)
     for species in 1:phys_props.n_species
         for cell in 1:phys_props.n_cells
             n = 0.0
@@ -130,7 +130,7 @@ function compute_props_sorted_without_moments!(phys_props, pia, particles, speci
     end
 end
 
-function compute_mixed_moment(pia, particles, cell, species, powers; sum_scaler=1.0, res_scaler=1.0)
+function compute_mixed_moment(particles, pia, cell, species, powers; sum_scaler=1.0, res_scaler=1.0)
     # sum scaler is used inside the particle summation loops to potentially reduce round-off issues
     # res_scaler can be used as inverse of sum_scaler (e.g. to get the full moment)
     # or set to any other quantity to get scaling of result as well

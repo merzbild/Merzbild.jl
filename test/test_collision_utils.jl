@@ -1,6 +1,9 @@
 @testset "collision utils" begin
-    species_list = load_species_list("data/particles.toml", "Ar")
-    interaction_data = load_interaction_data("data/vhs.toml", species_list)
+    particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
+    species_list::Vector{Species} = load_species_list(particles_data_path, "Ar")
+
+    interaction_data_path = joinpath(@__DIR__, "..", "data", "vhs.toml")
+    interaction_data = load_interaction_data(interaction_data_path, species_list)
 
     @test length(species_list) == 1
     @test size(interaction_data) == (1,1)
@@ -21,8 +24,8 @@
     @test abs(collision_data.g - 3.0) < eps()
 
 
-    species_list_2 = load_species_list("data/particles.toml", ["Ar", "He"])
-    interaction_data_2 = load_interaction_data("data/vhs.toml", species_list_2)
+    species_list_2 = load_species_list(particles_data_path, ["Ar", "He"])
+    interaction_data_2 = load_interaction_data(interaction_data_path, species_list_2)
 
     @test length(species_list_2) == 2
     @test size(interaction_data_2) == (2,2)

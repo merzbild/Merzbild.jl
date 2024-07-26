@@ -38,13 +38,13 @@ function map_cont_index(particle_indexer, i)
     return i < particle_indexer.n_group1 ? i + particle_indexer.start1 : (i - particle_indexer.n_group1) + particle_indexer.start2
 end
 
-function map_cont_index(species, cell, pia, i)
+function map_cont_index(pia, cell, species, i)
     # map a continuous index in [0, n_local-1]
     # to a index in the particle array given particle_indexer struct describing the split
     return map_cont_index(pia.indexer[cell, species], i)
 end
 
-function update_particle_indexer_new_lower_count(species, cell, pia, new_lower_count)
+function update_particle_indexer_new_lower_count(pia, cell, species, new_lower_count)
     # update particle indexer when we reduced the particle count
     diff = pia.indexer[cell, species].n_local - new_lower_count
     pia.indexer[cell, species].n_local = new_lower_count
@@ -65,7 +65,7 @@ function update_particle_indexer_new_lower_count(species, cell, pia, new_lower_c
     end
 end
 
-function update_particle_indexer_new_particle(species, cell, pia)
+function update_particle_indexer_new_particle(pia, cell, species)
     # update particle indexer when we add a new particle
     pia.n_total[species] += 1
     pia.indexer[cell, species].n_local += 1

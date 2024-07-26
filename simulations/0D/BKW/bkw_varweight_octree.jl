@@ -1,3 +1,4 @@
+# BKW with octree merging
 # Important!
 # The time scaling in the analytical solution is different
 # Tref = 273.0
@@ -18,7 +19,7 @@
 #     C = 1. - 0.4 * np.exp(-time * magic_factor / 6)
 #     kk = N // 2
 #     return C**(kk - 1) * (kk - (kk - 1) * C)
-include("../../src/merzbild.jl")
+include("../../../src/merzbild.jl")
 
 using ..Merzbild
 using Random
@@ -55,19 +56,18 @@ function run(seed::Int64, threshold::Int64, Ntarget::Int64)
 
     particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, np_base)]
 
-    vdf0 = (vx, vy, vz) -> bkw(T0, 0.0, species_list[1].mass, vx, vy, vz)
+    vdf0 = (vx, vy, vz) -> bkw(vx, vy, vz, species_list[1].mass, T0, 0.0)
 
-    n_sampled = sample_on_grid!(rng, vdf0, particles[1], nv, T0, species_list[1].mass, n_dens,
+    n_sampled = sample_on_grid!(rng, vdf0, particles[1], nv, species_list[1].mass, T0, n_dens,
                                 0.0, 1.0, 0.0, 1.0, 0.0, 1.0;
                                 v_mult=3.5, cutoff_mult=3.5, noise=0.0, v_offset=[0.0, 0.0, 0.0])
-    # println(n_sampled)
 
     pia = create_particle_indexer_array(n_sampled)
 
     phys_props::PhysProps = create_props(1, 1, moments_list, Tref=T0)
-    compute_props!(phys_props, pia, particles, species_list)
+    compute_props!(particles, pia, species_list, phys_props)
 
-    ds = create_netcdf_phys_props("../../Data/PIC_DSMC/NNLS_merging/BKW/octree_median/octree_$(threshold)_$(Ntarget)_$(seed).nc",phys_props, species_list)
+    ds = create_netcdf_phys_props("scratch/data/octree_median_$(threshold)_$(Ntarget)_$(seed).nc", species_list, phys_props)
     write_netcdf_phys_props(ds, phys_props, 0)
 
     collision_factors::CollisionFactors = create_collision_factors()
@@ -80,35 +80,27 @@ function run(seed::Int64, threshold::Int64, Ntarget::Int64)
     V::Float64 = 1.0
 
     for ts in 1:n_t
-        ntc!(1, 1, rng, collision_factors, pia, collision_data, interaction_data[1,1], particles[1],
-            Δt, V)
+        ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
 
         if phys_props.np[1,1] > threshold
-            merge_octree_N2_based!(1, 1, oc, particles, pia, Ntarget)
-            # println(oc.Nbins)
+            merge_octree_N2_based!(oc, particles[1], pia, 1, 1, Ntarget)
         end
         if ts % 100 == 0
             println(ts)
         end
         
-        compute_props!(phys_props, pia, particles, species_list)
+        compute_props!(particles, pia, species_list, phys_props)
         write_netcdf_phys_props(ds, phys_props, ts)
     end
-    close(ds)
-end
-# @code_warntype run(1234)
-# run(1234)
-
-const thr_nn =  [[50, 30], [75, 50], [100, 70], [150, 100], [300, 200], [500, 300]]
-for (thr, nn) in thr_nn
-    for seed in 1:400
-        run(seed, thr, nn)
-    end
+    close_netcdf(ds)
 end
 
-# @time run(1234) # 0.250579 seconds (892.24 k allocations: 35.134 MiB, 6.29% gc time)
+run(1, 50, 30)
 
-# 30^3, 400 threshold, 90 particles, 0.164385 seconds (538.60 k allocations: 23.414 MiB, 5.85% gc time)
-
-# set_zero_subnormals(true)
-# @time run(1234) # 0.238377 seconds (892.24 k allocations: 35.134 MiB)
+# multiple runs with ensembling if needed
+# const thr_nn =  [[50, 30], [75, 50], [100, 70], [150, 100], [300, 200], [500, 300]]
+# for (thr, nn) in thr_nn
+#     for seed in 1:400
+#         run(seed, thr, nn)
+#     end
+# end

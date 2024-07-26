@@ -1,3 +1,4 @@
+# BKW with octree merging + timing
 # Important!
 # The time scaling in the analytical solution is different
 # Tref = 273.0
@@ -18,11 +19,10 @@
 #     C = 1. - 0.4 * np.exp(-time * magic_factor / 6)
 #     kk = N // 2
 #     return C**(kk - 1) * (kk - (kk - 1) * C)
-include("../../src/merzbild.jl")
+include("../../../src/merzbild.jl")
 
 using ..Merzbild
 using Random
-using InteractiveUtils
 using TimerOutputs
 
 function run(seed)
@@ -58,19 +58,18 @@ function run(seed)
 
     particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, np_base)]
 
-    vdf0 = (vx, vy, vz) -> bkw(T0, 0.0, species_list[1].mass, vx, vy, vz)
+    vdf0 = (vx, vy, vz) -> bkw(vx, vy, vz, species_list[1].mass, T0, 0.0)
 
-    n_sampled = sample_on_grid!(rng, vdf0, particles[1], nv, T0, species_list[1].mass, n_dens,
+    n_sampled = sample_on_grid!(rng, vdf0, particles[1], nv, species_list[1].mass, T0, n_dens,
                                 0.0, 1.0, 0.0, 1.0, 0.0, 1.0;
                                 v_mult=3.5, cutoff_mult=3.5, noise=0.0, v_offset=[0.0, 0.0, 0.0])
-    # println(n_sampled)
 
     pia = create_particle_indexer_array(n_sampled)
 
     phys_props::PhysProps = create_props(1, 1, moments_list, Tref=T0)
-    compute_props!(phys_props, pia, particles, species_list)
+    compute_props!(particles, pia, species_list, phys_props)
 
-    ds = create_netcdf_phys_props("test.nc",phys_props, species_list)
+    ds = create_netcdf_phys_props("scratch/data/test_bkw_octree.nc", species_list, phys_props)
     write_netcdf_phys_props(ds, phys_props, 0)
 
     collision_factors::CollisionFactors = create_collision_factors()
@@ -85,30 +84,27 @@ function run(seed)
     firstm = true
 
     for ts in 1:n_t
-        @timeit "collide" ntc!(1, 1, rng, collision_factors, pia, collision_data, interaction_data[1,1], particles[1],
-            Δt, V)
+        @timeit "collide" ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
 
         if phys_props.np[1,1] > threshold
-
             if firstm
-                @timeit "merge: 1st time" merge_octree_N2_based!(1, 1, oc, particles, pia, Ntarget)
+                # first merge is slower since we have a lot more particles at t=0
+                @timeit "merge: 1st time" merge_octree_N2_based!(oc, particles[1], pia, 1, 1, Ntarget)
                 firstm = false
             else
-                @timeit "merge" merge_octree_N2_based!(1, 1, oc, particles, pia, Ntarget)
+                @timeit "merge" merge_octree_N2_based!(oc, particles[1], pia, 1, 1, Ntarget)
             end
-            # println(oc.Nbins)
         end
         if ts % 10 == 0
             println(ts)
         end
         
-        compute_props!(phys_props, pia, particles, species_list)
+        compute_props!(particles, pia, species_list, phys_props)
         write_netcdf_phys_props(ds, phys_props, ts)
     end
-    close(ds)
+    close_netcdf(ds)
 
     print_timer()
 end
 
-run(1234)
 run(1234)

@@ -336,15 +336,15 @@ function compute_cross_sections_only!(computed_cs, interaction, g, electron_neut
     end
 end
 
-function get_cs_total(computed_cs, neutral_species_index, electron_neutral_interactions)
+function get_cs_total(electron_neutral_interactions, computed_cs, neutral_species_index)
     return computed_cs[electron_neutral_interactions.neutral_indexer[neutral_species_index]].cs_total
 end
 
-function get_cs_elastic(computed_cs, neutral_species_index, electron_neutral_interactions)
+function get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index)
     return computed_cs[electron_neutral_interactions.neutral_indexer[neutral_species_index]].cs_elastic
 end
 
-function get_cs_ionization(computed_cs, neutral_species_index, electron_neutral_interactions)
+function get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index)
     return computed_cs[electron_neutral_interactions.neutral_indexer[neutral_species_index]].cs_ionization
 end
 

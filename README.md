@@ -1,3 +1,5 @@
+[![License: MPL2.0](https://img.shields.io/badge/License-MPL_2.0-success.svg)](https://opensource.org/license/mpl-2-0)
+
 # Merzbild.jl
 **Merzbild.jl** is a work-in-progress DSMC code fully written in Julia,
 designed to provide all the necessary components to build your own simulations.
@@ -7,12 +9,11 @@ particle sampling and indexing, collisions, merging, computation of physical pro
 
 ## Installation
 
-Create a project where you want to use **Merzbild.jl**, run `julia --project=.`, type `]` to
-enter the package manager, and run `add https://git-ce.rwth-aachen.de/georgii.oblapenko/merzbild.jl`.
+For now, **Merzbild.jl** needs to be cloned to be run.
 
 ## Usage
 Currently, the way to use the code is to 1) clone it 2) create a new file in the `simulations` directory
-3) add `include("../../../src/merzbild.jl")` and `using ..Merzbild` to the file.
+3) add `include("path/to/src/merzbild.jl")` and `using ..Merzbild` to the file.
 
 Some usage examples can be found in the `simulations` directory.
 A detailed overview of the structures required can be found in the documentation (upcoming),
@@ -20,7 +21,8 @@ but a short code snippet is given below. It simulates the relaxation of two gase
 to equilibrium.
 
 ```julia
-include("../../../src/merzbild.jl")
+# assuming the simulation file is directly in the simulations directory
+include("../src/merzbild.jl")
 using ..Merzbild
 
 function run(seed)
@@ -49,16 +51,16 @@ function run(seed)
     V = 1.0
 
     # sample particles
-    particles = [Vector{Particle}(undef, n_particles_Ar), Vector{Particle}(undef, n_particles_He)]
-    sample_particles_equal_weight!(rng, particles[1], n_particles_Ar, T0_Ar, species_list[1].mass, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
-    sample_particles_equal_weight!(rng, particles[2], n_particles_He, T0_He, species_list[2].mass, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+    particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, n_particles_Ar), Vector{Particle}(undef, n_particles_He)]
+    sample_particles_equal_weight!(rng, particles[1], n_particles_Ar, species_list[1].mass, T0_Ar, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+    sample_particles_equal_weight!(rng, particles[2], n_particles_He, species_list[2].mass, T0_He, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
 
     # create struct for particle indexing
-    particle_indexer = create_particle_indexer_array([n_particles_Ar, n_particles_He])
+    pia = create_particle_indexer_array([n_particles_Ar, n_particles_He])
 
     # create struct for computation of physical properties
     phys_props = create_props(1, 2, [], Tref=T0_Ar)
-    compute_props!(phys_props, particle_indexer, particles, species_list)
+    compute_props!(particles, pia, species_list, phys_props)
 
     # print properties at t=0
     println(phys_props.n)
@@ -66,7 +68,7 @@ function run(seed)
     println(phys_props.T)
 
     # create struct for output to netCDF file
-    ds = create_netcdf_phys_props("output_multi_species.nc", phys_props, species_list)
+    ds = create_netcdf_phys_props("output_multi_species.nc", species_list, phys_props)
     write_netcdf_phys_props(ds, phys_props, 0)
 
     # set up collision structs
@@ -80,19 +82,16 @@ function run(seed)
             # collide particles
             for s1 in s2:n_species
                 if (s1 == s2)
-                    ntc!(s1, 1, rng, collision_factors[s1,s1],
-                         particle_indexer, collision_data, interaction_data[s1,s1], particles[s1],
-                         Δt, V)
+                    ntc!(rng, collision_factors[s1,s1], collision_data, interaction_data, particles[s1], pia, 1, s1, Δt, V)
                 else
-                    ntc!(s1, s2, 1, rng, collision_factors[s1,s2], particle_indexer,
-                         collision_data, interaction_data[s1,s2], particles[s1], particles[s2],
-                         Δt, V)
+                    ntc!(rng, collision_factors[s1,s2], collision_data, interaction_data, particles[s1], particles[s2],
+                         pia, 1, s1, s2, Δt, V)
                 end
             end
         end
 
         # compute and write physical properties
-        compute_props!(phys_props, particle_indexer, particles, species_list)
+        compute_props!(particles, pia, species_list, phys_props)
         write_netcdf_phys_props(ds, phys_props, ts)
     end
 
@@ -110,5 +109,5 @@ Running with `-O3` might also speed up things.
 
 ## Testing
 
-The tests try to cover most of the functionality implemented in the code. They can be run by invoking `julia --project=. test/runtests.jl`.
+The tests try to cover most of the functionality implemented in the code. They can be run by invoking `julia --project=. test/runtests.jl` or by calling `using Pkg; Pkg.test()`.
 Addition of test coverage (via `Coverage.jl`) is planned.
