@@ -1,6 +1,6 @@
 # Test that sampling from a Maxwellian and computing physical properties gives reasonable results
 
-include("../../../src/merzbild.jl")
+include("../../../src/Merzbild.jl")
 
 using ..Merzbild
 using Random

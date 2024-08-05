@@ -23,6 +23,15 @@ function create_props(n_cells, n_species, moments_list; Tref=300.0)
     moments_list, zeros(length(moments_list), n_cells, n_species), Tref)
 end
 
+function create_props(pia, moments_list; Tref=300.0)
+    n_cells, n_species = size(pia.indexer)
+    return create_props(n_cells, n_species, moments_list; Tref=Tref)
+end
+
+function create_props(pia)
+    return create_props(pia, [])
+end
+
 function compute_props!(particles, pia, species_data, phys_props)
     for species in 1:phys_props.n_species
         if phys_props.n_moments > 0
@@ -97,7 +106,27 @@ function compute_props!(particles, pia, species_data, phys_props)
     end
 end
 
+function clear_props!(phys_props)
+    phys_props.lpa[:] = 0
+    phys_props.np[:,:] = 0
+    phys_props.n[:,:] = 0.0
+    phys_props.v[:,:,:] = 0.0
+    phys_props.T[:,:] = 0.0
+end
 
+function avg_props!(phys_props_avg, phys_props, n_avg_timesteps)
+    inv_nt_avg = 1.0 / n_avg_timesteps
+
+    for species in 1:phys_props.n_species
+        for cell in 1:phys_props.n_cells
+            # phys_props_avg.lpa[species] += phys_props.lpa[species] * inv_nt_avg
+            # phys_props_avg.np[cell,species] += phys_props.np[cell,species] * inv_nt_avg
+            phys_props_avg.n[cell,species] += phys_props.n[cell,species] * inv_nt_avg
+            phys_props_avg.v[:,cell,species] += phys_props.v[:,cell,species] * inv_nt_avg
+            phys_props_avg.T[cell,species] += phys_props.T[cell,species] * inv_nt_avg
+        end
+    end
+end
 
 function compute_props_sorted_without_moments!(particles, pia, species_data, phys_props)
     for species in 1:phys_props.n_species

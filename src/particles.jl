@@ -25,11 +25,34 @@ mutable struct ParticleIndexerArray
     n_total::Vector{Int64}  # per-species
 end
 
+mutable struct ParticleVector
+    particles::Vector{Particle}
+    index::Vector{Int64}
+    cell::Vector{Int64}
+end
+
+function Base.getindex(pv::ParticleVector, i)
+    return pv.particles[pv.index[i]]
+end
+
+function Base.setindex!(pv::ParticleVector, p::Particle, i::Int64)
+    pv.particles[pv.index[i]] = p
+end
+
+function Base.length(pv::ParticleVector)
+    return length(pv.particles)
+end
+
 struct Species
     name::String
     mass::Float64
     charge::Float64  # in terms of elemenary charge
     charge_div_mass::Float64  # q/m, C/kg
+end
+
+function create_particle_vector(np)
+    return ParticleVector(Vector{Particle}(undef, np),
+                          Vector{Int64}(1:np), zeros(Int64, np))
 end
 
 function map_cont_index(particle_indexer, i)
@@ -100,7 +123,18 @@ function create_particle_indexer_array(n_particles::Int64)  # 1 cell 1 species
     return ParticleIndexerArray(hcat(ParticleIndexer(n_particles, 1, n_particles, n_particles, 0, 0, 0)), [n_particles])
 end
 
-
 function create_particle_indexer_array(n_particles::T) where T<:AbstractVector  # 1 cell multi-species
     return ParticleIndexerArray(reshape([ParticleIndexer(np, 1, np, np, 0, 0, 0) for np in n_particles], 1, :), copy(n_particles))
+end
+
+function create_particle_indexer_array(n_cells, n_species)  # most generic version
+    pia_indexer = Array{ParticleIndexer, 2}(undef, (n_cells, n_species))
+
+    for j in 1:n_species
+        for i in 1:n_cells
+            pia_indexer[i, j] = ParticleIndexer(0, 0, -1, 0, 0, -1, 0)
+        end
+    end
+    return ParticleIndexerArray(pia_indexer,
+                                [0 for i in 1:n_species])
 end

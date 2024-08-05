@@ -19,7 +19,7 @@
 #     C = 1. - 0.4 * np.exp(-time * magic_factor / 6)
 #     kk = N // 2
 #     return C**(kk - 1) * (kk - (kk - 1) * C)
-include("../../../src/merzbild.jl")
+include("../../../src/Merzbild.jl")
 
 using ..Merzbild
 using Random

@@ -1,4 +1,5 @@
 [![License: MPL2.0](https://img.shields.io/badge/License-MPL_2.0-success.svg)](https://opensource.org/license/mpl-2-0)
+[![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 # Merzbild.jl
 **Merzbild.jl** is a work-in-progress DSMC code fully written in Julia,
@@ -22,7 +23,7 @@ to equilibrium.
 
 ```julia
 # assuming the simulation file is directly in the simulations directory
-include("../src/merzbild.jl")
+include("../src/Merzbild.jl")
 using ..Merzbild
 using Random
 
@@ -111,10 +112,47 @@ run(1234)
 
 ### Usage notes
 
-For now, bound checking is not turned off (via the `@inbounds` macro), so simulations may benefit from running with `--check-bounds=no`.
+For now, bound checking is not turned off (via the `@inbounds` macro) except for the convection and particle sorting routines, so simulations may benefit from running with `--check-bounds=no`.
 Running with `-O3` might also speed up things.
 
 ## Testing
 
-The tests try to cover most of the functionality implemented in the code. They can be run by invoking `julia --project=. test/runtests.jl` or by calling `using Pkg; Pkg.test()`.
+The tests try to cover most of the functionality implemented in the code. They can be run by invoking by calling `using Pkg; Pkg.test()`.
 Addition of test coverage (via `Coverage.jl`) is planned.
+
+## Speed
+Comparing to SPARTA running in serial mode computing a Couette flow with 50000 particles and 50 cells (averaging over 36k timesteps after t>14000):
+
+Merzbild.jl:
+```
+ ──────────────────────────────────────────────────────────────────────────
+                                  Time                    Allocations      
+                         ───────────────────────   ────────────────────────
+    Tot / % measured:         27.8s /  96.3%            699MiB /   0.4%    
+
+ Section         ncalls     time    %tot     avg     alloc    %tot      avg
+ ──────────────────────────────────────────────────────────────────────────
+ sort             50.0k    8.82s   33.0%   176μs     0.00B    0.0%    0.00B
+ convect          50.0k    6.86s   25.6%   137μs     0.00B    0.0%    0.00B
+ collide          2.50M    5.77s   21.6%  2.31μs     0.00B    0.0%    0.00B
+ props compute    36.0k    5.29s   19.8%   147μs     0.00B    0.0%    0.00B
+ I/O                 51   4.44ms    0.0%  87.1μs   12.0KiB    0.4%     240B
+ sampling             1   2.31ms    0.0%  2.31ms   3.05MiB   99.6%  3.05MiB
+ ──────────────────────────────────────────────────────────────────────────
+```
+
+SPARTA:
+```
+Loop time of 31.3989 on 1 procs for 50000 steps with 50000 particles
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Move    | 7.935      | 7.935      | 7.935      |   0.0 | 25.27
+Coll    | 11.904     | 11.904     | 11.904     |   0.0 | 37.91
+Sort    | 2.8201     | 2.8201     | 2.8201     |   0.0 |  8.98
+Comm    | 0.0034597  | 0.0034597  | 0.0034597  |   0.0 |  0.01
+Modify  | 8.7341     | 8.7341     | 8.7341     |   0.0 | 27.82
+Output  | 0.00060415 | 0.00060415 | 0.00060415 |   0.0 |  0.00
+Other   |            | 0.001508   |            |       |  0.00
+```

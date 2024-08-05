@@ -90,6 +90,26 @@ function sample_bkw!(rng, particles, nparticles, m, T, v0)
     end
 end
 
+function sample_bkw!(rng, particles, nparticles, offset, m, T, v0)
+    # BKW at t=0
+    vscale = sqrt(2 * k_B * T / m) * sqrt(0.3)  # 0.3 comes from some scaling of the Chi distribution
+
+    v_distribution = Distributions.Chi(5) 
+    v_abs = rand(v_distribution, nparticles)
+
+    Θ = rand(rng, Float64, nparticles) * π
+    ϕ = rand(rng, Float64, nparticles) * twopi
+    sintheta = sin.(Θ)
+
+    vx = v_abs .* sintheta .* cos.(ϕ)
+    vy = v_abs .* sintheta .* sin.(ϕ)
+    vz = v_abs .* cos.(Θ)
+
+    for i in 1:nparticles
+        particles[i+offset].v = vscale * SVector{3,Float64}(vx[i], vy[i], vz[i]) .+ v0
+    end
+end
+
 function evaluate_distribution_on_grid!(vdf, distribution_function, grid, w_total, cutoff_v; normalize=true)
     w = 0.0
     for k in 1:grid.base_grid.nz
@@ -209,6 +229,19 @@ function sample_maxwellian!(rng, particles, nparticles, m, T, v0)
     end
 end
 
+function sample_maxwellian!(rng, particles, nparticles, offset, m, T, v0)
+    vscale = compute_thermal_velocity(m, T)
+
+    for i in 1:nparticles
+        vn = sqrt(-log(rand(rng, Float64)))
+        vr = sqrt(-log(rand(rng, Float64)))
+        theta1 = twopi * rand(rng, Float64)
+        theta2 = twopi * rand(rng, Float64)
+
+        particles[i+offset].v = vscale * SVector{3,Float64}(vn * cos(theta1), vr * cos(theta2), vr * sin(theta2)) + v0
+    end
+end
+
 function sample_particles_equal_weight!(rng, particles, nparticles, m, T, Fnum, xlo, xhi, ylo, yhi, zlo, zhi;
                                         distribution=:Maxwellian, vx0=0.0, vy0=0.0, vz0=0.0)
     # other options: Dirac Delta (T = 0: single point)
@@ -222,6 +255,39 @@ function sample_particles_equal_weight!(rng, particles, nparticles, m, T, Fnum, 
     v0 = SVector{3}(vx0, vy0, vz0)
     if distribution == :Maxwellian
         sample_maxwellian!(rng, particles, nparticles, m, T, v0)
+    elseif distribution == :BKW
+        sample_bkw!(rng, particles, nparticles, m, T, v0)
+    end
+end
+
+function sample_particles_equal_weight!(rng, particles, pia, cell, species,
+                                        nparticles, m, T, Fnum, xlo, xhi, ylo, yhi, zlo, zhi;
+                                        distribution=:Maxwellian, vx0=0.0, vy0=0.0, vz0=0.0)
+
+    start = pia.n_total[species] + 1                                    
+    pia.indexer[cell, species].n_local = nparticles
+    pia.n_total[species] += nparticles
+
+    pia.indexer[cell, species].start1 = start
+    pia.indexer[cell, species].end1 = start - 1 + nparticles
+    pia.indexer[cell, species].n_group1 = nparticles
+
+    pia.indexer[cell, species].start2 = 0
+    pia.indexer[cell, species].end2 = 0
+    pia.indexer[cell, species].n_group2 = 0
+
+    offset = start - 1
+
+    for i in 1:nparticles
+        particles[i+offset] = Particle(Fnum,  SVector{3}(0.0, 0.0, 0.0),  SVector{3}(xlo + rand(rng, Float64) * (xhi - xlo),
+                                                                                     ylo + rand(rng, Float64) * (yhi - ylo),
+                                                                                     zlo + rand(rng, Float64) * (zhi - zlo)))
+        particles.cell[i+offset] = cell
+    end
+
+    v0 = SVector{3}(vx0, vy0, vz0)
+    if distribution == :Maxwellian
+        sample_maxwellian!(rng, particles, nparticles, offset, m, T, v0)
     elseif distribution == :BKW
         sample_bkw!(rng, particles, nparticles, m, T, v0)
     end

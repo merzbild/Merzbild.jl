@@ -1,0 +1,41 @@
+seed	    	    12345
+dimension   	    2
+global              gridcut -1.0 comm/sort yes
+
+boundary	    s p p
+
+create_box  	    0.0 0.0005 0.0 1.0 -0.5 0.5
+
+create_grid 	    50 1 1 
+balance_grid        rcb cell
+
+global		    fnum 5e14  # 4e11?
+global              surfmax 1000
+
+
+species		    ar_he.species Ar
+mixture		    armixambi Ar vstream 0 0 0 temp 273.0 nrho 5e22
+
+create_particles armixambi n 0
+
+collide             vss species ar.vhs
+surf_collide hotwall_l diffuse 300.0 1.0 translate 0.0 -500.0 0.0
+surf_collide hotwall_r diffuse 300.0 1.0 translate 0.0 500.0 0.0
+
+bound_modify xlo collide hotwall_l 
+bound_modify xhi collide hotwall_r
+
+timestep 	    2.59e-9
+
+stats		    1000
+stats_style	    step cpu np nattempt ncoll nscoll nscheck
+
+
+compute 1 thermal/grid all species temp press
+compute 2 grid all species n nrho u v 
+
+fix 1 ave/grid all 1 36000 50000 c_1[*] c_2[*]
+
+dump 1 grid all 50000 avg_seed_12345.grid.* id f_1[*]
+
+run 50000
