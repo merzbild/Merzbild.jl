@@ -4,7 +4,7 @@
 # The ions are merged away (very coarsely)
 # Neutrals are merged using octree merging
 
-include("../../../src/merzbild.jl")
+include("../../../src/Merzbild.jl")
 
 
 using ..Merzbild

@@ -15,7 +15,7 @@ function create_collision_factors(n_species)
     coll_factor_array = Array{CollisionFactors, 3}(undef, (n_species, n_species, 1))
     for k in 1:n_species
         for i in 1:n_species
-            coll_factor_array[i,k] = CollisionFactors(0, 0.0, 0.0, 0, 0, 0)
+            coll_factor_array[i,k,1] = CollisionFactors(0, 0.0, 0.0, 0, 0, 0)
         end
     end
     return coll_factor_array
@@ -23,9 +23,11 @@ end
 
 function create_collision_factors(n_species, n_cells)
     coll_factor_array = Array{CollisionFactors, 3}(undef, (n_species, n_species, n_cells))
-    for k in 1:n_species
-        for i in 1:n_species
-            coll_factor_array[i,k] = CollisionFactors(0, 0.0, 0.0, 0, 0, 0)
+    for k in 1:n_cells
+        for j in 1:n_species
+            for i in 1:n_species
+                coll_factor_array[i,j,k] = CollisionFactors(0, 0.0, 0.0, 0, 0, 0)
+            end
         end
     end
     return coll_factor_array
