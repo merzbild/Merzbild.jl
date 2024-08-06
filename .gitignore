@@ -7,3 +7,5 @@ Private_*
 simulations/tests
 *.sh
 scratch/
+**/*.jl.*.cov
+coverage_report/
