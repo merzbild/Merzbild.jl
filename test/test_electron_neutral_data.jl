@@ -2,13 +2,13 @@
     # test loading of data from XML file and linear interpolation thereof
 
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
-    species_list = load_species_list(particles_data_path, ["He", "e-"])
+    species_data = load_species_data(particles_data_path, ["He", "e-"])
 
     interaction_data_path = joinpath(@__DIR__, "..", "data", "vhs.toml")
-    interaction_data = load_interaction_data(interaction_data_path, species_list, 1e-10, 1.0, 273.0)
+    interaction_data = load_interaction_data(interaction_data_path, species_data, 1e-10, 1.0, 273.0)
 
     e_n_data_path = joinpath(@__DIR__, "..", "data", "test_neutral_electron_data.xml")
-    n_e_interactions = load_electron_neutral_interactions(species_list, e_n_data_path,
+    n_e_interactions = load_electron_neutral_interactions(species_data, e_n_data_path,
                                                           Dict("He" => "LinearDB"),
                                                           Dict("He" => ScatteringIsotropic),
                                                           Dict("He" => ElectronEnergySplitEqual))
@@ -72,7 +72,21 @@
         @test n_e_cs[1].prob_vec[1] < 1.0
         @test n_e_cs[1].prob_vec[2] > 0.0
         @test abs(sum(n_e_cs[1].prob_vec) - 1.0) < eps()
+
+        @test abs(Merzbild.get_cs_total(n_e_interactions, n_e_cs, 1) - n_e_cs[1].cs_total) < eps()
+        @test abs(Merzbild.get_cs_elastic(n_e_interactions, n_e_cs, 1) - n_e_cs[1].cs_elastic) < eps()
+        @test abs(Merzbild.get_cs_ionization(n_e_interactions, n_e_cs, 1) - n_e_cs[1].cs_ionization) < eps()
+        @test abs(Merzbild.get_ionization_threshold(n_e_interactions, 1) - 2.458740e+1) < eps()
+        @test Merzbild.get_electron_energy_split(n_e_interactions, 1) == ElectronEnergySplitEqual
     end
 
-    # 200.0
+    coll_data = CollisionData()
+    coll_data.E_coll_electron_eV = 107.5
+    Merzbild.compute_g_new_ionization!(coll_data, interaction_data[1,2], 7.5, ElectronEnergySplitEqual)
+    @test abs(coll_data.g_new_1 - coll_data.g_new_2) < eps()
+    @test (Merzbild.e_mass_div_electron_volt * coll_data.g_new_1^2 + 7.5 - coll_data.E_coll_electron_eV) < 1e-14
+
+    Merzbild.compute_g_new_ionization!(coll_data, interaction_data[1,2], 7.5, ElectronEnergySplitZeroE)
+    @test coll_data.g_new_2 == 0.0
+    @test (0.5 * Merzbild.e_mass_div_electron_volt * coll_data.g_new_1^2 + 7.5 - coll_data.E_coll_electron_eV) < 1e-14
 end

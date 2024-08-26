@@ -33,7 +33,7 @@
     end
 
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
-    species_list::Vector{Species} = load_species_list(particles_data_path, "Ar")
+    species_data::Vector{Species} = load_species_data(particles_data_path, "Ar")
 
     seed = 1234
     Random.seed!(seed)
@@ -43,15 +43,15 @@
     Ny = 2
     Nz = 2
 
-    phys_props::PhysProps = create_props(1, 1, [4], Tref=1)
+    phys_props::PhysProps = PhysProps(1, 1, [4], Tref=1)
 
     Δabs = 2.5
     Δrel_xsmall = 5e-13
     
     particles::Vector{Vector{Particle}} = [create_particles()]
-    pia = create_particle_indexer_array(length(particles[1]))
+    pia = ParticleIndexerArray(length(particles[1]))
 
-    compute_props!(particles, pia, species_list, phys_props)
+    compute_props!(particles, pia, species_data, phys_props)
 
     mim = []
     n_moms = 4
@@ -59,8 +59,8 @@
         append!(mim, compute_multi_index_moments(i))
     end
 
-    mnnls = create_nnls_merging(mim, 30)
-    vref = sqrt(2 * k_B * 300.0 / species_list[1].mass)
+    mnnls = NNLSMerge(mim, 30)
+    vref = sqrt(2 * k_B * 300.0 / species_data[1].mass)
     result = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1, vref)
     
     n0 = phys_props.n[1, 1]
@@ -87,7 +87,7 @@
     @test abs(mnnls.minvz + v0[3] - (-100 + 0.25)) < eps()
     @test abs(mnnls.maxvz + v0[3] - (-100 + 0.25 * 2500)) < eps()
 
-    compute_props!(particles, pia, species_list, phys_props)
+    compute_props!(particles, pia, species_data, phys_props)
     # test that merging conserves mass / momentum / energy
     @test phys_props.np[1, 1] < np0
     @test abs(n0 - phys_props.n[1, 1]) < 1.5e-14
@@ -113,9 +113,9 @@
         append!(mim, compute_multi_index_moments(i))
     end
 
-    mnnls2 = create_nnls_merging(mim, 30)
+    mnnls2 = NNLSMerge(mim, 30)
     particles2::Vector{Vector{Particle}} = [create_particles2()]
-    pia2 = create_particle_indexer_array(length(particles2[1]))
+    pia2 = ParticleIndexerArray(length(particles2[1]))
     vref = 1.0
 
     result = merge_nnls_based!(rng, mnnls2, particles2[1], pia2, 1, 1, vref)

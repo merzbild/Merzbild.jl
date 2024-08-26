@@ -105,7 +105,7 @@
     end
 
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
-    species_list::Vector{Species} = load_species_list(particles_data_path, "Ar")
+    species_data::Vector{Species} = load_species_data(particles_data_path, "Ar")
 
     seed = 1234
     Random.seed!(seed)
@@ -141,8 +141,8 @@
     # then we test particle sorting with 2 particles in a specific octant
     # octants are 8, 7, 6, 5, 4, 3, 3, 2, 1
     particles9::Vector{Vector{Particle}} = [create_9particles(3, true)]
-    pia = create_particle_indexer_array(9)
-    octree = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
+    pia = ParticleIndexerArray(9)
+    octree = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
 
     Merzbild.init_octree!(octree, particles9[1], pia, 1, 1)
     for i in 1:9
@@ -175,7 +175,7 @@
     @test octree.bin_end[1:8] == [1, 2, 4, 5, 6, 7, 8, 9]
 
     # the same but with pia constructed by hand with particle indices split into 2 groups
-    pia2 = create_particle_indexer_array(3)
+    pia2 = ParticleIndexerArray(3)
     pia2.n_total[1] = 9
     pia2.indexer[1,1].n_local = 9
 
@@ -207,7 +207,7 @@
     # particles:  1, 2, 3, 4, 5, 6, 7
     # octants are 8, 7, 6, 4, 3, 2, 1
     particles7::Vector{Vector{Particle}} = [create_7particles(5, true)]
-    pia3 = create_particle_indexer_array(7)
+    pia3 = ParticleIndexerArray(7)
 
     Merzbild.init_octree!(octree, particles7[1], pia3, 1, 1)
     Merzbild.split_bin!(octree, 1, particles7[1])
@@ -229,9 +229,9 @@
     # we do splitting of the main 0 bin, and then do a second split
     
     particles15::Vector{Vector{Particle}} = [create_15particles_nested()]
-    pia4 = create_particle_indexer_array(15)
+    pia4 = ParticleIndexerArray(15)
 
-    octree2 = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVelSym)
+    octree2 = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVelSym)
 
     # the initial bin will have bounds [-3.0, -3.0, -3.0], [3.0, 3.0, 3.0] 
     Merzbild.init_octree!(octree2, particles15[1], pia4, 1, 1)

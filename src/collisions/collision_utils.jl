@@ -28,10 +28,14 @@ function compute_vhs_factor(vhs_Tref, vhs_d, vhs_o, m_r)
     return π * vhs_d^2 * (2 * k_B * vhs_Tref/m_r)^(vhs_o - 0.5) / gamma(2.5 - vhs_o)
 end
 
-function load_interaction_data(interactions_filename, species_list)
+CollisionData() = CollisionData(SVector{3,Float64}(0.0, 0.0, 0.0), 0.0, 0.0, 0.0, 0.0,
+                                SVector{3,Float64}(0.0, 0.0, 0.0),
+                                SVector{3,Float64}(0.0, 0.0, 0.0), 0.0, 0.0)
+
+function load_interaction_data(interactions_filename, species_data)
     interactions_data = TOML.parsefile(interactions_filename)
 
-    species_names = [species.name for species in species_list]
+    species_names = [species.name for species in species_data]
 
     interactions_list = Array{Interaction,2}(undef,length(species_names),length(species_names))
 
@@ -41,10 +45,10 @@ function load_interaction_data(interactions_filename, species_list)
 
                 s1s2 = species_name1 * "," * species_name2
 
-                m_r = species_list[i].mass * species_list[k].mass / (species_list[i].mass + species_list[k].mass)
+                m_r = species_data[i].mass * species_data[k].mass / (species_data[i].mass + species_data[k].mass)
 
-                μ1 = species_list[i].mass / (species_list[i].mass + species_list[k].mass) 
-                μ2 = species_list[k].mass / (species_list[i].mass + species_list[k].mass) 
+                μ1 = species_data[i].mass / (species_data[i].mass + species_data[k].mass) 
+                μ2 = species_data[k].mass / (species_data[i].mass + species_data[k].mass) 
 
                 interaction_s1s2 = nothing
                 try
@@ -69,12 +73,10 @@ function load_interaction_data(interactions_filename, species_list)
     return interactions_list
 end
 
-
-
-function load_interaction_data(interactions_filename, species_list, dummy_vhs_d, dummy_vhs_o, dummy_vhs_Tref)
+function load_interaction_data(interactions_filename, species_data, dummy_vhs_d, dummy_vhs_o, dummy_vhs_Tref)
     interactions_data = TOML.parsefile(interactions_filename)
 
-    species_names = [species.name for species in species_list]
+    species_names = [species.name for species in species_data]
 
     interactions_list = Array{Interaction,2}(undef,length(species_names),length(species_names))
 
@@ -84,10 +86,10 @@ function load_interaction_data(interactions_filename, species_list, dummy_vhs_d,
 
                 s1s2 = species_name1 * "," * species_name2
 
-                m_r = species_list[i].mass * species_list[k].mass / (species_list[i].mass + species_list[k].mass)
+                m_r = species_data[i].mass * species_data[k].mass / (species_data[i].mass + species_data[k].mass)
 
-                μ1 = species_list[i].mass / (species_list[i].mass + species_list[k].mass) 
-                μ2 = species_list[k].mass / (species_list[i].mass + species_list[k].mass) 
+                μ1 = species_data[i].mass / (species_data[i].mass + species_data[k].mass) 
+                μ2 = species_data[k].mass / (species_data[i].mass + species_data[k].mass) 
 
                 interaction_s1s2 = nothing
                 try
@@ -127,14 +129,8 @@ function load_interaction_data(interactions_filename, species_list, dummy_vhs_d,
     return interactions_list
 end
 
-function load_interaction_data_with_dummy(interactions_filename, species_list)
-    return load_interaction_data(interactions_filename, species_list, 1e-10, 1.0, 273.0)
-end
-
-function create_collision_data()
-    return CollisionData(SVector{3,Float64}(0.0, 0.0, 0.0), 0.0, 0.0, 0.0, 0.0,
-                         SVector{3,Float64}(0.0, 0.0, 0.0),
-                         SVector{3,Float64}(0.0, 0.0, 0.0), 0.0, 0.0)
+function load_interaction_data_with_dummy(interactions_filename, species_data)
+    return load_interaction_data(interactions_filename, species_data, 1e-10, 1.0, 273.0)
 end
 
 function compute_com!(collision_data::CollisionData, interaction::Interaction, p1, p2)
@@ -158,9 +154,9 @@ function estimate_sigma_g_w_max(interaction, species1, species2, T1, T2, Fnum; m
     return mult_factor * sigma_vhs(interaction, g_thermal) * g_thermal * Fnum
 end
 
-function estimate_sigma_g_w_max!(collision_factors, interactions, species_list, T_list, Fnum; mult_factor=1.0)
-    for (k, species2) in enumerate(species_list)
-        for (i, species1) in enumerate(species_list)
+function estimate_sigma_g_w_max!(collision_factors, interactions, species_data, T_list, Fnum; mult_factor=1.0)
+    for (k, species2) in enumerate(species_data)
+        for (i, species1) in enumerate(species_data)
             sigma_g_w_max = estimate_sigma_g_w_max(interactions[i,k], species1, species2, T_list[1], T_list[2], Fnum, mult_factor=mult_factor)
 
             for cell in 1:length(collision_factors[i,k,:])
@@ -170,7 +166,7 @@ function estimate_sigma_g_w_max!(collision_factors, interactions, species_list, 
     end
 end
 
-function compute_g_new_ionization(coll_data, interaction, E_i, energy_splitting)
+function compute_g_new_ionization!(coll_data, interaction, E_i, energy_splitting)
     E_new_coll = coll_data.E_coll_electron_eV - E_i
 
     if (energy_splitting == ElectronEnergySplitEqual)

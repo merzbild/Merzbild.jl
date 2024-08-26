@@ -1,5 +1,5 @@
 @testset "test_indexing" begin
-    pia = create_particle_indexer_array(20)
+    pia = ParticleIndexerArray(20)
 
     @test pia.n_total[1] == 20
     @test pia.indexer[1,1].n_local == 20
@@ -20,7 +20,7 @@
     @test pia.indexer[1,1].end2 == 22
     @test pia.indexer[1,1].n_group2 == 2
 
-    pia = create_particle_indexer_array(10)
+    pia = ParticleIndexerArray(10)
 
     pia.n_total[1] += 5
     pia.indexer[1,1].n_local += 5
@@ -102,4 +102,8 @@
     @test pia.indexer[1,1].start2 == 0
     @test pia.indexer[1,1].end2 == 0
     @test pia.indexer[1,1].n_group2 == 0
+
+    pia = ParticleIndexerArray(10, 2)
+    @test length(pia.n_total) == 2
+    @test size(pia.indexer) == (10, 2)
 end

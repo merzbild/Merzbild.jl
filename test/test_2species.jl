@@ -6,11 +6,11 @@
     rng::Xoshiro = Xoshiro(seed)
 
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
-    species_list::Vector{Species} = load_species_list(particles_data_path, ["Ar", "He"])
+    species_data::Vector{Species} = load_species_data(particles_data_path, ["Ar", "He"])
 
     interaction_data_path = joinpath(@__DIR__, "..", "data", "vhs.toml")
-    interaction_data::Array{Interaction, 2} = load_interaction_data(interaction_data_path, species_list)
-    n_species = length(species_list)
+    interaction_data::Array{Interaction, 2} = load_interaction_data(interaction_data_path, species_data)
+    n_species = length(species_data)
 
     n_t = 800
 
@@ -27,22 +27,22 @@
     T_eq = (n_Ar * T0_Ar + n_He * T0_He) / (n_Ar + n_He)
 
     particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, n_particles_Ar), Vector{Particle}(undef, n_particles_He)]
-    sample_particles_equal_weight!(rng, particles[1], n_particles_Ar, species_list[1].mass, T0_Ar, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
-    sample_particles_equal_weight!(rng, particles[2], n_particles_He, species_list[2].mass, T0_He, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+    sample_particles_equal_weight!(rng, particles[1], n_particles_Ar, species_data[1].mass, T0_Ar, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+    sample_particles_equal_weight!(rng, particles[2], n_particles_He, species_data[2].mass, T0_He, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
 
-    pia = create_particle_indexer_array([n_particles_Ar, n_particles_He])
+    pia = ParticleIndexerArray([n_particles_Ar, n_particles_He])
 
-    phys_props::PhysProps = create_props(1, 2, [], Tref=T0_Ar)
-    compute_props!(particles, pia, species_list, phys_props)
+    phys_props::PhysProps = PhysProps(1, 2, [], Tref=T0_Ar)
+    compute_props!(particles, pia, species_data, phys_props)
     
     sol_path = joinpath(@__DIR__, "data", "tmp_2species_elastic.nc")
-    ds = create_netcdf_phys_props(sol_path, species_list, phys_props)
+    ds = NCDataHolder(sol_path, species_data, phys_props)
     write_netcdf_phys_props(ds, phys_props, 0)
 
-    collision_factors::Array{CollisionFactors, 3} = create_collision_factors(n_species)
-    collision_data::CollisionData = create_collision_data()
+    collision_factors::Array{CollisionFactors, 3} = create_collision_factors_array(n_species)
+    collision_data::CollisionData = CollisionData()
 
-    estimate_sigma_g_w_max!(collision_factors, interaction_data, species_list, T0_list, Fnum)
+    estimate_sigma_g_w_max!(collision_factors, interaction_data, species_data, T0_list, Fnum)
 
     Δt = 2.5e-3
     V = 1.0
@@ -59,8 +59,7 @@
             end
         end
 
-        # compute_props!(phys_props, particle_indexer, particles, species_list)
-        compute_props_sorted_without_moments!(particles, pia, species_list, phys_props)
+        compute_props!(particles, pia, species_data, phys_props)
         write_netcdf_phys_props(ds, phys_props, ts)
     end
 
@@ -85,7 +84,7 @@
 
     for species in 1:2
         diff = abs.(ref_T[1, species, :] - sol_T[1, species, :])
-        @test maximum(diff) < eps()
+        @test maximum(diff) < 1.2e-13
     end
 
     for species in 1:2

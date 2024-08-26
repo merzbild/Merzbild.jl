@@ -29,8 +29,8 @@ function run(seed::Int64, threshold::Int64, Ntarget::Int64)
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)
 
-    species_list::Vector{Species} = load_species_list("data/particles.toml", "Ar")
-    interaction_data::Array{Interaction, 2} = load_interaction_data("data/pseudo_maxwell.toml", species_list)
+    species_data::Vector{Species} = load_species_data("data/particles.toml", "Ar")
+    interaction_data::Array{Interaction, 2} = load_interaction_data("data/pseudo_maxwell.toml", species_data)
 
     dt_scaled = 0.025
     n_t = 500
@@ -43,38 +43,38 @@ function run(seed::Int64, threshold::Int64, Ntarget::Int64)
 
     # oc = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
     # oc = create_merging_octree(OctreeBinMeanSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
-    oc = create_merging_octree(OctreeBinMedianSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = OctreeN2Merge(OctreeBinMedianSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
     T0::Float64 = 273.0
     sigma_ref = π * (interaction_data[1,1].vhs_d^2)
     n_dens = 1e23
 
-    vref = sqrt(2 * k_B * T0 / species_list[1].mass)
+    vref = sqrt(2 * k_B * T0 / species_data[1].mass)
     Lref = 1.0 / (n_dens * sigma_ref)
     tref = Lref / vref
     moments_list = [4, 6, 8, 10]
 
     particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, np_base)]
 
-    vdf0 = (vx, vy, vz) -> bkw(vx, vy, vz, species_list[1].mass, T0, 0.0)
+    vdf0 = (vx, vy, vz) -> bkw(vx, vy, vz, species_data[1].mass, T0, 0.0)
 
-    n_sampled = sample_on_grid!(rng, vdf0, particles[1], nv, species_list[1].mass, T0, n_dens,
+    n_sampled = sample_on_grid!(rng, vdf0, particles[1], nv, species_data[1].mass, T0, n_dens,
                                 0.0, 1.0, 0.0, 1.0, 0.0, 1.0;
                                 v_mult=3.5, cutoff_mult=3.5, noise=0.0, v_offset=[0.0, 0.0, 0.0])
 
-    pia = create_particle_indexer_array(n_sampled)
+    pia = ParticleIndexerArray(n_sampled)
 
-    phys_props::PhysProps = create_props(1, 1, moments_list, Tref=T0)
-    compute_props!(particles, pia, species_list, phys_props)
+    phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
+    compute_props!(particles, pia, species_data, phys_props)
 
-    ds = create_netcdf_phys_props("scratch/data/octree_median_$(threshold)_$(Ntarget)_$(seed).nc", species_list, phys_props)
+    ds = NCDataHolder("scratch/data/octree_median_$(threshold)_$(Ntarget)_$(seed).nc", species_data, phys_props)
     write_netcdf_phys_props(ds, phys_props, 0)
 
-    collision_factors::CollisionFactors = create_collision_factors()
-    collision_data::CollisionData = create_collision_data()
+    collision_factors::CollisionFactors = CollisionFactors()
+    collision_data::CollisionData = CollisionData()
 
     Fnum = n_dens/n_sampled
-    collision_factors.sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1], species_list[1], T0, Fnum)
+    collision_factors.sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1], species_data[1], T0, Fnum)
 
     Δt::Float64 = dt_scaled * tref
     V::Float64 = 1.0
@@ -89,7 +89,7 @@ function run(seed::Int64, threshold::Int64, Ntarget::Int64)
             println(ts)
         end
         
-        compute_props!(particles, pia, species_list, phys_props)
+        compute_props!(particles, pia, species_data, phys_props)
         write_netcdf_phys_props(ds, phys_props, ts)
     end
     close_netcdf(ds)

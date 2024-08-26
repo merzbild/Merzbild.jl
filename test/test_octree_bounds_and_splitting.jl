@@ -70,15 +70,15 @@
     end
 
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
-    species_list::Vector{Species} = load_species_list(particles_data_path, "Ar")
+    species_data::Vector{Species} = load_species_data(particles_data_path, "Ar")
 
     seed = 1234
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)
 
     particles1::Vector{Vector{Particle}} = [create_8particles([1.0, 1.0, 1.0])]
-    pia1 = create_particle_indexer_array(8)
-    octree1 = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
+    pia1 = ParticleIndexerArray(8)
+    octree1 = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
 
     # test bounds that are from -speed of light to +speed of light
     Merzbild.init_octree!(octree1, particles1[1], pia1, 1, 1)
@@ -90,15 +90,15 @@
     @test maximum(abs.(octree1.vel_middle)) < 1e-12  # should be almost 0 since everything is symmetric
 
 
-    octree2 = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVelSym)
+    octree2 = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVelSym)
     particles2::Vector{Vector{Particle}} = [create_15particles_nested()]
-    pia2 = create_particle_indexer_array(15)
+    pia2 = ParticleIndexerArray(15)
     Merzbild.init_octree!(octree2, particles2[1], pia2, 1, 1)
     @test maximum(abs.(octree2.bins[1].v_min + octree2.bins[1].v_max)) < 1e-12  # check that init bin is symmetric
     @test maximum(abs.(octree2.bins[1].v_max - [3.0, 3.0, 3.0])) < 1e-12  # check bin bounds
 
     # test bounds, non-symmetric octree bin
-    octree3 = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel)
+    octree3 = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel)
     Merzbild.init_octree!(octree3, particles2[1], pia2, 1, 1)
     @test maximum(abs.(octree3.bins[1].v_min - [-3.0, -1.0, -3.0])) < 1e-11  # check bin bounds, non-symmetrized octree bin
     @test maximum(abs.(octree3.bins[1].v_max - [1.0, 3.0, 1.0])) < 1e-11  # check bin bounds, non-symmetrized octree bin
@@ -108,7 +108,7 @@
     # test that the new suboctant bin bounds make sense
 
 
-    octree4 = create_merging_octree(OctreeBinMeanSplit; init_bin_bounds=OctreeInitBinMinMaxVel)
+    octree4 = OctreeN2Merge(OctreeBinMeanSplit; init_bin_bounds=OctreeInitBinMinMaxVel)
     v_mean = SVector{3, Float64}(0.0, 0.0, 0.0)
     for i in 1:15
         v_mean = v_mean + particles2[1][i].v

@@ -7,6 +7,13 @@ mutable struct Particle
     x::SVector{3,Float64}
 end
 
+struct Species
+    name::String
+    mass::Float64
+    charge::Float64  # in terms of elemenary charge
+    charge_div_mass::Float64  # q/m, C/kg
+end
+
 # species x cells
 mutable struct ParticleIndexer
     n_local::Int64
@@ -20,16 +27,44 @@ mutable struct ParticleIndexer
     n_group2::Int64  # = end2 - start2 + 1
 end
 
+ParticleIndexer(n_particles) = ParticleIndexer(n_particles, 1, n_particles, n_particles, 0, 0, 0)
+
+ParticleIndexer() = ParticleIndexer(0, 0, -1, 0, 0, -1, 0)
+
 mutable struct ParticleIndexerArray
     indexer::Array{ParticleIndexer,2}  # cells x species
     n_total::Vector{Int64}  # per-species
+
+    function ParticleIndexerArray(indexer_arr, n_total)
+        return new(indexer_arr, n_total)
+    end
+
+    function ParticleIndexerArray(n_cells::Int, n_species::Int)  # most generic version
+        pia_indexer = Array{ParticleIndexer, 2}(undef, (n_cells, n_species))
+
+        for j in 1:n_species
+            for i in 1:n_cells
+                pia_indexer[i, j] = ParticleIndexer()
+            end
+        end
+        return new(pia_indexer, [0 for i in 1:n_species])
+    end
 end
+
+ParticleIndexerArray(n_particles::Int64) = ParticleIndexerArray(hcat(ParticleIndexer(n_particles)), [n_particles])
+
+ParticleIndexerArray(n_particles::T) where T<:AbstractVector = ParticleIndexerArray(reshape([ParticleIndexer(np) for np in n_particles], 1, :),
+                                                                                    copy(n_particles))
+
+ParticleIndexerArray(grid, species_data::Array{Species}) = ParticleIndexerArray(grid.n_cells, length(species_data))
 
 mutable struct ParticleVector
     particles::Vector{Particle}
     index::Vector{Int64}
     cell::Vector{Int64}
 end
+
+ParticleVector(np) = ParticleVector(Vector{Particle}(undef, np), Vector{Int64}(1:np), zeros(Int64, np))
 
 function Base.getindex(pv::ParticleVector, i)
     return pv.particles[pv.index[i]]
@@ -41,18 +76,6 @@ end
 
 function Base.length(pv::ParticleVector)
     return length(pv.particles)
-end
-
-struct Species
-    name::String
-    mass::Float64
-    charge::Float64  # in terms of elemenary charge
-    charge_div_mass::Float64  # q/m, C/kg
-end
-
-function create_particle_vector(np)
-    return ParticleVector(Vector{Particle}(undef, np),
-                          Vector{Int64}(1:np), zeros(Int64, np))
 end
 
 function map_cont_index(particle_indexer, i)
@@ -98,43 +121,19 @@ function update_particle_indexer_new_particle(pia, cell, species)
     pia.indexer[cell, species].end2 = pia.n_total[species]
 end
 
-function load_species_list(species_filename, species_names)
+function load_species_data(species_filename, species_names)
     species_data = TOML.parsefile(species_filename)
 
-    species_list = Vector{Species}()
+    res = Vector{Species}()
 
     for species_name in species_names
-        push!(species_list, Species(species_name, species_data[species_name]["mass"], species_data[species_name]["charge"],
-                                    q_e * species_data[species_name]["charge"] / species_data[species_name]["mass"]))
+        push!(res, Species(species_name, species_data[species_name]["mass"], species_data[species_name]["charge"],
+                           q_e * species_data[species_name]["charge"] / species_data[species_name]["mass"]))
     end
 
-    return species_list
+    return res
 end
 
-function load_species_list(species_filename, species_name::String)
-    return load_species_list(species_filename, [species_name])
-end
-
-function create_particle_indexer(n_particles)
-    return ParticleIndexer(n_particles, 1, n_particles, n_particles, 0, 0, 0)
-end
-
-function create_particle_indexer_array(n_particles::Int64)  # 1 cell 1 species
-    return ParticleIndexerArray(hcat(ParticleIndexer(n_particles, 1, n_particles, n_particles, 0, 0, 0)), [n_particles])
-end
-
-function create_particle_indexer_array(n_particles::T) where T<:AbstractVector  # 1 cell multi-species
-    return ParticleIndexerArray(reshape([ParticleIndexer(np, 1, np, np, 0, 0, 0) for np in n_particles], 1, :), copy(n_particles))
-end
-
-function create_particle_indexer_array(n_cells, n_species)  # most generic version
-    pia_indexer = Array{ParticleIndexer, 2}(undef, (n_cells, n_species))
-
-    for j in 1:n_species
-        for i in 1:n_cells
-            pia_indexer[i, j] = ParticleIndexer(0, 0, -1, 0, 0, -1, 0)
-        end
-    end
-    return ParticleIndexerArray(pia_indexer,
-                                [0 for i in 1:n_species])
+function load_species_data(species_filename, species_name::String)
+    return load_species_data(species_filename, [species_name])
 end

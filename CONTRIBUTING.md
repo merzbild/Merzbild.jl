@@ -52,3 +52,6 @@ then everything product-related.
 5. Octree-based N:2 merging: `merge_octree_N2_based!(octree, particles, pia, cell, species, target_np)`
 
 6. Computation of physical properties: `compute_props!(particles, pia, species_data, phys_props)`
+
+# Versioning
+The package uses semantic versioning. The MINOR version number is bumped for breaking changes; the PATCH version number is bumped when new features and/or bug fixes are added.

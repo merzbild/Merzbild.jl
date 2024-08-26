@@ -1,8 +1,8 @@
 @testset "multidimensional indexing" begin
-    pia = create_particle_indexer_array(8, 3)  # 8 cells 3 species
+    pia = ParticleIndexerArray(8, 3)  # 8 cells 3 species
     @test size(pia.indexer) == (8, 3)
 
-    particles = [create_particle_vector(10)]
+    particles = [ParticleVector(10)]
 
     @test particles[1].index == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     @test length(particles[1].particles) == 10

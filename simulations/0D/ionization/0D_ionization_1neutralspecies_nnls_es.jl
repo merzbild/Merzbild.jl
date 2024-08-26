@@ -81,11 +81,11 @@ function run(seed, E_Tn, n_t,
 
     reset_timer!()
 
-    species_list::Vector{Species} = load_species_list("data/particles.toml", ["Ar", "Ar+", "e-"])
-    interaction_data::Array{Interaction, 2} = load_interaction_data_with_dummy("data/vhs.toml", species_list)
+    species_data::Vector{Species} = load_species_data("data/particles.toml", ["Ar", "Ar+", "e-"])
+    interaction_data::Array{Interaction, 2} = load_interaction_data_with_dummy("data/vhs.toml", species_data)
 
 
-    n_e_interactions = load_electron_neutral_interactions(species_list, "../../Data/cross_sections/Ar_IST_Lisbon.xml",
+    n_e_interactions = load_electron_neutral_interactions(species_data, "../../Data/cross_sections/Ar_IST_Lisbon.xml",
                                                           Dict("Ar" => "IST-Lisbon"),
                                                           Dict("Ar" => ScatteringIsotropic),
                                                           Dict("Ar" => ElectronEnergySplitEqual))
@@ -95,8 +95,8 @@ function run(seed, E_Tn, n_t,
 
     println(ref_cs_elastic, ", ", ref_cs_ionization)
     
-    @timeit "NNLSinit" mnnls = create_nnls_merging(mim, threshold_electrons)
-    @timeit "NNLSinit RP" mnnls_rp = create_nnls_merging_rate_conserving(mim, threshold_electrons)
+    @timeit "NNLSinit" mnnls = NNLSMerge(mim, threshold_electrons, rate_preserving=false)
+    @timeit "NNLSinit RP" mnnls_rp = NNLSMerge(mim, threshold_electrons, rate_preserving=false)
 
     println("Total conservation eqns: $(length(mnnls.rhs_vector))")
 
@@ -112,9 +112,9 @@ function run(seed, E_Tn, n_t,
     np_base_heavy = nv_heavy^3  # some initial guess on # of particles in simulation
     np_base_electrons = nv_electrons^3  # some initial guess on # of particles in simulation
 
-    oc = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
-    oc_electrons = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
-    mg_ions = create_merging_grid(Nmerging_ions, Nmerging_ions, Nmerging_ions, 3.5)
+    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc_electrons = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    mg_ions = GridN2Merge(Nmerging_ions, Nmerging_ions, Nmerging_ions, 3.5)
 
    
     particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, np_base_heavy),
@@ -125,33 +125,33 @@ function run(seed, E_Tn, n_t,
     for (index, (n_dens, T0, nv)) in enumerate(zip([n_dens_neutrals, n_dens_ions, n_dens_e],
                                                    [T0, T0, T0_e],
                                                    [nv_heavy, nv_heavy, nv_electrons]))
-        n_sampled[index] = sample_maxwellian_on_grid!(rng, particles[index], nv, species_list[index].mass, T0, n_dens,
+        n_sampled[index] = sample_maxwellian_on_grid!(rng, particles[index], nv, species_data[index].mass, T0, n_dens,
                                                       0.0, 1.0, 0.0, 1.0, 0.0, 1.0;
                                                       v_mult=3.5, cutoff_mult=8.0, noise=0.0, v_offset=[0.0, 0.0, 0.0])
     end
 
-    pia = create_particle_indexer_array(n_sampled)
+    pia = ParticleIndexerArray(n_sampled)
 
-    phys_props::PhysProps = create_props(1, 3, [], Tref=T0)
-    compute_props!(particles, pia, species_list, phys_props)
+    phys_props::PhysProps = PhysProps(1, 3, [], Tref=T0)
+    compute_props!(particles, pia, species_data, phys_props)
 
-    ds = create_netcdf_phys_props(fname, species_list, phys_props)
+    ds = NCDataHolder(fname, species_data, phys_props)
     write_netcdf_phys_props(ds, phys_props, 0)
 
-    collision_factors = create_collision_factors(3)
-    collision_data = create_collision_data()
+    collision_factors = create_collision_factors_array(3)
+    collision_data = CollisionData()
 
     # neutral-neutral
     Fnum_neutral_mean = n_dens_neutrals / n_sampled[1]
     collision_factors[1,1].sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1],
-                                                                  species_list[1], T0,
+                                                                  species_data[1], T0,
                                                                   Fnum_neutral_mean)
                              
     s1 = index_neutral
     s2 = index_electron
     s3 = index_ion
     # neutral-electron
-    estimate_sigma_g_w_max_ntc_n_e!(rng, collision_factors[s1,s2], collision_data, interaction_data,
+    estimate_sigma_g_w_max_ntc_n_e!(rng, collision_factors[s1,s2,1], collision_data, interaction_data,
                                     n_e_interactions, n_e_cs,
                                     particles[s1], particles[s2], pia, 1, s1, s2, Δt, V, min_coll=15, n_loops=6)
 
@@ -181,10 +181,10 @@ function run(seed, E_Tn, n_t,
         end
 
         if pia.n_total[2] > threshold_ion
-            @timeit "merge i" merge_grid_based!(mg_ions, particles[2], pia, 1, 2, species_list, phys_props)
+            @timeit "merge i" merge_grid_based!(mg_ions, particles[2], pia, 1, 2, species_data, phys_props)
         end
 
-        vref = sqrt(2 * k_B * phys_props.T[1,index_electron] / species_list[index_electron].mass)
+        vref = sqrt(2 * k_B * phys_props.T[1,index_electron] / species_data[index_electron].mass)
 
         if pia.n_total[3] > threshold_electrons
             if firstm
@@ -217,10 +217,10 @@ function run(seed, E_Tn, n_t,
 
 
         @timeit "acc e" accelerate_constant_field_x!(particles[index_electron],
-                                     pia, 1, index_electron, species_list,
+                                     pia, 1, index_electron, species_data,
                                      E_field, Δt)
         
-        @timeit "props" compute_props!(particles, pia, species_list, phys_props)
+        @timeit "props" compute_props!(particles, pia, species_data, phys_props)
         @timeit "I/O" Merzbild.write_netcdf_phys_props(ds, phys_props, ts, sync_freq=5000)
 
     end

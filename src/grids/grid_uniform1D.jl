@@ -12,20 +12,20 @@ struct Grid1DUniform
     cells::Vector{Cell1D}
     min_x::Float64  # so that we don't get particles stuck exactly at the wall
     max_x::Float64  # so that we don't get particles stuck exactly at the wall
-end
 
-function create_grid1D_uniform(L, nx)
-    cells = Vector{Cell1D}(undef, nx)
-    dx = L / nx
+    function Grid1DUniform(L, nx; wall_offset=1e-12)
+        cells = Vector{Cell1D}(undef, nx)
+        dx = L / nx
 
-    for i in 1:nx
-        xlo = (i-1) * dx
-        xhi = i * dx
-        V = dx
-        cells[i] = Cell1D(xlo, xhi, V)
+        for i in 1:nx
+            xlo = (i-1) * dx
+            xhi = i * dx
+            V = dx
+            cells[i] = Cell1D(xlo, xhi, V)
+        end
+
+        return new(L, nx, dx, 1.0 / dx, cells, dx * wall_offset, (1.0 - wall_offset) * L)
     end
-
-    return Grid1DUniform(L, nx, dx, 1.0 / dx, cells, dx * 1e-12, (1.0 - 1e-12) * L)
 end
 
 function get_cell(grid1duniform::Grid1DUniform, x_pos)

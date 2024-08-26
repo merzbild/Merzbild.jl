@@ -18,9 +18,8 @@ function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls, 
                 x_old = 0.0
             end
 
-            reflect_particle_x!(rng, particles[i], species_data[species],
+            reflect_particle_x!(rng, particles[i], boundaries.reflection_velocities_sq[bc_id, species],
                                 wall_normal,
-                                boundaries.boundaries[bc_id].T,
                                 boundaries.boundaries[bc_id].v,
                                 boundaries.boundaries[bc_id].accomodation)
 

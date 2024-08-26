@@ -42,7 +42,7 @@ mutable struct OctreeFullCell
 end
 
 # struct for N:2 merge
-mutable struct OctreeN2
+mutable struct OctreeN2Merge
     max_Nbins::Int32
     Nbins::Int32  # actual bins computed
     bins::Vector{OctreeCell}
@@ -104,20 +104,18 @@ function fill_full_bins(Nbins)
                            SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0)) for i in 1:Nbins]
 end
 
-function create_merging_octree(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit,
-                               max_Nbins=4096, max_depth=10)
-    return OctreeN2(max_Nbins, 0, fill_bins(max_Nbins), fill_full_bins(max_Nbins), 0,
-                    zeros(max_Nbins), zeros(max_Nbins),  # bin_start, bin_end
-                    zeros(8192), zeros(8192), zeros(8192),
-                    MVector{8, Int64}(0, 0, 0, 0, 0, 0, 0, 0),
-                    MVector{8, Int64}(0, 0, 0, 0, 0, 0, 0, 0),
-                    MVector{8, Int64}(0, 0, 0, 0, 0, 0, 0, 0),
-                    MVector{8, Float64}(0, 0, 0, 0, 0, 0, 0, 0),
-                    bin_bounds_compute, split,
-                    SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0),
-                    SVector{3,Float64}(0.0, 0.0, 0.0),
-                    init_bin_bounds, max_depth, 0)
-end
+OctreeN2Merge(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit,
+              max_Nbins=4096, max_depth=10) = OctreeN2Merge(max_Nbins, 0, fill_bins(max_Nbins), fill_full_bins(max_Nbins), 0,
+                                                            zeros(max_Nbins), zeros(max_Nbins),  # bin_start, bin_end
+                                                            zeros(8192), zeros(8192), zeros(8192),
+                                                            MVector{8, Int64}(0, 0, 0, 0, 0, 0, 0, 0),
+                                                            MVector{8, Int64}(0, 0, 0, 0, 0, 0, 0, 0),
+                                                            MVector{8, Int64}(0, 0, 0, 0, 0, 0, 0, 0),
+                                                            MVector{8, Float64}(0, 0, 0, 0, 0, 0, 0, 0),
+                                                            bin_bounds_compute, split,
+                                                            SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0),
+                                                            SVector{3,Float64}(0.0, 0.0, 0.0),
+                                                            init_bin_bounds, max_depth, 0)
 
 function clear_octree!(octree)
     octree.Nbins = 0
@@ -161,7 +159,6 @@ function compute_octant(particle_v, v_middle)
 end
 
 function bin_bounds_inherit!(octree, bin_id, v_min_parent, v_max_parent, v_middle, octant)
-    # TODO: TEST
     # inherit bin bounds based on parent
     # octants order:
     # - - -
@@ -262,6 +259,7 @@ end
 
 function bin_bounds_recompute_and_v_mean!(octree, bin_id, bs, be, particles)
     # do everything in 1 pass over the particles
+    # TODO
 end
 
 function get_new_bin_id(i, bin_id, Nbins)
@@ -446,7 +444,7 @@ function get_bin_post_merge_np(octree, bin_id)
     return octree.bins[bin_id].np >= 2 ? 2 : octree.bins[bin_id].np
 end
 
-function compute_new_particles!(octree::OctreeN2, particles, pia, cell, species)
+function compute_new_particles!(octree::OctreeN2Merge, particles, pia, cell, species)
     # given computed Octree, create new particles instead of the old ones
     
     for bin_id in 1:octree.Nbins

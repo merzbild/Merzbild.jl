@@ -1,4 +1,4 @@
-function scatter_vhs(rng, collision_data, interaction, p1, p2)
+function scatter_vhs!(rng, collision_data, interaction, p1, p2)
     ϕ = twopi * rand(rng, Float64)
     cphi = cos(ϕ)
     sphi = sin(ϕ)
