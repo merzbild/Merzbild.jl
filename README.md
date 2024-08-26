@@ -71,7 +71,7 @@ function run(seed)
     println(phys_props.T)
 
     # create struct for output to netCDF file
-    ds = create_netcdf_phys_props("output_multi_species.nc", species_data, phys_props)
+    ds = NCDataHolder("output_multi_species.nc", species_data, phys_props)
     write_netcdf_phys_props(ds, phys_props, 0)
 
     # set up collision structs
