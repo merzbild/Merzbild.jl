@@ -1,7 +1,7 @@
 @testset "merging_grid_indexing" begin
 
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
-    species_list::Vector{Species} = load_species_list(particles_data_path, "Ar")
+    species_data::Vector{Species} = load_species_data(particles_data_path, "Ar")
 
     seed = 1234
     Random.seed!(seed)
@@ -10,16 +10,16 @@
     Nx = 4
     Ny = 3
     Nz = 2
-    mg = create_merging_grid(Nx, Ny, Nz, 1.0)
+    mg = GridN2Merge(Nx, Ny, Nz, 1.0)
 
-    phys_props::PhysProps = create_props(1, 1, [], Tref=1)
+    phys_props::PhysProps = PhysProps(1, 1, [], Tref=1)
 
-    phys_props.T[1,1] = species_list[1].mass / (2 * k_B)
+    phys_props.T[1,1] = species_data[1].mass / (2 * k_B)
 
     @test mg.Ntotal == 32  # Nx * Ny * Nz + 8
     @test mg.NyNz == 6  # Ny * Nz
 
-    Merzbild.compute_velocity_extent!(mg, 1, 1, species_list, phys_props)
+    Merzbild.compute_velocity_extent!(mg, 1, 1, species_data, phys_props)
 
     for i in 1:3
         @test abs(mg.extent_v_lower[i] - (-1)) <= eps(Float64)
@@ -78,16 +78,15 @@
     vx0 = 2000.0
     vy0 = 500.0
     vz0 = -400.0
-    sample_particles_equal_weight!(rng, particles[1], n_particles, species_list[1].mass, T0, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0,
+    sample_particles_equal_weight!(rng, particles[1], n_particles, species_data[1].mass, T0, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0,
     vx0=vx0, vy0=vy0, vz0=vz0)
 
+    pia = ParticleIndexerArray(n_particles)
 
-    pia = create_particle_indexer_array(n_particles)
+    compute_props!(particles, pia, species_data, phys_props)
+    mg2 = GridN2Merge(Nx, Ny, Nz, 3.5)
 
-    compute_props!(particles, pia, species_list, phys_props)
-    mg2 = create_merging_grid(Nx, Ny, Nz, 3.5)
-
-    Merzbild.compute_velocity_extent!(mg2, 1, 1, species_list, phys_props)
+    Merzbild.compute_velocity_extent!(mg2, 1, 1, species_data, phys_props)
 
     @test abs(vx0 - mg2.extent_v_mid[1]) <= Δabs
     @test abs(vy0 - mg2.extent_v_mid[2]) <= Δabs
@@ -104,8 +103,8 @@
     @test nptot == n_particles
     @test abs((ntot - n_particles * Fnum)) / (n_particles * Fnum) < Δrel_xsmall
 
-    mg3 = create_merging_grid(1, 1, 1, 500.0)
-    Merzbild.compute_velocity_extent!(mg3, 1, 1, species_list, phys_props)
+    mg3 = GridN2Merge(1, 1, 1, 500.0)
+    Merzbild.compute_velocity_extent!(mg3, 1, 1, species_data, phys_props)
     Merzbild.compute_grid!(mg3, particles[1], pia, 1, 1)
 
     @test mg3.cells[1].np == n_particles
@@ -124,7 +123,7 @@
     @test mg3.cells[1].x_mean[3] <= 1.0
     @test mg3.cells[1].x_mean[3] >= 0.0
 
-    etot = (mg3.cells[1].v_std_sq[1] + mg3.cells[1].v_std_sq[2] + mg3.cells[1].v_std_sq[3]) * species_list[1].mass / (3 * k_B)
+    etot = (mg3.cells[1].v_std_sq[1] + mg3.cells[1].v_std_sq[2] + mg3.cells[1].v_std_sq[3]) * species_data[1].mass / (3 * k_B)
 
     @test abs(etot - phys_props.T[1,1]) / phys_props.T[1,1] <= Δrel_xsmall
 end

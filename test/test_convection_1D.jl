@@ -1,17 +1,17 @@
 @testset "convection 1D" begin
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
-    species_data = load_species_list(particles_data_path, "Ar")
+    species_data = load_species_data(particles_data_path, "Ar")
 
     seed = 1234
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)
 
-    grid = create_grid1D_uniform(50.0, 100)
+    grid = Grid1DUniform(50.0, 100)
 
-    gridsorter = create_grid_sort_inplace(grid, 15000)
-    particles = [create_particle_vector(4)]
+    gridsorter = GridSortInPlace(grid, 15000)
+    particles = [ParticleVector(4)]
 
-    pia = create_particle_indexer_array(grid.n_cells, 1)
+    pia = ParticleIndexerArray(grid.n_cells, 1)
     pia.n_total[1] = 4
 
     # will just move: new x_coord = 20.5
@@ -27,7 +27,7 @@
     particles[1][4] = Particle(4.0, [-49.0, -20.0, 13.0], [1.5, -1.0, 9.0])
 
     # 1D specularly reflecting boundaries
-    boundaries = create_1D_boundaries(1.0, 1.0, 0.0, 0.0, 0.0, 0.0)
+    boundaries = MaxwellWalls(species_data, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0)
 
     convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, 2.0)
     sort_particles!(gridsorter, grid, particles[1], pia, 1)
@@ -49,7 +49,7 @@
     @test maximum(abs.(particles[1][4].x - [29.0, 6.0, -3.0])) < 2 * eps()
     @test particles[1][4].v == [-11.0, -3.0, 1.0]
     @test particles[1][4].w == 2.0
-    phys_props = create_props(grid.n_cells, 1, [], Tref=1)
+    phys_props = PhysProps(grid.n_cells, 1, [], Tref=1)
     compute_props!(particles, pia, species_data, phys_props)
 
     for i in 1:grid.n_cells
@@ -70,8 +70,8 @@
     # sample a lot of particles, move them so that they hit the wall
     # and sample from a half-Maxwellian and test the resulting distribution
     n_particles = 10000
-    particles = [create_particle_vector(n_particles)]
-    pia = create_particle_indexer_array(grid.n_cells, 1)
+    particles = [ParticleVector(n_particles)]
+    pia = ParticleIndexerArray(grid.n_cells, 1)
     pia.n_total[1] = n_particles
     n = 1e10
 
@@ -82,7 +82,7 @@
     Δt = 1e-7
     vy_left_wall = 1100.0
     vy_right_wall = -820.0
-    boundaries_acc = create_1D_boundaries(2000.0, 500.0, vy_left_wall, vy_right_wall, 1.0, 1.0)
+    boundaries_acc = MaxwellWalls(species_data, 2000.0, 500.0, vy_left_wall, vy_right_wall, 1.0, 1.0)
 
     convect_particles!(rng, grid, boundaries_acc, particles[1], pia, 1, species_data, Δt)
     sort_particles!(gridsorter, grid, particles[1], pia, 1)

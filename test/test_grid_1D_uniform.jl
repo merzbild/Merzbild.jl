@@ -5,7 +5,7 @@
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)
 
-    grid = create_grid1D_uniform(4, 8)
+    grid = Grid1DUniform(4, 8)
 
     @test grid.L == 4
     @test grid.n_cells == 8
@@ -27,12 +27,12 @@
     Fnum::Float64 = n_per_cell / ppc
     T = 500.0
 
-    particles = [create_particle_vector(ppc * grid.n_cells)]
+    particles = [ParticleVector(ppc * grid.n_cells)]
 
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
-    species_data::Vector{Species} = load_species_list(particles_data_path, "Ar")
+    species_data::Vector{Species} = load_species_data(particles_data_path, "Ar")
 
-    pia = create_particle_indexer_array(grid.n_cells, 1)
+    pia = ParticleIndexerArray(grid.n_cells, 1)
 
     sample_particles_equal_weight!(rng, grid, particles[1], pia, 1,
                                    species_data, ppc, T, Fnum)
@@ -52,7 +52,7 @@
         @test particles[1].cell[(i-1)*ppc + 1] == i
     end
 
-    phys_props::PhysProps = create_props(grid.n_cells, 1, [], Tref=1)
+    phys_props::PhysProps = PhysProps(grid.n_cells, 1, [], Tref=1)
     compute_props!(particles, pia, species_data, phys_props)
 
     @test phys_props.n_species == 1
@@ -78,7 +78,7 @@
     # test filling domain with particles
     # based on given ndens
     # cell volume is 0.5, so cell will have 500 particles
-    particles2 = [create_particle_vector(ppc * grid.n_cells)]
+    particles2 = [ParticleVector(ppc * grid.n_cells)]
 
     pia.n_total[1] = 0
 
@@ -100,4 +100,12 @@
         @test abs((phys_props.v[2,i,1])) < Δlarge * 1.5
         @test abs((phys_props.v[3,i,1])) < Δlarge * 1.5
     end
+
+    # test PIA construction from grid and species data
+    particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
+    species_data = load_species_data(particles_data_path, ["Ar", "He"])
+
+    pia = ParticleIndexerArray(grid, species_data)
+    @test length(pia.n_total) == 2
+    @test size(pia.indexer) == (8, 2)
 end 

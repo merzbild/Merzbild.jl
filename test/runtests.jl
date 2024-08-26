@@ -7,7 +7,10 @@ using SpecialFunctions
 using StaticArrays
 
 include("test_indexing.jl")  # first we test indexing routines
+include("test_constants.jl")  # test constants
+include("test_species_data.jl")  # test loading of species data
 include("test_computes.jl")  # we test functions that compute physical properties
+include("test_io.jl")  # we test various I/O routines
 include("test_sampling.jl")  # then we test sampling functions
 include("test_grid_sampling.jl")  # then we test grid sampling functions
 include("test_collision_utils.jl")  # then we test some collision utilities
@@ -31,4 +34,5 @@ include("test_convection_1D.jl")  # test particle convection and surface interac
 include("test_collisions_1D.jl")  # test particle collisions on a grid
 include("test_io_multidim.jl")  # test netCDF I/O of physical properties on a grid
 include("test_1D_couette.jl")  # test Couette flow
+include("test_misc.jl")  # various misc utility functions
 include("test_aqua.jl")

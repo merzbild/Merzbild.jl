@@ -33,10 +33,10 @@
     rng::Xoshiro = Xoshiro(seed)
 
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
-    species_list::Vector{Species} = load_species_list(particles_data_path, "Ar")
+    species_data::Vector{Species} = load_species_data(particles_data_path, "Ar")
 
     interaction_data_path = joinpath(@__DIR__, "..", "data", "pseudo_maxwell.toml")
-    interaction_data::Array{Interaction, 2} = load_interaction_data(interaction_data_path, species_list)
+    interaction_data::Array{Interaction, 2} = load_interaction_data(interaction_data_path, species_data)
 
     dt_scaled = 0.025
     n_t = 500
@@ -46,7 +46,7 @@
     sigma_ref = π * (interaction_data[1,1].vhs_d^2)
     n_dens = 1e23
 
-    vref = sqrt(2 * k_B * T0 / species_list[1].mass)
+    vref = sqrt(2 * k_B * T0 / species_data[1].mass)
     Lref = 1.0 / (n_dens * sigma_ref)
     tref = Lref / vref
     moments_list = [4, 6, 8, 10]
@@ -58,22 +58,22 @@
     Fnum::Float64 = n_dens / n_particles
 
     particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, n_particles)]
-    sample_particles_equal_weight!(rng, particles[1], n_particles, species_list[1].mass, T0, Fnum,
+    sample_particles_equal_weight!(rng, particles[1], n_particles, species_data[1].mass, T0, Fnum,
                                    0.0, 1.0, 0.0, 1.0, 0.0, 1.0; distribution=:BKW)
 
-    pia = create_particle_indexer_array(n_particles)
+    pia = ParticleIndexerArray(n_particles)
 
-    phys_props::PhysProps = create_props(1, 1, moments_list, Tref=T0)
-    compute_props!(particles, pia, species_list, phys_props)
+    phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
+    compute_props_with_total_moments!(particles, pia, species_data, phys_props)
 
     sol_path = joinpath(@__DIR__, "data", "tmp_bkw.nc")
-    ds = create_netcdf_phys_props(sol_path, species_list, phys_props)
+    ds = NCDataHolder(sol_path, species_data, phys_props)
     write_netcdf_phys_props(ds, phys_props, 0)
 
-    collision_factors::CollisionFactors = create_collision_factors()
-    collision_data::CollisionData = create_collision_data()
+    collision_factors::CollisionFactors = CollisionFactors()
+    collision_data::CollisionData = CollisionData()
 
-    collision_factors.sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1], species_list[1], T0, Fnum)
+    collision_factors.sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1], species_data[1], T0, Fnum)
 
     Δt::Float64 = dt_scaled * tref
     V::Float64 = 1.0
@@ -81,7 +81,7 @@
     for ts in 1:n_t
         ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
         
-        compute_props!(particles, pia, species_list, phys_props)
+        compute_props_with_total_moments!(particles, pia, species_data, phys_props)
         write_netcdf_phys_props(ds, phys_props, ts)
     end
     close_netcdf(ds)

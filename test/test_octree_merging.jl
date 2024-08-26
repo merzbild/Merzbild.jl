@@ -41,18 +41,18 @@
     end
 
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
-    species_list::Vector{Species} = load_species_list(particles_data_path, "Ar")
+    species_data::Vector{Species} = load_species_data(particles_data_path, "Ar")
 
     seed = 1234
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)
-    phys_props::PhysProps = create_props(1, 1, [], Tref=1)
+    phys_props::PhysProps = PhysProps(1, 1, [], Tref=1)
     
     particles24::Vector{Vector{Particle}} = [create_24_3particles_in_octant()]
-    pia = create_particle_indexer_array(24)
+    pia = ParticleIndexerArray(24)
 
     # symmetric octree with split at v0 = (0.0, 0.0, 0.0)
-    octree = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
+    octree = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
 
     Merzbild.init_octree!(octree, particles24[1], pia, 1, 1)
     
@@ -99,7 +99,7 @@
         @test Merzbild.get_bin_post_merge_np(octree, i) == 2
     end
 
-    compute_props!(particles24, pia, species_list, phys_props)
+    compute_props!(particles24, pia, species_data, phys_props)
 
     n0_computed = phys_props.n[1,1]
     np0_computed = phys_props.np[1,1]
@@ -107,7 +107,7 @@
     v0_computed = phys_props.v[:,1,1]
     @test n0_computed == total_w
 
-    octree2 = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
+    octree2 = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
     merge_octree_N2_based!(octree2, particles24[1], pia, 1, 1, 16)
 
     @test octree2.Nbins == 8
@@ -117,7 +117,7 @@
         @test octree2.bins[i].depth == 1
     end
 
-    compute_props!(particles24, pia, species_list, phys_props)
+    compute_props!(particles24, pia, species_data, phys_props)
     @test pia.n_total[1] == phys_props.np[1,1]
     @test abs(phys_props.n[1,1] - n0_computed) < eps()
     @test abs(phys_props.T[1,1] - T0_computed) < 1e-14
@@ -133,7 +133,7 @@
         @test octree2.bins[i].depth == 0
     end
 
-    compute_props!(particles24, pia, species_list, phys_props)
+    compute_props!(particles24, pia, species_data, phys_props)
     @test pia.n_total[1] == phys_props.np[1,1]
     @test particles24[1][1].w == 0.5 * total_w
     @test particles24[1][1].w == particles24[1][2].w

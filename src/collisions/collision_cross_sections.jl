@@ -285,8 +285,9 @@ function compute_tabulated_cs_zero_continuation(tabulated_cs_data, E_coll)
                                 0.0)
 end
 
-function compute_cross_sections!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index)
+function compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index)
     # the neutral_species_index is the absolute one (i.e. index in the list of all species)
+    # this is used in the NNLS merging approach
     E_coll_electron_eV = 0.5 * g^2 * e_mass_div_electron_volt  # convert to eV
     E_coll = 0.5 * g^2 * interaction.m_r * eV_J_inv
 
@@ -300,6 +301,16 @@ function compute_cross_sections!(computed_cs, interaction, g, electron_neutral_i
     for i in 1:computed_cs[i_neutral].n_excitations
         computed_cs[i_neutral].cs_excitation[i] = compute_tabulated_cs_constant_continuation(electron_neutral_interactions.excitation_sink[i_neutral].data, E_coll_electron_eV)
     end
+
+    return E_coll_electron_eV
+end
+
+function compute_cross_sections!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index)
+    # the neutral_species_index is the absolute one (i.e. index in the list of all species)
+    E_coll_electron_eV = compute_cross_sections_only!(computed_cs, interaction, g,
+                                                      electron_neutral_interactions, neutral_species_index)
+
+    i_neutral = electron_neutral_interactions.neutral_indexer[neutral_species_index]
 
     computed_cs[i_neutral].cs_total = computed_cs[i_neutral].cs_elastic + computed_cs[i_neutral].cs_ionization + sum(computed_cs[i_neutral].cs_excitation)
 
@@ -317,23 +328,6 @@ function compute_cross_sections!(computed_cs, interaction, g, electron_neutral_i
     end
 
     return E_coll_electron_eV
-end
-
-function compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index)
-    # the neutral_species_index is the absolute one (i.e. index in the list of all species)
-    E_coll_electron_eV = 0.5 * g^2 * e_mass_div_electron_volt  # convert to eV
-    E_coll = 0.5 * g^2 * interaction.m_r * eV_J_inv
-
-    i_neutral = electron_neutral_interactions.neutral_indexer[neutral_species_index]
-
-    computed_cs[i_neutral].n_excitations = electron_neutral_interactions.excitation_sink[i_neutral].n_reactions
-
-    computed_cs[i_neutral].cs_elastic = compute_tabulated_cs_constant_continuation(electron_neutral_interactions.elastic[i_neutral].data, E_coll)
-    computed_cs[i_neutral].cs_ionization = compute_tabulated_cs_constant_continuation(electron_neutral_interactions.ionization[i_neutral].data, E_coll_electron_eV)
-
-    for i in 1:computed_cs[i_neutral].n_excitations
-        computed_cs[i_neutral].cs_excitation[i] = compute_tabulated_cs_constant_continuation(electron_neutral_interactions.excitation_sink[i_neutral].data, E_coll_electron_eV)
-    end
 end
 
 function get_cs_total(electron_neutral_interactions, computed_cs, neutral_species_index)

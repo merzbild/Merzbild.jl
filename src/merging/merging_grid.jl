@@ -1,6 +1,5 @@
 using StaticArrays
-
-mutable struct MergingGrid
+mutable struct GridN2Merge
     Nx::Int8
     Ny::Int8
     Nz::Int8
@@ -16,36 +15,32 @@ mutable struct MergingGrid
     direction_vec::SVector{3,Float64}
 
     cells::Vector{GridCell}
-end
 
-function create_merging_grid(Nx, Ny, Nz, extent_multiplier::T) where T <: AbstractArray
-    Ntotal = Nx * Ny * Nz + 8
-    cells = Vector{GridCell}(undef, Nx * Ny * Nz + 8)
+    function GridN2Merge(Nx::Int, Ny::Int, Nz::Int, extent_multiplier::T) where T <: AbstractArray
+        Ntotal = Nx * Ny * Nz + 8
+        cells = Vector{GridCell}(undef, Nx * Ny * Nz + 8)
 
-    for i in 1:Ntotal
-        cells[i] = GridCell(0, 0.0, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0, 0,
-                            0.0, 0.0, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0])
+        for i in 1:Ntotal
+            cells[i] = GridCell(0, 0.0, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0, 0,
+                                0.0, 0.0, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0])
+        end
+
+        return new(Nx, Ny, Nz, Ny*Nz, Ntotal, extent_multiplier, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0],
+                   [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], cells)
     end
-
-    return MergingGrid(Nx, Ny, Nz, Ny*Nz, Ntotal, extent_multiplier, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0],
-                [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], cells)
 end
 
-function create_merging_grid(N, extent_multiplier::T) where T <: AbstractArray
-    return create_merging_grid(N, N, N, extent_multiplier)
-end
+GridN2Merge(N::Int, extent_multiplier::T) where T <: AbstractArray = GridN2Merge(N, N, N, extent_multiplier)
 
-function create_merging_grid(Nx, Ny, Nz, extent_multiplier::Float64)
-    return create_merging_grid(Nx, Ny, Nz, [extent_multiplier, extent_multiplier, extent_multiplier])
-end
+GridN2Merge(Nx::Int, Ny::Int, Nz::Int, extent_multiplier::Float64) = GridN2Merge(Nx, Ny, Nz, [extent_multiplier, extent_multiplier, extent_multiplier])
 
-function create_merging_grid(Nx, Ny, Nz, extent_multiplier_x::Float64, extent_multiplier_y::Float64, extent_multiplier_z::Float64)
-    return create_merging_grid(Nx, Ny, Nz, [extent_multiplier_x, extent_multiplier_y, extent_multiplier_z])
-end
-
-function create_merging_grid(N, extent_multiplier::Float64)
-    return create_merging_grid(N, N, N, extent_multiplier)
-end
+GridN2Merge(Nx::Int, Ny::Int, Nz::Int,
+            extent_multiplier_x::Float64,
+            extent_multiplier_y::Float64,
+            extent_multiplier_z::Float64) = GridN2Merge(Nx, Ny, Nz, [extent_multiplier_x,
+                                                                     extent_multiplier_y,
+                                                                     extent_multiplier_z])
+GridN2Merge(N::Int, extent_multiplier::Float64) = GridN2Merge(N, N, N, extent_multiplier)
 
 function compute_velocity_extent!(merging_grid, cell, species, species_data, phys_props)
     dv = merging_grid.extent_multiplier .* sqrt.(2 * phys_props.T[cell, species] * k_B / species_data[species].mass)
@@ -104,7 +99,7 @@ function clear_merging_grid!(merging_grid)
     end
 end
 
-function compute_grid!(merging_grid::MergingGrid, particles, pia, cell, species)
+function compute_grid!(merging_grid::GridN2Merge, particles, pia, cell, species)
     clear_merging_grid!(merging_grid)
 
     for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
@@ -170,7 +165,7 @@ function compute_grid!(merging_grid::MergingGrid, particles, pia, cell, species)
     end
 end
 
-function compute_new_particles!(merging_grid::MergingGrid, particles, pia, cell, species)
+function compute_new_particles!(merging_grid::GridN2Merge, particles, pia, cell, species)
     # no limits on particle location, i.e. 0-D
 
     for index in 1:merging_grid.Ntotal

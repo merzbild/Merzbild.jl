@@ -3,9 +3,7 @@ mutable struct GridSortInPlace
     sorted_indices::Vector{Int64}
 end
 
-function create_grid_sort_inplace(grid, n_particles)
-    return GridSortInPlace(zeros(Int64, grid.n_cells + 1), zeros(Int64, n_particles))
-end
+GridSortInPlace(grid, n_particles::Int64) = GridSortInPlace(zeros(Int64, grid.n_cells + 1), zeros(Int64, n_particles))
 
 function sort_particles!(gridsort::GridSortInPlace, grid, particles, pia, species)
     if pia.n_total[species] > length(gridsort.sorted_indices)

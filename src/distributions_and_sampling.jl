@@ -70,26 +70,6 @@ function bkw(vx, vy, vz, m, T, scaled_time)
     return (5 * xk - 3 + 2 * (1.0 - xk) * Csq * m / (2 * k_B * xk * T)) * exp(-Csq * m / (2 * k_B * xk * T))
 end
 
-function sample_bkw!(rng, particles, nparticles, m, T, v0)
-    # BKW at t=0
-    vscale = sqrt(2 * k_B * T / m) * sqrt(0.3)  # 0.3 comes from some scaling of the Chi distribution
-
-    v_distribution = Distributions.Chi(5) 
-    v_abs = rand(v_distribution, nparticles)
-
-    Θ = rand(rng, Float64, nparticles) * π
-    ϕ = rand(rng, Float64, nparticles) * twopi
-    sintheta = sin.(Θ)
-
-    vx = v_abs .* sintheta .* cos.(ϕ)
-    vy = v_abs .* sintheta .* sin.(ϕ)
-    vz = v_abs .* cos.(Θ)
-
-    for i in 1:nparticles
-        particles[i].v = vscale * SVector{3,Float64}(vx[i], vy[i], vz[i]) .+ v0
-    end
-end
-
 function sample_bkw!(rng, particles, nparticles, offset, m, T, v0)
     # BKW at t=0
     vscale = sqrt(2 * k_B * T / m) * sqrt(0.3)  # 0.3 comes from some scaling of the Chi distribution
@@ -108,6 +88,10 @@ function sample_bkw!(rng, particles, nparticles, offset, m, T, v0)
     for i in 1:nparticles
         particles[i+offset].v = vscale * SVector{3,Float64}(vx[i], vy[i], vz[i]) .+ v0
     end
+end
+
+function sample_bkw!(rng, particles, nparticles, m, T, v0)
+    sample_bkw!(rng, particles, nparticles, 0, m, T, v0)
 end
 
 function evaluate_distribution_on_grid!(vdf, distribution_function, grid, w_total, cutoff_v; normalize=true)

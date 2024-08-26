@@ -1,6 +1,6 @@
 @testset "collisions on 1D grid" begin
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
-    species_data = load_species_list(particles_data_path, "Ar")
+    species_data = load_species_data(particles_data_path, "Ar")
 
     interaction_data_path = joinpath(@__DIR__, "..", "data", "pseudo_maxwell.toml")
     interaction_data::Array{Interaction, 2} = load_interaction_data(interaction_data_path, species_data)
@@ -12,11 +12,11 @@
     Fnum = 1e15
     T = 750.0
 
-    grid = create_grid1D_uniform(10.0, 5)
+    grid = Grid1DUniform(10.0, 5)
 
-    particles = [create_particle_vector(np)]
+    particles = [ParticleVector(np)]
 
-    pia = create_particle_indexer_array(grid.n_cells, 1)
+    pia = ParticleIndexerArray(grid.n_cells, 1)
     
 
     cell = 2
@@ -31,7 +31,7 @@
     @test pia.indexer[cell, 1].start1 == 1
     @test pia.indexer[cell, 1].end1 == np
 
-    phys_props = create_props(grid.n_cells, 1, [], Tref=1)
+    phys_props = PhysProps(grid.n_cells, 1, [], Tref=1)
     compute_props!(particles, pia, species_data, phys_props)
 
     @test phys_props.n[1, 1] == 0.0
@@ -44,8 +44,8 @@
     v_init = phys_props.v[:, 2, 1]
 
 
-    collision_factors = create_collision_factors(1, grid.n_cells)
-    collision_data = create_collision_data()
+    collision_factors = create_collision_factors_array(1, grid.n_cells)
+    collision_data = CollisionData()
 
     for cell in 1:grid.n_cells
         collision_factors[1, 1, cell].sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1], species_data[1], T, Fnum)

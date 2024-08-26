@@ -6,19 +6,19 @@
     rng::Xoshiro = Xoshiro(seed)
 
     # domain length of 8, 2 cells
-    grid_coarse = create_grid1D_uniform(8, 2)
+    grid_coarse = Grid1DUniform(8, 2)
 
     n_per_cell = 1e10
     ppc = 4
     Fnum::Float64 = n_per_cell / ppc
     T = 500.0
 
-    particles = [create_particle_vector(ppc * grid_coarse.n_cells)]
+    particles = [ParticleVector(ppc * grid_coarse.n_cells)]
 
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
-    species_data::Vector{Species} = load_species_list(particles_data_path, "Ar")
+    species_data::Vector{Species} = load_species_data(particles_data_path, "Ar")
 
-    pia_coarse = create_particle_indexer_array(grid_coarse.n_cells, 1)
+    pia_coarse = ParticleIndexerArray(grid_coarse.n_cells, 1)
 
     sample_particles_equal_weight!(rng, grid_coarse, particles[1], pia_coarse, 1,
                                    species_data, ppc, T, Fnum)
@@ -29,7 +29,7 @@
         particles[1][i].x = SVector{3,Float64}(0.99 * 8.0 * (9.0 - i) / 8, 0.0, 0.0)
     end
 
-    gridsorter = create_grid_sort_inplace(grid_coarse, pia_coarse.n_total[1])
+    gridsorter = GridSortInPlace(grid_coarse, pia_coarse.n_total[1])
     sort_particles!(gridsorter, grid_coarse, particles[1], pia_coarse, 1)
     
     # x (sorted) = [3.96 2.97 1.98 0.99] [7.92 6.93 5.94 4.95] 
@@ -66,15 +66,44 @@
         @test particles[1][i].x[1] == 0.99 * 8.0 * (9.0 - i + 4) / 8
     end
 
-    # now we try a finer grid
-    grid_fine = create_grid1D_uniform(8, 4)
+    # test resizing
+    particles2 = [ParticleVector(ppc * grid_coarse.n_cells)]
+    pia_coarse2 = ParticleIndexerArray(grid_coarse.n_cells, 1)
+    sample_particles_equal_weight!(rng, grid_coarse, particles2[1], pia_coarse2, 1,
+                                   species_data, ppc, T, Fnum)
+    for i in 1:pia_coarse.n_total[1]
+        particles2[1][i].x = SVector{3,Float64}(0.99 * 8.0 * (9.0 - i) / 8, 0.0, 0.0)
+    end
 
-    pia_fine = create_particle_indexer_array(grid_fine.n_cells, 1)
+    gridsorter_small = GridSortInPlace(grid_coarse, 1)
+    @test length(gridsorter_small.sorted_indices) < pia_coarse2.n_total[1]
+    sort_particles!(gridsorter_small, grid_coarse, particles2[1], pia_coarse2, 1)
+    @test length(gridsorter_small.sorted_indices) > pia_coarse2.n_total[1]
+
+    @test particles2[1].index == [5, 6, 7, 8, 1, 2, 3, 4]
+
+    # underlying particles did not change
+    for i in 1:8
+        particles2[1].particles[i].x[1] == 0.99 * 8.0 * (9.0 - i) / 8
+    end
+
+    # but when we access them through the ParticleVector we get the expected result
+    for i in 1:4
+        @test particles2[1][i].x[1] == 0.99 * 8.0 * (9.0 - i - 4) / 8
+    end
+    for i in 5:8
+        @test particles2[1][i].x[1] == 0.99 * 8.0 * (9.0 - i + 4) / 8
+    end
+
+    # now we try a finer grid
+    grid_fine = Grid1DUniform(8, 4)
+
+    pia_fine = ParticleIndexerArray(grid_fine.n_cells, 1)
 
     # we don't need to fill in per-cell info since it will be overwritten anyway
     pia_fine.n_total[1] = 8
 
-    gridsorter_fine = create_grid_sort_inplace(grid_fine, pia_fine.n_total[1])
+    gridsorter_fine = GridSortInPlace(grid_fine, pia_fine.n_total[1])
     sort_particles!(gridsorter_fine, grid_fine, particles[1], pia_fine, 1)
 
     # x (sorted) = [1.98 0.99] [3.96 2.97] [5.94 4.95] [7.92 6.93]
@@ -143,7 +172,7 @@
         @test pia_fine.indexer[cell,1].n_local == counts[cell]
     end
 
-    phys_props::PhysProps = create_props(grid_fine.n_cells, 1, [], Tref=1)
+    phys_props::PhysProps = PhysProps(grid_fine.n_cells, 1, [], Tref=1)
     compute_props!(particles, pia_fine, species_data, phys_props)
     n_per_cell = Fnum * counts
 

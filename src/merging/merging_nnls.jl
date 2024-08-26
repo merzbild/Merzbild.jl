@@ -1,7 +1,4 @@
-# using NNLS
-# using TimerOutputs
-
-mutable struct NNLSMerging
+mutable struct NNLSMerge
     v0::SVector{3,Float64}
     vref::Float64  # used for scaling
     inv_vref::Float64  # used for scaling
@@ -23,37 +20,28 @@ mutable struct NNLSMerging
     mim::Vector{Vector{Int32}}  # mult-index moments
     tot_order::Vector{Int32}
     work::NNLSWorkspace
+
+    function NNLSMerge(multi_index_moments, init_np; rate_preserving=false)
+        add_length = 0
+        if rate_preserving
+            add_length = 2
+        end
+
+        base_moments = base_multi_index_moments()
+        filtered_mim = [x for x in multi_index_moments if !(x in base_moments)]
+        n_total_conserved = length(base_moments) + length(filtered_mim) + add_length
+        append!(base_moments, filtered_mim)
+        tot_order = [sum(mim) for mim in base_moments]
+    
+        return new(SVector{3,Float64}(0.0, 0.0, 0.0), 1.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                   n_total_conserved - add_length,
+                   zeros(n_total_conserved), zeros(n_total_conserved),
+                   base_moments, tot_order,
+                   NNLSWorkspace(zeros(n_total_conserved, init_np), zeros(n_total_conserved)))
+    end
 end
 
-function create_nnls_merging(multi_index_moments, init_np)
-    base_moments = base_multi_index_moments()
-    filtered_mim = [x for x in multi_index_moments if !(x in base_moments)]
-    n_total_conserved = length(base_moments) + length(filtered_mim)
-    append!(base_moments, filtered_mim)
-    tot_order = [sum(mim) for mim in base_moments]
-
-    return NNLSMerging(SVector{3,Float64}(0.0, 0.0, 0.0), 1.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-                       0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                       n_total_conserved,
-                       zeros(n_total_conserved), zeros(n_total_conserved),
-                       base_moments, tot_order,
-                       NNLSWorkspace(zeros(n_total_conserved, init_np), zeros(n_total_conserved)))
-end
-
-function create_nnls_merging_rate_conserving(multi_index_moments, init_np)
-    base_moments = base_multi_index_moments()
-    filtered_mim = [x for x in multi_index_moments if !(x in base_moments)]
-    n_total_conserved = length(base_moments) + length(filtered_mim) + 2
-    append!(base_moments, filtered_mim)
-    tot_order = [sum(mim) for mim in base_moments]
-
-    return NNLSMerging(SVector{3,Float64}(0.0, 0.0, 0.0), 1.0, 1.0, 0.0, 0.0, 0.0, 0.0,
-                       0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                       n_total_conserved - 2,  # we conserve N moments and 2 rates, so n_moments = n_total_conserved - 2
-                       zeros(n_total_conserved), zeros(n_total_conserved),
-                       base_moments, tot_order,
-                       NNLSWorkspace(zeros(n_total_conserved, init_np), zeros(n_total_conserved)))
-end
 
 function vx_sign(octant)
     if octant % 2 == 1

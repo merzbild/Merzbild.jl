@@ -33,9 +33,9 @@ function run(seed)
 
     # load species and interaction data
     # path is correct if run from root directory of the Merzbild repo
-    species_list = load_species_list("data/particles.toml", ["Ar", "He"])
-    interaction_data = load_interaction_data("data/vhs.toml", species_list)
-    n_species = length(species_list)
+    species_data = load_species_data("data/particles.toml", ["Ar", "He"])
+    interaction_data = load_interaction_data("data/vhs.toml", species_data)
+    n_species = length(species_data)
 
     n_t = 800 # set number of timesteps
 
@@ -55,15 +55,15 @@ function run(seed)
 
     # sample particles
     particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, n_particles_Ar), Vector{Particle}(undef, n_particles_He)]
-    sample_particles_equal_weight!(rng, particles[1], n_particles_Ar, species_list[1].mass, T0_Ar, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
-    sample_particles_equal_weight!(rng, particles[2], n_particles_He, species_list[2].mass, T0_He, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+    sample_particles_equal_weight!(rng, particles[1], n_particles_Ar, species_data[1].mass, T0_Ar, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+    sample_particles_equal_weight!(rng, particles[2], n_particles_He, species_data[2].mass, T0_He, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
 
     # create struct for particle indexing
-    pia = create_particle_indexer_array([n_particles_Ar, n_particles_He])
+    pia = ParticleIndexerArray([n_particles_Ar, n_particles_He])
 
     # create struct for computation of physical properties
-    phys_props = create_props(1, 2, [], Tref=T0_Ar)
-    compute_props!(particles, pia, species_list, phys_props)
+    phys_props = PhysProps(pia)
+    compute_props!(particles, pia, species_data, phys_props)
 
     # print properties at t=0
     println(phys_props.n)
@@ -71,13 +71,13 @@ function run(seed)
     println(phys_props.T)
 
     # create struct for output to netCDF file
-    ds = create_netcdf_phys_props("output_multi_species.nc", species_list, phys_props)
+    ds = create_netcdf_phys_props("output_multi_species.nc", species_data, phys_props)
     write_netcdf_phys_props(ds, phys_props, 0)
 
     # set up collision structs
-    collision_factors = create_collision_factors(n_species)
-    collision_data = create_collision_data()
-    estimate_sigma_g_w_max!(collision_factors, interaction_data, species_list, T0_list, Fnum)
+    collision_factors = create_collision_factors_array(n_species)
+    collision_data = CollisionData()
+    estimate_sigma_g_w_max!(collision_factors, interaction_data, species_data, T0_list, Fnum)
 
     # start time loop
     for ts in 1:n_t
@@ -94,7 +94,7 @@ function run(seed)
         end
 
         # compute and write physical properties
-        compute_props!(particles, pia, species_list, phys_props)
+        compute_props!(particles, pia, species_data, phys_props)
         write_netcdf_phys_props(ds, phys_props, ts)
     end
 
@@ -118,26 +118,25 @@ Running with `-O3` might also speed up things.
 ## Testing
 
 The tests try to cover most of the functionality implemented in the code. They can be run by invoking by calling `using Pkg; Pkg.test()`.
-Addition of test coverage (via `Coverage.jl`) is planned.
 
 ## Speed
-Comparing to SPARTA running in serial mode computing a Couette flow with 50000 particles and 50 cells (averaging over 36k timesteps after t>14000):
+Comparing to SPARTA running in serial mode computing a Couette flow with 50000 particles and 50 cells (averaging over 36k timesteps after t>14000). Julia 1.9.4, with `--check-bounds=no -O3`.
 
 Merzbild.jl:
 ```
  ──────────────────────────────────────────────────────────────────────────
                                   Time                    Allocations      
                          ───────────────────────   ────────────────────────
-    Tot / % measured:         27.8s /  96.3%            699MiB /   0.4%    
+    Tot / % measured:         27.6s /  96.2%            699MiB /   0.4%    
 
  Section         ncalls     time    %tot     avg     alloc    %tot      avg
  ──────────────────────────────────────────────────────────────────────────
- sort             50.0k    8.82s   33.0%   176μs     0.00B    0.0%    0.00B
- convect          50.0k    6.86s   25.6%   137μs     0.00B    0.0%    0.00B
- collide          2.50M    5.77s   21.6%  2.31μs     0.00B    0.0%    0.00B
- props compute    36.0k    5.29s   19.8%   147μs     0.00B    0.0%    0.00B
- I/O                 51   4.44ms    0.0%  87.1μs   12.0KiB    0.4%     240B
- sampling             1   2.31ms    0.0%  2.31ms   3.05MiB   99.6%  3.05MiB
+ sort             50.0k    8.90s   33.5%   178μs     0.00B    0.0%    0.00B
+ convect          50.0k    6.70s   25.2%   134μs     0.00B    0.0%    0.00B
+ collide          2.50M    5.80s   21.8%  2.32μs     0.00B    0.0%    0.00B
+ props compute    36.0k    5.19s   19.5%   144μs     0.00B    0.0%    0.00B
+ I/O                 51   4.44ms    0.0%  87.0μs   12.0KiB    0.4%     240B
+ sampling             1   2.53ms    0.0%  2.53ms   3.05MiB   99.6%  3.05MiB
  ──────────────────────────────────────────────────────────────────────────
 ```
 

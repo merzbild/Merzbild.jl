@@ -7,11 +7,9 @@ mutable struct CollisionFactors
     n_eq_w_coll_performed::Int64  # number of collisions of particles with equal weights (no splitting), for debugging/etc
 end
 
-function create_collision_factors()
-    return CollisionFactors(0, 0.0, 0.0, 0, 0, 0)
-end
+CollisionFactors() = CollisionFactors(0, 0.0, 0.0, 0, 0, 0)
 
-function create_collision_factors(n_species)
+function create_collision_factors_array(n_species)
     coll_factor_array = Array{CollisionFactors, 3}(undef, (n_species, n_species, 1))
     for k in 1:n_species
         for i in 1:n_species
@@ -21,7 +19,7 @@ function create_collision_factors(n_species)
     return coll_factor_array
 end
 
-function create_collision_factors(n_species, n_cells)
+function create_collision_factors_array(n_species, n_cells)
     coll_factor_array = Array{CollisionFactors, 3}(undef, (n_species, n_species, n_cells))
     for k in 1:n_cells
         for j in 1:n_species
@@ -118,7 +116,7 @@ function ntc!(rng, collision_factors, collision_data, interaction, particles, pi
 
                     particles[pia.n_total[species]] = Particle(Δw, particles[k].v, particles[k].x)
                 end
-                scatter_vhs(rng, collision_data, interaction[species, species], particles[i], particles[k])
+                scatter_vhs!(rng, collision_data, interaction[species, species], particles[i], particles[k])
             end
         end
     end
@@ -193,7 +191,7 @@ function ntc!(rng, collision_factors, collision_data, interaction,
 
                     particles_2[pia.n_total[species_2]] = Particle(Δw, particles_2[i].v, particles_2[i].x)
                 end
-                scatter_vhs(rng, collision_data, interaction[species1, species2], particles_1[i], particles_2[k])
+                scatter_vhs!(rng, collision_data, interaction[species1, species2], particles_1[i], particles_2[k])
             end
         end
     end
@@ -328,7 +326,7 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                 # println(n_e_cs[species_n].prob_vec, ", ", n_e_cs[species_n].cs_total, ", ", n_e_cs[species_n].cs_elastic)
                 if (R < n_e_cs[species_n].prob_vec[1])  # TODO: fix indexing! 
                     # elastic collision
-                    scatter_vhs(rng, collision_data, interaction[species_n, species_e], particles_n[i], particles_e[k])
+                    scatter_vhs!(rng, collision_data, interaction[species_n, species_e], particles_n[i], particles_e[k])
                 else
                     # perform the ionization: 
                     if (length(particles_ion) <= pia.n_total[species_ion])
@@ -349,8 +347,8 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                     particles_n[i].w = 0.0
 
                     # compute energy split across the primare and secondary electrons
-                    compute_g_new_ionization(collision_data, interaction[species_n, species_e],
-                                             get_ionization_threshold(n_e_interactions, species_n), get_electron_energy_split(n_e_interactions, species_n))
+                    compute_g_new_ionization!(collision_data, interaction[species_n, species_e],
+                                              get_ionization_threshold(n_e_interactions, species_n), get_electron_energy_split(n_e_interactions, species_n))
 
                     scatter_ionization_electrons!(rng, collision_data, particles_e, k, pia.n_total[species_e])
                 end
@@ -438,7 +436,7 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
                 # now we collide the 2 equal-weight particles
                 
                 if (n_e_cs[species_n].prob_vec[2] == 0.0)
-                    scatter_vhs(rng, collision_data, interaction[species_n, species_e], particles_n[i], particles_e[k])
+                    scatter_vhs!(rng, collision_data, interaction[species_n, species_e], particles_n[i], particles_e[k])
                 else
                     w_ionized = particles_e[k].w * n_e_cs[species_n].prob_vec[2]
     
@@ -464,10 +462,10 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
                     k2 = pia.n_total[species_e]
 
                     # elastic scattering
-                    scatter_vhs(rng, collision_data, interaction[species_n, species_e], particles_n[i], particles_e[k])
+                    scatter_vhs!(rng, collision_data, interaction[species_n, species_e], particles_n[i], particles_e[k])
 
-                    compute_g_new_ionization(collision_data, interaction[species_n, species_e],
-                                             get_ionization_threshold(n_e_interactions, species_n), get_electron_energy_split(n_e_interactions, species_n))
+                    compute_g_new_ionization!(collision_data, interaction[species_n, species_e],
+                                              get_ionization_threshold(n_e_interactions, species_n), get_electron_energy_split(n_e_interactions, species_n))
 
                     scatter_ionization_electrons!(rng, collision_data, particles_e, k1, k2)
                 end

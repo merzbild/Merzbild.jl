@@ -10,21 +10,21 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)
 
-    # create our grid and BCs
-    grid = create_grid1D_uniform(L, nx)
-    boundaries = create_1D_boundaries(T_wall, T_wall, -v_wall, v_wall, 1.0, 1.0)
-
     # load particle and interaction data
     particles_data_path = joinpath("data", "particles.toml")
-    species_data = load_species_list(particles_data_path, "Ar")
+    species_data = load_species_data(particles_data_path, "Ar")
     interaction_data_path = joinpath("data", "vhs.toml")
     interaction_data::Array{Interaction, 2} = load_interaction_data(interaction_data_path, species_data)
 
+    # create our grid and BCs
+    grid = Grid1DUniform(L, nx)
+    boundaries = MaxwellWalls(species_data, T_wall, T_wall, -v_wall, v_wall, 1.0, 1.0)
+
     # init particle vector, particle indexer, grid particle sorter
     n_particles = ppc * nx
-    particles = particles = [create_particle_vector(n_particles)]
-    pia = create_particle_indexer_array(grid.n_cells, 1)
-    gridsorter = create_grid_sort_inplace(grid, n_particles)
+    particles = particles = [ParticleVector(n_particles)]
+    pia = ParticleIndexerArray(grid.n_cells, 1)
+    gridsorter = GridSortInPlace(grid, n_particles)
 
     # sample particles
     # Fnum * ppc = Np in cell = ndens * V_cell
@@ -33,21 +33,21 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
                                                       species_data, ndens, T_wall, Fnum)
 
     # create collision structs
-    collision_factors = create_collision_factors(1, grid.n_cells)
-    collision_data = create_collision_data()
+    collision_factors = create_collision_factors_array(1, grid.n_cells)
+    collision_data = CollisionData()
     
     # create struct for computation of physical properties
-    phys_props = create_props(pia)
+    phys_props = PhysProps(pia)
 
     # create second struct for averaging of physical properties
-    phys_props_avg = create_props(pia)
+    phys_props_avg = PhysProps(pia)
 
     # create struct for netCDF output
-    ds = create_netcdf_phys_props("scratch/data/couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc).nc", species_data, phys_props)
+    ds = NCDataHolder("scratch/data/couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc).nc", species_data, phys_props)
 
     # create struct for second netCDF, this one is for time-averaged 
-    ds_avg = create_netcdf_phys_props("scratch/data/avg_couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc)_after$(avg_start).nc",
-                                      species_data, phys_props)
+    ds_avg = NCDataHolder("scratch/data/avg_couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc)_after$(avg_start).nc",
+                          species_data, phys_props)
 
     # init collision structs
     for cell in 1:grid.n_cells
@@ -58,6 +58,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
     # compute and write data at t=0
     compute_props!(particles, pia, species_data, phys_props)
     write_netcdf_phys_props(ds, phys_props, 0)
+    write_grid("scratch/data/couette_$(L)_$(nx)_grid.nc", grid)
 
     n_avg = n_timesteps - avg_start + 1
 
@@ -82,10 +83,10 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
 
         if (t < avg_start)
             if (t % output_freq == 0)
-                @timeit "props compute" compute_props_sorted_without_moments!(particles, pia, species_data, phys_props)
+                @timeit "props compute" compute_props_sorted!(particles, pia, species_data, phys_props)
             end
         else
-            @timeit "props compute" compute_props_sorted_without_moments!(particles, pia, species_data, phys_props)
+            @timeit "props compute" compute_props_sorted!(particles, pia, species_data, phys_props)
             avg_props!(phys_props_avg, phys_props, n_avg)
         end
 
