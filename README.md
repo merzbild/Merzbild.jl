@@ -10,7 +10,9 @@ particle sampling and indexing, collisions, merging, computation of physical pro
 
 ## Installation
 
-For now, **Merzbild.jl** needs to be cloned to be run.
+For now, **Merzbild.jl** needs to be cloned to be run. Once cloned, navigate to the directory, run `julia --project=.`, and in the
+Julia interpreter run `using Pkg; Pkg.resolve(); Pkg.instantiate()` to install the required packages.
+Running `Pkg.test()` afterwards will install the test environment dependencies and run the tests.
 
 ## Usage
 Currently, the way to use the code is to 1) clone it 2) create a new file in the `simulations` directory
