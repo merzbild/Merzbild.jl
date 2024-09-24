@@ -114,6 +114,7 @@
     @test maximum(ref_sol["ndens"][:, 1, 1:5] .- sol["ndens"][:, 1, 1:5]) < 2 * eps()
     @test maximum(ref_sol["T"][:, 1, 1:5] .- sol["T"][:, 1, 1:5]) < 1.2e-13
 
+    close(sol)
     rm(sol_path)
 
     # the reference solution was also time averaged betwen t=14001 and t=50000 and compared to a SPARTA solution
