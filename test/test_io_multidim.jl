@@ -57,5 +57,6 @@
     @test maximum(abs.(grid_info["xhi"][:] - [grid.cells[i].xhi for i in 1:grid.n_cells])) < 2 * eps()
     @test maximum(abs.(grid_info["cell_volume"][:] - [grid.cells[i].V for i in 1:grid.n_cells])) < 2 * eps()
 
+    close(grid_info)
     rm(grid_path)
 end

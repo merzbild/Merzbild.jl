@@ -58,5 +58,6 @@
     @test size(props_read["ndens"]) == (4, 2, 3)
     @test size(props_read["length_particle_array"]) == (2, 3)
 
+    close(props_read)
     rm(sol_path)
 end
