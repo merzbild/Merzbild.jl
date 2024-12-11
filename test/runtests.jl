@@ -36,3 +36,4 @@ include("test_io_multidim.jl")  # test netCDF I/O of physical properties on a gr
 include("test_1D_couette.jl")  # test Couette flow
 include("test_misc.jl")  # various misc utility functions
 include("test_aqua.jl")
+include("test_collision_fp.jl")

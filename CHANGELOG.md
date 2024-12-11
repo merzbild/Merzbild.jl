@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.5.0
+Implemented linear Fokker-Planck model for a single species gas without internal degrees of freedom.
+
 ## v0.4.0
 Proper constructors added for a lot of the structs used in the code; old initialization functions removed.
 Other additions include code coverage reports via Coverage.jl and more tests.

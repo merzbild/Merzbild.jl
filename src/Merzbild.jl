@@ -20,14 +20,14 @@ export load_species_data, Particle, sample_particles_equal_weight!
 export Species, Interaction
 export compute_props!, compute_props_sorted!, compute_props_with_total_moments!
 export clear_props!, avg_props!
-export ParticleIndexer, ParticleIndexerArray, PhysProps, CollisionFactors, CollisionData
+export ParticleIndexer, ParticleIndexerArray, PhysProps, CollisionFactors, CollisionData, CollisionDataFP
 export NCDataHolder, IOSkipList
 export write_netcdf_phys_props
 export close_netcdf
 export load_interaction_data, load_interaction_data_with_dummy
 export create_collision_factors_array
 export estimate_sigma_g_w_max, estimate_sigma_g_w_max!
-export ntc!
+export ntc!, fp!
 export k_B
 export GridN2Merge, merge_grid_based!
 export OctreeN2Merge, OctreeBinMidSplit, OctreeBinMeanSplit, OctreeBinMedianSplit
