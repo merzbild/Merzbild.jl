@@ -1,3 +1,6 @@
+"""
+Scatter two particles using VHS scattering
+"""
 function scatter_vhs!(rng, collision_data, interaction, p1, p2)
     ϕ = twopi * rand(rng, Float64)
     cphi = cos(ϕ)
@@ -12,6 +15,9 @@ function scatter_vhs!(rng, collision_data, interaction, p1, p2)
     p2.v = collision_data.v_com - interaction.μ1 * collision_data.g_vec_new
 end
 
+"""
+Scatter an electron off of a neutral particle using VHS scattering
+"""
 function scatter_electron_vhs!(rng, collision_data, particles_electron, g_new, i)
     ϕ = twopi * rand(rng, Float64)
     cphi = cos(ϕ)
@@ -36,6 +42,9 @@ function scatter_electron_vhs!(rng, collision_data, particles_electron, g_new, i
     end
 end
 
+"""
+Scatter two electrons
+"""
 function scatter_ionization_electrons!(rng, collision_data, particles_electron, i1, i2)
     scatter_electron_vhs!(rng, collision_data, particles_electron, collision_data.g_new_1, i1)
     scatter_electron_vhs!(rng, collision_data, particles_electron, collision_data.g_new_2, i2)

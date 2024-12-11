@@ -55,11 +55,11 @@ function run(seed)
 
     Fnum::Float64 = n_dens / n_particles
 
-    particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, n_particles)]
-    sample_particles_equal_weight!(rng, particles[1], n_particles, T0, species_data[1].mass, Fnum,
-                                0.0, 1.0, 0.0, 1.0, 0.0, 1.0; distribution=:BKW)
+    particles::Vector{ParticleVector} = [ParticleVector(n_particles)]
+    pia = ParticleIndexerArray(0)
 
-    pia = ParticleIndexerArray(n_particles)
+    sample_particles_equal_weight!(rng, particles[1], pia, 1, 1, n_particles, T0, species_data[1].mass, Fnum,
+                                   0.0, 1.0, 0.0, 1.0, 0.0, 1.0; distribution=:BKW)
 
     phys_props::PhysProps = create_props(1, 1, [4, 6, 8, 10], Tref=T0)
     compute_props!(phys_props, pia, particles, species_data)

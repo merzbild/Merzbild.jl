@@ -1,3 +1,6 @@
+"""
+Write info to a NetCDF file
+"""
 function write_grid(nc_filename, grid::Grid1DUniform; global_attributes=Dict{Any,Any}())
     cells_dim = NcDim("cells", grid.n_cells, unlimited=false)
 

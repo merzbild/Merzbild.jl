@@ -1,17 +1,32 @@
 using StaticArrays
 
+"""
+    OctreeBinSplit OctreeBinMidSplit=1 OctreeBinMeanSplit=2 OctreeBinMedianSplit=3
+Enum for octree bin splitting types
+"""
 @enum OctreeBinSplit OctreeBinMidSplit=1 OctreeBinMeanSplit=2 OctreeBinMedianSplit=3
 
 # initial bin bounds:
 # 1) min/max velocities of particles
 # 2) min/max but symmetrized (-max(abs(min), abs(max)), -max(abs(min), abs(max)))
 # 3) speed of light
-@enum OctreeInitBin  OctreeInitBinMinMaxVel=1 OctreeInitBinMinMaxVelSym=2 OctreeInitBinC=3
+"""
+    OctreeInitBin OctreeInitBinMinMaxVel=1 OctreeInitBinMinMaxVelSym=2 OctreeInitBinC=3
+Enum for initial bin bounds
+"""
+@enum OctreeInitBin OctreeInitBinMinMaxVel=1 OctreeInitBinMinMaxVelSym=2 OctreeInitBinC=3
 
 # how bounds of split bins are computed: using splitting velocity and bounds of bounding bin
 # or using min/max velocities of particles in sub-bin
+"""
+    OctreeBinBounds OctreeBinBoundsInherit=1 OctreeBinBoundsRecompute=2
+Computation of bounds of split bin
+"""
 @enum OctreeBinBounds OctreeBinBoundsInherit=1 OctreeBinBoundsRecompute=2
 
+"""
+Struct holding data needed for refinement of an octree bin
+"""
 mutable struct OctreeCell
     # this holds only the data needed for refinement
     np::Int64
@@ -24,6 +39,9 @@ mutable struct OctreeCell
     can_be_refined::Bool
 end
 
+"""
+Octree bin properties required to merge the particles in a bin
+"""
 mutable struct OctreeFullCell
     # this holds the additional data needed for actual merging
     v_mean::SVector{3,Float64}
@@ -42,6 +60,9 @@ mutable struct OctreeFullCell
 end
 
 # struct for N:2 merge
+"""
+Struct for N:2 Octree merging
+"""
 mutable struct OctreeN2Merge
     max_Nbins::Int32
     Nbins::Int32  # actual bins computed
@@ -92,10 +113,16 @@ mutable struct OctreeN2Merge
     total_post_merge_np::Int64 # used to keep track of number of post-merge particles
 end
 
+"""
+Fill the octree bins struct with zero data
+"""
 function fill_bins(Nbins)
     return [OctreeCell(0, 0.0, SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0), 0, true) for i in 1:Nbins]
 end
 
+"""
+Fill the octree full bins struct with zero data
+"""
 function fill_full_bins(Nbins)
     return [OctreeFullCell(SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0),
                            SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0),
@@ -104,6 +131,12 @@ function fill_full_bins(Nbins)
                            SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0)) for i in 1:Nbins]
 end
 
+"""
+    OctreeN2Merge(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit,
+              max_Nbins=4096, max_depth=10)
+    
+Create Octree N:2 merging
+"""
 OctreeN2Merge(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit,
               max_Nbins=4096, max_depth=10) = OctreeN2Merge(max_Nbins, 0, fill_bins(max_Nbins), fill_full_bins(max_Nbins), 0,
                                                             zeros(max_Nbins), zeros(max_Nbins),  # bin_start, bin_end
@@ -117,10 +150,16 @@ OctreeN2Merge(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin
                                                             SVector{3,Float64}(0.0, 0.0, 0.0),
                                                             init_bin_bounds, max_depth, 0)
 
+"""
+Reset octree
+"""
 function clear_octree!(octree)
     octree.Nbins = 0
 end
 
+"""
+Resize octree buffers
+"""
 function resize_octree_buffers!(octree, n_particles)
     if (length(octree.particle_indexes_sorted) < n_particles)
         resize!(octree.particle_indexes_sorted, n_particles + DELTA_PARTICLES)
@@ -133,6 +172,9 @@ function resize_octree_buffers!(octree, n_particles)
     end
 end
 
+"""
+Compute octant of particle velocity relative to a `v_middle``
+"""
 function compute_octant(particle_v, v_middle)
 
     # octants order:
@@ -158,6 +200,9 @@ function compute_octant(particle_v, v_middle)
     return oct
 end
 
+"""
+Compute new bin bounds of sub-bin inheriting bounds of parent bin
+"""
 function bin_bounds_inherit!(octree, bin_id, v_min_parent, v_max_parent, v_middle, octant)
     # inherit bin bounds based on parent
     # octants order:
@@ -196,6 +241,9 @@ function bin_bounds_inherit!(octree, bin_id, v_min_parent, v_max_parent, v_middl
     end
 end
 
+"""
+Recompute bin bounds based on particle velocities
+"""
 function bin_bounds_recompute!(octree, bin_id, bs, be, particles)
     # compute bin bounds based on the particles in the bin
     minvx = 9_299_792_458.0  # speed of light + 9e9
@@ -232,6 +280,9 @@ function bin_bounds_recompute!(octree, bin_id, bs, be, particles)
     end
 end
 
+"""
+Compute mean velocity of bin
+"""
 function compute_v_mean!(octree, bs, be, particles)
     n_tot = 0.0
     for i in bs:be
@@ -242,6 +293,9 @@ function compute_v_mean!(octree, bs, be, particles)
     octree.vel_middle = octree.vel_middle / n_tot
 end
 
+"""
+Compute median velocity of bin
+"""
 function compute_v_median!(octree, bs, be, particles)
     # https://rcoh.me/posts/linear-time-median-finding/
     # https://en.wikipedia.org/wiki/Weighted_median
@@ -262,10 +316,16 @@ function bin_bounds_recompute_and_v_mean!(octree, bin_id, bs, be, particles)
     # TODO
 end
 
+"""
+Get index of a newly created bin
+"""
 function get_new_bin_id(i, bin_id, Nbins)
     return i == 1 ? bin_id : Nbins + i -1
 end
 
+"""
+Sort particles into sub-bins, split bin, keeping track of which sub-bins particles end up in
+"""
 function split_bin!(octree, bin_id, particles)
     octree.particle_in_bin_counter .= 0 # reset counter
     octree.ndens_counter .= 0.0
@@ -392,6 +452,9 @@ function split_bin!(octree, bin_id, particles)
     octree.Nbins += n_nonempty_bins - 1
 end
 
+"""
+Compute properties in a bin required for merging
+"""
 function compute_bin_props!(octree, bin_id, particles)
     bs = octree.bin_start[bin_id]
     be = octree.bin_end[bin_id]
@@ -437,6 +500,9 @@ function compute_bin_props!(octree, bin_id, particles)
     octree.full_bins[bin_id].x_std_sq = octree.full_bins[bin_id].x_std_sq / octree.bins[bin_id].w
 end
 
+"""
+Get number of post-merge particles in a bin
+"""
 function get_bin_post_merge_np(octree, bin_id)
     # how many particles will we get after merging in the bin:
     # 2 if np >= 2
@@ -444,6 +510,9 @@ function get_bin_post_merge_np(octree, bin_id)
     return octree.bins[bin_id].np >= 2 ? 2 : octree.bins[bin_id].np
 end
 
+"""
+Compute post-merge particles
+"""
 function compute_new_particles!(octree::OctreeN2Merge, particles, pia, cell, species)
     # given computed Octree, create new particles instead of the old ones
     
@@ -509,6 +578,9 @@ function compute_new_particles!(octree::OctreeN2Merge, particles, pia, cell, spe
 end
 
 # initialize first bin with all the particles - set number of bins to 1, copy over particle indices
+"""
+Initialize the top bin in an octree
+"""
 function init_octree!(octree, particles, pia, cell, species)
     octree.Nbins = 1
     octree.particle_indexes_sorted[1:pia.indexer[cell,species].n_group1] = pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
@@ -548,6 +620,9 @@ function init_octree!(octree, particles, pia, cell, species)
     end
 end
 
+"""
+Perform N:2 merging
+"""
 function merge_octree_N2_based!(octree, particles, pia, cell, species, target_np)
     clear_octree!(octree)
     resize_octree_buffers!(octree, pia.indexer[cell,species].n_local)

@@ -27,7 +27,7 @@
     particles[1][4] = Particle(4.0, [-49.0, -20.0, 13.0], [1.5, -1.0, 9.0])
 
     # 1D specularly reflecting boundaries
-    boundaries = MaxwellWalls(species_data, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0)
+    boundaries = MaxwellWalls1D(species_data, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0)
 
     convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, 2.0)
     sort_particles!(gridsorter, grid, particles[1], pia, 1)
@@ -82,7 +82,7 @@
     Δt = 1e-7
     vy_left_wall = 1100.0
     vy_right_wall = -820.0
-    boundaries_acc = MaxwellWalls(species_data, 2000.0, 500.0, vy_left_wall, vy_right_wall, 1.0, 1.0)
+    boundaries_acc = MaxwellWalls1D(species_data, 2000.0, 500.0, vy_left_wall, vy_right_wall, 1.0, 1.0)
 
     convect_particles!(rng, grid, boundaries_acc, particles[1], pia, 1, species_data, Δt)
     sort_particles!(gridsorter, grid, particles[1], pia, 1)
@@ -134,4 +134,38 @@
 
     # z-velocity should be almost zero
     @test abs(phys_props.v[3, 100, 1] - 0.0) < 3.0
+
+
+    # now we try out a very cold accomodating wall
+    # cold so that the chances of a particle reflected from the wall with a velocity of 1000.0
+    # are virtually zero
+    for i in 1:n_particles
+        particles[1][i] = Particle(n / n_particles, [-1000.0, 0.0, 0.0], [0.999e-4, 0.0, 0.0])
+    end
+
+    Δt = 1e-7
+    vy_left_wall = 1100.0
+    vy_right_wall = -820.0
+    # accomodation coefficient of 0.2 - 80% chance of specular reflection
+    boundaries_acc = MaxwellWalls1D(species_data, 10.0, 10.0, vy_left_wall, vy_right_wall, 0.2, 1.0)
+
+    convect_particles!(rng, grid, boundaries_acc, particles[1], pia, 1, species_data, Δt)
+    sort_particles!(gridsorter, grid, particles[1], pia, 1)
+
+    sign_pos = true
+    nspecular = 0
+    for i in 1:n_particles
+        if particles[1][i].v[1] < 0
+            sign_pos = false
+        end
+        if abs(particles[1][i].v[1] - 1000.0) < 2 * eps()
+            nspecular += 1
+        end
+    end
+
+    # no reflected particles have a negative velocity
+    @test sign_pos == true
+
+    # approximately 80% of particles are reflected with specular reflection
+    @test abs(nspecular - 8000) < 100
 end

@@ -23,11 +23,11 @@
 
     # create our grid and BCs
     grid = Grid1DUniform(L, nx)
-    boundaries = MaxwellWalls(species_data, T_wall, T_wall, -v_wall, v_wall, 1.0, 1.0)
+    boundaries = MaxwellWalls1D(species_data, T_wall, T_wall, -v_wall, v_wall, 1.0, 1.0)
 
     # init particle vector, particle indexer, grid particle sorter
     n_particles = ppc * nx
-    particles = particles = [ParticleVector(n_particles)]
+    particles = [ParticleVector(n_particles)]
     pia = ParticleIndexerArray(grid.n_cells, 1)
     gridsorter = GridSortInPlace(grid, n_particles)
 

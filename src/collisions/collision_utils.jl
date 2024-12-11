@@ -2,6 +2,9 @@ using SpecialFunctions: gamma
 using TOML
 using StaticArrays
 
+"""
+Used to store temporary collision data for a specific collision
+"""
 mutable struct CollisionData
     v_com::SVector{3,Float64}
     g::Float64
@@ -14,12 +17,18 @@ mutable struct CollisionData
     g_new_2::Float64  # to store post-collision energies of multiple particles (i.e. during chemical reactions)
 end
 
+"""
+Used to store Fokker-Planck collision data
+"""
 mutable struct CollisionDataFP
     vel_ave::SVector{3,Float64}
     mean::SVector{3,Float64}
     stddev::SVector{3,Float64}
 end
 
+"""
+Used to store interaction parameters for a 2-species interaction
+"""
 struct Interaction
     m_r::Float64
     μ1::Float64  # m1 / (m1 + m2)
@@ -31,19 +40,31 @@ struct Interaction
     vhs_factor::Float64 # = π * vhs_d^2 * (2 * vhs_Tref/m_r)^(vhs_o - 0.5) / gamma(2.5 - vhs_o)
 end
 
+"""
+Compute interaction-specific factor ``\\pi D_{VHS}^2 (2 T_{ref,VHS}/m_r)^{(\\omega_{VHS} - 0.5)} \\frac{1}{\\Gamma(2.5 - \\omega_{VHS})}``
+"""
 function compute_vhs_factor(vhs_Tref, vhs_d, vhs_o, m_r)
     # π * vhs_d^2 * ((2 * k_B * vhs_Tref/m_r)^(vhs_o - 0.5)) / gamma(2.5 - vhs_o), ", ", π * vhs_d^2)
     return π * vhs_d^2 * (2 * k_B * vhs_Tref/m_r)^(vhs_o - 0.5) / gamma(2.5 - vhs_o)
 end
 
+"""
+Create empty CollisionData instance
+"""
 CollisionData() = CollisionData(SVector{3,Float64}(0.0, 0.0, 0.0), 0.0, 0.0, 0.0, 0.0,
                                 SVector{3,Float64}(0.0, 0.0, 0.0),
                                 SVector{3,Float64}(0.0, 0.0, 0.0), 0.0, 0.0)
 
+"""
+Create empty CollisionDataFP instance
+"""
 CollisionDataFP() = CollisionDataFP(SVector{3,Float64}(0.0, 0.0, 0.0),
                                     SVector{3,Float64}(0.0, 0.0, 0.0),
                                     SVector{3,Float64}(0.0, 0.0, 0.0))
 
+"""
+Load interaction data
+"""
 function load_interaction_data(interactions_filename, species_data)
     interactions_data = TOML.parsefile(interactions_filename)
 
@@ -89,6 +110,9 @@ function load_interaction_data(interactions_filename, species_data)
     return interactions_list
 end
 
+"""
+Compute reference viscosity
+"""
 function compute_mu_ref(mass, omega, Tref, diameter)
     numerator = 30.0 * sqrt(mass * k_B * Tref)
     denumerator = 4.0 * sqrt(π) * (5.0 - 2.0 * omega) * (7.0 - 2.0 * omega) * diameter * diameter
@@ -96,6 +120,9 @@ function compute_mu_ref(mass, omega, Tref, diameter)
     return numerator / denumerator;
 end
 
+"""
+Load interaction data filling with dummy data if needed
+"""
 function load_interaction_data(interactions_filename, species_data, dummy_vhs_d, dummy_vhs_o, dummy_vhs_Tref)
     interactions_data = TOML.parsefile(interactions_filename)
 
@@ -160,24 +187,31 @@ function load_interaction_data(interactions_filename, species_data, dummy_vhs_d,
     return interactions_list
 end
 
+"""
+Load interaction data filling with dummy data if needed
+"""
 function load_interaction_data_with_dummy(interactions_filename, species_data)
     return load_interaction_data(interactions_filename, species_data, 1e-10, 1.0, 273.0)
 end
 
+"""
+Compute center of mass velocity
+"""
 function compute_com!(collision_data::CollisionData, interaction::Interaction, p1, p2)
     collision_data.v_com = interaction.μ1 * p1.v + interaction.μ2 * p2.v
 end
 
+"""
+Compute relative velocity
+"""
 function compute_g!(collision_data::CollisionData, p1, p2)
     collision_data.g_vec = p1.v - p2.v
     collision_data.g = norm(collision_data.g_vec)
 end
 
-function estimate_sigma_g_w_max(interaction, species, T, Fnum; mult_factor=1.0)
-    g_thermal = sqrt(2 * T * k_B / species.mass)
-    return mult_factor * sigma_vhs(interaction, g_thermal) * g_thermal * Fnum
-end
-
+"""
+Estimate ``(\\sigma g w)_{max}`` for a two-species interaction
+"""
 function estimate_sigma_g_w_max(interaction, species1, species2, T1, T2, Fnum; mult_factor=1.0)
     g_thermal1 = sqrt(2 * T1 * k_B / species1.mass)
     g_thermal2 = sqrt(2 * T2 * k_B / species2.mass)
@@ -185,10 +219,20 @@ function estimate_sigma_g_w_max(interaction, species1, species2, T1, T2, Fnum; m
     return mult_factor * sigma_vhs(interaction, g_thermal) * g_thermal * Fnum
 end
 
+"""
+Estimate ``(\\sigma g w)_{max}`` for a single-species interaction
+"""
+function estimate_sigma_g_w_max(interaction, species, T, Fnum; mult_factor=1.0)
+    return estimate_sigma_g_w_max(interaction, species, species, T, T, Fnum, mult_factor=mult_factor)
+end
+
+"""
+Estimate ``(\\sigma g w)_{max}`` for all species
+"""
 function estimate_sigma_g_w_max!(collision_factors, interactions, species_data, T_list, Fnum; mult_factor=1.0)
     for (k, species2) in enumerate(species_data)
         for (i, species1) in enumerate(species_data)
-            sigma_g_w_max = estimate_sigma_g_w_max(interactions[i,k], species1, species2, T_list[1], T_list[2], Fnum, mult_factor=mult_factor)
+            sigma_g_w_max = estimate_sigma_g_w_max(interactions[i,k], species1, species2, T_list[i], T_list[k], Fnum, mult_factor=mult_factor)
 
             for cell in 1:length(collision_factors[i,k,:])
                 collision_factors[i,k,cell].sigma_g_w_max = sigma_g_w_max
@@ -197,6 +241,9 @@ function estimate_sigma_g_w_max!(collision_factors, interactions, species_data, 
     end
 end
 
+"""
+Compute post-ionization relative velocity
+"""
 function compute_g_new_ionization!(coll_data, interaction, E_i, energy_splitting)
     E_new_coll = coll_data.E_coll_electron_eV - E_i
 

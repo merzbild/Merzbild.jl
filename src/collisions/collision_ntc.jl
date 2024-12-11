@@ -1,3 +1,6 @@
+"""
+Struct to store NTC-related collision factors
+"""
 mutable struct CollisionFactors
     n1::Int64
     n2::Int64
@@ -7,8 +10,14 @@ mutable struct CollisionFactors
     n_eq_w_coll_performed::Int64  # number of collisions of particles with equal weights (no splitting), for debugging/etc
 end
 
+"""
+Create a CollisionFactors instance
+"""
 CollisionFactors() = CollisionFactors(0, 0.0, 0.0, 0, 0, 0)
 
+"""
+Create collision factors for all interaction pairs for a 0-D case (1 spatial cell)
+"""
 function create_collision_factors_array(n_species)
     coll_factor_array = Array{CollisionFactors, 3}(undef, (n_species, n_species, 1))
     for k in 1:n_species
@@ -19,6 +28,9 @@ function create_collision_factors_array(n_species)
     return coll_factor_array
 end
 
+"""
+Create collision factors for all interaction pairs for a non 0-D case
+"""
 function create_collision_factors_array(n_species, n_cells)
     coll_factor_array = Array{CollisionFactors, 3}(undef, (n_species, n_species, n_cells))
     for k in 1:n_cells
@@ -31,15 +43,25 @@ function create_collision_factors_array(n_species, n_cells)
     return coll_factor_array
 end
 
+"""
+Compute number of collisions, collisions between particles of same species
+"""
 function compute_n_coll_single_species(rng, collision_factors, np, Δt, V)
     return 0.5 * Δt * np * (np - 1) * collision_factors.sigma_g_w_max / V +
         rand(rng, Float64)
 end
 
+"""
+Compute number of collisions, collisions between particles of different species
+"""
 function compute_n_coll_two_species(rng, collision_factors, np1, np2, Δt, V)
     return Δt * np1 * np2 * collision_factors.sigma_g_w_max / V + rand(rng, Float64)
 end
 
+
+"""
+Perform elastic collisions between particles of same species using the NTC algorithm
+"""
 function ntc!(rng, collision_factors, collision_data, interaction, particles, pia,
               cell, species, Δt, V)
     # single-species ntc
@@ -99,6 +121,7 @@ function ntc!(rng, collision_factors, collision_data, interaction, particles, pi
 
                     # first need to update the particle indexer struct
                     update_particle_indexer_new_particle(pia, cell, species)
+                    update_particle_buffer_new_particle(particles, pia, species)
 
                     Δw = particles[i].w - particles[k].w
                     particles[i].w = particles[k].w
@@ -110,6 +133,7 @@ function ntc!(rng, collision_factors, collision_data, interaction, particles, pi
                     end
 
                     update_particle_indexer_new_particle(pia, cell, species)
+                    update_particle_buffer_new_particle(particles, pia, species)
 
                     Δw = particles[k].w - particles[i].w
                     particles[k].w = particles[i].w
@@ -122,6 +146,9 @@ function ntc!(rng, collision_factors, collision_data, interaction, particles, pi
     end
 end
 
+"""
+Perform elastic collisions between particles of different species using the NTC algorithm
+"""
 function ntc!(rng, collision_factors, collision_data, interaction,
               particles_1, particles_2, pia,
               cell, species1, species2, Δt, V)
@@ -175,6 +202,7 @@ function ntc!(rng, collision_factors, collision_data, interaction,
                     end
                     # first need to update the particle indexer struct
                     update_particle_indexer_new_particle(pia, cell, species1)
+                    update_particle_buffer_new_particle(particles1, pia, species1)
 
                     Δw = particles_1[i].w - particles_2[k].w
                     particles_1[i].w = particles_2[k].w
@@ -185,6 +213,7 @@ function ntc!(rng, collision_factors, collision_data, interaction,
                         resize!(particles_2, length(particles_2)+DELTA_PARTICLES)
                     end
                     update_particle_indexer_new_particle(pia, cell, species2)
+                    update_particle_buffer_new_particle(particles_2, pia, species2)
 
                     Δw = particles_2[k].w - particles_1[i].w
                     particles_2[k].w = particles_1[i].w
@@ -198,6 +227,9 @@ function ntc!(rng, collision_factors, collision_data, interaction,
 end
 
 
+"""
+Estimate ``(\\sigma g w)_{max}`` for an electron-neutral interaction by stochastically choosing particle pairs
+"""
 function estimate_sigma_g_w_max_ntc_n_e!(rng, collision_factors, collision_data, interaction,
                                          n_e_interactions, n_e_cs, particles_n, particles_e,
                                          pia, cell, species_n, species_e, Δt, V; min_coll=5, n_loops=3)
@@ -244,6 +276,10 @@ function estimate_sigma_g_w_max_ntc_n_e!(rng, collision_factors, collision_data,
     end
 end
 
+
+"""
+Perform elastic scattering and ionizing collisions for electron-neutral interactions
+"""
 function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                   n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion,
                   pia, cell, species_n, species_e, species_ion, Δt, V)
@@ -301,6 +337,7 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                     end
                     # first need to update the particle indexer struct
                     update_particle_indexer_new_particle(pia, cell, species_n)
+                    update_particle_buffer_new_particle(particles_n, pia, species_n)
 
                     Δw = particles_n[i].w - particles_e[k].w
                     particles_n[i].w = particles_e[k].w
@@ -313,6 +350,7 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                         resize!(particles_e, length(particles_e)+DELTA_PARTICLES)
                     end
                     update_particle_indexer_new_particle(pia, cell, species_e)
+                    update_particle_buffer_new_particle(particles_e, pia, species_e)
 
                     Δw = particles_e[k].w - particles_n[i].w
                     particles_e[k].w = particles_n[i].w
@@ -334,6 +372,7 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                     end
                     # create the ion particle
                     update_particle_indexer_new_particle(pia, cell, species_ion)
+                    update_particle_buffer_new_particle(particles_ion, pia, species_ion)
                     particles_ion[pia.n_total[species_ion]] = Particle(particles_n[i].w, particles_n[i].v, particles_n[i].x)
 
                     # add a second electron
@@ -341,6 +380,7 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                         resize!(particles_e, length(particles_e)+DELTA_PARTICLES)
                     end
                     update_particle_indexer_new_particle(pia, cell, species_e)
+                    update_particle_buffer_new_particle(particles_e, pia, species_e)
                     particles_e[pia.n_total[species_e]] = Particle(particles_n[i].w, particles_e[k].v, particles_e[k].x)
 
                     # set neutral particle weight to 0
@@ -357,6 +397,10 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
     end
 end
 
+"""
+Perform elastic scattering and ionizing collisions for electron-neutral interactions
+    using the event splitting approach of [Oblapenko et al. (2022)](https://doi.org/10.1016/j.jcp.2022.111390)
+"""
 function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
     n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion, 
     pia, cell, species_n, species_e, species_ion, Δt, V)
@@ -414,6 +458,7 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
                     end
                     # first need to update the particle indexer struct
                     update_particle_indexer_new_particle(pia, cell, species_n)
+                    update_particle_buffer_new_particle(particles_n, pia, species_n)
 
                     Δw = particles_n[i].w - particles_e[k].w
                     particles_n[i].w = particles_e[k].w
@@ -426,6 +471,7 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
                         resize!(particles_e, length(particles_e)+DELTA_PARTICLES)
                     end
                     update_particle_indexer_new_particle(pia, cell, species_e)
+                    update_particle_buffer_new_particle(particles_e, pia, species_e)
 
                     Δw = particles_e[k].w - particles_n[i].w
                     particles_e[k].w = particles_n[i].w
@@ -448,6 +494,7 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
                     end
                     # create the ion particle
                     update_particle_indexer_new_particle(pia, cell, species_ion)
+                    update_particle_buffer_new_particle(particles_ion, pia, species_ion)
                     particles_ion[pia.n_total[species_ion]] = Particle(w_ionized, particles_n[i].v, particles_n[i].x)
 
                     # add 2 electrons (split + secondary)
@@ -455,9 +502,11 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
                         resize!(particles_e, length(particles_e)+DELTA_PARTICLES)
                     end
                     update_particle_indexer_new_particle(pia, cell, species_e)
+                    update_particle_buffer_new_particle(particles_e, pia, species_e)
                     particles_e[pia.n_total[species_e]] = Particle(w_ionized, particles_e[k].v, particles_e[k].x)
                     k1 = pia.n_total[species_e]
                     update_particle_indexer_new_particle(pia, cell, species_e)
+                    update_particle_buffer_new_particle(particles_e, pia, species_e)
                     particles_e[pia.n_total[species_e]] = Particle(w_ionized, particles_e[k].v, particles_e[k].x)
                     k2 = pia.n_total[species_e]
 

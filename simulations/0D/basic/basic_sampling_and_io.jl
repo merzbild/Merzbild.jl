@@ -12,11 +12,12 @@ function run(seed)
 
     n_particles = 5000
 
-    particles = [Vector{Particle}(undef, n_particles)]
-    sample_particles_equal_weight!(rng, particles[1], n_particles, species_data[1].mass, 500.0, 1e10, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
-    
-    pia = ParticleIndexerArray(n_particles)
+    particles = [ParticleVector(n_particles)]
+    pia = ParticleIndexerArray(0)
 
+    sample_particles_equal_weight!(rng, particles[1], pia, 1, 1,
+                                   n_particles, species_data[1].mass, 500.0, 1e10, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+    
     phys_props = PhysProps(1, 1, [])
     compute_props!(particles, pia, species_data, phys_props)
     println(phys_props.n)

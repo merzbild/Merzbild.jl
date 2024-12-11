@@ -1,10 +1,19 @@
+"""
+Struct for in-place sorting of particles
+"""
 mutable struct GridSortInPlace
     cell_counts::Vector{Int64}  # n_cells + 1
     sorted_indices::Vector{Int64}
 end
 
+"""
+Create GridSortInPlace instance given a grid and number of particles
+"""
 GridSortInPlace(grid, n_particles::Int64) = GridSortInPlace(zeros(Int64, grid.n_cells + 1), zeros(Int64, n_particles))
 
+"""
+Sort particles on a grid
+"""
 function sort_particles!(gridsort::GridSortInPlace, grid, particles, pia, species)
     if pia.n_total[species] > length(gridsort.sorted_indices)
         resize!(gridsort.sorted_indices, pia.n_total[species] + DELTA_PARTICLES)

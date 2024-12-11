@@ -57,11 +57,14 @@
 
     Fnum::Float64 = n_dens / n_particles
 
-    particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, n_particles)]
-    sample_particles_equal_weight!(rng, particles[1], n_particles, species_data[1].mass, T0, Fnum,
-                                   0.0, 1.0, 0.0, 1.0, 0.0, 1.0; distribution=:BKW)
+    particles::Vector{ParticleVector} = [ParticleVector(n_particles)]
 
-    pia = ParticleIndexerArray(n_particles)
+    pia = ParticleIndexerArray(0)
+
+    sample_particles_equal_weight!(rng, particles[1], pia, 1, 1, n_particles,
+                                   species_data[1].mass, T0, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0;
+                                   distribution=:BKW)
+
 
     phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
     compute_props_with_total_moments!(particles, pia, species_data, phys_props)

@@ -53,5 +53,15 @@ then everything product-related.
 
 6. Computation of physical properties: `compute_props!(particles, pia, species_data, phys_props)`
 
+# Checklist before contributing
+
+- [ ] Do all tests pass?
+
+- [ ] Does the new feature have corresponding tests added?
+
+- [ ] Is it documented?
+
+- [ ] Is the documentation added to the correct section in the `docs/src/reference.md` file?
+
 # Versioning
 The package uses semantic versioning. The MINOR version number is bumped for breaking changes; the PATCH version number is bumped when new features and/or bug fixes are added.
