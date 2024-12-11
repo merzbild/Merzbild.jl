@@ -1,4 +1,7 @@
-function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls, particles, pia, species, species_data, Δt)
+"""
+Convect particles on 1-D uniform grid
+"""
+function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particles, pia, species, species_data, Δt)
     @inbounds @simd for i in 1:pia.n_total[species]
         t_rest = Δt
         x_old = particles[i].x[1]

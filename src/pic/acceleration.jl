@@ -1,3 +1,6 @@
+"""
+Accelerate particles with a constant electric field in the X direction
+"""
 function accelerate_constant_field_x!(particles, pia, cell, species, species_data, E, Δt)
     # for 1-D problems, assume E-field is in the X direction
     dv = species_data[species].charge_div_mass * E * Δt

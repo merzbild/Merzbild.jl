@@ -55,13 +55,13 @@ function run(seed)
     # set simulation volume (we're doing a 0D simulation)
     V = 1.0
 
-    # sample particles
-    particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, n_particles_Ar), Vector{Particle}(undef, n_particles_He)]
-    sample_particles_equal_weight!(rng, particles[1], n_particles_Ar, species_data[1].mass, T0_Ar, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
-    sample_particles_equal_weight!(rng, particles[2], n_particles_He, species_data[2].mass, T0_He, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
-
     # create struct for particle indexing
-    pia = ParticleIndexerArray([n_particles_Ar, n_particles_He])
+    pia = ParticleIndexerArray([0, 0])
+
+    # sample particles
+    particles::Vector{ParticleVector} = [ParticleVector(n_particles_Ar), ParticleVector(n_particles_He)]
+    sample_particles_equal_weight!(rng, particles[1], pia, 1, 1, n_particles_Ar, species_data[1].mass, T0_Ar, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+    sample_particles_equal_weight!(rng, particles[2], pia, 1, 2, n_particles_He, species_data[2].mass, T0_He, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
 
     # create struct for computation of physical properties
     phys_props = PhysProps(pia)
@@ -157,3 +157,26 @@ Modify  | 8.7341     | 8.7341     | 8.7341     |   0.0 | 27.82
 Output  | 0.00060415 | 0.00060415 | 0.00060415 |   0.0 |  0.00
 Other   |            | 0.001508   |            |       |  0.00
 ```
+
+## Citing
+For now, the repository can be cited as
+```bibtex
+@misc{oblapenko2024merzbild,
+  title={{M}erzbild.jl: A {J}ulia {DSMC} code},
+  author={Oblapenko, Georgii},
+  year={2024},
+  month={12},
+  howpublished={\url{https://github.com/merzbild/Merzbild.jl}},
+  doi={10/zenodo.0}
+}
+```
+
+Depending on the specific functionality used, other citations may be warranted (please look at the "Overview of capabilities" section
+in the documentation).
+
+## Contributing
+Please see `CONTRIBUTING.MD` about some general guidelines on contributing to the development of Merzbild.jl
+
+## Acknowledgments
+Dr. Georgii Oblapenko acknowledges the support of the German Research Foundation (DFG) via
+the [SFB1481 research group](https://sfb1481.rwth-aachen.de).

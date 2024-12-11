@@ -16,12 +16,17 @@
     Fnum::Float64 = n_dens / n_particles
 
     for (v0, T0) in zip([[0.0, 0.0, 0.0], [20.0, -10.0, 30.0], [3000.0, 2000.0, -1000.0]], [273.0, 1000.0, 500.0])
-        particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, n_particles)]
+        particles::Vector{ParticleVector} = [ParticleVector(n_particles)]
 
-        sample_particles_equal_weight!(rng, particles[1], n_particles, species_data[1].mass, T0, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0,
-        vx0=v0[1], vy0=v0[2], vz0=v0[3])
+        pia = ParticleIndexerArray(0)
 
-        pia = ParticleIndexerArray(n_particles)
+        # particles, pia, cell, species,
+        # nparticles, m, T, Fnum, xlo, xhi, ylo, yhi, zlo, zhi;
+        # distribution=:Maxwellian, vx0=0.0, vy0=0.0, vz0=0.0)
+
+        sample_particles_equal_weight!(rng, particles[1], pia, 1, 1, n_particles,
+                                       species_data[1].mass, T0, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0,
+                                       vx0=v0[1], vy0=v0[2], vz0=v0[3])
 
         phys_props::PhysProps = PhysProps(1, 1, [4, 6, 8], Tref=T0)
         compute_props_with_total_moments!(particles, pia, species_data, phys_props)

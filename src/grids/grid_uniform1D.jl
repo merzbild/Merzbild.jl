@@ -1,9 +1,15 @@
+"""
+Cell element of a 1-D grid
+"""
 struct Cell1D
     xlo::Float64
     xhi::Float64
     V::Float64
 end
 
+"""
+1-D Uniform grid
+"""
 struct Grid1DUniform
     L::Float64
     n_cells::Int64
@@ -13,6 +19,9 @@ struct Grid1DUniform
     min_x::Float64  # so that we don't get particles stuck exactly at the wall
     max_x::Float64  # so that we don't get particles stuck exactly at the wall
 
+    """
+    Create 1-D uniform grid for a domain [0, L] with `nx` cells
+    """
     function Grid1DUniform(L, nx; wall_offset=1e-12)
         cells = Vector{Cell1D}(undef, nx)
         dx = L / nx
@@ -28,10 +37,16 @@ struct Grid1DUniform
     end
 end
 
+"""
+Find cell in 1-D uniform grid given coordinates of a particle
+"""
 function get_cell(grid1duniform::Grid1DUniform, x_pos)
     return floor(Int64, x_pos[1] * grid1duniform.inv_Δx) + 1
 end
 
+"""
+Sample particles in each cell of 1-D uniform grid given ppc
+"""
 function sample_particles_equal_weight!(rng, grid1duniform, particles, pia, species,
                                         species_data, ppc::Int64, T, Fnum)
 
@@ -45,6 +60,9 @@ function sample_particles_equal_weight!(rng, grid1duniform, particles, pia, spec
     end
 end
 
+"""
+Sample particles in each cell of 1-D uniform grid given target number density
+"""
 function sample_particles_equal_weight!(rng, grid1duniform, particles, pia, species,
                                         species_data, ndens::Float64, T, Fnum)
     # ndens is target ndensity per cell

@@ -27,7 +27,8 @@ include("test_nnls_merging.jl")  # test NNLS-based merging
 include("test_bkw_varweight_nnls.jl")  # test NNLS-based merging
 include("test_electron_neutral_data.jl")  # test loading of XML LXCat-like data
 include("test_acceleration.jl")  # test acceleration of charge particles
-include("test_indexing_multidim.jl")  # test some multi-cell indexing things
+include("test_indexing_particlevector.jl")  # test particle vector and multi-cell indexing
+include("test_indexing_particlebuffer.jl")  # test buffer in ParticleVector
 include("test_grid_1D_uniform.jl")  # test sampling and computes on 1D uniform grid
 include("test_grid_sorting.jl")  # test particle sorting routines
 include("test_convection_1D.jl")  # test particle convection and surface interaction on a 1D grid

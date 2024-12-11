@@ -1,7 +1,9 @@
 using NCDatasets
 using NetCDF
 
-
+"""
+Struct that holds track of which variables are not to be written to NetCDF file
+"""
 struct IOSkipList
     skip_length_particle_array::Bool
     skip_moments::Bool
@@ -10,6 +12,11 @@ struct IOSkipList
     skip_velocity::Bool
     skip_temperature::Bool
 
+    @doc """
+        IOSkipList(list_of_variables_to_skip)
+    
+    Construct an `IOSkipList` from a list of variable names
+    """
     function IOSkipList(list_of_variables_to_skip)
 
         skip_length_particle_array = false
@@ -47,12 +54,19 @@ struct IOSkipList
                    skip_number_density, skip_velocity, skip_temperature)
     end
 
-
+    @doc """
+        IOSkipList()
+    
+    Construct an empty `IOSkipList`
+    """
     function IOSkipList()
         return IOSkipList([])
     end
 end
 
+"""
+Struct that holds NetCDF-output related data
+"""
 mutable struct NCDataHolder
     filehandle::NcFile
     ndens_not_Np::Bool
@@ -79,6 +93,11 @@ mutable struct NCDataHolder
 
     skip_list::IOSkipList
 
+    @doc """
+        NCDataHolder(nc_filename, names_skip_list, species_data, phys_props; global_attributes=Dict{Any,Any}())
+
+    Construct a `NCDataHolder` instance
+    """
     function NCDataHolder(nc_filename, names_skip_list, species_data, phys_props; global_attributes=Dict{Any,Any}())
         skip_list = IOSkipList(names_skip_list)
 
@@ -148,45 +167,26 @@ mutable struct NCDataHolder
                    skip_list)
     end
 
+    @doc """
+        NCDataHolder(nc_filename, species_data, phys_props; global_attributes=Dict{Any,Any}())
+
+    Construct a `NCDataHolder` instance with an empty list of variable to skip
+    """
     function NCDataHolder(nc_filename, species_data, phys_props; global_attributes=Dict{Any,Any}())
         return NCDataHolder(nc_filename, [], species_data, phys_props; global_attributes=global_attributes)
     end
 end
 
+"""
+Close NetCDF file
+"""
 function close_netcdf(ds::NCDataHolder)
     finalize(ds.filehandle)
 end
 
-# function write_netcdf_phys_props(ds, phys_props, timestep; sync_freq=0)
-#     if phys_props.ndens_not_Np != ds.ndens_not_Np
-#         throw(ErrorException("Inconsistent computation of ndens/number of physical particles in cell"))
-#     end
-
-#     currtimesteps = ds.timestep_dim.dimlen + 1
-
-#     ds.currtimesteps[1] = currtimesteps
-#     ds.currtimesteps_1[2] = currtimesteps
-#     ds.currtimesteps_1_1[3] = currtimesteps
-#     ds.currtimesteps_1_1_1[4] = currtimesteps
-#     ds.timestep[1] = timestep
-
-#     NetCDF.putvar(ds.v_timestep, ds.timestep, start=ds.currtimesteps)
-
-#     NetCDF.putvar(ds.v_lpa, phys_props.lpa, start=ds.currtimesteps_1, count=ds.n_species_1)
-#     NetCDF.putvar(ds.v_np, phys_props.np, start=ds.currtimesteps_1_1, count=ds.n_cells_n_species_1)
-#     NetCDF.putvar(ds.v_ndens, phys_props.n, start=ds.currtimesteps_1_1, count=ds.n_cells_n_species_1)
-#     NetCDF.putvar(ds.v_v, phys_props.v, start=ds.currtimesteps_1_1_1, count=ds.n_v_n_cells_n_species_1)
-#     NetCDF.putvar(ds.v_T, phys_props.T, start=ds.currtimesteps_1_1, count=ds.n_cells_n_species_1)
-
-#     if (phys_props.n_moments > 0)
-#         NetCDF.putvar(ds.v_moments, phys_props.moments, start=[1, 1, 1, currtimesteps], count=[phys_props.n_moments, phys_props.n_cells, phys_props.n_species, 1])
-#     end
-
-#     if (sync_freq > 0) && (currtimesteps % sync_freq == 0)
-#         NetCDF.sync(ds.filehandle)
-#     end
-# end
-
+"""
+Write PhysProps to NetCDF file
+"""
 function write_netcdf_phys_props(ds, phys_props, timestep; sync_freq=0)
     currtimesteps = ds.timestep_dim.dimlen + 1
 

@@ -33,11 +33,11 @@ function run(seed)
     T0_list = [T0_Ar, T0_He]
     Fnum = 5e11
 
-    particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, n_particles_Ar), Vector{Particle}(undef, n_particles_He)]
-    sample_particles_equal_weight!(rng, particles[1], n_particles_Ar, species_data[1].mass, T0_Ar, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
-    sample_particles_equal_weight!(rng, particles[2], n_particles_He, species_data[2].mass, T0_He, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+    particles::Vector{ParticleVector} = [ParticleVector(n_particles_Ar), ParticleVector(n_particles_He)]
+    pia = ParticleIndexerArray([0, 0])
 
-    pia = ParticleIndexerArray([n_particles_Ar, n_particles_He])
+    sample_particles_equal_weight!(rng, particles[1], pia, 1, 1, n_particles_Ar, species_data[1].mass, T0_Ar, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+    sample_particles_equal_weight!(rng, particles[2], pia, 1, 2, n_particles_He, species_data[2].mass, T0_He, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
 
     phys_props::PhysProps = PhysProps(1, 2, [], Tref=T0_Ar)
     compute_props!(particles, pia, species_data, phys_props)

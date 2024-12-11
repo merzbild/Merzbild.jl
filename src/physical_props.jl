@@ -1,7 +1,9 @@
 using StaticArrays
 using LinearAlgebra
 
-# iterate over species, then over cells - should be cells x species then
+"""
+Structure to store computed physical properties in a cell
+"""
 mutable struct PhysProps
     ndens_not_Np::Bool
     n_cells::Int64
@@ -17,15 +19,33 @@ mutable struct PhysProps
     Tref::Float64  # used to scale moments
 end
 
+"""
+    PhysProps(n_cells, n_species, moments_list; Tref=300.0)
+
+Construct physical properties given a number of cells and species
+"""
 PhysProps(n_cells, n_species, moments_list; Tref=300.0) = PhysProps(false, n_cells, n_species,
                                                                     length(moments_list), zeros(n_species), zeros(n_cells, n_species),
                                                                     zeros(n_cells, n_species), zeros(3, n_cells, n_species), zeros(n_cells, n_species),
                                                                     moments_list, zeros(length(moments_list), n_cells, n_species), Tref)
 
+"""
+    PhysProps(pia, moments_list; Tref=300.0)
+
+Construct physical properties given a `ParticleIndexerArray` instance
+"""
 PhysProps(pia, moments_list; Tref=300.0) = PhysProps(size(pia.indexer)[1], size(pia.indexer)[2], moments_list, Tref=Tref)
 
+"""
+    PhysProps(pia)
+
+Construct physical properties given a `ParticleIndexerArray` instance, no moments computed
+"""
 PhysProps(pia) = PhysProps(pia, [])
 
+"""
+Compute PhysProps
+"""
 function compute_props!(particles, pia, species_data, phys_props)
     for species in 1:phys_props.n_species
         for cell in 1:phys_props.n_cells
@@ -78,6 +98,9 @@ function compute_props!(particles, pia, species_data, phys_props)
     end
 end
 
+"""
+Compute PhysProps with total moments
+"""
 function compute_props_with_total_moments!(particles, pia, species_data, phys_props)
     if phys_props.n_moments == 0
         compute_props!(particles, pia, species_data, phys_props)
@@ -157,6 +180,10 @@ function compute_props_with_total_moments!(particles, pia, species_data, phys_pr
     end
 end
 
+"""
+Clear all data from PhysProps, for use when physical properties are averaged over timesteps
+and averaging over a new set of timesteps needs to be started
+"""
 function clear_props!(phys_props)
     phys_props.lpa[:] .= 0
     phys_props.np[:,:] .= 0
@@ -165,6 +192,9 @@ function clear_props!(phys_props)
     phys_props.T[:,:] .= 0.0
 end
 
+"""
+Average PhysProps
+"""
 function avg_props!(phys_props_avg, phys_props, n_avg_timesteps)
     if (phys_props_avg.ndens_not_Np != phys_props.ndens_not_Np)
         throw(ErrorException("Inconsistent computation of ndens/number of physical particles in cell"))
@@ -183,6 +213,10 @@ function avg_props!(phys_props_avg, phys_props, n_avg_timesteps)
     end
 end
 
+"""
+Compute physical properties of all species in all cells assuming
+the particles are sorted; moments are not computed
+"""
 function compute_props_sorted!(particles, pia, species_data, phys_props)
     for species in 1:phys_props.n_species
         for cell in 1:phys_props.n_cells
@@ -214,6 +248,9 @@ function compute_props_sorted!(particles, pia, species_data, phys_props)
     end
 end
 
+"""
+Compute mixed moment of particles in a cell
+"""
 function compute_mixed_moment(particles, pia, cell, species, powers; sum_scaler=1.0, res_scaler=1.0)
     # sum scaler is used inside the particle summation loops to potentially reduce round-off issues
     # res_scaler can be used as inverse of sum_scaler (e.g. to get the full moment)

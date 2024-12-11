@@ -1,6 +1,13 @@
 # Changelog
 
 ## v0.5.0
+First draft of documentation. Removed one old version of particle sampling routine used in some of the tests and examples.
+`resize!` now works with `ParticleVector` instances (preliminary work for variable-weight DSMC in non-0D settings).
+`buffer` field added to `ParticleVector` instances to keep track of unused particles. Additional tests.
+Fixed simple estimator of (sigma_w_g)_max for the multi-species case.
+`MaxwellWalls` renamed to `MaxwellWalls1D`.
+
+## v0.4.1
 Implemented linear Fokker-Planck model for a single species gas without internal degrees of freedom.
 
 ## v0.4.0

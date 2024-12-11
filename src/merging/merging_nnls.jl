@@ -1,3 +1,7 @@
+
+"""
+Struct for keeping track of merging-related quantities for NNLS merging
+"""
 mutable struct NNLSMerge
     v0::SVector{3,Float64}
     vref::Float64  # used for scaling
@@ -21,6 +25,18 @@ mutable struct NNLSMerge
     tot_order::Vector{Int32}
     work::NNLSWorkspace
 
+    @doc """
+        NNLSMerge(multi_index_moments, init_np; rate_preserving=false)
+
+    Create NNLS-based merging
+
+    # Positional arguments:
+    * `multi_index_moments`: vector of mixed moments to preserve, [(i1, j1, k1), (i2, j2, k2), ...] Mass/momentum/directionalenergy are always conserved! (Added automatically if not in list)
+    * `init_np`: initial number of particles to pre-allocated memory for
+    
+    Keyword arguments:
+    * `rate_preserving`: used for rate-preserving merging of electrons, preserves approximate elastic collision and ionization rates
+    """
     function NNLSMerge(multi_index_moments, init_np; rate_preserving=false)
         add_length = 0
         if rate_preserving
@@ -42,7 +58,9 @@ mutable struct NNLSMerge
     end
 end
 
-
+"""
+Return sign of velocity vx of an octant in velocity space
+"""
 function vx_sign(octant)
     if octant % 2 == 1
         return -1
@@ -51,6 +69,9 @@ function vx_sign(octant)
     end
 end
 
+"""
+Return sign of velocity vy of an octant in velocity space
+"""
 function vy_sign(octant)
     if (octant == 3) || (octant == 4) || (octant == 7) || (octant == 8)
         return 1
@@ -59,6 +80,9 @@ function vy_sign(octant)
     end
 end
 
+"""
+Return sign of velocity vz of an octant in velocity space
+"""
 function vz_sign(octant)
     if octant >= 5
         return 1
@@ -67,10 +91,16 @@ function vz_sign(octant)
     end
 end
 
+"""
+Check speed bound
+"""
 function check_speed_bound(speed_val, minval, maxval)
     return max(min(speed_val, maxval), minval)
 end
 
+"""
+Check speed bound with multiplier
+"""
 function check_speed_bound(speed_val, minval, maxval, multiplier)
     ms = multiplier * speed_val
     if ms > maxval
@@ -82,6 +112,9 @@ function check_speed_bound(speed_val, minval, maxval, multiplier)
     end
 end
 
+"""
+Base multi indices corresponding to conservation of mass momentum and energy components
+"""
 function base_multi_index_moments()
     # mass/momentum/directional energy conservation
     return [[0, 0, 0],
@@ -89,6 +122,9 @@ function base_multi_index_moments()
             [2, 0, 0], [0, 2, 0], [0, 0, 2]]
 end
 
+"""
+Compute all mixed moments of total order up to n
+"""
 function compute_multi_index_moments(n)
     result = []
     for i in 0:n
@@ -102,6 +138,9 @@ function compute_multi_index_moments(n)
     return result
 end
 
+"""
+Compute total computational weight of particles and mean velocity, as well as velocity bounds
+"""
 function compute_w_total_v0!(nnls_merging, particles, pia, cell, species)
     nnls_merging.v0 = SVector{3,Float64}(0.0, 0.0, 0.0)
     nnls_merging.w_total = 0.0
@@ -179,17 +218,23 @@ function compute_w_total_v0!(nnls_merging, particles, pia, cell, species)
     nnls_merging.maxvz -= nnls_merging.v0[3]
 end
 
-
+"""
+Compute unweighted centered moment
+"""
 function ccm(v, v0, mim)
-    # computed unweighted centered moment
     return (v[1] - v0[1])^mim[1] * (v[2] - v0[2])^mim[2] * (v[3] - v0[3])^mim[3]
 end
 
+"""
+Compute unweighted centered moment
+"""
 function ccm(vx, vy, vz, vx0, vy0, vz0, mim)
-    # computed unweighted centered moment
     return (vx - vx0)^mim[1] * (vy - vy0)^mim[2] * (vz - vz0)^mim[3]
 end
 
+"""
+Compute LHS matrix and RHS vector for NNLS merging
+"""
 function compute_lhs_and_rhs!(nnls_merging, lhs_matrix,
                               particles, pia, cell, species)
     nnls_merging.Ex = 0.0
@@ -243,7 +288,9 @@ function compute_lhs_and_rhs!(nnls_merging, lhs_matrix,
     return col_index
 end
 
-
+"""
+Compute LHS matrix and RHS vector for NNLS merging, rate-preserving version
+"""
 function compute_lhs_and_rhs_rate_preserving!(nnls_merging, lhs_matrix,
                                               interaction, electron_neutral_interactions, computed_cs,
                                               particles, pia, cell, species, neutral_species_index)
@@ -315,7 +362,9 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging, lhs_matrix,
     return col_index
 end
 
-
+"""
+Compute additional LHS columns for additional particles
+"""
 function compute_lhs_particles_additional!(rng, col_index, nnls_merging, lhs_matrix,
                                            particles, pia, cell, species,
                                            n_rand_pairs)
@@ -380,7 +429,9 @@ function compute_lhs_particles_additional!(rng, col_index, nnls_merging, lhs_mat
     end
 end
 
-
+"""
+Compute additional LHS columns for additional particles, rate preserving
+"""
 function compute_lhs_particles_additional_rate_preserving!(rng, col_index, nnls_merging, lhs_matrix,
                                            interaction, electron_neutral_interactions, computed_cs, 
                                            particles, pia, cell, species, neutral_species_index,
@@ -399,6 +450,7 @@ function compute_lhs_particles_additional_rate_preserving!(rng, col_index, nnls_
     col_index += 1
 
     # add 8 additional particles
+    # TODO: make optional!!!
     for i in 1:8
         vxs = vx_sign(i)
         vys = vy_sign(i)
@@ -471,7 +523,9 @@ function compute_lhs_particles_additional_rate_preserving!(rng, col_index, nnls_
     end
 end
 
-
+"""
+Scale LHS and RHS
+"""
 function scale_lhs_rhs!(nnls_merging, lhs_matrix)
     for n_mom in 1:nnls_merging.n_moments
         lhs_matrix[n_mom, :] .*= nnls_merging.inv_vref^nnls_merging.tot_order[n_mom]
@@ -479,6 +533,9 @@ function scale_lhs_rhs!(nnls_merging, lhs_matrix)
     end
 end
 
+"""
+Scale LHS and RHS, rate-preserving version
+"""
 function scale_lhs_rhs_rate_preserving!(nnls_merging, lhs_matrix, ref_cs_elastic, ref_cs_ion)
     for n_mom in 1:nnls_merging.n_moments
         lhs_matrix[n_mom, :] .*= nnls_merging.inv_vref^nnls_merging.tot_order[n_mom]
@@ -491,7 +548,9 @@ function scale_lhs_rhs_rate_preserving!(nnls_merging, lhs_matrix, ref_cs_elastic
     nnls_merging.rhs_vector[nnls_merging.n_moments+2] *= nnls_merging.inv_vref / ref_cs_ion
 end
 
-
+"""
+Compute post-merge particles
+"""
 function compute_post_merge_particles_nnls!(lhs_ncols, lhs_matrix,
                                             nnls_merging, particles, pia, cell, species)
 
@@ -515,6 +574,9 @@ function compute_post_merge_particles_nnls!(lhs_ncols, lhs_matrix,
     update_particle_indexer_new_lower_count(pia, cell, species, curr_particle_index)
 end
 
+"""
+Perform NNLS-based merging
+"""
 function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species, vref; n_rand_pairs=0, max_err=1e-11)
 
     # create LHS matrix
@@ -559,6 +621,9 @@ function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species, vre
     return 1
 end
 
+"""
+Perform NNLS-based merging, rate-preserving version
+"""
 function merge_nnls_based_rate_preserving!(rng, nnls_merging,
                                            interaction, electron_neutral_interactions, computed_cs,
                                            particles, pia, cell, species, neutral_species_index,

@@ -3,6 +3,7 @@
 # - https://github.com/tpapp/LocalCoverage.jl by Tamas K. Papp
 # - https://github.com/trixi-framework/Trixi.jl/blob/main/test/coverage/coverage.jl by the Trixi.jl team
 # Pkg.test("Merzbild"; coverage=true)
+# TODO: https://github.com/JuliaCI/LocalCoverage.jl
 
 using Coverage
 

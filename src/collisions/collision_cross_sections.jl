@@ -46,10 +46,16 @@ mutable struct ComputedCrossSections
     cdf_prob_vec::Vector{Float64}
 end
 
+"""
+Compute the VHS cross-section for a given interaction
+"""
 function sigma_vhs(interaction, g)
     return interaction.vhs_factor * g^(1.0 - 2 * interaction.vhs_o)
 end
 
+"""
+Binary search for value `val` in array `x`
+"""
 function binary_search(x, val)
     low = 1
     high = length(x)
@@ -85,6 +91,9 @@ function binary_search(x, val)
     return low
 end
 
+"""
+Perform linear interpolation between two neighbouring values in y
+"""
 function linear_interpolation(x, y, val, pos, lower_limit, upper_limit)
     # we found pos such that x[pos] < val < x[pos+1]
     # we want to interpolate y(x): such that y[x[pos]] = y[pos], y[x[pos+1]] = y[pos+1]
@@ -104,6 +113,10 @@ function linear_interpolation(x, y, val, pos, lower_limit, upper_limit)
     return alpha * y[pos+1] + (1.0 - alpha) * y[pos]
 end
 
+
+"""
+Find a chemical species in an LXCat-format XML file
+"""
 function find_species_in_db(xml_data, species_name)
     flag = false
     for i in 1:length(xml_data)
@@ -121,6 +134,9 @@ function find_species_in_db(xml_data, species_name)
     end
 end
 
+"""
+Load electron-impact ionization data from an LXCat-format XML file
+"""
 function load_ionization_data(xml_data)
     ndata = 0
     ΔE = 0.0
@@ -162,6 +178,9 @@ function load_ionization_data(xml_data)
     end
 end
 
+"""
+Load elastic electron-neutral scattering data from an LXCat-format XML file
+"""
 function load_elastic_data(xml_data)
     ndata = 0
     ΔE = 0.0
@@ -197,7 +216,9 @@ function load_elastic_data(xml_data)
     end
 end
 
-
+"""
+Load electron-neutral interaction data from an LXCat-format XML file
+"""
 function load_electron_neutral_interactions(species_data, filename, databases, scattering_laws, energy_splits)
     neutral_indexer::Vector{Int32} = []
     elastic_cs_vector::Vector{ElasticScattering} = []
@@ -252,6 +273,9 @@ function load_electron_neutral_interactions(species_data, filename, databases, s
     return ElectronNeutralInteractions(neutral_subindex, neutral_indexer, elastic_cs_vector, ionization_cs_vector, excitation_sink_cs_vector)
 end
 
+"""
+Create a vector of ComputedCrossSections instances
+"""
 function create_computed_crosssections(electron_neutral_interactions)
     res::Vector{ComputedCrossSections} = []
 
@@ -265,6 +289,9 @@ function create_computed_crosssections(electron_neutral_interactions)
     return res
 end
 
+"""
+Compute a cross-section from tabulated data, continuing with first and last values if outside of range
+"""
 function compute_tabulated_cs_constant_continuation(tabulated_cs_data, E_coll)
     # linear interpolation + constant values (starting and ending array values) for out-of-bounds energies
 
@@ -275,6 +302,9 @@ function compute_tabulated_cs_constant_continuation(tabulated_cs_data, E_coll)
                                 tabulated_cs_data.sigma[end])
 end
 
+"""
+Compute a cross-section from tabulated data, continuing with 0.0 if outside of range
+"""
 function compute_tabulated_cs_zero_continuation(tabulated_cs_data, E_coll)
     # linear interpolation + constant values (starting and ending array values) for out-of-bounds energies
 
@@ -285,6 +315,10 @@ function compute_tabulated_cs_zero_continuation(tabulated_cs_data, E_coll)
                                 0.0)
 end
 
+"""
+Compute electron-impact ionization and excitation cross-sections, and electron-neutral elastic scattering
+Return collision energy in eV
+"""
 function compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index)
     # the neutral_species_index is the absolute one (i.e. index in the list of all species)
     # this is used in the NNLS merging approach
@@ -305,6 +339,10 @@ function compute_cross_sections_only!(computed_cs, interaction, g, electron_neut
     return E_coll_electron_eV
 end
 
+"""
+Compute electron-impact ionization and excitation cross-sections, and electron-neutral elastic scattering
+Plus compute total cross-section and probabilites of different processes
+"""
 function compute_cross_sections!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index)
     # the neutral_species_index is the absolute one (i.e. index in the list of all species)
     E_coll_electron_eV = compute_cross_sections_only!(computed_cs, interaction, g,
@@ -330,23 +368,38 @@ function compute_cross_sections!(computed_cs, interaction, g, electron_neutral_i
     return E_coll_electron_eV
 end
 
+"""
+Get the value of the total collision cross-section for electron-neutral interactions
+"""
 function get_cs_total(electron_neutral_interactions, computed_cs, neutral_species_index)
     return computed_cs[electron_neutral_interactions.neutral_indexer[neutral_species_index]].cs_total
 end
 
+"""
+Get the value of the elastic scattering electron-neutral cross-section
+"""
 function get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index)
     return computed_cs[electron_neutral_interactions.neutral_indexer[neutral_species_index]].cs_elastic
 end
 
+"""
+Get the value of the electron-impact ionization cross-section
+"""
 function get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index)
     return computed_cs[electron_neutral_interactions.neutral_indexer[neutral_species_index]].cs_ionization
 end
 
+"""
+Get the ionization threshold
+"""
 function get_ionization_threshold(electron_neutral_interactions, neutral_species_index)
     # the neutral_species_index is the absolute one (i.e. index in the list of all species)
     return electron_neutral_interactions.ionization[electron_neutral_interactions.neutral_indexer[neutral_species_index]].data.ΔE
 end
 
+"""
+Get the way electron energy is split during ionization
+"""
 function get_electron_energy_split(electron_neutral_interactions, neutral_species_index)
     # the neutral_species_index is the absolute one (i.e. index in the list of all species)
     return electron_neutral_interactions.ionization[electron_neutral_interactions.neutral_indexer[neutral_species_index]].split

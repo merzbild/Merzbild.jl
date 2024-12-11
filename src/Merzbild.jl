@@ -32,6 +32,7 @@ export k_B
 export GridN2Merge, merge_grid_based!
 export OctreeN2Merge, OctreeBinMidSplit, OctreeBinMeanSplit, OctreeBinMedianSplit
 export OctreeInitBinMinMaxVel, OctreeInitBinMinMaxVelSym, OctreeInitBinC
+export OctreeBinBoundsInherit, OctreeBinBoundsRecompute
 export merge_octree_N2_based!
 export NNLSMerge, compute_multi_index_moments, merge_nnls_based!
 export merge_nnls_based_rate_preserving!
@@ -43,6 +44,6 @@ export estimate_sigma_g_w_max_ntc_n_e!, ntc_n_e!, ntc_n_e_es!
 export ParticleVector
 export Grid1DUniform, write_grid
 export GridSortInPlace, sort_particles!
-export MaxwellWalls, convect_particles!
+export MaxwellWallBC, MaxwellWalls1D, convect_particles!
 
 end # module merzbild

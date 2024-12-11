@@ -72,16 +72,17 @@
     Δrel_xsmall = 5e-13
 
     n_particles = 40000
-    particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, n_particles)]
+    particles::Vector{ParticleVector} = [ParticleVector(n_particles)]
     T0 = 300.0
     Fnum = 1e20
     vx0 = 2000.0
     vy0 = 500.0
     vz0 = -400.0
-    sample_particles_equal_weight!(rng, particles[1], n_particles, species_data[1].mass, T0, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0,
-    vx0=vx0, vy0=vy0, vz0=vz0)
+    pia = ParticleIndexerArray(0)
 
-    pia = ParticleIndexerArray(n_particles)
+    sample_particles_equal_weight!(rng, particles[1], pia, 1, 1,
+                                   n_particles, species_data[1].mass, T0, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0,
+                                   vx0=vx0, vy0=vy0, vz0=vz0)
 
     compute_props!(particles, pia, species_data, phys_props)
     mg2 = GridN2Merge(Nx, Ny, Nz, 3.5)
