@@ -1,10 +1,7 @@
-using Merzbild
-
 @testset "collision_fp" begin
     #scale_norm_rands!
     seed = 1234
-    Random.seed!(seed)
-    rng::Xoshiro = Xoshiro(seed)
+    rng = StableRNG(seed)
     n_particles = 100
     mean = zeros(3)
     stddev = zeros(3)

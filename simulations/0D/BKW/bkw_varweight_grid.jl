@@ -82,7 +82,7 @@ function run(seed)
         ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
 
         if phys_props.np[1,1] > threshold
-            merge_grid_based!(mg, particles[1], pia, 1, 1, species_data, phys_props)
+            merge_grid_based!(rng, mg, particles[1], pia, 1, 1, species_data, phys_props)
         end
         
         compute_props!(particles, pia, species_data, phys_props)

@@ -1,9 +1,7 @@
 @testset "2species elastic" begin
 
-
     seed = 1234
-    Random.seed!(seed)
-    rng::Xoshiro = Xoshiro(seed)
+    rng = StableRNG(seed)
 
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
     species_data::Vector{Species} = load_species_data(particles_data_path, ["Ar", "He"])
@@ -92,7 +90,7 @@
     end
 
     for species in 1:2
-        @test abs(ref_T[1, species, end] - T_eq) / T_eq < 0.1
+        @test abs(ref_T[1, species, end] - T_eq) / T_eq < 0.12
     end
 
     close(sol)

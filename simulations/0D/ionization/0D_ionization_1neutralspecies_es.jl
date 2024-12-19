@@ -142,15 +142,15 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons, merging_
 
 
         if pia.n_total[1] > threshold_neutrals
-            @timeit "merge n" merge_octree_N2_based!(oc, particles[1], pia, 1, 1, np_target_neutrals)
+            @timeit "merge n" merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
         end
 
         if pia.n_total[2] > threshold_ion
-            @timeit "merge i" merge_grid_based!(mg_ions, particles[2], pia, 1, 2, species_data, phys_props)
+            @timeit "merge i" merge_grid_based!(rng, mg_ions, particles[2], pia, 1, 2, species_data, phys_props)
         end
 
         if pia.n_total[3] > threshold_electrons
-            @timeit "merge e" merge_octree_N2_based!(oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
+            @timeit "merge e" merge_octree_N2_based!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
         end
 
         @timeit "acc e" accelerate_constant_field_x!(particles[index_electron],

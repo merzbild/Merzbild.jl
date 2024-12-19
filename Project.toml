@@ -1,7 +1,7 @@
 name = "Merzbild"
 uuid = "de01fcb4-c117-45a4-a951-7e39b0f12516"
 authors = ["Georgii Oblapenko <kunstmord@kunstmord.com>", "Leo Basov <basov.leo@gmail.com>"]
-version = "0.5.0"
+version = "0.6.0"
 
 [deps]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
@@ -24,8 +24,8 @@ NetCDF = "0.11.8"
 Random = "1"
 SpecialFunctions = "2.4"
 StaticArrays = "1.9.5"
-Statistics = "1.9"
+Statistics = "1.11"
 TOML = "1"
 TimerOutputs = "0.5.24"
 XML = "0.3.3"
-julia = "1.9"
+julia = "^1.10"
