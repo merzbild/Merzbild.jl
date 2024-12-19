@@ -116,7 +116,7 @@ end
 """
 Set underlying particle in ParticleVector with index i to a new particle
 """
-function Base.setindex!(pv::ParticleVector, p::Particle, i::Int)
+function Base.setindex!(pv::ParticleVector, p::Particle, i::Integer)
     pv.particles[pv.index[i]] = p
 end
 
@@ -130,7 +130,7 @@ end
 """
 Resize a `ParticleVector`` instance
 """
-function Base.resize!(pv::ParticleVector, n::Int)
+function Base.resize!(pv::ParticleVector, n::Integer)
     old_len = length(pv.particles)
     resize!(pv.particles, n)
     resize!(pv.index, n)
