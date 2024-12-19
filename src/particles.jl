@@ -55,14 +55,14 @@ mutable struct ParticleIndexerArray
     """
     Create a ParticleIndexerArray from a 2-D array of ParticleIndexers
     """
-    function ParticleIndexerArray(indexer_arr, n_total)
+    function ParticleIndexerArray(indexer_arr::Array{ParticleIndexer,2}, n_total)
         return new(indexer_arr, n_total)
     end
 
     """
     Create a ParticleIndexerArray given the number of cells and species
     """
-    function ParticleIndexerArray(n_cells::Int, n_species::Int)  # most generic version
+    function ParticleIndexerArray(n_cells::Integer, n_species::Integer)  # most generic version
         pia_indexer = Array{ParticleIndexer, 2}(undef, (n_cells, n_species))
 
         for j in 1:n_species
@@ -77,7 +77,7 @@ end
 """
 Create a single-species/single-cell ParticleIndexerArray
 """
-ParticleIndexerArray(n_particles::Int) = ParticleIndexerArray(hcat(ParticleIndexer(n_particles)), [n_particles])
+ParticleIndexerArray(n_particles::Integer) = ParticleIndexerArray(hcat(ParticleIndexer(n_particles)), [n_particles])
 
 """
 Create a multi-species/single-cell ParticleIndexerArray
