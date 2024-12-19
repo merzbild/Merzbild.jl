@@ -9,7 +9,7 @@ end
 """
 Create GridSortInPlace instance given a grid and number of particles
 """
-GridSortInPlace(grid, n_particles::Int64) = GridSortInPlace(zeros(Int64, grid.n_cells + 1), zeros(Int64, n_particles))
+GridSortInPlace(grid, n_particles::Integer) = GridSortInPlace(zeros(Int64, grid.n_cells + 1), zeros(Int64, n_particles))
 
 """
 Sort particles on a grid
