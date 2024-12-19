@@ -77,7 +77,7 @@ end
 """
 Create a single-species/single-cell ParticleIndexerArray
 """
-ParticleIndexerArray(n_particles::Int64) = ParticleIndexerArray(hcat(ParticleIndexer(n_particles)), [n_particles])
+ParticleIndexerArray(n_particles::Int) = ParticleIndexerArray(hcat(ParticleIndexer(n_particles)), [n_particles])
 
 """
 Create a multi-species/single-cell ParticleIndexerArray
@@ -116,7 +116,7 @@ end
 """
 Set underlying particle in ParticleVector with index i to a new particle
 """
-function Base.setindex!(pv::ParticleVector, p::Particle, i::Int64)
+function Base.setindex!(pv::ParticleVector, p::Particle, i::Int)
     pv.particles[pv.index[i]] = p
 end
 
@@ -130,7 +130,7 @@ end
 """
 Resize a `ParticleVector`` instance
 """
-function Base.resize!(pv::ParticleVector, n::Integer)
+function Base.resize!(pv::ParticleVector, n::Int)
     old_len = length(pv.particles)
     resize!(pv.particles, n)
     resize!(pv.index, n)
