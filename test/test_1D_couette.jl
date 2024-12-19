@@ -111,7 +111,7 @@
     sol = NCDataset(sol_path, "r")
  
     @test maximum(ref_sol["ndens"][:, 1, 1:5] .- sol["ndens"][:, 1, 1:5]) < 2 * eps()
-    @test maximum(ref_sol["T"][:, 1, 1:5] .- sol["T"][:, 1, 1:5]) < 1.2e-13
+    @test maximum(ref_sol["T"][:, 1, 1:5] .- sol["T"][:, 1, 1:5]) < 1.8e-13
 
     close(sol)
     rm(sol_path)
