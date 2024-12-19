@@ -94,7 +94,7 @@ function sample_bkw!(rng, particles, nparticles, offset, m, T, v0)
     vscale = sqrt(2 * k_B * T / m) * sqrt(0.3)  # 0.3 comes from some scaling of the Chi distribution
 
     v_distribution = Distributions.Chi(5) 
-    v_abs = rand(v_distribution, nparticles)
+    v_abs = rand(rng, v_distribution, nparticles)
 
     Θ = rand(rng, Float64, nparticles) * π
     ϕ = rand(rng, Float64, nparticles) * twopi

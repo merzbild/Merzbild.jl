@@ -44,8 +44,8 @@
     species_data::Vector{Species} = load_species_data(particles_data_path, "Ar")
 
     seed = 1234
-    Random.seed!(seed)
-    rng::Xoshiro = Xoshiro(seed)
+    rng = StableRNG(seed)
+
     phys_props::PhysProps = PhysProps(1, 1, [], Tref=1)
     
     particles24::Vector{Vector{Particle}} = [create_24_3particles_in_octant()]
@@ -108,7 +108,7 @@
     @test n0_computed == total_w
 
     octree2 = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
-    merge_octree_N2_based!(octree2, particles24[1], pia, 1, 1, 16)
+    merge_octree_N2_based!(rng, octree2, particles24[1], pia, 1, 1, 16)
 
     @test octree2.Nbins == 8
     @test pia.n_total[1] == 16
@@ -125,7 +125,7 @@
     @test abs(v0_computed[2] - phys_props.v[2,1,1]) < 1e-14
     @test abs(v0_computed[3] - phys_props.v[3,1,1]) < 1e-14
 
-    merge_octree_N2_based!(octree2, particles24[1], pia, 1, 1, 2)
+    merge_octree_N2_based!(rng,octree2, particles24[1], pia, 1, 1, 2)
 
     @test octree2.Nbins == 1
     @test pia.n_total[1] == 2

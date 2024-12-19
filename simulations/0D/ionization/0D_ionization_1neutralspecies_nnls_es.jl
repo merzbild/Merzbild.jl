@@ -96,7 +96,7 @@ function run(seed, E_Tn, n_t,
     println(ref_cs_elastic, ", ", ref_cs_ionization)
     
     @timeit "NNLSinit" mnnls = NNLSMerge(mim, threshold_electrons, rate_preserving=false)
-    @timeit "NNLSinit RP" mnnls_rp = NNLSMerge(mim, threshold_electrons, rate_preserving=false)
+    @timeit "NNLSinit RP" mnnls_rp = NNLSMerge(mim, threshold_electrons, rate_preserving=true)
 
     println("Total conservation eqns: $(length(mnnls.rhs_vector))")
 
@@ -177,11 +177,11 @@ function run(seed, E_Tn, n_t,
         end
 
         if pia.n_total[1] > threshold_neutrals
-            @timeit "merge n" merge_octree_N2_based!(oc, particles[1], pia, 1, 1, np_target_neutrals)
+            @timeit "merge n" merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
         end
 
         if pia.n_total[2] > threshold_ion
-            @timeit "merge i" merge_grid_based!(mg_ions, particles[2], pia, 1, 2, species_data, phys_props)
+            @timeit "merge i" merge_grid_based!(rng, mg_ions, particles[2], pia, 1, 2, species_data, phys_props)
         end
 
         vref = sqrt(2 * k_B * phys_props.T[1,index_electron] / species_data[index_electron].mass)
@@ -211,7 +211,7 @@ function run(seed, E_Tn, n_t,
 
             if nnls_success_flag == -1
                 println("Resorting to octree merging")
-                @timeit "Octreemerge e" merge_octree_N2_based!(oc_electrons, particles[3], pia, 1, 3, np_target_electrons_octree)
+                @timeit "Octreemerge e" merge_octree_N2_based!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons_octree)
             end
         end
 
@@ -229,8 +229,8 @@ function run(seed, E_Tn, n_t,
 end
 
 const paramset = [8, 6, 150, 100]
-run(1234, 400.0, 500000, paramset[1], paramset[2], paramset[3], paramset[4], adds=0, rate_preserving=false, do_es=false)
-run(1234, 400.0, 500000, paramset[1], paramset[2], paramset[3], paramset[4], adds=0, rate_preserving=false, do_es=true)
+# run(1234, 400.0, 500000, paramset[1], paramset[2], paramset[3], paramset[4], adds=0, rate_preserving=false, do_es=false)
+# run(1234, 400.0, 500000, paramset[1], paramset[2], paramset[3], paramset[4], adds=0, rate_preserving=false, do_es=true)
 
 run(1234, 400.0, 500000, paramset[1], paramset[2], paramset[3], paramset[4], adds=0, rate_preserving=true, do_es=false)
 run(1234, 400.0, 500000, paramset[1], paramset[2], paramset[3], paramset[4], adds=0, rate_preserving=true, do_es=true)

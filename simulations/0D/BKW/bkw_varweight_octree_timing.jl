@@ -89,10 +89,10 @@ function run(seed)
         if phys_props.np[1,1] > threshold
             if firstm
                 # first merge is slower since we have a lot more particles at t=0
-                @timeit "merge: 1st time" merge_octree_N2_based!(oc, particles[1], pia, 1, 1, Ntarget)
+                @timeit "merge: 1st time" merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
                 firstm = false
             else
-                @timeit "merge" merge_octree_N2_based!(oc, particles[1], pia, 1, 1, Ntarget)
+                @timeit "merge" merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
             end
         end
         if ts % 10 == 0

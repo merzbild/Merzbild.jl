@@ -97,7 +97,7 @@ oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel,
 Ntarget = 100
 
 # perform merging
-merge_octree_N2_based!(oc, particles[1], pia, 1, 1, Ntarget)
+merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
 ```
 
 We can check the number of particles after the merging procedure by looking at `pia.indexer[1,1].n_local` (the number of particles
@@ -155,7 +155,7 @@ Ntarget = 100
 Nthreshold = 120
 
 # perform initial merge
-merge_octree_N2_based!(oc, particles[1], pia, 1, 1, Ntarget)
+merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
 
 # set some reference values
 sigma_ref = π * (interaction_data[1,1].vhs_d^2)

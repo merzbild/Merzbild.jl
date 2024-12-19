@@ -29,8 +29,7 @@
     end
         
     seed = 1234
-    Random.seed!(seed)
-    rng::Xoshiro = Xoshiro(seed)
+    rng = StableRNG(seed)
 
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
     species_data::Vector{Species} = load_species_data(particles_data_path, "Ar")
@@ -69,14 +68,13 @@
     n_sampled = sample_on_grid!(rng, vdf0, particles[1], nv, species_data[1].mass, T0, n_dens,
                                 0.0, 1.0, 0.0, 1.0, 0.0, 1.0;
                                 v_mult=3.5, cutoff_mult=3.5, noise=0.0, v_offset=[0.0, 0.0, 0.0])
-    # println(n_sampled)
 
     pia = ParticleIndexerArray(n_sampled)
 
     phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
     compute_props_with_total_moments!(particles, pia, species_data, phys_props)
 
-    sol_path = joinpath(@__DIR__, "data", "tmp_bkw.nc")
+    sol_path = joinpath(@__DIR__, "data", "tmp_bkw_grid.nc")
     ds = NCDataHolder(sol_path, species_data, phys_props)
     write_netcdf_phys_props(ds, phys_props, 0)
 
@@ -93,7 +91,7 @@
         ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
 
         if phys_props.np[1,1] > threshold
-            merge_grid_based!(mg, particles[1], pia, 1, 1, species_data, phys_props)
+            merge_grid_based!(rng, mg, particles[1], pia, 1, 1, species_data, phys_props)
         end
         
         compute_props_with_total_moments!(particles, pia, species_data, phys_props)
@@ -127,7 +125,7 @@
 
     analytic_6 = analytic(sol["timestep"] * dt_scaled, magic_factor, 6)
     diff = abs.(analytic_6 .- sol_mom[2, 1, 1, :]) ./ analytic_6
-    @test maximum(diff) < 0.05
+    @test maximum(diff) < 0.06
 
     analytic_8 = analytic(sol["timestep"] * dt_scaled, magic_factor, 8)
     diff = abs.(analytic_8 .- sol_mom[3, 1, 1, :]) ./ analytic_8

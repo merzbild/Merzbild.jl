@@ -108,7 +108,7 @@ function run(seed, n_up_to_total, n_full_up_to_total, threshold, ntarget_octree)
 
             if nnls_success_flag == -1
                 println("Resorting to octree merging on timestep $ts")
-                @timeit "Octreemerge" merge_octree_N2_based!(ocm, particles[1], pia, 1, 1, ntarget_octree)
+                @timeit "Octreemerge" merge_octree_N2_based!(rng, ocm, particles[1], pia, 1, 1, ntarget_octree)
             end
         end
         

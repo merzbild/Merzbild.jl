@@ -1,7 +1,6 @@
 
 @testset "couette test" begin
 
-    seed = 1234
     T_wall = 300.0
     v_wall = 500.0
     L = 5e-4
@@ -12,8 +11,8 @@
     output_freq = 1000
     n_timesteps = 6000
 
-    Random.seed!(seed)
-    rng::Xoshiro = Xoshiro(seed)
+    seed = 1234
+    rng = StableRNG(seed)
 
     # load particle and interaction data
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")

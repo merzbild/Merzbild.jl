@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.6.0
+The Octree and Grid-based merging routines now require the random number generator to be passed.
+Tests now rely on the `StableRNGs` package to avoid changes in RNGs between julia versions. BKW sampling fixed and
+now uses the RNG. CI Github workflow added. Test values and tolerances updated. Examples in the `simulations` directory updated.
+
 ## v0.5.0
 First draft of documentation. Removed one old version of particle sampling routine used in some of the tests and examples.
 `resize!` now works with `ParticleVector` instances (preliminary work for variable-weight DSMC in non-0D settings).

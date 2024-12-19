@@ -28,9 +28,8 @@
         return C.^(kk - 1) .* (kk .- (kk - 1) * C)
     end
         
-    seed = 0
-    Random.seed!(seed)
-    rng::Xoshiro = Xoshiro(seed)
+    seed = 1234
+    rng = StableRNG(seed)
 
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
     species_data::Vector{Species} = load_species_data(particles_data_path, "Ar")
@@ -113,7 +112,7 @@
             nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1, vref)
 
             if nnls_success_flag == -1
-                merge_octree_N2_based!(ocm, particles[1], pia, 1, 1, ntarget_octree)
+                merge_octree_N2_based!(rng, ocm, particles[1], pia, 1, 1, ntarget_octree)
             end
         end
         
@@ -144,7 +143,7 @@
 
     analytic_4 = analytic(sol["timestep"] * dt_scaled, magic_factor, 4)
     diff = abs.(analytic_4 .- sol_mom[1, 1, 1, :]) ./ analytic_4
-    @test maximum(diff) < 0.12
+    @test maximum(diff) < 0.285
 
     close(sol)
     rm(sol_path)

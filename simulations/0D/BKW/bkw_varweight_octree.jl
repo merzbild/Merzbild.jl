@@ -83,7 +83,7 @@ function run(seed::Int64, threshold::Int64, Ntarget::Int64)
         ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
 
         if phys_props.np[1,1] > threshold
-            merge_octree_N2_based!(oc, particles[1], pia, 1, 1, Ntarget)
+            merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
         end
         if ts % 100 == 0
             println(ts)

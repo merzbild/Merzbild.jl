@@ -513,7 +513,7 @@ end
 """
 Compute post-merge particles
 """
-function compute_new_particles!(octree::OctreeN2Merge, particles, pia, cell, species)
+function compute_new_particles!(rng, octree::OctreeN2Merge, particles, pia, cell, species)
     # given computed Octree, create new particles instead of the old ones
     
     for bin_id in 1:octree.Nbins
@@ -524,11 +524,11 @@ function compute_new_particles!(octree::OctreeN2Merge, particles, pia, cell, spe
             octree.full_bins[bin_id].v_std_sq = sqrt.(octree.full_bins[bin_id].v_std_sq)
             octree.full_bins[bin_id].x_std_sq = sqrt.(octree.full_bins[bin_id].x_std_sq)
             
-            octree.direction_vec = @SVector rand(direction_signs, 3)
+            octree.direction_vec = @SVector rand(rng, direction_signs, 3)
             octree.full_bins[bin_id].v1 = octree.full_bins[bin_id].v_mean + octree.direction_vec .* octree.full_bins[bin_id].v_std_sq
             octree.full_bins[bin_id].v2 = octree.full_bins[bin_id].v_mean - octree.direction_vec .* octree.full_bins[bin_id].v_std_sq
 
-            octree.direction_vec = @SVector rand(direction_signs, 3)
+            octree.direction_vec = @SVector rand(rng, direction_signs, 3)
             octree.full_bins[bin_id].x1 = octree.full_bins[bin_id].x_mean + octree.direction_vec .* octree.full_bins[bin_id].x_std_sq
             octree.full_bins[bin_id].x2 = octree.full_bins[bin_id].x_mean - octree.direction_vec .* octree.full_bins[bin_id].x_std_sq
         elseif (octree.bins[bin_id].np == 2)
@@ -623,7 +623,7 @@ end
 """
 Perform N:2 merging
 """
-function merge_octree_N2_based!(octree, particles, pia, cell, species, target_np)
+function merge_octree_N2_based!(rng, octree, particles, pia, cell, species, target_np)
     clear_octree!(octree)
     resize_octree_buffers!(octree, pia.indexer[cell,species].n_local)
     init_octree!(octree, particles, pia, cell, species)
@@ -662,5 +662,5 @@ function merge_octree_N2_based!(octree, particles, pia, cell, species, target_np
     for bin_id in 1:octree.Nbins
         compute_bin_props!(octree, bin_id, particles)
     end
-    compute_new_particles!(octree, particles, pia, cell, species)
+    compute_new_particles!(rng, octree, particles, pia, cell, species)
 end

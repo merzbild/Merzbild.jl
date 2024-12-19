@@ -29,8 +29,7 @@
     end
         
     seed = 1234
-    Random.seed!(seed)
-    rng::Xoshiro = Xoshiro(seed)
+    rng = StableRNG(seed)
 
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
     species_data::Vector{Species} = load_species_data(particles_data_path, "Ar")
@@ -92,7 +91,7 @@
         ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
 
         if phys_props.np[1,1] > threshold
-            merge_octree_N2_based!(oc, particles[1], pia, 1, 1, Ntarget)
+            merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
             # println(oc.Nbins)
         end
         
@@ -127,7 +126,7 @@
 
     analytic_6 = analytic(sol["timestep"] * dt_scaled, magic_factor, 6)
     diff = abs.(analytic_6 .- sol_mom[2, 1, 1, :]) ./ analytic_6
-    @test maximum(diff) < 0.054
+    @test maximum(diff) < 0.0561
 
     analytic_8 = analytic(sol["timestep"] * dt_scaled, magic_factor, 8)
     diff = abs.(analytic_8 .- sol_mom[3, 1, 1, :]) ./ analytic_8

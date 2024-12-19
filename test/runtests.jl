@@ -5,6 +5,7 @@ using Random
 using NCDatasets
 using SpecialFunctions
 using StaticArrays
+using StableRNGs
 
 include("test_indexing.jl")  # first we test indexing routines
 include("test_constants.jl")  # test constants

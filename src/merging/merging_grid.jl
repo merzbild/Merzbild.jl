@@ -241,7 +241,7 @@ end
 """
 Compute new particles based on the grid cell properties without checking particle locations
 """
-function compute_new_particles!(merging_grid::GridN2Merge, particles, pia, cell, species)
+function compute_new_particles!(rng, merging_grid::GridN2Merge, particles, pia, cell, species)
     # no limits on particle location, i.e. 0-D
 
     for index in 1:merging_grid.Ntotal
@@ -252,11 +252,11 @@ function compute_new_particles!(merging_grid::GridN2Merge, particles, pia, cell,
             merging_grid.cells[index].v_std_sq = sqrt.(merging_grid.cells[index].v_std_sq)
             merging_grid.cells[index].x_std_sq = sqrt.(merging_grid.cells[index].x_std_sq)
             
-            merging_grid.direction_vec = @SVector rand(direction_signs, 3)
+            merging_grid.direction_vec = @SVector rand(rng, direction_signs, 3)
             merging_grid.cells[index].v1 = merging_grid.cells[index].v_mean + merging_grid.direction_vec .* merging_grid.cells[index].v_std_sq
             merging_grid.cells[index].v2 = merging_grid.cells[index].v_mean - merging_grid.direction_vec .* merging_grid.cells[index].v_std_sq
 
-            merging_grid.direction_vec = @SVector rand(direction_signs, 3)
+            merging_grid.direction_vec = @SVector rand(rng, direction_signs, 3)
             merging_grid.cells[index].x1 = merging_grid.cells[index].x_mean + merging_grid.direction_vec .* merging_grid.cells[index].x_std_sq
             merging_grid.cells[index].x2 = merging_grid.cells[index].x_mean - merging_grid.direction_vec .* merging_grid.cells[index].x_std_sq
         elseif (merging_grid.cells[index].np == 2)
@@ -308,9 +308,9 @@ end
 """
 Merge particles using a velocity grid-based merging approach
 """
-function merge_grid_based!(merging_grid, particles, pia, cell, species, species_data, phys_props)
+function merge_grid_based!(rng, merging_grid, particles, pia, cell, species, species_data, phys_props)
     # 0-D, no grid, particles in single cell
     compute_velocity_extent!(merging_grid, cell, species, species_data, phys_props)
     compute_grid!(merging_grid, particles, pia, cell, species)
-    compute_new_particles!(merging_grid, particles, pia, cell, species)
+    compute_new_particles!(rng, merging_grid, particles, pia, cell, species)
 end
