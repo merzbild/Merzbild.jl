@@ -48,7 +48,7 @@ end
 Sample particles in each cell of 1-D uniform grid given ppc
 """
 function sample_particles_equal_weight!(rng, grid1duniform, particles, pia, species,
-                                        species_data, ppc::Int64, T, Fnum)
+                                        species_data, ppc::Integer, T, Fnum)
 
     for cell in 1:grid1duniform.n_cells
         sample_particles_equal_weight!(rng, particles, pia, cell, species,
