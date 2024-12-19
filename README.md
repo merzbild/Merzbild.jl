@@ -1,4 +1,5 @@
 [![Docs-dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://merzbild.github.io/Merzbild.jl/dev/)
+![Tests](https://github.com/merzbild/Merzbild.jl/actions/workflows/ci.yml/badge.svg)
 [![License: MPL2.0](https://img.shields.io/badge/License-MPL_2.0-success.svg)](https://opensource.org/license/mpl-2-0)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
