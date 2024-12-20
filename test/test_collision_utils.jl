@@ -13,6 +13,7 @@
     p1 = Particle(1e10, [2.0, 1.0, 0.0], [0.0, 0.0, 0.0])
     p2 = Particle(1e10, [0.0, -1.0, -1.0], [0.0, 0.0, 0.0])
 
+
     collision_data = CollisionData()
 
     Merzbild.compute_com!(collision_data, interaction_data[1,1], p1, p2)
@@ -52,5 +53,40 @@
     @test abs(interaction_data_2[1,2].μ1 + interaction_data_2[1,2].μ2 - 1.0) < eps()
 
 
+    sp_data, int_data = load_species_and_interaction_data(particles_data_path, interaction_data_path,
+                                                          ["Ar", "He"]; fill_dummy=false)
+    
+    @test length(sp_data) == 2
+    for i in 1:2
+        for j in 1:2
+            @test abs(interaction_data_2[i,j].μ1 - int_data[i,j].μ1) < eps()
+            @test abs(interaction_data_2[i,j].μ2 - int_data[i,j].μ2) < eps()
+            @test abs(interaction_data_2[i,j].m_r - int_data[i,j].m_r) < eps()
+            @test abs(interaction_data_2[i,j].vhs_d - int_data[i,j].vhs_d) < eps()
+            @test abs(interaction_data_2[i,j].vhs_o - int_data[i,j].vhs_o) < eps()
+            @test abs(interaction_data_2[i,j].vhs_Tref - int_data[i,j].vhs_Tref) < eps()
+            @test abs(interaction_data_2[i,j].vhs_muref - int_data[i,j].vhs_muref) < eps()
+            @test abs(interaction_data_2[i,j].vhs_factor - int_data[i,j].vhs_factor) < eps()
+        end
+    end
 
+    e_sp_data = load_species_data(particles_data_path, "e-")
+    @test_throws KeyError e_int_data = load_interaction_data(interaction_data_path, e_sp_data)
+
+    e_int_data = load_interaction_data_with_dummy(interaction_data_path, e_sp_data)
+    @test abs(e_int_data[1,1].vhs_d - 1e-10) < eps()
+    @test abs(e_int_data[1,1].vhs_o - 1.0) < eps()
+    @test abs(e_int_data[1,1].vhs_Tref - 273.0) < eps()
+
+    e_sp_data2, e_int_data2 = load_species_and_interaction_data(particles_data_path, interaction_data_path,
+                                                                ["e-"]; fill_dummy=true)
+
+    @test abs(e_int_data2[1,1].μ1 - e_int_data[1,1].μ1) < eps()
+    @test abs(e_int_data2[1,1].μ2 - e_int_data[1,1].μ2) < eps()
+    @test abs(e_int_data2[1,1].m_r - e_int_data[1,1].m_r) < eps()
+    @test abs(e_int_data2[1,1].vhs_d - e_int_data[1,1].vhs_d) < eps()
+    @test abs(e_int_data2[1,1].vhs_o - e_int_data[1,1].vhs_o) < eps()
+    @test abs(e_int_data2[1,1].vhs_Tref - e_int_data[1,1].vhs_Tref) < eps()
+    @test abs(e_int_data2[1,1].vhs_muref - e_int_data[1,1].vhs_muref) < eps()
+    @test abs(e_int_data2[1,1].vhs_factor - e_int_data[1,1].vhs_factor) < eps()
 end

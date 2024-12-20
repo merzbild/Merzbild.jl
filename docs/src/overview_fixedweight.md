@@ -21,6 +21,9 @@ is missing in the TOML file, but will just create an interaction using the passe
 parameters. This is relevant for electron-neutral interactions, for example, since 
 VHS collision parameters don't really make sense for such interactions, but are required to fill in the fields.
 
+An additional utility function `load_species_and_interaction_data` is also available, which loads both
+the species' and interaction data for those species at the same time.
+
 ## Storing intermediate collision data: CollisionData
 During collisions, multiple vector quantities (such as the center of mass velocity,
 pre- and post-collision relative velocity) are computed for multiple collision pairs. In order to avoid excessive allocations

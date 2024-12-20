@@ -1,6 +1,8 @@
 [![Docs-dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://merzbild.github.io/Merzbild.jl/dev/)
 ![Tests](https://github.com/merzbild/Merzbild.jl/actions/workflows/ci.yml/badge.svg)
+[![codecov](https://codecov.io/gh/merzbild/Merzbild.jl/branch/main/graph/badge.svg?token=MC2A2MM18K)](https://codecov.io/gh/merzbild/Merzbild.jl)
 [![License: MPL2.0](https://img.shields.io/badge/License-MPL_2.0-success.svg)](https://opensource.org/license/mpl-2-0)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14503197.svg)](https://doi.org/10.5281/zenodo.14503197)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 # Merzbild.jl

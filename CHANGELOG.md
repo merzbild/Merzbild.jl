@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.6.1
+Utility function `load_species_and_interaction_data` added.
+
 ## v0.6.0
 The Octree and Grid-based merging routines now require the random number generator to be passed.
 Tests now rely on the `StableRNGs` package to avoid changes in RNGs between julia versions. BKW sampling fixed and

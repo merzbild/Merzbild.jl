@@ -24,7 +24,7 @@ export ParticleIndexer, ParticleIndexerArray, PhysProps, CollisionFactors, Colli
 export NCDataHolder, IOSkipList
 export write_netcdf_phys_props
 export close_netcdf
-export load_interaction_data, load_interaction_data_with_dummy
+export load_interaction_data, load_interaction_data_with_dummy, load_species_and_interaction_data
 export create_collision_factors_array
 export estimate_sigma_g_w_max, estimate_sigma_g_w_max!
 export ntc!, fp!
