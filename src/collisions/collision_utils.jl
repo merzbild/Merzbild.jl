@@ -194,6 +194,19 @@ function load_interaction_data_with_dummy(interactions_filename, species_data)
     return load_interaction_data(interactions_filename, species_data, 1e-10, 1.0, 273.0)
 end
 
+
+"""
+Load species and interaction data filling with dummy data if needed
+"""
+function load_species_and_interaction_data(species_filename, interactions_filename, species_names; fill_dummy=true)
+    species_data = load_species_data(species_filename, species_names)
+    if fill_dummy
+        return species_data, load_interaction_data_with_dummy(interactions_filename, species_data)
+    else
+        return species_data, load_interaction_data(interactions_filename, species_data)
+    end
+end
+
 """
 Compute center of mass velocity
 """

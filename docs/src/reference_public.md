@@ -19,6 +19,7 @@ Interaction
 load_species_data
 load_interaction_data
 load_interaction_data_with_dummy
+load_species_and_interaction_data
 load_electron_neutral_interactions
 ```
 
