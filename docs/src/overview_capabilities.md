@@ -15,6 +15,7 @@ via an accommodation coefficient).
 ## Collisions
 The No-Time-Counter (NTC) approach of [Bird (1994)](https://doi.org/10.1093/oso/9780198561958.001.0001) is implemented for fixed-weight DSMC.
 The variable-weight NTC approach of [Schmidt and Rutland (2000)](https://doi.org/10.1006/jcph.2000.6568) is implemented for variable-weight DSMC.
+Event splitting ([Oblapenko et al. (2022)](https://doi.org/10.1016/j.jcp.2022.111390)) is implemented for neutral-electron interactions.
 
 ## Fokker-Planck collisions
 As an alternative to DSMC, one can use the stochastic Fokker-Planck algorithm to simulate the particle collisions.
@@ -29,9 +30,9 @@ Currently, the linear Fokker-Planck model of [Gorhi, Torrilhon, and Jenny (2011)
 The following particle merging algorithms are available for variable-weight DSMC
 simulations:
 
-  1. A grid-based merging algorithm as described in [Oblapenko et al. (2020)](https://doi.org/10.1016/j.jcp.2020.109302) (see also TODO?)
+  1. A grid-based merging algorithm as described in [Oblapenko et al. (2020)](https://doi.org/10.1016/j.jcp.2020.109302) (see also [Vranic et al. (2015)](https://doi.org/10.1016/j.cpc.2015.01.020))
   2. The octree merging algorithm of [Martin and Cambier (2016)](https://doi.org/10.1016/j.jcp.2016.01.020)
-  3. A Non-Negative Least Squares (NNLS)-based merging approach (see [Solving Least Squares Problems](https://doi.org/10.1137/1.9781611971217) for a description of the general NNLS method)
+  3. A Non-Negative Least Squares (NNLS)-based merging approach described in [Oblapenko (2024)](https://doi.org/10.48550/arXiv.2412.12354)
 
 ## Cross-sections
 The Variable-Hard Sphere (VHS) model is implemented for collisions of neutral particles.

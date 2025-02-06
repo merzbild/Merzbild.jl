@@ -19,12 +19,15 @@ include("test_bkw.jl")  # then we test the BKW relaxation case against reference
 include("test_2species.jl")  # then we test 2-species elastic collisions
 include("test_merging_grid_indexing.jl")  # then we test basic indexing in grid-based merging
 include("test_merging_grid_merging.jl")  # then we test grid-based merging in 0D
+include("test_merging_grid_buffer_sorting.jl")  # then we test that particles are freed correctly in NNLS-based merging
 include("test_bkw_varweight_grid.jl")  # then we test variable-weight NTC collisions+grid-based merging in 0D (BKW relaxation)
 include("test_octree_bounds_and_splitting.jl")  # then we test bin bounds and splitting in octree merging
 include("test_octree_sorting.jl")  # then we test sorting in octree merging
 include("test_octree_merging.jl")  # then we test computation of props and octree merging
+include("test_octree_merging_buffer_sorting.jl")  # then we test that particles are freed correctly in octree merging
 include("test_bkw_varweight_octree.jl")  # then we test variable-weight NTC collisions+octree merging in 0D (BKW relaxation)
 include("test_nnls_merging.jl")  # test NNLS-based merging
+include("test_nnls_merging_buffer_sorting.jl")  # then we test that particles are freed correctly in NNLS-based merging
 include("test_bkw_varweight_nnls.jl")  # test NNLS-based merging
 include("test_electron_neutral_data.jl")  # test loading of XML LXCat-like data
 include("test_acceleration.jl")  # test acceleration of charge particles
@@ -37,5 +40,5 @@ include("test_collisions_1D.jl")  # test particle collisions on a grid
 include("test_io_multidim.jl")  # test netCDF I/O of physical properties on a grid
 include("test_1D_couette.jl")  # test Couette flow
 include("test_misc.jl")  # various misc utility functions
-include("test_aqua.jl")
 include("test_collision_fp.jl")
+include("test_aqua.jl")

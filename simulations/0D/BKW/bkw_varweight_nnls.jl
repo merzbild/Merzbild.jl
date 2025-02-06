@@ -62,7 +62,7 @@ function run(seed, n_up_to_total, n_full_up_to_total, threshold, ntarget_octree)
     tref = Lref / vref
     moments_list = [4, 6, 8, 10]
 
-    particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, np_base)]
+    particles::Vector{ParticleVector} = [ParticleVector(np_base)]
 
     vdf0 = (vx, vy, vz) -> bkw(vx, vy, vz, species_data[1].mass, T0, 0.0)
 

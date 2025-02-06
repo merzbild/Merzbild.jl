@@ -1,5 +1,12 @@
 """
+    Cell1D
+
 Cell element of a 1-D grid
+
+# Fields
+* `xlo`: coordinate of the left end of the element
+* `xhi`: coordinate of the right end of the element 
+* `V`: cell volume
 """
 struct Cell1D
     xlo::Float64
@@ -8,7 +15,18 @@ struct Cell1D
 end
 
 """
-1-D Uniform grid
+    Grid1DUniform
+
+1-D Uniform grid for a domain ``[0,L]``
+
+# Fields
+* `L`: length of the domain
+* `nx`: number of cells
+* `Δx`: cell size
+* `inv_Δx`: inverse of cell size
+* `cells`: `Vector` of `Cell1D` elements
+* `min_x`: minimum allowed `x` coordinate for particles (slightly larger than ``0``)
+* `max_x`: maximum allowed `x` coordinate for particles (slightly smaller than ``L``)
 """
 struct Grid1DUniform
     L::Float64
@@ -19,8 +37,20 @@ struct Grid1DUniform
     min_x::Float64  # so that we don't get particles stuck exactly at the wall
     max_x::Float64  # so that we don't get particles stuck exactly at the wall
 
-    """
-    Create 1-D uniform grid for a domain [0, L] with `nx` cells
+    @doc """
+        Grid1DUniform(L, nx; wall_offset=1e-12)
+
+    Create 1-D uniform grid for a domain ``[0, L]`` with `nx` cells
+
+    # Positional arguments
+    * `L`: length of the domain
+    * `nx`: number of cells
+
+    # Keyword arguments
+    * `wall_offset`: specifies a small relative offset from the walls so that particles
+        never end up with a coordinate of exactly ``0`` or ``L``, otherwise some
+        sorting routines may produce cell indices outside of the `1:nx` range.
+        The offset is computed as `Δx * wall_offset`, where `Δx` is the cell size.
     """
     function Grid1DUniform(L, nx; wall_offset=1e-12)
         cells = Vector{Cell1D}(undef, nx)
@@ -33,19 +63,38 @@ struct Grid1DUniform
             cells[i] = Cell1D(xlo, xhi, V)
         end
 
-        return new(L, nx, dx, 1.0 / dx, cells, dx * wall_offset, (1.0 - wall_offset) * L)
+        return new(L, nx, dx, 1.0 / dx, cells, dx * wall_offset, L - dx * wall_offset)
     end
 end
 
 """
-Find cell in 1-D uniform grid given coordinates of a particle
+    get_cell(grid1duniform::Grid1DUniform, x_pos)
+
+Find in which cell of 1-D uniform grid the coordinate is located
+
+# Positional arguments
+* `grid1duniform`: the 1-D uniform grid
+* `x_pos`: the 3-D coordinate vector for the which the cell index is to be determined (only the first component is used)
 """
 function get_cell(grid1duniform::Grid1DUniform, x_pos)
     return floor(Int64, x_pos[1] * grid1duniform.inv_Δx) + 1
 end
 
 """
-Sample particles in each cell of 1-D uniform grid given ppc
+    sample_particles_equal_weight!(rng, grid1duniform, particles, pia, species, species_data, ppc::Integer, T, Fnum)
+
+Sample particles from a Maxwellian distribution in each cell of 1-D uniform grid given the number of particles per cell
+
+# Positional arguments
+* `rng`: the random number generator
+* `grid1duniform`: the 1-D uniform grid
+* `particles`: the `ParticleVector` of particles
+* `pia`: the `ParticleIndexerArray`
+* `species`: the index of the species to be sampled for
+* `species_data`: `Vector` of `Species` data
+* `ppc`: number of particles per cell to be sampled
+* `T`: the temperature
+* `Fnum`: the computational weight of the particles
 """
 function sample_particles_equal_weight!(rng, grid1duniform, particles, pia, species,
                                         species_data, ppc::Integer, T, Fnum)
@@ -61,7 +110,22 @@ function sample_particles_equal_weight!(rng, grid1duniform, particles, pia, spec
 end
 
 """
-Sample particles in each cell of 1-D uniform grid given target number density
+    sample_particles_equal_weight!(rng, grid1duniform, particles, pia, species, species_data, ndens::Float64, T, Fnum)
+
+Sample particles from a Maxwellian distribution in each cell of 1-D uniform grid given the target number density.
+If the computed number of particles is not an integer value, the fractional remainder is used to
+probabilistically sample an extra particle, so that on average, the expected number density is achieved.
+
+# Positional arguments
+* `rng`: the random number generator
+* `grid1duniform`: the 1-D uniform grid
+* `particles`: the `ParticleVector` of particles
+* `pia`: the `ParticleIndexerArray`
+* `species`: the index of the species to be sampled for
+* `species_data`: `Vector` of `Species` data
+* `ndens`: target number density
+* `T`: the temperature
+* `Fnum`: the computational weight of the particles
 """
 function sample_particles_equal_weight!(rng, grid1duniform, particles, pia, species,
                                         species_data, ndens::Float64, T, Fnum)

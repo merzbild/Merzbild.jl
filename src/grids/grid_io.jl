@@ -1,5 +1,14 @@
-"""
-Write info to a NetCDF file
+@doc """
+    write_grid(nc_filename, grid::Grid1DUniform; global_attributes=Dict{Any,Any}())
+
+Write grid info to a NetCDF file
+
+# Positional arguments
+* `nc_filename`: path to the NetCDF file
+* `grid`: the grid to be written out to a file
+
+# Keyword arguments
+* `global_attributes`: dictionary of additional global attributes to be written to the netCDF file
 """
 function write_grid(nc_filename, grid::Grid1DUniform; global_attributes=Dict{Any,Any}())
     cells_dim = NcDim("cells", grid.n_cells, unlimited=false)
@@ -12,6 +21,7 @@ function write_grid(nc_filename, grid::Grid1DUniform; global_attributes=Dict{Any
     gatts = deepcopy(global_attributes)
     gatts["dx"] = grid.Δx
     gatts["L"] = grid.L
+    gatts["dim"] = 1
 
     filehandle = NetCDF.create(nc_filename, varlist, gatts=gatts, mode=NC_NETCDF4)
 

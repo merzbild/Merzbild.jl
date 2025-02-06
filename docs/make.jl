@@ -16,8 +16,14 @@ makedocs(
             "1D DSMC simulations" => "overview_1d.md",
             "Fokker-Planck simulations" => "overview_fp.md",
         ],
-        "Public API reference" => "reference_public.md",
-        "Internal API reference" => "reference_internal.md",
+        "Tutorials" => [
+            "Contiguous indexing" => "contiguous_indexing.md"
+            "Modelling ionization reactions" => "modelling_ionization.md"
+        ],
+        "API reference" => [
+            "Public API reference" => "reference_public.md",
+            "Internal API reference" => "reference_internal.md",
+        ],
         "Benchmarks" => "benchmarks.md"
     ]
 )

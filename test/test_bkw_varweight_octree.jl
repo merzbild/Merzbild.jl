@@ -61,7 +61,8 @@
     ttt_bkw = 1 / (4 * π * n_dens * kappa_mult)
     magic_factor = tref / ttt_bkw / (4 * π)
 
-    particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, np_base)]
+    # particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, np_base)]
+    particles = [ParticleVector(np_base)]
 
     vdf0 = (vx, vy, vz) -> bkw(vx, vy, vz, species_data[1].mass, T0, 0.0)
 

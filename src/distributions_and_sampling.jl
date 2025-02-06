@@ -1,6 +1,22 @@
 using Random
 import Distributions
 
+"""
+    UnitDVGrid
+
+Stores information about a uniform discrete 3-dimensional velocity grid with extent ``[-1.0,1.0]\\times[-1.0,1.0]\\times[-1.0,1.0]``.
+
+# Fields
+* `nx`: number of cells in x direction
+* `ny`: number of cells in y direction
+* `nz`: number of cells in z direction
+* `dx`: grid spacing in x direction
+* `dy`: grid spacing in y direction
+* `dz`: grid spacing in z direction
+* `vx_grid`: `Vector` of grid nodes in x direction
+* `vy_grid`: `Vector` of grid nodes in y direction
+* `vz_grid`: `Vector` of grid nodes in z direction
+"""
 struct UnitDVGrid
     nx::Int16
     ny::Int16
@@ -13,6 +29,23 @@ struct UnitDVGrid
     vz_grid::Array{Float64}
 end
 
+"""
+    DVGrid
+
+Stores information about a uniform discrete 3-dimensional velocity grid with extent ``[-v_{x,max},v_{x,max}]\\times[-v_{y,max},v_{y,max}]\\times[-v_{z,max},v_{z,max}]``.
+
+# Fields
+* `base_grid`: the underlying unit (non-scaled) `UnitDVGrid` uniform grid 
+* `vx_max`: extent of the grid in the x direction
+* `vy_max`: extent of the grid in the y direction
+* `vz_max`: extent of the grid in the z direction
+* `dy`: grid spacing in x direction
+* `dy`: grid spacing in y direction
+* `dz`: grid spacing in z direction
+* `vx_grid`: `Vector` of grid nodes in x direction
+* `vy_grid`: `Vector` of grid nodes in y direction
+* `vz_grid`: `Vector` of grid nodes in z direction
+"""
 mutable struct DVGrid
     const base_grid::UnitDVGrid
     vx_max::Float64
@@ -26,6 +59,17 @@ mutable struct DVGrid
     vz_grid::Array{Float64}
 end
 
+"""
+    VDF
+
+Stores the values of a function evaluated on 3-dimensional velocity grid.
+
+# Fields
+* `nx`: the number of grid elements in the x direction
+* `ny`: the number of grid elements in the y direction
+* `nz`: the number of grid elements in the z direction
+* `w`: the 3-dimensional array of values
+"""
 mutable struct VDF
     const nx::Int16
     const ny::Int16
@@ -63,16 +107,35 @@ function create_vdf(nx, ny, nz)
 end
 
 """
-Evaluate a Maxwell distribution with temperature T for a species with mass m
-    at a velocity vx vy vz
+    maxwellian(vx, vy, vz, m, T)
+
+Evaluate the Maxwell distribution with temperature `T` for a species with mass `m`
+    at a velocity `(vx, vy, vz)`
+
+# Positional arguments
+* `vx`: x velocity
+* `vy`: y velocity
+* `vz`: z velocity
+* `m`: species' mass
+* `T`: temperature
 """
 function maxwellian(vx, vy, vz, m, T)
     return (m / (2.0 * π * k_B * T))^(1.5) * exp(-m * (vx^2 + vy^2 + vz^2) / (2.0 * k_B * T))
 end
 
 """
-Evaluate the BKW distribution with temperature T for a species with mass m
-    at a velocity vx vy vz at a scaled time t
+    bkw(vx, vy, vz, m, T, scaled_time)
+
+Evaluate the Bobylev-Krook-Wu (BKW) distribution with temperature `T` for a species with mass `m`
+    at a velocity `(vx, vy, vz)` and scaled time `scaled_time`
+
+# Positional arguments
+* `vx`: x velocity
+* `vy`: y velocity
+* `vz`: z velocity
+* `m`: species' mass
+* `T`: temperature
+* `scaled_time`: the scaled_time
 """
 function bkw(vx, vy, vz, m, T, scaled_time)
     xk = 1.0 - 0.4 * exp(-scaled_time / 6.0)
@@ -86,8 +149,20 @@ function bkw(vx, vy, vz, m, T, scaled_time)
 end
 
 """
-Sample from the BKW distribution with temperature T for a species with mass m
-    at t=0 and add a velocity offset
+    sample_bkw!(rng, particles, nparticles, offset, m, T, v0)
+
+Sample particle velocities from the BKW distribution with temperature `T` for a species with mass `m`
+at `t=0` and add a velocity offset.
+Note: This does not update the particle weights, positions, or any indexing structures.
+
+# Positional arguments
+* `rng`: the random number generator
+* `particles`: the `Vector`-like structure holding the particles
+* `nparticles`: the number of particles to sample
+* `offset`: offset the starting position for writing the sampled particles to the `particles` array 
+* `m`: species' mass
+* `T`: temperature
+* `v0`: the 3-dimensional velocity to add to the sampled velocities
 """
 function sample_bkw!(rng, particles, nparticles, offset, m, T, v0)
     # BKW at t=0
@@ -110,15 +185,42 @@ function sample_bkw!(rng, particles, nparticles, offset, m, T, v0)
 end
 
 """
-Sample from the BKW distribution with temperature T for a species with mass m
-    at t=0 and add a velocity offset
+    sample_bkw!(rng, particles, nparticles, m, T, v0)
+
+Sample particles' velocities from the BKW distribution with temperature `T` for a species with mass `m`
+    at `t=0` and add a velocity offset. This does not update the particle weights, positions, or any indexing structures.
+    The sampled particles are written to the start of the `particles` array.
+
+# Positional arguments
+* `rng`: the random number generator
+* `particles`: the `Vector`-like structure holding the particles
+* `nparticles`: the number of particles to sample
+* `m`: species' mass
+* `T`: temperature
+* `v0`: the 3-dimensional velocity to add to the sampled velocities
 """
 function sample_bkw!(rng, particles, nparticles, m, T, v0)
     sample_bkw!(rng, particles, nparticles, 0, m, T, v0)
 end
 
 """
-Evaluate a distribution on a discrete velocity grid
+    evaluate_distribution_on_grid!(vdf, distribution_function, grid, w_total, cutoff_v; normalize=true)
+
+Evaluate a distribution on a discrete velocity grid, considering only points inside a sphere of a given radius
+(the value of the VDF at points outside of the sphere will be 0.0). The values can be re-normalized so that
+the distribution has the prescribed computational weight/density.
+
+# Positional arguments
+* `vdf`: The `VDF` instance where the evaluated values will be stored
+* `distribution_function`: the distribution function to be evaluated which takes the x, y, and z velocities as parameters
+* `grid`: the `DVGrid` on which the distribution function is evaluated
+* `w_total`: the total weight used in the re-normalization
+* `cutoff_v`: the radius of the sphere used to cut off high velocities: on grid points outside the sphere
+    the VDF will be 0
+
+# Keyword arguments
+* `normalize`: if `true`, the resulting values of the VDF will be renormalized so that their sum is equal to
+    `w_total`
 """
 function evaluate_distribution_on_grid!(vdf, distribution_function, grid, w_total, cutoff_v; normalize=true)
     w = 0.0
@@ -138,7 +240,46 @@ function evaluate_distribution_on_grid!(vdf, distribution_function, grid, w_tota
 end
 
 """
-Sample from an arbitrary distribution on a discrete velocity grid
+    sample_on_grid!(rng, vdf_func, particles, nv, m, T, n_total,
+                    xlo, xhi, ylo, yhi, zlo, zhi; v_mult=3.5, cutoff_mult=3.5, noise=0.0,
+                    v_offset=[0.0, 0.0, 0.0])
+
+Sample particles by evaluating a distribution on a discrete velocity grid,
+considering only points inside a sphere of a given radius
+(the value of the VDF at points outside of the sphere will be 0.0). The values of the VDF at the grid points
+will then be the computational weights of the particles, and the particles velocities are taken
+to be the velocities of the corresponding grid nodes (with additional uniformly distributed noise).
+Note: this can produce a large amount of particles for fine grids (as the number of grid nodes scales
+as `nv^3`.)
+The grid is assumed to have the same number of nodes `nv` in each direction, and the extent is computed
+as `v_mult * v_thermal`, where `v_thermal` is the thermal velocity ``\\sqrt(2kT/m)``, and `v_mult` is a
+user-defined parameter. The positions of the particles are assumed to be randomly distributed in a cuboid.
+
+# Positional arguments
+* `rng`: The random number generator
+* `vdf_func`: the distribution function to be evaluated which takes the x, y, and z velocities as parameters
+* `particles`: the `Vector`-like structure holding the particles
+* `nv`: the number of grid nodes in each direction
+* `m`: the molecular mass of the species
+* `T`: the temperature used to compute the thermal velocity
+* `n_total`: the total computational weight (number of physical particles) to be sampled
+* `xlo`: the lower bound of the x coordinates of the particles
+* `xhi`: the upper bound of the x coordinates of the particles
+* `ylo`: the lower bound of the y coordinates of the particles
+* `yhi`: the upper bound of the y coordinates of the particles
+* `zlo`: the lower bound of the z coordinates of the particles
+* `zhi`: the upper bound of the z coordinates of the particles
+
+# Keyword arguments
+* `v_mult`: the value by which the thermal velocity is multiplied to compute the extent of the velocity grid
+* `cutoff_mult`: the value by which the thermal velocity is multiplied to compute the radius for the sphere 
+    used to cut-off the higher velocities
+* `noise`: controls the amount of noise added to the particle velocities (the noise is uniformly distributed
+    on the interval `[-noise*dv, noise*dv]`, where `dv` is the grid spacing)
+* `v_offset`: the streaming velocity vector to be added to the particle velocities
+
+# Returns
+* The number of particles created
 """
 function sample_on_grid!(rng, vdf_func, particles, nv, m, T, n_total,
                          xlo, xhi, ylo, yhi, zlo, zhi; v_mult=3.5, cutoff_mult=3.5, noise=0.0,
@@ -178,8 +319,47 @@ function sample_on_grid!(rng, vdf_func, particles, nv, m, T, n_total,
     return n_sampled
 end
 
+
 """
-Sample from a Maxwellian on a discrete velocity grid
+    sample_maxwellian_on_grid!(rng, particles, nv, m, T, n_total,
+                               xlo, xhi, ylo, yhi, zlo, zhi; v_mult=3.5, cutoff_mult=3.5, noise=0.0,
+                               v_offset=[0.0, 0.0, 0.0])
+
+Sample particles by evaluating a Maxwellian on a discrete velocity grid,
+considering only points inside a sphere of a given radius
+(the value of the VDF at points outside of the sphere will be 0.0). The values of the VDF at the grid points
+will then be the computational weights of the particles, and the particles velocities are taken
+to be the velocities of the corresponding grid nodes (with additional uniformly distributed noise).
+Note: this can produce a large amount of particles for fine grids (as the number of grid nodes scales
+as `nv^3`.)
+The grid is assumed to have the same number of nodes `nv` in each direction, and the extent is computed
+as `v_mult * v_thermal`, where `v_thermal` is the thermal velocity ``\\sqrt(2kT/m)``, and `v_mult` is a
+user-defined parameter. The positions of the particles are assumed to be randomly distributed in a cuboid.
+
+# Positional arguments
+* `rng`: The random number generator
+* `particles`: the `Vector`-like structure holding the particles
+* `nv`: the number of grid nodes in each direction
+* `m`: the molecular mass of the species
+* `T`: the temperature used to compute the thermal velocity
+* `n_total`: the total computational weight (number of physical particles) to be sampled
+* `xlo`: the lower bound of the x coordinates of the particles
+* `xhi`: the upper bound of the x coordinates of the particles
+* `ylo`: the lower bound of the y coordinates of the particles
+* `yhi`: the upper bound of the y coordinates of the particles
+* `zlo`: the lower bound of the z coordinates of the particles
+* `zhi`: the upper bound of the z coordinates of the particles
+
+# Keyword arguments
+* `v_mult`: the value by which the thermal velocity is multiplied to compute the extent of the velocity grid
+* `cutoff_mult`: the value by which the thermal velocity is multiplied to compute the radius for the sphere 
+    used to cut-off the higher velocities
+* `noise`: controls the amount of noise added to the particle velocities (the noise is uniformly distributed
+    on the interval `[-noise*dv, noise*dv]`, where `dv` is the grid spacing)
+* `v_offset`: the streaming velocity vector to be added to the particle velocities
+
+# Returns
+The function returns the number of particles created
 """
 function sample_maxwellian_on_grid!(rng, particles, nv, m, T, n_total,
                                     xlo, xhi, ylo, yhi, zlo, zhi; v_mult=3.5, cutoff_mult=3.5, noise=0.0,
@@ -192,7 +372,16 @@ function sample_maxwellian_on_grid!(rng, particles, nv, m, T, n_total,
 end
 
 """
-compute thermal velocity: ``\\sqrt(2kT/m)``
+    compute_thermal_velocity(m, T)
+
+Compute the thermal velocity ``\\sqrt(2kT/m)``.
+
+# Positional arguments
+* `m`: the molecular mass of the species
+* `T`: the temperature
+
+# Returns
+The thermal velocity
 """
 function compute_thermal_velocity(m, T)
     return sqrt(2 * k_B * T / m)
@@ -200,8 +389,17 @@ end
 
 
 """
-Sample a single particle from a Maxwell distribution with temperature T for a species with mass m
-    and add a velocity offset
+    sample_maxwellian_single!(rng, v, m, T, v0)
+
+Sample a single particle from a Maxwellian distribution with temperature T for a species with mass m
+    and add a velocity offset.
+
+# Positional arguments
+* `rng`: The random number generator
+* `v`: the 3-dimensional vector to store the sampled velocity
+* `m`: the molecular mass of the species
+* `T`: the temperature
+* `v_offset`: the offset velocity vector to be added to the sampled velocity
 """
 function sample_maxwellian_single!(rng, v, m, T, v0)
     vscale = sqrt(2 * k_B * T / m)
@@ -215,26 +413,22 @@ function sample_maxwellian_single!(rng, v, m, T, v0)
     v[3] = vr * sin(theta2) + v0[3]
 end
 
-"""
-Sample `nparticles` particles from a Maxwell distribution with temperature T for a species with mass m
-    and add a velocity offset
-"""
-function sample_maxwellian!(rng, particles, nparticles, m, T, v0)
-    vscale = compute_thermal_velocity(m, T)
-
-    for i in 1:nparticles
-        vn = sqrt(-log(rand(rng, Float64)))
-        vr = sqrt(-log(rand(rng, Float64)))
-        theta1 = twopi * rand(rng, Float64)
-        theta2 = twopi * rand(rng, Float64)
-
-        particles[i].v = vscale * SVector{3,Float64}(vn * cos(theta1), vr * cos(theta2), vr * sin(theta2)) + v0
-    end
-end
 
 """
-Sample `nparticles` particles from a Maxwell distribution with temperature T for a species with mass m
-    and add a velocity offset
+    sample_maxwellian!(rng, particles, nparticles, offset, m, T, v0)
+
+Sample `nparticles` particles from a Maxwellian with temperature T for a species with mass m
+and add a velocity offset.
+Note: This does not update the particle weights, positions, or any indexing structures.
+
+# Positional arguments
+* `rng`: the random number generator
+* `particles`: the `Vector`-like structure holding the particles
+* `nparticles`: the number of particles to sample
+* `offset`: offset the starting position for writing the sampled particles to the `particles` array 
+* `m`: species' mass
+* `T`: temperature
+* `v0`: the 3-dimensional velocity to add to the sampled velocities
 """
 function sample_maxwellian!(rng, particles, nparticles, offset, m, T, v0)
     vscale = compute_thermal_velocity(m, T)
@@ -250,7 +444,57 @@ function sample_maxwellian!(rng, particles, nparticles, offset, m, T, v0)
 end
 
 """
-Sample from a distribution for particles of a specific species in a specific cell
+    sample_maxwellian!(rng, particles, nparticles, m, T, v0)
+
+Sample `nparticles` particles from a Maxwellian with temperature T for a species with mass m
+and add a velocity offset.
+Note: This does not update the particle weights, positions, or any indexing structures.
+The sampled particles are written to the start of the `particles` array.
+
+# Positional arguments
+* `rng`: the random number generator
+* `particles`: the `Vector`-like structure holding the particles
+* `nparticles`: the number of particles to sample
+* `m`: species' mass
+* `T`: temperature
+* `v0`: the 3-dimensional velocity to add to the sampled velocities
+"""
+function sample_maxwellian!(rng, particles, nparticles, m, T, v0)
+    sample_maxwellian!(rng, particles, nparticles, 0, m, T, v0)
+end
+
+"""
+    sample_particles_equal_weight!(rng, particles, pia, cell, species,
+                                        nparticles, m, T, Fnum, xlo, xhi, ylo, yhi, zlo, zhi;
+                                        distribution=:Maxwellian, vx0=0.0, vy0=0.0, vz0=0.0)
+
+Sample equal-weight  particles of a specific species in a specific cell from a distribution.
+The positions of the particles are assumed to be randomly distributed in a cuboid.
+Note: this does not work if applied twice in a row to the same cell
+
+
+# Positional arguments
+* `rng`: the random number generator
+* `particles`: the `Vector`-like structure holding the particles
+* `pia`: the `ParticleIndexerArray`
+* `cell`: the cell index
+* `species`: the species index
+* `nparticles`: the number of particles to sample
+* `m`: species' mass
+* `T`: temperature
+* `Fnum`: the computational weight of the particles
+* `xlo`: the lower bound of the x coordinates of the particles
+* `xhi`: the upper bound of the x coordinates of the particles
+* `ylo`: the lower bound of the y coordinates of the particles
+* `yhi`: the upper bound of the y coordinates of the particles
+* `zlo`: the lower bound of the z coordinates of the particles
+* `zhi`: the upper bound of the z coordinates of the particles
+
+# Keyword arguments
+* `distribution`: the distribution to sample from (either `:Maxwellian` or `:BKW`)
+* `vx0`: the x-velocity offset to add to the particle velocities
+* `vy0`: the y-velocity offset to add to the particle velocities
+* `vz0`: the z-velocity offset to add to the particle velocities
 """
 function sample_particles_equal_weight!(rng, particles, pia, cell, species,
                                         nparticles, m, T, Fnum, xlo, xhi, ylo, yhi, zlo, zhi;

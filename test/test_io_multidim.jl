@@ -51,6 +51,7 @@
     grid_info =  NCDataset(grid_path, "r")
 
     @test grid_info.attrib["L"] == grid.L
+    @test grid_info.attrib["dim"] == 1
     @test grid_info.attrib["dx"] == grid.Δx
     @test grid_info.dim["cells"] == grid.n_cells
     @test maximum(abs.(grid_info["xlo"][:] - [grid.cells[i].xlo for i in 1:grid.n_cells])) < 2 * eps()

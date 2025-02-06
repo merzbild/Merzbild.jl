@@ -25,15 +25,18 @@
     function create_24_3particles_in_octant()
     # create 3 particles in octant, each with weight == octant
     # and velocity = 9.0 - octant - 0.5 / 9.0 - octant + 0.5 / 9.0 - octant
-        vp = Vector{Particle}(undef, 24)
+        vp = ParticleVector(24)
 
         i = 0
         for octant in 1:8
             i += 1
+            Merzbild.update_particle_buffer_new_particle(vp, i)
             vp[i] = create_particle_in_octant(octant, 9.0 - octant - 0.5, w=octant * 1.0)
             i += 1
+            Merzbild.update_particle_buffer_new_particle(vp, i)
             vp[i] = create_particle_in_octant(octant, 9.0 - octant + 0.5, w=octant * 1.0)
             i += 1
+            Merzbild.update_particle_buffer_new_particle(vp, i)
             vp[i] = create_particle_in_octant(octant, 9.0 - octant, w=octant * 1.0)
         end
 
@@ -48,7 +51,8 @@
 
     phys_props::PhysProps = PhysProps(1, 1, [], Tref=1)
     
-    particles24::Vector{Vector{Particle}} = [create_24_3particles_in_octant()]
+    # particles24::Vector{Vector{Particle}} = [create_24_3particles_in_octant()]
+    particles24 = [create_24_3particles_in_octant()]
     pia = ParticleIndexerArray(24)
 
     # symmetric octree with split at v0 = (0.0, 0.0, 0.0)

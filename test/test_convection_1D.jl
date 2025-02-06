@@ -13,6 +13,10 @@
 
     pia = ParticleIndexerArray(grid.n_cells, 1)
     pia.n_total[1] = 4
+    pia.indexer[1,1].n_local = 4
+    pia.indexer[1,1].n_group1 = 4
+    pia.indexer[1,1].start1 = 1
+    pia.indexer[1,1].end1 = 4
 
     # will just move: new x_coord = 20.5
     particles[1][1] = Particle(1.0, [-1.25, -1.5, 4.0], [23.0, -8.0, 7.5])
@@ -73,6 +77,10 @@
     particles = [ParticleVector(n_particles)]
     pia = ParticleIndexerArray(grid.n_cells, 1)
     pia.n_total[1] = n_particles
+    pia.indexer[1,1].n_local = n_particles
+    pia.indexer[1,1].n_group1 = n_particles
+    pia.indexer[1,1].start1 = 1
+    pia.indexer[1,1].end1 = n_particles
     n = 1e10
 
     for i in 1:n_particles
@@ -168,4 +176,95 @@
 
     # approximately 80% of particles are reflected with specular reflection
     @test abs(nspecular - 8000) < 100
+
+    # now we try out convection of variable-weight particles
+    for i in 1:n_particles
+        w = 1.0
+        vx = -1.0
+        if i % 2 == 0
+            w = 2.0
+            vx = 2.0
+        end
+        particles[1][i] = Particle(w, [vx, 0.0, 0.0], [1e-4, 0.0, 0.0])
+    end
+
+    boundaries = MaxwellWalls1D(species_data, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0)
+
+    convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, 0.5)
+    sort_particles!(gridsorter, grid, particles[1], pia, 1)
+
+
+    sign_pos = true
+    for i in 1:n_particles
+        if particles[1][i].v[1] < 0
+            sign_pos = false
+        end
+    end
+
+    # no reflected particles have a negative velocity
+    @test sign_pos == true
+
+    compute_props!(particles, pia, species_data, phys_props)
+    @test abs(phys_props.n[1, 1] - n_particles / 2) < eps()
+    @test abs(phys_props.n[3, 1] - 2 * n_particles / 2) < eps()
+
+
+    # now we test non-contiguous convection
+    # we create 30 particles in cell 2, but the pia structure only points to a subset of them
+    # and we test that only those are convected
+    particles = [ParticleVector(30)]
+    pia = ParticleIndexerArray(grid.n_cells, 1)
+
+    for i in 1:10
+        particles[1][i] = Particle(1.0, [1.0, 0.0, 0.0], [0.75, 0.0, 0.0])
+    end
+    for i in 11:25
+        particles[1][i] = Particle(10000.0, [-1000.0, 0.0, 0.0], [0.75, 0.0, 0.0])
+    end
+    for i in 26:30
+        particles[1][i] = Particle(1.0, [1.0, 0.0, 0.0], [0.75, 0.0, 0.0])
+    end
+
+    pia.n_total[1] = 15
+    pia.indexer[2,1].n_local = 15
+    pia.indexer[2,1].n_group1 = 10
+    pia.indexer[2,1].start1 = 1
+    pia.indexer[2,1].end1 = 10
+    pia.indexer[2,1].n_group2 = 5
+    pia.indexer[2,1].start2 = 26
+    pia.indexer[2,1].end2 = 30
+    pia.contiguous[1] = false
+
+    compute_props!(particles, pia, species_data, phys_props)
+    @test abs(phys_props.n[2, 1] - 1.0 * 15) < eps()
+    flag = true
+    for i in 1:100
+        if i != 2
+            if abs(phys_props.n[i, 1] - 0) > eps()
+                flag = false
+            end
+        end
+    end
+    @test flag == true
+    @test abs(phys_props.v[1, 2, 1] - 1.0) < eps()
+
+    convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, 1.0)
+    sort_particles!(gridsorter, grid, particles[1], pia, 1)
+
+    # all particles that are actually tracked are in cell 4
+    compute_props!(particles, pia, species_data, phys_props)
+    @test abs(phys_props.n[4, 1] - 1.0 * 15) < eps()
+
+    flag = true
+    for i in 1:100
+        if i != 4
+            if abs(phys_props.n[i, 1] - 0) > eps()
+                flag = false
+            end
+        end
+    end
+    @test flag == true
+
+    @test abs(phys_props.v[1, 4, 1] - 1.0) < eps()
+
 end

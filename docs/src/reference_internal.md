@@ -15,18 +15,22 @@ Merzbild.update_particle_buffer_new_particle(pv::ParticleVector, position)
 Merzbild.update_particle_buffer_new_particle(pv::ParticleVector, pia, species)
 Merzbild.update_particle_buffer_new_particle(pv::Vector{Particle}, pia, species)
 Merzbild.update_particle_buffer_new_particle(pv::Vector{Particle}, position)
+Merzbild.delete_particle!
+Merzbild.delete_particle_end!
+Merzbild.delete_particle_end_group1!
+Merzbild.delete_particle_end_group2!
 ```
 
 ## Loading species and interaction data
 ```@docs
-Merzbild.find_species_in_db
-Merzbild.load_elastic_data
-Merzbild.load_ionization_data
 Merzbild.compute_mu_ref
 ```
 
 ## Sampling
 ```@docs
+Merzbild.UnitDVGrid
+Merzbild.DVGrid
+Merzbild.VDF
 Merzbild.create_unit_dvgrid
 Merzbild.create_noiseless_dvgrid
 Merzbild.create_vdf
@@ -57,6 +61,17 @@ Merzbild.get_cs_elastic
 Merzbild.get_cs_ionization
 Merzbild.get_ionization_threshold
 Merzbild.get_electron_energy_split
+```
+
+## Electron-neutral interactions
+```@docs
+Merzbild.TabulatedCSData
+Merzbild.ElasticScattering
+Merzbild.ExcitationSink
+Merzbild.Ionization
+Merzbild.find_species_in_db
+Merzbild.load_elastic_data
+Merzbild.load_ionization_data
 ```
 
 ## Merging
@@ -104,6 +119,11 @@ Merzbild.merge_octree_N2_based!
 ```@docs
 Merzbild.Cell1D
 Merzbild.get_cell
+```
+
+## Particle movement
+```@docs
+Merzbild.convect_single_particle!
 ```
 
 ## Particle-surface interactions

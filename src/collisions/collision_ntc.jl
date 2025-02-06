@@ -1,5 +1,17 @@
 """
-Struct to store NTC-related collision factors
+    CollisionFactors
+
+Structure to store NTC-related collision factors for collisions between particles of two species
+in a given cell.
+
+# Fields
+* `n1`: the number of particles of the first species in the cell
+* `n2`: the number of particles of the second species in the cell
+* `sigma_g_w_max`: estimate of the ``(\\sigma g w)_{max}`` (``\\sigma`` is the total collision cross-section,
+    ``g`` is the relative collision velocity, ``w`` is the computational weight of the particles)
+* `n_coll`: number of collisions to be tested
+* `n_coll_performed`: number of collisions actually performed
+* `n_eq_w_coll_performed`: number of collisions between particles with equal weights actually performed
 """
 mutable struct CollisionFactors
     n1::Int64
@@ -11,12 +23,23 @@ mutable struct CollisionFactors
 end
 
 """
-Create a CollisionFactors instance
+    CollisionFactors()
+
+Create an empty CollisionFactors instance (all values set to 0).
 """
 CollisionFactors() = CollisionFactors(0, 0.0, 0.0, 0, 0, 0)
 
 """
-Create collision factors for all interaction pairs for a 0-D case (1 spatial cell)
+    create_collision_factors_array(n_species)
+
+Create a 3-dimensional array of collision factors for all interaction pairs for a 0-D case (1 spatial cell),
+with shape `(n_species,n_species,1)`.
+
+# Positional arguments
+* `n_species`: number of species in the flow
+
+# Returns
+3-dimensional array of `CollisionFactors` instances with shape `(n_species,n_species,1)`.
 """
 function create_collision_factors_array(n_species)
     coll_factor_array = Array{CollisionFactors, 3}(undef, (n_species, n_species, 1))
@@ -29,7 +52,17 @@ function create_collision_factors_array(n_species)
 end
 
 """
-Create collision factors for all interaction pairs for a non 0-D case
+    create_collision_factors_array(n_species, n_cells)
+
+Create a 3-dimensional array of collision factors for all interaction pairs for all cells
+in the simulation, with shape `(n_species,n_species,n_cells)`.
+
+# Positional arguments
+* `n_species`: number of species in the flow
+* `n_cells`: number of cells in the simulation
+
+# Returns
+3-dimensional array of `CollisionFactors` instances with shape `(n_species,n_species,n_cells)`.
 """
 function create_collision_factors_array(n_species, n_cells)
     coll_factor_array = Array{CollisionFactors, 3}(undef, (n_species, n_species, n_cells))
@@ -44,7 +77,20 @@ function create_collision_factors_array(n_species, n_cells)
 end
 
 """
-Compute number of collisions, collisions between particles of same species
+    compute_n_coll_single_species(rng, collision_factors, np, Δt, V)
+
+Compute the non-integer number of collisions between particles of same species.
+
+# Positional arguments
+* `rng`: the random number generator
+* `collision_factors`: the `CollisionFactors` holding the estimate of ``(\\sigma g w)_{max}``
+    for the species in question in the cell
+* `np`: number of particles in the cell
+* `Δt`: timestep
+* `V`: cell volume
+
+# Returns
+The non-integer number of collisions.
 """
 function compute_n_coll_single_species(rng, collision_factors, np, Δt, V)
     return 0.5 * Δt * np * (np - 1) * collision_factors.sigma_g_w_max / V +
@@ -52,7 +98,21 @@ function compute_n_coll_single_species(rng, collision_factors, np, Δt, V)
 end
 
 """
-Compute number of collisions, collisions between particles of different species
+    compute_n_coll_two_species(rng, collision_factors, np1, np2, Δt, V)
+
+Compute number of collisions between particles of different species
+
+# Positional arguments
+* `rng`: the random number generator
+* `collision_factors`: the `CollisionFactors` holding the estimate of ``(\\sigma g w)_{max}``
+    for the species in question in the cell
+* `np1`: number of particles of the first species in the cell
+* `np2`: number of particles of the second species in the cell
+* `Δt`: timestep
+* `V`: cell volume
+
+# Returns
+The non-integer number of collisions.
 """
 function compute_n_coll_two_species(rng, collision_factors, np1, np2, Δt, V)
     return Δt * np1 * np2 * collision_factors.sigma_g_w_max / V + rand(rng, Float64)
@@ -60,7 +120,23 @@ end
 
 
 """
+    ntc!(rng, collision_factors, collision_data, interaction, particles, pia,
+         cell, species, Δt, V)
+
 Perform elastic collisions between particles of same species using the NTC algorithm
+and the VHS cross-section model.
+
+# Positional arguments
+* `rng`: the random number generator
+* `collision_factors`: the `CollisionFactors` for the species in question in the cell
+* `collision_data`: `CollisionData` instance used for storing collisional quantities
+* `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
+* `particles`: `ParticleVector` of the particles being collided
+* `pia`: the `ParticleIndexerArray`
+* `cell`: the index of the cell in which collisions are performed
+* `species`: the index of the species for which collisions are performed
+* `Δt`: timestep
+* `V`: cell volume
 """
 function ntc!(rng, collision_factors, collision_data, interaction, particles, pia,
               cell, species, Δt, V)
@@ -95,7 +171,7 @@ function ntc!(rng, collision_factors, collision_data, interaction, particles, pi
         i = map_cont_index(pia.indexer[cell, species], i)
         k = map_cont_index(pia.indexer[cell, species], k)
         
-        compute_g!(collision_data, particles[i], particles[k])
+        @inline compute_g!(collision_data, particles[i], particles[k])
         # println("NTC: ", particle_indexer.n_total, ", ", length(particles))
         if (collision_data.g > eps())
 
@@ -107,7 +183,7 @@ function ntc!(rng, collision_factors, collision_data, interaction, particles, pi
             
             if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
                 collision_factors.n_coll_performed += 1
-                compute_com!(collision_data, interaction[species, species], particles[i], particles[k])
+                @inline compute_com!(collision_data, interaction[species, species], particles[i], particles[k])
                 # do collision
                 if (particles[i].w == particles[k].w)
                     collision_factors.n_eq_w_coll_performed += 1
@@ -140,14 +216,33 @@ function ntc!(rng, collision_factors, collision_data, interaction, particles, pi
 
                     particles[pia.n_total[species]] = Particle(Δw, particles[k].v, particles[k].x)
                 end
-                scatter_vhs!(rng, collision_data, interaction[species, species], particles[i], particles[k])
+                @inline scatter_vhs!(rng, collision_data, interaction[species, species], particles[i], particles[k])
             end
         end
     end
 end
 
 """
+    ntc!(rng, collision_factors, collision_data, interaction,
+         particles_1, particles_2, pia,
+         cell, species1, species2, Δt, V)
+
 Perform elastic collisions between particles of different species using the NTC algorithm
+and the VHS cross-section model.
+
+# Positional arguments
+* `rng`: the random number generator
+* `collision_factors`: the `CollisionFactors` for the species in question in the cell
+* `collision_data`: `CollisionData` instance used for storing collisional quantities
+* `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
+* `particles_1`: `ParticleVector` of the particles of the first species being collided
+* `particles_2`: `ParticleVector` of the particles of the second species being collided
+* `pia`: the `ParticleIndexerArray`
+* `cell`: the index of the cell in which collisions are performed
+* `species1`: the index of the first species for which collisions are performed
+* `species1`: the index of the second species for which collisions are performed
+* `Δt`: timestep
+* `V`: cell volume
 """
 function ntc!(rng, collision_factors, collision_data, interaction,
               particles_1, particles_2, pia,
@@ -179,7 +274,7 @@ function ntc!(rng, collision_factors, collision_data, interaction,
         i = map_cont_index(pia.indexer[cell, species1], i)
         k = map_cont_index(pia.indexer[cell, species2], k)
         
-        compute_g!(collision_data, particles_1[i], particles_2[k])
+        @inline compute_g!(collision_data, particles_1[i], particles_2[k])
 
         if (collision_data.g > eps())
 
@@ -191,7 +286,7 @@ function ntc!(rng, collision_factors, collision_data, interaction,
 
             if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
                 collision_factors.n_coll_performed += 1
-                compute_com!(collision_data, interaction[species1, species2], particles_1[i], particles_2[k])
+                @inline compute_com!(collision_data, interaction[species1, species2], particles_1[i], particles_2[k])
                 # do collision
                 if (particles_1[i].w == particles_2[k].w)
                     collision_factors.n_eq_w_coll_performed += 1
@@ -220,7 +315,7 @@ function ntc!(rng, collision_factors, collision_data, interaction,
 
                     particles_2[pia.n_total[species_2]] = Particle(Δw, particles_2[i].v, particles_2[i].x)
                 end
-                scatter_vhs!(rng, collision_data, interaction[species1, species2], particles_1[i], particles_2[k])
+                @inline scatter_vhs!(rng, collision_data, interaction[species1, species2], particles_1[i], particles_2[k])
             end
         end
     end

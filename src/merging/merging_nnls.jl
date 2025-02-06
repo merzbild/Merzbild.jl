@@ -30,7 +30,7 @@ mutable struct NNLSMerge
 
     Create NNLS-based merging
 
-    # Positional arguments:
+    # Positional arguments
     * `multi_index_moments`: vector of mixed moments to preserve, [(i1, j1, k1), (i2, j2, k2), ...] Mass/momentum/directionalenergy are always conserved! (Added automatically if not in list)
     * `init_np`: initial number of particles to pre-allocated memory for
     
@@ -571,7 +571,14 @@ function compute_post_merge_particles_nnls!(lhs_ncols, lhs_matrix,
         end
     end
 
-    update_particle_indexer_new_lower_count(pia, cell, species, curr_particle_index)
+    old_count = pia.indexer[cell,species].n_local
+    n_particles_to_delete = old_count - curr_particle_index
+    for i in 1:n_particles_to_delete
+        delete_particle_end!(particles, pia, cell, species)
+    end
+
+    pia.contiguous[species] = false
+    # update_particle_indexer_new_lower_count(pia, cell, species, curr_particle_index)
 end
 
 """

@@ -111,6 +111,12 @@ For all practical purposes, it should be sufficient to deal with particles in a 
 by directly accessing them as `pv[i]`; the `index` and `cell` fields need to be changed only when one is writing
 new sorting routines.
 
+For a more in-depth overview of particle indexing, especially relevant for multi-dimensional simulations
+where particles might be frequently deleted due to merging or outflow, the reader is referred to
+[the documentation on contiguous indexing](@ref "Contiguous indexing"), which describes additional
+concepts associated with the indexing approach used in Merzbild.jl and provides some tips on improving performance
+in the listed scenarios.
+
 To summarize, for multi-species multi-dimensional simulations, one needs to use a `Vector{ParticleVector}` instance,
 each element of which (of type `ParticleVector`) corresponds to a vector of particles of a specific species.
 If one does not intend to sort particles (i.e. a 0-D simulation), one can in theory use a simple `Vector{Vector{Particle}}` instance,

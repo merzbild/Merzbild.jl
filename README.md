@@ -13,7 +13,6 @@ and the code provides only functionality such as
 particle sampling and indexing, collisions, merging, computation of physical properties and I/O.
 
 ## Installation
-
 For now, **Merzbild.jl** needs to be cloned to be run. Once cloned, navigate to the directory, run `julia --project=.`, and in the
 Julia interpreter run `using Pkg; Pkg.resolve(); Pkg.instantiate()` to install the required packages.
 Running `Pkg.test()` afterwards will install the test environment dependencies and run the tests.
@@ -23,9 +22,11 @@ Julia LTS version (currently `1.10`).
 ## Usage
 Currently, the way to use the code is to 1) clone it 2) create a new file in the `simulations` directory
 3) add `include("path/to/src/merzbild.jl")` and `using ..Merzbild` to the file.
+A simulation file can be run by calling `julia --project=. simulations/path/to/simulation_file.jl` from the project
+root directory.
 
 Some usage examples can be found in the `simulations` directory.
-A detailed overview of the structures required can be found in the documentation (upcoming),
+A detailed overview of the structures required can be found in [the documentation](https://merzbild.github.io/Merzbild.jl/dev/),
 but a short code snippet is given below. It simulates the relaxation of two gases initialized at different temperatures
 to equilibrium.
 
@@ -119,50 +120,15 @@ run(1234)
 ```
 
 ### Usage notes
-
 For now, bound checking is not turned off (via the `@inbounds` macro) except for the convection and particle sorting routines, so simulations may benefit from running with `--check-bounds=no`.
 Running with `-O3` might also speed up things.
 
 ## Testing
-
 The tests try to cover most of the functionality implemented in the code. They can be run by invoking by calling `using Pkg; Pkg.test()`.
 
 ## Speed
-Comparing to SPARTA running in serial mode computing a Couette flow with 50000 particles and 50 cells (averaging over 36k timesteps after t>14000). Julia 1.9.4, with `--check-bounds=no -O3`.
-
-Merzbild.jl:
-```
- ──────────────────────────────────────────────────────────────────────────
-                                  Time                    Allocations      
-                         ───────────────────────   ────────────────────────
-    Tot / % measured:         27.6s /  96.2%            699MiB /   0.4%    
-
- Section         ncalls     time    %tot     avg     alloc    %tot      avg
- ──────────────────────────────────────────────────────────────────────────
- sort             50.0k    8.90s   33.5%   178μs     0.00B    0.0%    0.00B
- convect          50.0k    6.70s   25.2%   134μs     0.00B    0.0%    0.00B
- collide          2.50M    5.80s   21.8%  2.32μs     0.00B    0.0%    0.00B
- props compute    36.0k    5.19s   19.5%   144μs     0.00B    0.0%    0.00B
- I/O                 51   4.44ms    0.0%  87.0μs   12.0KiB    0.4%     240B
- sampling             1   2.53ms    0.0%  2.53ms   3.05MiB   99.6%  3.05MiB
- ──────────────────────────────────────────────────────────────────────────
-```
-
-SPARTA:
-```
-Loop time of 31.3989 on 1 procs for 50000 steps with 50000 particles
-
-MPI task timing breakdown:
-Section |  min time  |  avg time  |  max time  |%varavg| %total
----------------------------------------------------------------
-Move    | 7.935      | 7.935      | 7.935      |   0.0 | 25.27
-Coll    | 11.904     | 11.904     | 11.904     |   0.0 | 37.91
-Sort    | 2.8201     | 2.8201     | 2.8201     |   0.0 |  8.98
-Comm    | 0.0034597  | 0.0034597  | 0.0034597  |   0.0 |  0.01
-Modify  | 8.7341     | 8.7341     | 8.7341     |   0.0 | 27.82
-Output  | 0.00060415 | 0.00060415 | 0.00060415 |   0.0 |  0.00
-Other   |            | 0.001508   |            |       |  0.00
-```
+Detailed benchmarks can be found in [`BENCHMARKS.md`](BENCHMARKS.md). For a serial 1-D Couette flow simulation, Merzbild.jl is up to 33% faster
+than SPARTA.
 
 ## Citing
 For now, the repository can be cited as
@@ -181,7 +147,7 @@ Depending on the specific functionality used, other citations may be warranted (
 in the documentation).
 
 ## Contributing
-Please see `CONTRIBUTING.MD` about some general guidelines on contributing to the development of Merzbild.jl
+Please see [`CONTRIBUTING.MD`](CONTRIBUTING.MD) about some general guidelines on contributing to the development of Merzbild.jl.
 
 ## Acknowledgments
 Dr. Georgii Oblapenko acknowledges the support of the German Research Foundation (DFG) via
