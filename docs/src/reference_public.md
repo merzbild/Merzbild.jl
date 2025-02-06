@@ -4,12 +4,24 @@
 ```@docs
 Particle
 ParticleVector
+ParticleVector(np)
+Base.getindex(pv::ParticleVector, i)
+Base.setindex!(pv::ParticleVector, p::Particle, i::Integer)
+Base.length(pv::ParticleVector)
+Base.resize!(pv::ParticleVector, n::Integer)
 ```
 
 ## Particle indexing
 ```@docs
 ParticleIndexer
+ParticleIndexer()
+ParticleIndexer(n_particles)
 ParticleIndexerArray
+ParticleIndexerArray(indexer_arr::Array{ParticleIndexer,2}, n_total)
+ParticleIndexerArray(n_cells::Integer, n_species::Integer)
+ParticleIndexerArray(n_particles::Integer) 
+ParticleIndexerArray(n_particles::T) where T<:AbstractVector
+ParticleIndexerArray(grid, species_data::Array{Species}) 
 ```
 
 ## Loading species and interaction data
@@ -68,6 +80,14 @@ ntc_n_e_es!
 fp!
 ```
 
+## Electron-neutral interactions
+```@docs
+ElectronNeutralInteractions
+ComputedCrossSections
+Merzbild.ElectronEnergySplit
+Merzbild.ScatteringLaw
+```
+
 ## Merging
 
 ### Grid merging
@@ -105,7 +125,9 @@ OctreeN2Merge(split::Merzbild.OctreeBinSplit;
 ## Grids and particle sorting
 ```@docs
 Grid1DUniform
+Grid1DUniform(L, nx; wall_offset=1e-12)
 GridSortInPlace
+GridSortInPlace(grid, n_particles::Integer)
 sort_particles!
 ```
 
@@ -143,4 +165,9 @@ accelerate_constant_field_x!
 ## Constants
 ```@docs
 k_B
+```
+
+## Misc
+```@docs
+DataMissingException
 ```

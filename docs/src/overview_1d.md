@@ -30,7 +30,7 @@ If we want to have `ppc` particles and a number density of `ndens`, then we can 
 Fnum = grid.cells[1].V * ndens / ppc
 ```
 
-We then initialize an array of `Vector{ParticleVector}` to store out particles:
+We then initialize an `Vector` of `ParticleVector`'s to store our particles for each species:
 ```julia
 particles = [ParticleVector(n_particles)]
 ```

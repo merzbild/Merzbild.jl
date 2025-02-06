@@ -100,8 +100,13 @@
 
     pia_fine = ParticleIndexerArray(grid_fine.n_cells, 1)
 
-    # we don't need to fill in per-cell info since it will be overwritten anyway
+    # we just need to set indexing so that we can iterate through the particles,
+    # exact cell counts don't matter: we're sorting anyway
     pia_fine.n_total[1] = 8
+    pia_fine.indexer[1,1].n_local = 8
+    pia_fine.indexer[1,1].start1 = 1
+    pia_fine.indexer[1,1].end1 = 8
+    pia_fine.indexer[1,1].n_group1 = 8
 
     gridsorter_fine = GridSortInPlace(grid_fine, pia_fine.n_total[1])
     sort_particles!(gridsorter_fine, grid_fine, particles[1], pia_fine, 1)

@@ -1,5 +1,16 @@
 """
+    accelerate_constant_field_x!(particles, pia, cell, species, species_data, E, Δt)
+
 Accelerate particles with a constant electric field in the X direction
+
+# Positional arguments
+* `particles`: vector-like structure of particles to be accelerated
+* `pia`: ParticleIndexerArray instance
+* `cell`: index of the cell in which particles are being accelerated
+* `species`: index of the species of the particles being accelerated
+* `species_data`: a `Vector{Species}` instance with the species' data
+* `E`: value of the electric field in V/m
+* `Δt`: timestep for which the acceleration is performed
 """
 function accelerate_constant_field_x!(particles, pia, cell, species, species_data, E, Δt)
     # for 1-D problems, assume E-field is in the X direction

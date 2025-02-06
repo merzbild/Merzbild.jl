@@ -3,6 +3,7 @@
 # Electrons are merged away using NNLS merging
 # The ions are merged away (very coarsely)
 # Neutrals are merged using octree merging
+# Requires external data (not included in the repository), available from LXCat!
 
 include("../../../src/Merzbild.jl")
 
@@ -76,6 +77,7 @@ function run(seed, E_Tn, n_t,
         end
     end
 
+    println(fname)
     Random.seed!(seed+adds)
     rng::Xoshiro = Xoshiro(seed+adds)
 
@@ -117,9 +119,9 @@ function run(seed, E_Tn, n_t,
     mg_ions = GridN2Merge(Nmerging_ions, Nmerging_ions, Nmerging_ions, 3.5)
 
    
-    particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, np_base_heavy),
-                                           Vector{Particle}(undef, np_base_heavy),
-                                           Vector{Particle}(undef, np_base_electrons)]
+    particles = [ParticleVector(np_base_heavy),
+                 ParticleVector(np_base_heavy),
+                 ParticleVector(np_base_electrons)]
     n_sampled = [0, 0, 0]
 
     for (index, (n_dens, T0, nv)) in enumerate(zip([n_dens_neutrals, n_dens_ions, n_dens_e],

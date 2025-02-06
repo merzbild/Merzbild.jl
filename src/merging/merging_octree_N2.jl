@@ -2,6 +2,7 @@ using StaticArrays
 
 """
     OctreeBinSplit OctreeBinMidSplit=1 OctreeBinMeanSplit=2 OctreeBinMedianSplit=3
+    
 Enum for octree bin splitting types
 """
 @enum OctreeBinSplit OctreeBinMidSplit=1 OctreeBinMeanSplit=2 OctreeBinMedianSplit=3
@@ -12,6 +13,7 @@ Enum for octree bin splitting types
 # 3) speed of light
 """
     OctreeInitBin OctreeInitBinMinMaxVel=1 OctreeInitBinMinMaxVelSym=2 OctreeInitBinC=3
+
 Enum for initial bin bounds
 """
 @enum OctreeInitBin OctreeInitBinMinMaxVel=1 OctreeInitBinMinMaxVelSym=2 OctreeInitBinC=3
@@ -20,6 +22,7 @@ Enum for initial bin bounds
 # or using min/max velocities of particles in sub-bin
 """
     OctreeBinBounds OctreeBinBoundsInherit=1 OctreeBinBoundsRecompute=2
+
 Computation of bounds of split bin
 """
 @enum OctreeBinBounds OctreeBinBoundsInherit=1 OctreeBinBoundsRecompute=2
@@ -574,7 +577,14 @@ function compute_new_particles!(rng, octree::OctreeN2Merge, particles, pia, cell
         end
     end
 
-    update_particle_indexer_new_lower_count(pia, cell, species, curr_particle_index)
+    old_count = pia.indexer[cell,species].n_local
+    n_particles_to_delete = old_count - curr_particle_index
+    for i in 1:n_particles_to_delete
+        delete_particle_end!(particles, pia, cell, species)
+    end
+
+    pia.contiguous[species] = false
+    # update_particle_indexer_new_lower_count(pia, cell, species, curr_particle_index)
 end
 
 # initialize first bin with all the particles - set number of bins to 1, copy over particle indices

@@ -1,35 +1,41 @@
 @testset "nnls_merging" begin
 
     function create_particles()
-        vp::Vector{Particle} = []
+        pv = ParticleVector(50)
 
         for i in 1:50
-            push!(vp, Particle(1.0, [i, 5 - 2.0 * i, -100.0 + 0.25 * i^2], [-0.5 * i, 27 + i, 400.0 - 0.5 * i^2]))
+            Merzbild.update_particle_buffer_new_particle(pv, i)
+            pv.particles[i] = Particle(1.0, [i, 5 - 2.0 * i, -100.0 + 0.25 * i^2], [-0.5 * i, 27 + i, 400.0 - 0.5 * i^2])
         end
 
-        return vp
+        return pv
     end
 
     function create_particles2()
-        vp::Vector{Particle} = [Particle(1.0, [1.0, 1.0, 1.0], [0.0, 0.0, 0.0]),
-                                Particle(1.0, [1.0, 1.0, -1.0], [0.0, 0.0, 0.0]),
-                                Particle(1.0, [1.0, -1.0, 1.0], [0.0, 0.0, 0.0]),
-                                Particle(1.0, [1.0, -1.0, -1.0], [0.0, 0.0, 0.0]),
-                                Particle(1.0, [-1.0, 1.0, 1.0], [0.0, 0.0, 0.0]),
-                                Particle(1.0, [-1.0, 1.0, -1.0], [0.0, 0.0, 0.0]),
-                                Particle(1.0, [-1.0, -1.0, 1.0], [0.0, 0.0, 0.0]),
-                                Particle(1.0, [-1.0, -1.0, -1.0], [0.0, 0.0, 0.0]),
-                                Particle(1.0, [2.0, 2.0, 2.0], [0.0, 0.0, 0.0]),
-                                Particle(1.0, [2.0, 2.0, -2.0], [0.0, 0.0, 0.0]),
-                                Particle(1.0, [2.0, -2.0, 2.0], [0.0, 0.0, 0.0]),
-                                Particle(1.0, [2.0, -2.0, -2.0], [0.0, 0.0, 0.0]),
-                                Particle(1.0, [-2.0, 2.0, 2.0], [0.0, 0.0, 0.0]),
-                                Particle(1.0, [-2.0, 2.0, -2.0], [0.0, 0.0, 0.0]),
-                                Particle(1.0, [-2.0, -2.0, 2.0], [0.0, 0.0, 0.0]),
-                                Particle(1.0, [-2.0, -2.0, -2.0], [0.0, 0.0, 0.0])]
+        pv = ParticleVector(16)
 
+        pv.particles = [Particle(1.0, [1.0, 1.0, 1.0], [0.0, 0.0, 0.0]),
+                        Particle(1.0, [1.0, 1.0, -1.0], [0.0, 0.0, 0.0]),
+                        Particle(1.0, [1.0, -1.0, 1.0], [0.0, 0.0, 0.0]),
+                        Particle(1.0, [1.0, -1.0, -1.0], [0.0, 0.0, 0.0]),
+                        Particle(1.0, [-1.0, 1.0, 1.0], [0.0, 0.0, 0.0]),
+                        Particle(1.0, [-1.0, 1.0, -1.0], [0.0, 0.0, 0.0]),
+                        Particle(1.0, [-1.0, -1.0, 1.0], [0.0, 0.0, 0.0]),
+                        Particle(1.0, [-1.0, -1.0, -1.0], [0.0, 0.0, 0.0]),
+                        Particle(1.0, [2.0, 2.0, 2.0], [0.0, 0.0, 0.0]),
+                        Particle(1.0, [2.0, 2.0, -2.0], [0.0, 0.0, 0.0]),
+                        Particle(1.0, [2.0, -2.0, 2.0], [0.0, 0.0, 0.0]),
+                        Particle(1.0, [2.0, -2.0, -2.0], [0.0, 0.0, 0.0]),
+                        Particle(1.0, [-2.0, 2.0, 2.0], [0.0, 0.0, 0.0]),
+                        Particle(1.0, [-2.0, 2.0, -2.0], [0.0, 0.0, 0.0]),
+                        Particle(1.0, [-2.0, -2.0, 2.0], [0.0, 0.0, 0.0]),
+                        Particle(1.0, [-2.0, -2.0, -2.0], [0.0, 0.0, 0.0])]
+
+        for i in 1:16
+            Merzbild.update_particle_buffer_new_particle(pv, i)
+        end
         
-        return vp
+        return pv
     end
 
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
@@ -48,7 +54,7 @@
     Δabs = 2.5
     Δrel_xsmall = 5e-13
     
-    particles::Vector{Vector{Particle}} = [create_particles()]
+    particles = [create_particles()]
     pia = ParticleIndexerArray(length(particles[1]))
 
     compute_props!(particles, pia, species_data, phys_props)
@@ -114,7 +120,7 @@
     end
 
     mnnls2 = NNLSMerge(mim, 30)
-    particles2::Vector{Vector{Particle}} = [create_particles2()]
+    particles2 = [create_particles2()]
     pia2 = ParticleIndexerArray(length(particles2[1]))
     vref = 1.0
 

@@ -62,7 +62,7 @@ You can for now cite the repository as
   year={2024},
   month={12},
   howpublished={\url{https://github.com/merzbild/Merzbild.jl}},
-  doi={10/zenodo.0}
+  doi={10.5281/zenodo.14503197}
 }
 ```
 

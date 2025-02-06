@@ -1,4 +1,7 @@
 @testset "particle vector and multidimensional indexing" begin
+    # the tests of indexing ParticleVectors and the buffer part of the ParticleVectors
+    # are not that easy to split nicely, so some duplication of tests is possible
+    
     pia = ParticleIndexerArray(8, 3)  # 8 cells 3 species
     @test size(pia.indexer) == (8, 3)
 
@@ -40,5 +43,5 @@
     @test length(particles[1].buffer) == 13
 
     @test particles[1].nbuffer == old_buffer_length + 3
-    @test particles[1].buffer == [11,12,13,10,9,8,7,6,5,4,3,2,1]
+    @test particles[1].buffer == [13,12,11,10,9,8,7,6,5,4,3,2,1]
 end

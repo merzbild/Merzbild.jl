@@ -36,6 +36,7 @@ export OctreeBinBoundsInherit, OctreeBinBoundsRecompute
 export merge_octree_N2_based!
 export NNLSMerge, compute_multi_index_moments, merge_nnls_based!
 export merge_nnls_based_rate_preserving!
+export ElectronNeutralInteractions, ComputedCrossSections
 export load_electron_neutral_interactions, create_computed_crosssections, DataMissingException
 export ScatteringIsotropic, ScatteringOkhrimovskyy
 export ElectronEnergySplitEqual, ElectronEnergySplitZeroE
