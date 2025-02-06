@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Variable-weight DSMC simulations · Merzbild</title><meta name="title" content="Variable-weight DSMC simulations · Merzbild"/><meta property="og:title" content="Variable-weight DSMC simulations · Merzbild"/><meta property="twitter:title" content="Variable-weight DSMC simulations · Merzbild"/><meta name="description" content="Documentation for Merzbild."/><meta property="og:description" content="Documentation for Merzbild."/><meta property="twitter:description" content="Documentation for Merzbild."/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">Merzbild</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../overview_capabilities/">Overview of capabilities</a></li><li><span class="tocitem">Getting started</span><ul><li><a class="tocitem" href="../overview_blocks/">Overview of basic building blocks</a></li><li><a class="tocitem" href="../overview_fixedweight/">Fixed-weight DSMC simulations</a></li><li class="is-active"><a class="tocitem" href>Variable-weight DSMC simulations</a><ul class="internal"><li><a class="tocitem" href="#Sampling-variable-weight-particles"><span>Sampling variable-weight particles</span></a></li><li><a class="tocitem" href="#Colliding-variable-weight-particles"><span>Colliding variable-weight particles</span></a></li><li><a class="tocitem" href="#Merging-variable-weight-particles"><span>Merging variable-weight particles</span></a></li><li><a class="tocitem" href="#Example:-bringing-it-all-together"><span>Example: bringing it all together</span></a></li></ul></li><li><a class="tocitem" href="../overview_1d/">1D DSMC simulations</a></li><li><a class="tocitem" href="../overview_fp/">Fokker-Planck simulations</a></li></ul></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../contiguous_indexing/">Contiguous indexing</a></li><li><a class="tocitem" href="../modelling_ionization/">Modelling ionization reactions</a></li></ul></li><li><span class="tocitem">API reference</span><ul><li><a class="tocitem" href="../reference_public/">Public API reference</a></li><li><a class="tocitem" href="../reference_internal/">Internal API reference</a></li></ul></li><li><a class="tocitem" href="../benchmarks/">Benchmarks</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Getting started</a></li><li class="is-active"><a href>Variable-weight DSMC simulations</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Variable-weight DSMC simulations</a></li></ul></nav><div class="docs-right"><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Variable-weight-DSMC-simulations"><a class="docs-heading-anchor" href="#Variable-weight-DSMC-simulations">Variable-weight DSMC simulations</a><a id="Variable-weight-DSMC-simulations-1"></a><a class="docs-heading-anchor-permalink" href="#Variable-weight-DSMC-simulations" title="Permalink"></a></h1><p>For variable-weight DSMC simulation not much is different compared to fixed-weight DSMC simulations. Existing routines for computation of macroscopic properties, I/O, and even collisions can be re-used, since they all do not explicitly assume fixed particle weights.</p><p>Two additional things are required, however: a way to sample particles with variable weights, and an algorithm to merge particles to avoid a blow-up of the number of particles due to collisions.</p><h2 id="Sampling-variable-weight-particles"><a class="docs-heading-anchor" href="#Sampling-variable-weight-particles">Sampling variable-weight particles</a><a id="Sampling-variable-weight-particles-1"></a><a class="docs-heading-anchor-permalink" href="#Sampling-variable-weight-particles" title="Permalink"></a></h2><p>In order to obtain variable-weight particles, one can either use the <a href="../reference_public/#Merzbild.sample_particles_equal_weight!"><code>sample_particles_equal_weight!</code></a> multiple times with different <code>Fnum</code> values, or one can use the  <a href="../reference_public/#Merzbild.sample_on_grid!"><code>sample_on_grid!</code></a> function and its more specific version <a href="../reference_public/#Merzbild.sample_maxwellian_on_grid!"><code>sample_maxwellian_on_grid!</code></a>, as mentioned in the <a href="../overview_blocks/#Overview-of-basic-building-blocks">Overview of basic building blocks</a> section.</p><p>These approaches compute the values of a VDF function on a discrete velocity grid and then re-interpret the grid points and associated VDF values as particles. Thus one can get a good resolution of high-velocity tails (with the particles there having small weights). The function constructs the velocity grid via a Cartesian product of discrete grids for each velocity direction. In each direction, the interval <span>$[-v_m\sqrt{2kT/m},v_m\sqrt{2kT/m}]$</span> is discretized into <code>nv</code> subintervals. Here the multiplier <span>$v_m$</span> is specified by the <code>v_mult</code> parameter; so the discrete velocity grid spans several mean thermal velocities. In addition, only particles with a speed less than <span>$c_m \sqrt{2kT/m}$</span> are actually created, where <span>$c_m$</span> is specified by the <code>cutoff_mult</code> parameter. Finally, numerical noise may be added to the velocity via the <code>noise</code> parameter, and a velocity offset via the <code>v_offset</code> parameter; the spatial distribution of the particles is randomized in the cell. The function returns the total number of particles sampled (which may be less than <code>nv^3</code> depending on the choice of the value of <code>cutoff_mult</code>).</p><p>An example of such sampling is shown below:</p><pre><code class="language-julia hljs">using Merzbild
+using Random
+
+seed = 1
+Random.seed!(seed)
+rng = Xoshiro(seed)
+
+# our number density
+ndens = 1e23 
+
+# our temperature
+T0 = 300.0  
+
+# load species and interaction data
+species_data = load_species_data(&quot;data/particles.toml&quot;, &quot;Ar&quot;)
+interaction_data = load_interaction_data(&quot;data/pseudo_maxwell.toml&quot;, species_data)
+
+# number of velocity grid points in each velocity direction
+nv = 20  
+
+# some initial guess on # of particles in simulation
+np_base = 40^3  
+
+particles = [ParticleVector(np_base)]
+
+# sample from a BKW distribution at t=0
+vdf0 = (vx, vy, vz) -&gt; bkw(vx, vy, vz, species_data[1].mass, T0, 0.0)
+
+# returns number of particles sampled
+n_sampled = sample_on_grid!(rng, vdf0, particles[1], nv, species_data[1].mass, T0, ndens,
+                            0.0, 1.0, 0.0, 1.0, 0.0, 1.0;
+                            v_mult=3.5, cutoff_mult=3.5, noise=0.0, v_offset=[0.0, 0.0, 0.0])
+
+# create the ParticleIndexerArray
+pia = ParticleIndexerArray(n_sampled)</code></pre><h2 id="Colliding-variable-weight-particles"><a class="docs-heading-anchor" href="#Colliding-variable-weight-particles">Colliding variable-weight particles</a><a id="Colliding-variable-weight-particles-1"></a><a class="docs-heading-anchor-permalink" href="#Colliding-variable-weight-particles" title="Permalink"></a></h2><p>As mentioned above, the existing DSMC routines take care of the required particle splitting, so no specific adaptation is required for the variable-weight case. However, one needs to estimate <span>$(\sigma g w)_{max}$</span>. The simplest approach is to use <code>estimate_sigma_g_w_max</code> function, but it requires a (fixed) value of <code>Fnum</code> - so one can simply compute it as <code>ndens/n_sampled</code> (i.e. the number density divided by the total number of sampled particles).</p><h2 id="Merging-variable-weight-particles"><a class="docs-heading-anchor" href="#Merging-variable-weight-particles">Merging variable-weight particles</a><a id="Merging-variable-weight-particles-1"></a><a class="docs-heading-anchor-permalink" href="#Merging-variable-weight-particles" title="Permalink"></a></h2><p>In order to merge variable-weight particles, one needs to set up a merging algorithm and the associated data structures and parameters. A more detailed overview of merging algorithms will appear later in a Tutorials section; here, the Octree merging approach of <a href="https://doi.org/10.1016/j.jcp.2016.01.020">Martin and Cambier (2016)</a> is used. The algorithm groups particles into bins in velocity space, recursively refining the bins until the number of post-merge particles reaches the prescribed value. It then performs an <span>$N:2$</span> merge in each bin, replacing all particles in a bin with 2 particles.</p><p>To set up this merging algorithm, one needs to create a <code>OctreeN2Merge</code> instance, specifying</p><ul><li>The extent of the first (root) bin - whether it accounts for the extent of the particles or whether it is just taken to be very large</li><li>How bins are split (along the middle velocity, the mean velocity, or the median velocity)</li><li>Whether the velocity bounds of each sub-bin are recomputed based on the particles in the bin or are based purely on the bounds of the parent bin and the splitting velocity</li><li>Maximum number of bins</li><li>Maximum refinement depth</li></ul><p>For example, we can create an octree merging instance that splits velocity bins across the middle, sets the root bin bounds to the bounding box of the particle velocities, and inherits the bin bounds of the parent bin when splitting a bin. We also immediately merge our particles, setting a target particle number of 100.</p><pre><code class="language-julia hljs"># set up the merging algorithm
+oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel,
+                   bin_bounds_compute=OctreeBinBoundsInherit, max_Nbins=6000)
+
+# set Ntarget
+Ntarget = 100
+
+# perform merging
+merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)</code></pre><p>We can check the number of particles after the merging procedure by looking at <code>pia.indexer[1,1].n_local</code> (the number of particles of species 1 in cell 1), which should be equal to 100.</p><h2 id="Example:-bringing-it-all-together"><a class="docs-heading-anchor" href="#Example:-bringing-it-all-together">Example: bringing it all together</a><a id="Example:-bringing-it-all-together-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-bringing-it-all-together" title="Permalink"></a></h2><p>Now we can put the variable-weight collisions and merging into a timestep loop, performing merging by when <code>pia.indexer[1,1].n_local &gt; Nthreshold</code>, where <code>Nthreshold</code> is the threshold number of particles. Alternatively, one can check <code>phys_props.np[1,1] &gt; Nthreshold</code>, in case the physical properties are computed frequently enough. The following simulation computes the BKW relaxation problem.</p><pre><code class="language-julia hljs">using Merzbild
+using Random
+
+seed = 1
+Random.seed!(seed)
+rng = Xoshiro(seed)
+
+# our number density
+ndens = 1e23 
+
+# our temperature
+T0 = 300.0  
+
+# load species and interaction data
+species_data = load_species_data(&quot;data/particles.toml&quot;, &quot;Ar&quot;)
+interaction_data = load_interaction_data(&quot;data/pseudo_maxwell.toml&quot;, species_data)
+
+# number of velocity grid points in each velocity direction
+nv = 20  
+
+# some initial guess on # of particles in simulation
+np_base = 40^3  
+
+particles = [ParticleVector(np_base)]
+
+# sample from a BKW distribution at t=0
+vdf0 = (vx, vy, vz) -&gt; bkw(vx, vy, vz, species_data[1].mass, T0, 0.0)
+
+# returns number of particles sampled
+n_sampled = sample_on_grid!(rng, vdf0, particles[1], nv, species_data[1].mass, T0, ndens,
+                            0.0, 1.0, 0.0, 1.0, 0.0, 1.0;
+                            v_mult=3.5, cutoff_mult=3.5, noise=0.0, v_offset=[0.0, 0.0, 0.0])
+
+# create the ParticleIndexerArray
+pia = ParticleIndexerArray(n_sampled)
+
+# set up the merging algorithm
+oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel,
+                   bin_bounds_compute=OctreeBinBoundsInherit, max_Nbins=6000)
+
+# set Ntarget for merging
+Ntarget = 100
+
+# set Nthreshold for merging
+Nthreshold = 120
+
+# perform initial merge
+merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
+
+# set some reference values
+sigma_ref = π * (interaction_data[1,1].vhs_d^2)
+vref = sqrt(2 * k_B * T0 / species_data[1].mass)
+Lref = 1.0 / (ndens * sigma_ref)
+tref = Lref / vref
+
+# set up computation of physical properties
+phys_props = PhysProps(1, 1, [], Tref=T0)
+compute_props!(particles, pia, species_data, phys_props)
+
+ds = NCDataHolder(&quot;output_bkw_octree.nc&quot;, species_data, phys_props)
+write_netcdf_phys_props(ds, phys_props, 0)
+
+collision_factors = create_collision_factors_array(1)  # 1-species, 0-D
+collision_data = CollisionData()
+
+# estimate average Fnum
+Fnum = ndens/n_sampled
+
+# estimate (sigma_g_w)_max
+estimate_sigma_g_w_max!(collision_factors, interaction_data, species_data, [T0], Fnum)
+
+
+# set number of timesteps and scaled timestep
+n_t = 100
+dt_scaled = 0.025
+
+# set timestep and cell volume (0D so V=1)
+Δt = dt_scaled * tref
+V = 1.0
+
+# start time loop
+for ts in 1:n_t
+
+    # collide
+    ntc!(rng, collision_factors[1,1,1], collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
+
+    # check if we need to merge
+    if pia.indexer[1,1].n_local &gt; Nthreshold
+        merge_octree_N2_based!(oc, particles[1], pia, 1, 1, Ntarget)
+    end
+    if ts % 10 == 0
+        println(&quot;t=$ts, np=$(pia.indexer[1,1].n_local)&quot;)
+    end
+    
+    compute_props!(particles, pia, species_data, phys_props)
+    write_netcdf_phys_props(ds, phys_props, ts)
+end
+close_netcdf(ds)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../overview_fixedweight/">« Fixed-weight DSMC simulations</a><a class="docs-footer-nextpage" href="../overview_1d/">1D DSMC simulations »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Thursday 6 February 2025 15:17">Thursday 6 February 2025</span>. Using Julia version 1.11.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
