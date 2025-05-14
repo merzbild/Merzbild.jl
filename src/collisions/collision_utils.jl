@@ -345,7 +345,7 @@ Compute center of mass velocity of two particles.
 * `p1`: the first particle
 * `p2`: the second particle
 """
-function compute_com!(collision_data::CollisionData, interaction::Interaction, p1, p2)
+@inline function compute_com!(collision_data::CollisionData, interaction::Interaction, p1, p2)
     collision_data.v_com = interaction.μ1 * p1.v + interaction.μ2 * p2.v
 end
 
@@ -359,7 +359,7 @@ Compute relative velocity (vector and its magnitude) of two particles.
 * `p1`: the first particle
 * `p2`: the second particle
 """
-function compute_g!(collision_data::CollisionData, p1, p2)
+@inline function compute_g!(collision_data::CollisionData, p1, p2)
     collision_data.g_vec = p1.v - p2.v
     collision_data.g = norm(collision_data.g_vec)
 end
@@ -428,7 +428,7 @@ Uses the same methodology as the estimate for a two-species interaction.
 # Positional arguments
 * `collision_factors`: 3-dimensional array of `CollisionFactors` of shape `(n_species, n_species, n_cells)`
 * `interactions`: the 2-dimensional array of `Interaction` instances (of shape `(n_species, n_species)`) of all the pair-wise interactions
-* `species_data`: the vectors `Species` instances of the species in the flow 
+* `species_data`: the vector of `Species` instances of the species in the flow 
 * `T_list`: the list of temperatures of the species
 * `Fnum`: the constant computational weight of the particles
 

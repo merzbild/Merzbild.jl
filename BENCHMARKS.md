@@ -5,8 +5,9 @@ Various benchmarks and comparisons to other open-source codes are provided here 
 ## Couette flow, serial
 
 Comparison with SPARTA are provided for a single-species (argon) Couette flow test case with 50000 particles and 50 cells (averaging over 36k timesteps after t>14000). The computation is serial. Timing in Merzbild.jl providedd by [TimerOutputs.jl](https://github.com/KristofferC/TimerOutputs.jl), timing in SPARTA provided by the inbuilt timers.
+The input is identical to the one in `simulations/1D/couette.jl`, but with `output_freq` set to 100000 (to avoid excessive I/O).
 
-Merzbild.jl version 0.6.2, run with  `--check-bounds=no -O3`.
+Merzbild.jl version 0.6.3, run with  `--check-bounds=no -O3`.
 
 SPARTA version 4Sep2024, compiled with `-O3`.
 
@@ -19,16 +20,16 @@ Ubuntu 22.04.5, Julia version 1.11.2, gcc version 11.4.0.
  ──────────────────────────────────────────────────────────────────────────
                                   Time                    Allocations      
                          ───────────────────────   ────────────────────────
-    Tot / % measured:         28.9s /  95.7%            698MiB /   0.4%    
+    Tot / % measured:         29.3s /  95.8%            696MiB /   0.4%    
 
  Section         ncalls     time    %tot     avg     alloc    %tot      avg
  ──────────────────────────────────────────────────────────────────────────
- sort             50.0k    10.3s   37.2%   206μs     0.00B    0.0%    0.00B
- convect          50.0k    6.48s   23.4%   130μs     0.00B    0.0%    0.00B
- collide          2.50M    5.93s   21.5%  2.37μs     0.00B    0.0%    0.00B
- props compute    36.0k    4.95s   17.9%   138μs     0.00B    0.0%    0.00B
- sampling             1   2.33ms    0.0%  2.33ms   3.05MiB  100.0%  3.05MiB
- I/O                  1    427μs    0.0%   427μs      240B    0.0%     240B
+ sort             50.0k    10.4s   36.9%   207μs     0.00B    0.0%    0.00B
+ convect          50.0k    6.85s   24.4%   137μs     0.00B    0.0%    0.00B
+ collide          2.50M    5.86s   20.9%  2.34μs     0.00B    0.0%    0.00B
+ props compute    36.0k    4.99s   17.8%   139μs     0.00B    0.0%    0.00B
+ sampling             1   2.35ms    0.0%  2.35ms   3.05MiB  100.0%  3.05MiB
+ I/O                  1    394μs    0.0%   394μs      240B    0.0%     240B
  ──────────────────────────────────────────────────────────────────────────
 ```
 
@@ -58,16 +59,16 @@ MacOS 12.7.5, Julia version 1.11.2, Apple clang version 14.0.0.
 ──────────────────────────────────────────────────────────────────────────
                                  Time                    Allocations      
                         ───────────────────────   ────────────────────────
-   Tot / % measured:         33.8s /  96.3%            693MiB /   0.4%    
+   Tot / % measured:         33.6s /  96.3%            693MiB /   0.4%    
 
 Section         ncalls     time    %tot     avg     alloc    %tot      avg
 ──────────────────────────────────────────────────────────────────────────
-sort             50.0k    11.6s   35.7%   233μs     0.00B    0.0%    0.00B
-collide          2.50M    8.57s   26.3%  3.43μs     0.00B    0.0%    0.00B
-convect          50.0k    6.86s   21.0%   137μs     0.00B    0.0%    0.00B
-props compute    36.0k    5.51s   16.9%   153μs     0.00B    0.0%    0.00B
-sampling             1   2.64ms    0.0%  2.64ms   3.05MiB  100.0%  3.05MiB
-I/O                  1    139μs    0.0%   139μs      240B    0.0%     240B
+sort             50.0k    11.6s   35.7%   231μs     0.00B    0.0%    0.00B
+collide          2.50M    7.97s   24.6%  3.19μs     0.00B    0.0%    0.00B
+convect          50.0k    7.38s   22.8%   148μs     0.00B    0.0%    0.00B
+props compute    36.0k    5.46s   16.9%   152μs     0.00B    0.0%    0.00B
+sampling             1   2.62ms    0.0%  2.62ms   3.05MiB  100.0%  3.05MiB
+I/O                  1    184μs    0.0%   184μs      240B    0.0%     240B
 ──────────────────────────────────────────────────────────────────────────
 ```
 

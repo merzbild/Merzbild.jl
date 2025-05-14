@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.6.3
+* Documentation improvements
+* Function to restore continuity to indices in a `ParticleVector`/`ParticleIndexerArray` pair
+
 ## v0.6.2
 * Fixes in resizing of `ParticleVector` instances.
 * Tests for buffers for `ParticleVector` instances.

@@ -58,7 +58,7 @@ Perform specular reflection of a particle in the x direction.
 # Positional arguments
 * `particle`: the `Particle` instance for which the velocity is reflected
 """
-function specular_reflection_x!(particle)
+@inline function specular_reflection_x!(particle)
     particle.v = SVector{3, Float64}(-particle.v[1], particle.v[2], particle.v[3])
 end
 
@@ -82,9 +82,9 @@ function diffuse_reflection_x!(rng, particle, wall_reflection_v_sq, wall_normal_
     R = max(1e-50, rand(rng))
     v_tang = sqrt(-wall_reflection_v_sq * log(R))
 
-    R = rand(rng)
-    v_tang1 = sin(twopi * R) * v_tang 
-    v_tang2 = cos(twopi * R) * v_tang
+    R = twopi * rand(rng)
+    v_tang1 = sin(R) * v_tang 
+    v_tang2 = cos(R) * v_tang
 
     particle.v = SVector{3, Float64}(v_normal + wall_v[1], v_tang1 + wall_v[2], v_tang2 + wall_v[3])
 end
@@ -102,7 +102,7 @@ Reflect particle from a Maxwell wall orthogonal to the x axis.
 * `wall_v`: wall velocity vector
 * `wall_accommodation`: wall accommodation coefficient
 """
-function reflect_particle_x!(rng, particle, wall_reflection_v_sq, wall_normal_sign, wall_v, wall_accommodation)
+@inline function reflect_particle_x!(rng, particle, wall_reflection_v_sq, wall_normal_sign, wall_v, wall_accommodation)
     if wall_accommodation == 0.0
         specular_reflection_x!(particle)
     elseif wall_accommodation == 1.0

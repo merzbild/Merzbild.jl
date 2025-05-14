@@ -220,7 +220,7 @@ Is usually called as `ParticleVector[i]`.
 * `pv`: `ParticleVector` instance
 * `i`: the index of the particle to be selected
 """
-function Base.getindex(pv::ParticleVector, i)
+@inline function Base.getindex(pv::ParticleVector, i)
     @inbounds return pv.particles[pv.index[i]]
 end
 
@@ -236,7 +236,7 @@ Is usually called as `ParticleVector[i] = p`.
 * `p`: the `Particle` instance to write
 * `i`: the index of the particle to be written to
 """
-function Base.setindex!(pv::ParticleVector, p::Particle, i::Integer)
+@inline function Base.setindex!(pv::ParticleVector, p::Particle, i::Integer)
     @inbounds pv.particles[pv.index[i]] = p
 end
 
@@ -250,7 +250,7 @@ Is usually called as `length(ParticleVector)`.
 # Positional arguments
 * `pv`: `ParticleVector` instance
 """
-function Base.length(pv::ParticleVector)
+@inline function Base.length(pv::ParticleVector)
     return length(pv.particles)
 end
 
@@ -296,7 +296,7 @@ the length of the active part of the buffer by 1.
 * `pv`: `ParticleVector` instance
 * `position`: the position in the `index` vector to which to write the index of the new particle
 """
-function update_particle_buffer_new_particle(pv::ParticleVector, position)
+@inline function update_particle_buffer_new_particle(pv::ParticleVector, position)
     # position is where we will be writing to
     @inbounds pv.index[position] = pv.buffer[pv.nbuffer]
     pv.nbuffer -= 1
@@ -315,7 +315,7 @@ as the index of the new particle taken from the buffer is written to `pv.index.[
 * `pia`: the `ParticleIndexerArray` instance
 * `species`: the index of the species of which a new particle is created
 """
-function update_particle_buffer_new_particle(pv::ParticleVector, pia, species)
+@inline function update_particle_buffer_new_particle(pv::ParticleVector, pia, species)
     update_particle_buffer_new_particle(pv, pia.n_total[species])
 end
 
@@ -324,7 +324,7 @@ end
 
 Dummy function in case `Vector{Particle}` is used and not a `ParticleVector`, just to make the simplest 0-D examples work.
 """
-function update_particle_buffer_new_particle(pv::Vector{Particle}, pia, species)
+@inline function update_particle_buffer_new_particle(pv::Vector{Particle}, pia, species)
     # dummy function, might remove it at some point
     nothing
 end
@@ -334,7 +334,7 @@ end
 
 Dummy function in case `Vector{Particle}` is used and not a `ParticleVector`, just to make the simplest 0-D examples work.
 """
-function update_particle_buffer_new_particle(pv::Vector{Particle}, position)
+@inline function update_particle_buffer_new_particle(pv::Vector{Particle}, position)
     # dummy function, might remove it at some point
     nothing
 end
@@ -349,7 +349,7 @@ a `ParticleIndexer` instance describing how particle indices are split across 2 
 * `particle_indexer`: the `ParticleIndexer` instance
 * `i`: the index to map
 """
-function map_cont_index(particle_indexer, i)
+@inline function map_cont_index(particle_indexer, i)
     return i < particle_indexer.n_group1 ? i + particle_indexer.start1 : (i - particle_indexer.n_group1) + particle_indexer.start2
 end
 
@@ -365,7 +365,7 @@ for particles of a specific species in a specific cell.
 * `species`: the index of the particles' species
 * `i`: the index to map
 """
-function map_cont_index(pia, cell, species, i)
+@inline function map_cont_index(pia, cell, species, i)
     @inbounds return map_cont_index(pia.indexer[cell, species], i)
 end
 
@@ -411,7 +411,7 @@ This places the particle index in the 2-nd group of particle indices in the `Par
 * `cell`: the index of the cell in which the particle is created
 * `species`: the index of the species of which the particle is created
 """
-function update_particle_indexer_new_particle(pia, cell, species)
+@inline function update_particle_indexer_new_particle(pia, cell, species)
     pia.n_total[species] += 1
     pia.indexer[cell, species].n_local += 1
     pia.indexer[cell, species].n_group2 += 1
@@ -433,7 +433,7 @@ and update the particle indexers and buffers accordingly. This changes the order
 * `species`: the index of the species of which the particle is deleted
 * `i`: the index of the particle to delete
 """
-function delete_particle!(pv::ParticleVector, pia, cell, species, i)
+@inline function delete_particle!(pv::ParticleVector, pia, cell, species, i)
     # check in which group we are in
     if (pia.indexer[cell, species].n_group2 > 0) && (i >= pia.indexer[cell, species].start2) && (i <= pia.indexer[cell, species].end2)
         last_index_group2 = pv.index[pia.indexer[cell, species].end2]
@@ -462,7 +462,7 @@ If no particles are present in the cell, the function does nothing.
 * `cell`: the index of the cell in which the particle is deleted
 * `species`: the index of the species of which the particle is deleted
 """
-function delete_particle_end!(pv::ParticleVector, pia, cell, species)
+@inline function delete_particle_end!(pv::ParticleVector, pia, cell, species)
     if pia.indexer[cell, species].n_group2 > 0
         delete_particle_end_group2!(pv, pia, cell, species)
     else
@@ -484,7 +484,7 @@ If no particles are present in the 1st group of particles, the function does not
 * `cell`: the index of the cell in which the particle is deleted
 * `species`: the index of the species of which the particle is deleted
 """
-function delete_particle_end_group1!(pv::ParticleVector, pia, cell, species)
+@inline function delete_particle_end_group1!(pv::ParticleVector, pia, cell, species)
     if pia.indexer[cell, species].n_group1 == 0
         return
     end
@@ -518,7 +518,7 @@ If no particles are present in the 2nd group of particles, the function does not
 * `cell`: the index of the cell in which the particle is deleted
 * `species`: the index of the species of which the particle is deleted
 """
-function delete_particle_end_group2!(pv::ParticleVector, pia, cell, species)
+@inline function delete_particle_end_group2!(pv::ParticleVector, pia, cell, species)
     if pia.indexer[cell, species].n_group2 == 0
         return
     end
@@ -551,6 +551,9 @@ Load a vector of species data (mass, charge, etc.) from a TOML file.
 # Positional arguments
 * `species_filename`: the path to the TOML file containing the data
 * `species_names`: a list of the names of the species for which to load the data
+
+# Returns
+Vector of `Species` filled with data loaded from the file. 
 """
 function load_species_data(species_filename, species_names)
     species_data = TOML.parsefile(species_filename)
@@ -574,7 +577,111 @@ Load a vector of species data (mass, charge, etc.) from a TOML file for a single
 # Positional arguments
 * `species_filename`: the path to the TOML file containing the data
 * `species_name`: the name of the species for which to load the data
+
+# Returns
+Vector of `Species` filled with data loaded from the file.
 """
 function load_species_data(species_filename, species_name::String)
     return load_species_data(species_filename, [species_name])
+end
+
+"""
+    squash_pia!(pia, species)
+
+Restore the continuity of indices in a `ParticleVector and associated
+`ParticleIndexerArray` instance for a specific species.
+If for this species the instance has `contiguous == true`, nothing will be done.
+
+# Positional arguments
+* `pv`: the `ParticleVector`
+* `pia`: the `ParticleIndexerArray` instance
+* `species`: the index of the species for which to restore continuity of indices
+"""
+function squash_pia!(pv, pia, species)
+    if pia.contiguous[species]
+        return
+    else
+        n_cells = size(pia.indexer)[1]
+        if n_cells == 1
+            if pia.indexer[1, species].n_group2 > 0
+                offset = pia.indexer[1, species].start2 - (pia.indexer[1, species].end1 + 1)
+
+                if offset > 0
+                    pia.indexer[1, species].start2 -= offset
+                    pia.indexer[1, species].end2 -= offset
+
+                    for j in pia.indexer[1, species].start2:pia.indexer[1, species].end2
+                        pv.index[j] = pv.index[j+offset]
+                    end
+                end
+            end
+        else
+            offset = 0
+            for i in 1:n_cells-1
+                offset = pia.indexer[i+1, species].start1 - (pia.indexer[i, species].end1 + 1)
+                if offset > 0
+                    pia.indexer[i+1, species].start1 -= offset
+                    pia.indexer[i+1, species].end1 -= offset
+
+                    for j in pia.indexer[i+1, species].start1:pia.indexer[i+1, species].end1
+                        pv.index[j] = pv.index[j+offset]
+                    end
+                end
+            end
+
+            offset = 0
+            last_end = pia.indexer[n_cells, species].end1 # keep track of last previous end
+            if pia.indexer[1, species].n_group2 > 0
+                offset = pia.indexer[1, species].start2 - (last_end + 1)
+                if offset > 0
+                    pia.indexer[1, species].start2 -= offset
+                    pia.indexer[1, species].end2 -= offset
+
+                    for j in pia.indexer[1, species].start2:pia.indexer[1, species].end2
+                        pv.index[j] = pv.index[j+offset]
+                    end
+                end
+
+                last_end = pia.indexer[1, species].end2
+            end
+
+            for i in 2:n_cells
+                if pia.indexer[i, species].n_group2 > 0
+                    offset = pia.indexer[i, species].start2 - (last_end + 1)
+
+                    if offset > 0
+                        pia.indexer[i, species].start2 -= offset
+                        pia.indexer[i, species].end2 -= offset
+                        
+
+                        for j in pia.indexer[i, species].start2:pia.indexer[i, species].end2
+                            pv.index[j] = pv.index[j+offset]
+                        end
+                    end
+
+                    last_end = pia.indexer[i, species].end2
+                end
+            end
+        end
+        pia.contiguous[species] = true
+    end
+end
+
+"""
+    squash_pia!(pia)
+
+Restore the continuity of indices in a list of `ParticleVector`s and the associated
+`ParticleIndexerArray` instance for all species.
+If for a specific species the instance has `contiguous == true`, nothing will be done.
+
+# Positional arguments
+* `particles`: the list of `ParticleVector`s for all species in the flow
+* `pia`: the `ParticleIndexerArray` instance
+"""
+function squash_pia!(particles, pia)
+    for species in 1:length(pia.contiguous)
+        if !pia.contiguous[species]
+            squash_pia!(particles[species], pia, species)
+        end
+    end
 end

@@ -161,7 +161,7 @@ Computes the VHS cross-section.
 # Returns
 The value of the computed cross-section.
 """
-function sigma_vhs(interaction, g)
+@inline function sigma_vhs(interaction, g)
     return interaction.vhs_factor * g^(1.0 - 2 * interaction.vhs_o)
 end
 
@@ -239,7 +239,7 @@ That is, given that `x[pos] < val < x[pos+1]`, we want to interpolate `y(val)` g
 * `lower_limit`, if `val < x[1]`
 * `upper_limit`, if `val > x[end]`
 """
-function linear_interpolation(x, y, val, pos, lower_limit, upper_limit)
+@inline function linear_interpolation(x, y, val, pos, lower_limit, upper_limit)
     # we found pos such that x[pos] < val < x[pos+1]
     # we want to interpolate y(x): such that y[x[pos]] = y[pos], y[x[pos+1]] = y[pos+1]
     # we interpolate y as y(x) = alpha * y2 + (1.0 - alpha) * y1

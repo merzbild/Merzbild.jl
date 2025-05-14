@@ -76,7 +76,7 @@ Find in which cell of 1-D uniform grid the coordinate is located
 * `grid1duniform`: the 1-D uniform grid
 * `x_pos`: the 3-D coordinate vector for the which the cell index is to be determined (only the first component is used)
 """
-function get_cell(grid1duniform::Grid1DUniform, x_pos)
+@inline function get_cell(grid1duniform::Grid1DUniform, x_pos)
     return floor(Int64, x_pos[1] * grid1duniform.inv_Δx) + 1
 end
 
