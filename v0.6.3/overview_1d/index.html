@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>1D DSMC simulations · Merzbild</title><meta name="title" content="1D DSMC simulations · Merzbild"/><meta property="og:title" content="1D DSMC simulations · Merzbild"/><meta property="twitter:title" content="1D DSMC simulations · Merzbild"/><meta name="description" content="Documentation for Merzbild."/><meta property="og:description" content="Documentation for Merzbild."/><meta property="twitter:description" content="Documentation for Merzbild."/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">Merzbild</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../overview_capabilities/">Overview of capabilities</a></li><li><span class="tocitem">Getting started</span><ul><li><a class="tocitem" href="../overview_blocks/">Overview of basic building blocks</a></li><li><a class="tocitem" href="../overview_fixedweight/">Fixed-weight DSMC simulations</a></li><li><a class="tocitem" href="../overview_varweight/">Variable-weight DSMC simulations</a></li><li class="is-active"><a class="tocitem" href>1D DSMC simulations</a><ul class="internal"><li><a class="tocitem" href="#Creating-a-grid"><span>Creating a grid</span></a></li><li><a class="tocitem" href="#Sampling-particles-in-each-cell"><span>Sampling particles in each cell</span></a></li><li><a class="tocitem" href="#Particle-sorting"><span>Particle sorting</span></a></li><li><a class="tocitem" href="#Creating-boundary-conditions"><span>Creating boundary conditions</span></a></li><li><a class="tocitem" href="#Performing-convection"><span>Performing convection</span></a></li><li><a class="tocitem" href="#Bringing-it-all-together"><span>Bringing it all together</span></a></li></ul></li><li><a class="tocitem" href="../overview_fp/">Fokker-Planck simulations</a></li></ul></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../contiguous_indexing/">Contiguous indexing</a></li><li><a class="tocitem" href="../modelling_ionization/">Modelling ionization reactions</a></li></ul></li><li><span class="tocitem">API reference</span><ul><li><a class="tocitem" href="../reference_public/">Public API reference</a></li><li><a class="tocitem" href="../reference_internal/">Internal API reference</a></li></ul></li><li><a class="tocitem" href="../benchmarks/">Benchmarks</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Getting started</a></li><li class="is-active"><a href>1D DSMC simulations</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>1D DSMC simulations</a></li></ul></nav><div class="docs-right"><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="1D-DSMC-simulations"><a class="docs-heading-anchor" href="#1D-DSMC-simulations">1D DSMC simulations</a><a id="1D-DSMC-simulations-1"></a><a class="docs-heading-anchor-permalink" href="#1D-DSMC-simulations" title="Permalink"></a></h1><p>In this section, setting up DSMC simulations on a uniform 1D grid will be discussed. Some of the concepts and algorithms used here are also applicable to other grids (upcoming), but some things are specific to the uniform 1D grids.</p><h2 id="Creating-a-grid"><a class="docs-heading-anchor" href="#Creating-a-grid">Creating a grid</a><a id="Creating-a-grid-1"></a><a class="docs-heading-anchor-permalink" href="#Creating-a-grid" title="Permalink"></a></h2><p>Creating a 1D uniform grid is very easy, as one needs to specify only the domain length <code>L</code> and the number of cells <code>nx</code>:</p><pre><code class="language-julia hljs">grid = Grid1DUniform(L, nx)</code></pre><p>The Grid1DUniform structure stores additional properties such as cell volume, required for collisions.</p><p>We can also immediately create the <code>ParticleIndexerArray</code> instance (assuming we have a single-species flow):</p><pre><code class="language-julia hljs">pia = ParticleIndexerArray(grid.n_cells, 1)</code></pre><p>The grid information can be written to a NetCDF file by calling <code>write_grid</code>:</p><pre><code class="language-julia hljs">write_grid(&quot;grid_info.nc&quot;, grid)</code></pre><h2 id="Sampling-particles-in-each-cell"><a class="docs-heading-anchor" href="#Sampling-particles-in-each-cell">Sampling particles in each cell</a><a id="Sampling-particles-in-each-cell-1"></a><a class="docs-heading-anchor-permalink" href="#Sampling-particles-in-each-cell" title="Permalink"></a></h2><p>To sample equal-weight particles in each cell, we need to compute the required <code>Fnum</code>. If we want to have <code>ppc</code> particles and a number density of <code>ndens</code>, then we can compute <code>Fnum</code> as (since the grid is uniform, we can use the volume of any cell for the computation)</p><pre><code class="language-julia hljs">Fnum = grid.cells[1].V * ndens / ppc</code></pre><p>We then initialize an <code>Vector</code> of <code>ParticleVector</code>&#39;s to store our particles for each species:</p><pre><code class="language-julia hljs">particles = [ParticleVector(n_particles)]</code></pre><p>and perform the sampling:</p><pre><code class="language-julia hljs">sample_particles_equal_weight!(rng, grid, particles[1], pia, 1,
+                               species_data, ndens, T, Fnum)</code></pre><h2 id="Particle-sorting"><a class="docs-heading-anchor" href="#Particle-sorting">Particle sorting</a><a id="Particle-sorting-1"></a><a class="docs-heading-anchor-permalink" href="#Particle-sorting" title="Permalink"></a></h2><p>We will need to sort particles on the grid in case we will be convecting them; therefore a structure for particle sorting needs to be created as well. An in-place bin sorting algorithm is used, it requires an estimate of the number of particles in the simulation to pre-allocate arrays. For a fixed-weight simulation where <code>ppc</code> (particles per cell) are sampled in each cell at the start and no particles are created during the course of the simulation, we can compute the estimate as <code>n_particles = ppc * nx</code>. So we can initialize the <code>GridSortInPlace</code> instance like this:</p><pre><code class="language-julia hljs">n_particles = ppc * nx
+
+gridsorter = GridSortInPlace(grid, n_particles)</code></pre><p>If we want to sort our particles (held in a <code>ParticleVector</code> instance), we can simply call</p><pre><code class="language-julia hljs">species_id = 1
+
+# we assume that particles has type Vector{ParticleVector} (a ParticleVector per species)
+sort_particles!(gridsorter, grid, particles[species_id], pia, species_id)</code></pre><h2 id="Creating-boundary-conditions"><a class="docs-heading-anchor" href="#Creating-boundary-conditions">Creating boundary conditions</a><a id="Creating-boundary-conditions-1"></a><a class="docs-heading-anchor-permalink" href="#Creating-boundary-conditions" title="Permalink"></a></h2><p>Next, we need to create boundary conditions for the left and right walls. Currently, a diffusely reflecting wall is implemented with a user-defined accommodation coefficient (if it is equal to 0, the reflection is fully specular; if it is equal to 1, the reflection is fully diffuse).</p><p>This type of boundary condition (which stores the wall temperature, wall velocity, and accommodation coefficient) is described by the <code>MaxwellWallBC</code> structure, which should be defined for each wall.</p><p>However, it is not intended to be defined or used directly; instead, for a 1-D simulation, a higher-level <code>MaxwellWalls1D</code> structure is used, which holds not only the two <code>MaxwellWallBC</code> instances (for the left and right walls), but also some species-wise precomputed quantities for the diffuse reflection. The <code>MaxwellWalls1D</code> struct assumes that the wall velocity in the <code>x</code> and <code>z</code> directions is 0, but a non-zero <code>y</code> velocity may be specified.</p><p>A <code>MaxwellWalls1D</code> instance can be initialized like this (this will create two walls with equal temperatures and <code>y</code> velocities in opposite directions):</p><pre><code class="language-julia hljs">
+boundaries = MaxwellWalls1D(species_data, T_wall, T_wall, -v_wall, v_wall, 1.0, 1.0)</code></pre><h2 id="Performing-convection"><a class="docs-heading-anchor" href="#Performing-convection">Performing convection</a><a id="Performing-convection-1"></a><a class="docs-heading-anchor-permalink" href="#Performing-convection" title="Permalink"></a></h2><p>Having set up the grid and boundary conditions, we can convect particles. This is done by calling the <code>convect_particles!</code> function. The convection should be followed by particle sorting before any computations of physical properties are done.</p><pre><code class="language-julia hljs">convect_particles!(rng, grid, boundaries, particles[species_id], pia, species_id, species_data, Δt)</code></pre><h2 id="Bringing-it-all-together"><a class="docs-heading-anchor" href="#Bringing-it-all-together">Bringing it all together</a><a id="Bringing-it-all-together-1"></a><a class="docs-heading-anchor-permalink" href="#Bringing-it-all-together" title="Permalink"></a></h2><p>Now we can combine all the pieces to set up a simulation of a single-species Couette flow in a channel with a width of 0.5 mm, discretized with 50 cells. The y-velocity of the left wall is assumed to be -500 m/s, and that of the right wall 500 m/s; the temperature of both walls is 300 K. The solution is initialized with 100 particles per cell and a number density of 5e22 1/m^3. A timestep of 2.59 ns is used. The simulation runs for 50K steps and the solution time-averaged is averaged after the first 14K steps.</p><pre><code class="language-julia hljs">using Merzbild
+using Random
+
+# set our random seed for reproducibility
+seed = 1
+Random.seed!(seed)
+rng = Xoshiro(seed)
+
+# set physical and discretization parameters
+T_wall = 300.0
+v_wall = 500.0
+L = 5e-4
+ndens = 5e22
+nx = 50
+ppc = 100
+Δt = 2.59e-9
+n_timesteps = 50000
+avg_start = 14000
+
+# load particle and interaction data
+particles_data_path = joinpath(&quot;data&quot;, &quot;particles.toml&quot;)
+species_data = load_species_data(particles_data_path, &quot;Ar&quot;)
+interaction_data_path = joinpath(&quot;data&quot;, &quot;vhs.toml&quot;)
+interaction_data::Array{Interaction, 2} = load_interaction_data(interaction_data_path, species_data)
+
+# create our grid and BCs
+grid = Grid1DUniform(L, nx)
+boundaries = MaxwellWalls1D(species_data, T_wall, T_wall, -v_wall, v_wall, 1.0, 1.0)
+
+# init particle vector, particle indexer, grid particle sorter
+# we will not be creating or destroying any particles, so we can compute the exact number
+# of particles we will have in the simulation
+n_particles = ppc * nx
+particles = [ParticleVector(n_particles)]
+pia = ParticleIndexerArray(grid.n_cells, 1)
+gridsorter = GridSortInPlace(grid, n_particles)
+
+# sample particles
+# Fnum * ppc = Np in cell = ndens * V_cell
+Fnum = grid.cells[1].V * ndens / ppc
+sample_particles_equal_weight!(rng, grid, particles[1], pia, 1,
+                                species_data, ndens, T_wall, Fnum)
+
+# create collision structs
+collision_data = CollisionData()
+
+# create struct for computation of physical properties
+phys_props = PhysProps(pia)
+
+# create second struct for averaging of physical properties
+phys_props_avg = PhysProps(pia)
+
+# create struct for time-averaged output netCDF
+ds_avg = NCDataHolder(&quot;couette_example.nc&quot;,
+                        species_data, phys_props)
+
+# init collision factors
+collision_factors = create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum)
+
+# write out grid data
+write_grid(&quot;scratch/data/couette_$(L)_$(nx)_grid.nc&quot;, grid)
+
+# number of timesteps we are averaging for
+n_avg = n_timesteps - avg_start + 1
+
+for t in 1:n_timesteps
+
+    # output timestep every 1000 timesteps
+    if t % 1000 == 0
+        println(t)
+    end
+
+    # collide particles
+    for cell in 1:grid.n_cells
+        ntc!(rng, collision_factors[1, 1, cell],
+                collision_data, interaction_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
+    end
+
+    # convect particles
+    convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, Δt)
+
+    # sort particles
+    sort_particles!(gridsorter, grid, particles[1], pia, 1)
+
+    # compute props and do averaging
+    if (t &gt;= avg_start)
+        compute_props_sorted!(particles, pia, species_data, phys_props)
+        avg_props!(phys_props_avg, phys_props, n_avg)
+    end
+end
+
+write_netcdf_phys_props(ds_avg, phys_props_avg, n_timesteps)
+
+close_netcdf(ds_avg)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../overview_varweight/">« Variable-weight DSMC simulations</a><a class="docs-footer-nextpage" href="../overview_fp/">Fokker-Planck simulations »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.11.2 on <span class="colophon-date" title="Wednesday 14 May 2025 09:34">Wednesday 14 May 2025</span>. Using Julia version 1.11.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
