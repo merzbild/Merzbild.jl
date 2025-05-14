@@ -26,7 +26,7 @@ function fp!(rng, collision_data_fp, interaction, species_data, particles, pia, 
         local_w += particles[part_id].w
     end
 
-    if indexer.start2 > 0
+    if indexer.n_group2 > 0
         for part_id in indexer.start2:indexer.end2
             collision_data_fp.vel_ave = vel_ave + particles[part_id].v * particles[part_id].w
             local_w += particles[part_id].w
@@ -40,7 +40,7 @@ function fp!(rng, collision_data_fp, interaction, species_data, particles, pia, 
         es_old += 0.5 * dot(particles[part_id].v, particles[part_id].v) * particles[part_id].w
     end
 
-    if indexer.start2 > 0
+    if indexer.n_group2 > 0
         for part_id in indexer.start2:indexer.end2
             particles[part_id].v -= collision_data_fp.vel_ave
             es_old += 0.5 * dot(particles[part_id].v, particles[part_id].v) * particles[part_id].w
@@ -62,7 +62,7 @@ function fp!(rng, collision_data_fp, interaction, species_data, particles, pia, 
         es_new += 0.5*dot(particles[part_id].v, particles[part_id].v) * particles[part_id].w
     end
 
-    if indexer.start2 > 0
+    if indexer.n_group2 > 0
         for part_id in indexer.start2:indexer.end2
             i = part_id - n_begin + 1
 
@@ -79,7 +79,7 @@ function fp!(rng, collision_data_fp, interaction, species_data, particles, pia, 
         particles[part_id].v = alpha*particles[part_id].v + collision_data_fp.vel_ave
     end
 
-    if indexer.start2 > 0
+    if indexer.n_group2 > 0
         for part_id in indexer.start2:indexer.end2
             particles[part_id].v = alpha*particles[part_id].v + collision_data_fp.vel_ave
         end

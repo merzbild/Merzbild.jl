@@ -41,6 +41,8 @@ this is done by calling `create_collision_factors_array(n_species, n_cells)`.
 Some initial estimate for the values of ``(\sigma g w)_{max}``; the simplest way to do so for a fixed-weight DSMC simulation
 is to call the `estimate_sigma_g_w_max!(collision_factors, interactions, species_data, T_list, Fnum; mult_factor=1.0)`
 function.
+Version of the `create_collision_factors_array` function that automatically estimate ``(\sigma g w)_{max}`` are also
+available.
 
 This will pre-compute  ``(\sigma g w)_{max}`` based on a list of temperatures for each species by computing the
 average thermal velocities and calculating the value of the VHS collision cross-section:

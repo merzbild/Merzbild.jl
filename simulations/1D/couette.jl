@@ -33,7 +33,6 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
                                                       species_data, ndens, T_wall, Fnum)
 
     # create collision structs
-    collision_factors = create_collision_factors_array(1, grid.n_cells)
     collision_data = CollisionData()
     
     # create struct for computation of physical properties
@@ -49,11 +48,8 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
     ds_avg = NCDataHolder("scratch/data/avg_couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc)_after$(avg_start).nc",
                           species_data, phys_props)
 
-    # init collision structs
-    for cell in 1:grid.n_cells
-        collision_factors[1, 1, cell].sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1],
-                                                                             species_data[1], T_wall, Fnum)
-    end
+    # create and estime collision factors
+    collision_factors = create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum)
 
     # compute and write data at t=0
     compute_props!(particles, pia, species_data, phys_props)

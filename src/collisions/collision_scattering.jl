@@ -12,7 +12,7 @@ Scatter two particles using VHS (isotropic) scattering.
 * `p1`: the first colliding particle
 * `p2`: the second colliding particle
 """
-function scatter_vhs!(rng, collision_data, interaction, p1, p2)
+@inline function scatter_vhs!(rng, collision_data, interaction, p1, p2)
     ϕ = twopi * rand(rng, Float64)
     cphi = cos(ϕ)
     sphi = sin(ϕ)
@@ -40,7 +40,7 @@ re-scale its relative velocity to `g_new`.
 * `particles_electron`: the electron particle to scatter off of the neutral particle
 * `g_new`: the magnitude of the post-collisional relative velocity
 """
-function scatter_electron_vhs!(rng, collision_data, particles_electron, g_new)
+@inline function scatter_electron_vhs!(rng, collision_data, particles_electron, g_new)
     ϕ = twopi * rand(rng, Float64)
     cphi = cos(ϕ)
     sphi = sin(ϕ)

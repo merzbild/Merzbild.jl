@@ -89,4 +89,48 @@
     @test abs(e_int_data2[1,1].vhs_Tref - e_int_data[1,1].vhs_Tref) < eps()
     @test abs(e_int_data2[1,1].vhs_muref - e_int_data[1,1].vhs_muref) < eps()
     @test abs(e_int_data2[1,1].vhs_factor - e_int_data[1,1].vhs_factor) < eps()
+
+    species_data2 = load_species_data(particles_data_path, ["Ar", "He"])
+    interaction_data2 = load_interaction_data(interaction_data_path, species_data2)
+    pia2 = ParticleIndexerArray(40, 2) # 40 cells, 2 species
+
+    collision_factors1 = create_collision_factors_array(2, 40)
+    collision_factors2 = create_collision_factors_array(pia2)
+    @test size(collision_factors1) == size(collision_factors2)
+
+    # we will use as the baseline
+    estimate_sigma_g_w_max!(collision_factors1, interaction_data2, species_data2, [300.0, 300.0], 1e10; mult_factor=2.0)
+    collision_factors3 = create_collision_factors_array(pia2, interaction_data2, species_data2, 300.0, 1e10; mult_factor=2.0)
+    @test size(collision_factors3) == size(collision_factors1)
+
+    flag = false
+    for i1 in 1:size(collision_factors3)[1]
+        for i2 in 1:size(collision_factors3)[2]
+            for i3 in 1:size(collision_factors3)[3]
+                if abs(collision_factors3[i1, i2, i3].sigma_g_w_max - collision_factors1[i1, i2, i3].sigma_g_w_max) > 2 * eps()
+                    flag = true
+                end
+            end
+        end
+    end
+    @test flag == false
+
+    estimate_sigma_g_w_max!(collision_factors1, interaction_data2, species_data2, [300.0, 600.0], 1e10; mult_factor=2.0)
+    collision_factors4 = create_collision_factors_array(pia2, interaction_data2, species_data2, [300.0, 600.0],
+                                                        1e10; mult_factor=2.0)
+    @test size(collision_factors4) == size(collision_factors1)
+    
+
+    flag = false
+    for i1 in 1:size(collision_factors4)[1]
+        for i2 in 1:size(collision_factors4)[2]
+            for i3 in 1:size(collision_factors4)[3]
+                if abs(collision_factors4[i1, i2, i3].sigma_g_w_max - collision_factors1[i1, i2, i3].sigma_g_w_max) > 2 * eps()
+                    flag = true
+                end
+            end
+        end
+    end
+    @test flag == false
+    # collision_data = CollisionData()
 end

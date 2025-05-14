@@ -77,6 +77,82 @@ function create_collision_factors_array(n_species, n_cells)
 end
 
 """
+    create_collision_factors_array(pia)
+
+Create a 3-dimensional array of collision factors for all interaction pairs for all cells
+in the simulation, with shape `(n_species,n_species,n_cells)`.
+
+# Positional arguments
+* `pia`: the ParticleIndexerArray instance
+
+# Returns
+3-dimensional array of `CollisionFactors` instances with shape `(n_species,n_species,n_cells)`.
+"""
+function create_collision_factors_array(pia::ParticleIndexerArray)
+    return create_collision_factors_array(size(pia.indexer)[2], size(pia.indexer)[1])
+end
+
+"""
+    create_collision_factors_array(pia, interactions, species_data, T::Real, Fnum::Real; mult_factor=1.0)
+
+Create a 3-dimensional array of collision factors for all interaction pairs for all cells
+in the simulation, with shape `(n_species,n_species,n_cells)`.
+This will fill the array with the estimates ``(\\sigma g w)_{max}`` for all species in all cells, assuming
+a constant particle computational weight `Fnum`, a VHS cross-section, and that all species have a single temperature
+that is constant across all cells.
+
+# Positional arguments
+* `pia`: the ParticleIndexerArray instance
+* `interactions`: the 2-dimensional array of `Interaction` instances (of shape `(n_species, n_species)`) of all the pair-wise interactions
+* `species_data`: the vector of `Species` instances of the species in the flow 
+* `T`: the temperatures of the flow
+* `Fnum`: the constant computational weight of the particles
+
+# Keyword arguments
+* `mult_factor`: a factor by which to multiply the result (default value is 1.0)
+
+# Returns
+3-dimensional array of `CollisionFactors` instances with shape `(n_species,n_species,n_cells)` fille with estimated
+values of ``(\\sigma g w)_{max}``.
+"""
+function create_collision_factors_array(pia, interactions, species_data, T::Real, Fnum::Real; mult_factor=1.0)
+    coll_factor_array = create_collision_factors_array(pia)
+    estimate_sigma_g_w_max!(coll_factor_array, interactions, species_data, repeat([T], length(species_data)),
+                            Fnum; mult_factor=mult_factor)
+    return coll_factor_array
+end
+
+"""
+    create_collision_factors_array(pia, interactions, species_data, T_list, Fnum::Real; mult_factor=1.0)
+
+Create a 3-dimensional array of collision factors for all interaction pairs for all cells
+in the simulation, with shape `(n_species,n_species,n_cells)`.
+This will fill the array with the estimates ``(\\sigma g w)_{max}`` for all species in all cells, assuming
+a constant particle computational weight `Fnum`, a VHS cross-section, and that the temperature of each
+species is constant across all cells.
+
+# Positional arguments
+* `pia`: the ParticleIndexerArray instance
+* `interactions`: the 2-dimensional array of `Interaction` instances (of shape `(n_species, n_species)`) of all the pair-wise interactions
+* `species_data`: the vector of `Species` instances of the species in the flow 
+* `T_list`: the list of temperatures of the species
+* `Fnum`: the constant computational weight of the particles
+
+# Keyword arguments
+* `mult_factor`: a factor by which to multiply the result (default value is 1.0)
+
+# Returns
+3-dimensional array of `CollisionFactors` instances with shape `(n_species,n_species,n_cells)` fille with estimated
+values of ``(\\sigma g w)_{max}``.
+"""
+function create_collision_factors_array(pia, interactions, species_data, T_list, Fnum::Real; mult_factor=1.0)
+    coll_factor_array = create_collision_factors_array(pia)
+    estimate_sigma_g_w_max!(coll_factor_array, interactions, species_data, T_list,
+                            Fnum; mult_factor=mult_factor)
+    return coll_factor_array
+end
+
+"""
     compute_n_coll_single_species(rng, collision_factors, np, Δt, V)
 
 Compute the non-integer number of collisions between particles of same species.
@@ -171,7 +247,7 @@ function ntc!(rng, collision_factors, collision_data, interaction, particles, pi
         i = map_cont_index(pia.indexer[cell, species], i)
         k = map_cont_index(pia.indexer[cell, species], k)
         
-        @inline compute_g!(collision_data, particles[i], particles[k])
+        compute_g!(collision_data, particles[i], particles[k])
         # println("NTC: ", particle_indexer.n_total, ", ", length(particles))
         if (collision_data.g > eps())
 
@@ -183,7 +259,7 @@ function ntc!(rng, collision_factors, collision_data, interaction, particles, pi
             
             if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
                 collision_factors.n_coll_performed += 1
-                @inline compute_com!(collision_data, interaction[species, species], particles[i], particles[k])
+                compute_com!(collision_data, interaction[species, species], particles[i], particles[k])
                 # do collision
                 if (particles[i].w == particles[k].w)
                     collision_factors.n_eq_w_coll_performed += 1
@@ -216,7 +292,7 @@ function ntc!(rng, collision_factors, collision_data, interaction, particles, pi
 
                     particles[pia.n_total[species]] = Particle(Δw, particles[k].v, particles[k].x)
                 end
-                @inline scatter_vhs!(rng, collision_data, interaction[species, species], particles[i], particles[k])
+                scatter_vhs!(rng, collision_data, interaction[species, species], particles[i], particles[k])
             end
         end
     end
@@ -274,7 +350,7 @@ function ntc!(rng, collision_factors, collision_data, interaction,
         i = map_cont_index(pia.indexer[cell, species1], i)
         k = map_cont_index(pia.indexer[cell, species2], k)
         
-        @inline compute_g!(collision_data, particles_1[i], particles_2[k])
+        compute_g!(collision_data, particles_1[i], particles_2[k])
 
         if (collision_data.g > eps())
 
@@ -286,7 +362,7 @@ function ntc!(rng, collision_factors, collision_data, interaction,
 
             if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
                 collision_factors.n_coll_performed += 1
-                @inline compute_com!(collision_data, interaction[species1, species2], particles_1[i], particles_2[k])
+                compute_com!(collision_data, interaction[species1, species2], particles_1[i], particles_2[k])
                 # do collision
                 if (particles_1[i].w == particles_2[k].w)
                     collision_factors.n_eq_w_coll_performed += 1
@@ -315,15 +391,44 @@ function ntc!(rng, collision_factors, collision_data, interaction,
 
                     particles_2[pia.n_total[species_2]] = Particle(Δw, particles_2[i].v, particles_2[i].x)
                 end
-                @inline scatter_vhs!(rng, collision_data, interaction[species1, species2], particles_1[i], particles_2[k])
+                scatter_vhs!(rng, collision_data, interaction[species1, species2], particles_1[i], particles_2[k])
             end
         end
     end
 end
 
-
 """
+    estimate_sigma_g_w_max_ntc_n_e!(rng, collision_factors, collision_data, interaction,
+                                    n_e_interactions, n_e_cs, particles_n, particles_e,
+                                    pia, cell, species_n, species_e, Δt, V; min_coll=5, n_loops=3)
+
 Estimate ``(\\sigma g w)_{max}`` for an electron-neutral interaction by stochastically choosing particle pairs
+multiple times and computing ``(\\sigma g w)`` for each pair. The number of collisions is computed
+using the standard variable-weight NTC formula, the value of `min_coll` is added to this number,
+and particles are randomly sampled. The whole procedure is repeated `n_loops` times, so that
+an increased value ``(\\sigma g w)_{max}`` can have an impact on the computed number of pairs to select
+during the next loop iteration.
+
+# Positional arguments
+* `rng`: the random number generator
+* `collision_factors`: the `CollisionFactors` for the species in question in the cell
+* `collision_data`: `CollisionData` instance used for storing collisional quantities
+* `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
+* `n_e_interactions`: the `ElectronNeutralInteractions` instance
+* `n_e_cs`: the `ComputedCrossSections` instance
+* `particles_n`: `ParticleVector` of the particles of neutral species
+* `particles_e`: `ParticleVector` of the particles of the electron species
+* `pia`: the `ParticleIndexerArray`
+* `cell`: the index of the cell in which collisions are performed
+* `species_n`: the index of the neutral species
+* `species_e`: the index of the electron species
+* `Δt`: timestep
+* `V`: cell volume
+
+# Keyword arguments:
+* `min_coll`: the minimum number of pairs to test
+* `n_loops`: the number of loops to perform (in each loop the number of collisions is computed using the
+    estimated value of  ``(\\sigma g w)_{max}``)
 """
 function estimate_sigma_g_w_max_ntc_n_e!(rng, collision_factors, collision_data, interaction,
                                          n_e_interactions, n_e_cs, particles_n, particles_e,
@@ -372,8 +477,31 @@ function estimate_sigma_g_w_max_ntc_n_e!(rng, collision_factors, collision_data,
 end
 
 
+
 """
-Perform elastic scattering and ionizing collisions for electron-neutral interactions
+    ntc_n_e!(rng, collision_factors, collision_data, interaction,
+             n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion,
+             pia, cell, species_n, species_e, species_ion, Δt, V)
+
+Perform electron-neutral elastic scattering and electron-impact ionization collisions.
+
+# Positional arguments
+* `rng`: the random number generator
+* `collision_factors`: the `CollisionFactors` for the species in question in the cell
+* `collision_data`: `CollisionData` instance used for storing collisional quantities
+* `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
+* `n_e_interactions`: the `ElectronNeutralInteractions` instance
+* `n_e_cs`: the `ComputedCrossSections` instance
+* `particles_n`: `ParticleVector` of the particles of neutral species
+* `particles_e`: `ParticleVector` of the particles of the electron species
+* `particles_ion`: `ParticleVector` of the particles of the ion species
+* `pia`: the `ParticleIndexerArray`
+* `cell`: the index of the cell in which collisions are performed
+* `species_n`: the index of the neutral species
+* `species_e`: the index of the electron species
+* `species_ion`: the index of the ion species
+* `Δt`: timestep
+* `V`: cell volume
 """
 function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                   n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion,
@@ -493,8 +621,30 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
 end
 
 """
-Perform elastic scattering and ionizing collisions for electron-neutral interactions
-    using the event splitting approach of [Oblapenko et al. (2022)](https://doi.org/10.1016/j.jcp.2022.111390)
+    ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
+             n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion,
+             pia, cell, species_n, species_e, species_ion, Δt, V)
+
+Perform electron-neutral elastic scattering and electron-impact ionization collisions
+using the event splitting approach of [Oblapenko et al. (2022)](https://doi.org/10.1016/j.jcp.2022.111390)
+
+# Positional arguments
+* `rng`: the random number generator
+* `collision_factors`: the `CollisionFactors` for the species in question in the cell
+* `collision_data`: `CollisionData` instance used for storing collisional quantities
+* `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
+* `n_e_interactions`: the `ElectronNeutralInteractions` instance
+* `n_e_cs`: the `ComputedCrossSections` instance
+* `particles_n`: `ParticleVector` of the particles of neutral species
+* `particles_e`: `ParticleVector` of the particles of the electron species
+* `particles_ion`: `ParticleVector` of the particles of the ion species
+* `pia`: the `ParticleIndexerArray`
+* `cell`: the index of the cell in which collisions are performed
+* `species_n`: the index of the neutral species
+* `species_e`: the index of the electron species
+* `species_ion`: the index of the ion species
+* `Δt`: timestep
+* `V`: cell volume
 """
 function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
     n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion, 

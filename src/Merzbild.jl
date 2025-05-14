@@ -21,6 +21,7 @@ export Species, Interaction
 export compute_props!, compute_props_sorted!, compute_props_with_total_moments!
 export clear_props!, avg_props!
 export ParticleIndexer, ParticleIndexerArray, PhysProps, CollisionFactors, CollisionData, CollisionDataFP
+export squash_pia!
 export NCDataHolder, IOSkipList
 export write_netcdf_phys_props
 export close_netcdf

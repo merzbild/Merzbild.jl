@@ -110,7 +110,7 @@ function compute_props!(particles, pia, species_data, phys_props)
                 np += 1
             end
 
-            if pia.indexer[cell,species].start2 > 0
+            if pia.indexer[cell,species].n_group2 > 0
                 for i in pia.indexer[cell,species].start2:pia.indexer[cell,species].end2
                     n += particles[species][i].w
                     v = v + particles[species][i].v * particles[species][i].w
@@ -126,7 +126,7 @@ function compute_props!(particles, pia, species_data, phys_props)
                                                   + (particles[species][i].v[3] - v[3])^2)
                 end
             
-                if pia.indexer[cell,species].start2 > 0
+                if pia.indexer[cell,species].n_group2 > 0
                     for i in pia.indexer[cell,species].start2:pia.indexer[cell,species].end2
                         E += particles[species][i].w * ((particles[species][i].v[1] - v[1])^2
                                                       + (particles[species][i].v[2] - v[2])^2
@@ -185,7 +185,7 @@ function compute_props_with_total_moments!(particles, pia, species_data, phys_pr
                 np += 1
             end
 
-            if pia.indexer[cell,species].start2 > 0
+            if pia.indexer[cell,species].n_group2 > 0
                 for i in pia.indexer[cell,species].start2:pia.indexer[cell,species].end2
                     n += particles[species][i].w
                     v = v + particles[species][i].v * particles[species][i].w
@@ -205,7 +205,7 @@ function compute_props_with_total_moments!(particles, pia, species_data, phys_pr
                     end
                 end
             
-                if pia.indexer[cell,species].start2 > 0
+                if pia.indexer[cell,species].n_group2 > 0
                     for i in pia.indexer[cell,species].start2:pia.indexer[cell,species].end2
                         # TODO: make normv optional, only if we include moments!
                         normv = norm(particles[species][i].v - v)
@@ -361,7 +361,7 @@ function compute_mixed_moment(particles, pia, cell, species, powers; sum_scaler=
                   (particles[species][i].v[3]^powers[3])
     end
 
-    if pia.indexer[cell,species].start2 > 0
+    if pia.indexer[cell,species].n_group2 > 0
         for i in pia.indexer[cell,species].start2:pia.indexer[cell,species].end2
             result += particles[species][i].w * sum_scaler * (particles[species][i].v[1]^powers[1]) *
                       (particles[species][i].v[2]^powers[2]) *

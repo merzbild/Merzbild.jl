@@ -12,7 +12,7 @@ Convect a singe particle on a 1-D uniform grid.
 * `species`: the index of the species being convected
 * `Δt`: the convection timestep
 """
-function convect_single_particle!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particle, species, Δt)
+@inline function convect_single_particle!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particle, species, Δt)
     t_rest = Δt
     x_old = particle.x[1]
     x_new = particle.x[1] + particle.v[1] * Δt
@@ -31,7 +31,7 @@ function convect_single_particle!(rng, grid::Grid1DUniform, boundaries::MaxwellW
             x_old = 0.0
         end
 
-        @inline reflect_particle_x!(rng, particle, boundaries.reflection_velocities_sq[bc_id, species],
+        reflect_particle_x!(rng, particle, boundaries.reflection_velocities_sq[bc_id, species],
                                     wall_normal,
                                     boundaries.boundaries[bc_id].v,
                                     boundaries.boundaries[bc_id].accommodation)
@@ -71,7 +71,7 @@ function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D
     
     if pia.contiguous[species]
         @simd for i in 1:pia.n_total[species]
-            @inline convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt) 
+            convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt) 
         end
     else
         for cell in 1:grid.n_cells
@@ -79,7 +79,7 @@ function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D
             e = pia.indexer[cell, species].end1
             
             @simd for i in s:e
-                @inline convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt) 
+                convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt) 
             end
 
             if pia.indexer[cell, species].n_group2 > 0
@@ -87,7 +87,7 @@ function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D
                 e = pia.indexer[cell, species].end2
             
                 @simd for i in s:e
-                    @inline convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt) 
+                    convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt) 
                 end
             end
         end

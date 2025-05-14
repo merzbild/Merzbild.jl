@@ -22,6 +22,7 @@ ParticleIndexerArray(n_cells::Integer, n_species::Integer)
 ParticleIndexerArray(n_particles::Integer) 
 ParticleIndexerArray(n_particles::T) where T<:AbstractVector
 ParticleIndexerArray(grid, species_data::Array{Species}) 
+squash_pia!
 ```
 
 ## Loading species and interaction data
@@ -67,6 +68,9 @@ CollisionDataFP
 CollisionDataFP()
 create_collision_factors_array(n_species)
 create_collision_factors_array(n_species, n_cells)
+create_collision_factors_array(pia::ParticleIndexerArray)
+create_collision_factors_array(pia, interactions, species_data, T::Real, Fnum::Real; mult_factor=1.0)
+create_collision_factors_array(pia, interactions, species_data, T_list, Fnum::Real; mult_factor=1.0)
 create_computed_crosssections
 estimate_sigma_g_w_max
 estimate_sigma_g_w_max!
