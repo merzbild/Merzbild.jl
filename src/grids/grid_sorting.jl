@@ -64,6 +64,11 @@ function sort_particles!(gridsort::GridSortInPlace, grid, particles, pia, specie
                 for nci in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
                     ci += 1
                     gridsort.non_contiguous_indices[ci] = nci
+                
+                    if (particles[nci].w <= 0) 
+                        println("Cell $cell: Group1 Found $ci", ", ", nci, ", ", particles[nci])
+                        println("Pia: $(pia.indexer[cell, species].start1), $(pia.indexer[cell, species].end1), $(pia.indexer[cell, species].n_group1)")
+                    end
                 end
             end
 
@@ -71,12 +76,28 @@ function sort_particles!(gridsort::GridSortInPlace, grid, particles, pia, specie
                 for nci in pia.indexer[cell,species].start2:pia.indexer[cell,species].end2
                     ci += 1
                     gridsort.non_contiguous_indices[ci] = nci
+
+
+                    if (particles[nci].w <= 0) 
+                        println("Cell $cell: Group2 Found $ci", ", ", nci, ", ", particles[nci])
+                        println("Pia: $(pia.indexer[cell, species].start2), $(pia.indexer[cell, species].end2), $(pia.indexer[cell, species].n_group2)")
+                    end
                 end
             end
         end
 
         @inbounds @simd for i in 1:pia.n_total[species]
             nci = gridsort.non_contiguous_indices[i]
+
+            if (particles[nci].w <= 0) 
+                println(i, ", ", nci, ", ", particles[nci])
+            end
+
+            if isnan(particles[nci].x[1])
+                println("wat")
+                println(i, ", ", nci, ", ", particles[nci])
+            end
+
             newcell = get_cell(grid, particles[nci].x)
             particles.cell[i] = newcell
             gridsort.cell_counts[newcell+1] += 1

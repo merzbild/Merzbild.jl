@@ -239,7 +239,7 @@ function compute_props_with_total_moments!(particles, pia, species_data, phys_pr
 end
 
 """
-    clear_props!(phys_props)
+    clear_props!(phys_props::PhysProps)
 
 Clear all data from PhysProps, for use when physical properties are averaged over timesteps
 and averaging over a new set of timesteps needs to be started.
@@ -247,7 +247,7 @@ and averaging over a new set of timesteps needs to be started.
 # Positional arguments
 * `phys_props`: the `PhysProps` instance to be cleared
 """
-function clear_props!(phys_props)
+function clear_props!(phys_props::PhysProps)
     phys_props.lpa[:] .= 0
     phys_props.np[:,:] .= 0
     phys_props.n[:,:] .= 0.0
@@ -256,7 +256,7 @@ function clear_props!(phys_props)
 end
 
 """
-    avg_props!(phys_props_avg, phys_props, n_avg_timesteps)
+    avg_props!(phys_props_avg, phys_props::PhysProps, n_avg_timesteps)
 
 Used to time-average computed physical properties, not including the total moments.
 For each instantaneous value of a property computed and stored in `phys_props`,
@@ -268,7 +268,7 @@ it is divided by `n_avg_timesteps` and added to `phys_props_avg`.
     to be used for the averaging at the current timestep
 * `n_avg_timesteps`: the number of timesteps over which the averaging is performed
 """
-function avg_props!(phys_props_avg, phys_props, n_avg_timesteps)
+function avg_props!(phys_props_avg::PhysProps, phys_props::PhysProps, n_avg_timesteps)
     if (phys_props_avg.ndens_not_Np != phys_props.ndens_not_Np)
         throw(ErrorException("Inconsistent computation of ndens/number of physical particles in cell"))
     end
@@ -303,6 +303,7 @@ function compute_props_sorted!(particles, pia, species_data, phys_props)
     for species in 1:phys_props.n_species
         for cell in 1:phys_props.n_cells
             n = 0.0
+            np = 0.0
             E = 0.0
             T = 0.0
             v = SVector{3,Float64}(0.0, 0.0, 0.0)
@@ -310,6 +311,7 @@ function compute_props_sorted!(particles, pia, species_data, phys_props)
             for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
                 n += particles[species][i].w
                 v = v + particles[species][i].v * particles[species][i].w
+                np += 1.0
             end
 
             if (n > 0.0)
@@ -323,6 +325,7 @@ function compute_props_sorted!(particles, pia, species_data, phys_props)
                 T = (2.0/3.0) * E
             end
     
+            phys_props.np[cell,species] = np
             phys_props.n[cell,species] = n
             phys_props.v[:,cell,species] = v
             phys_props.T[cell,species] = T

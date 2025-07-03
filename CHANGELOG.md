@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.6.4
+* Now possible to compute surface properties due to particle-surface interactions.
+* Unified `update_particle_indexer_new_particle` and `update_particle_buffer_new_particle`
+    into single routine `update_buffer_index_new_particle!`.
+* Documentation improvements
+* Fixed bug where `compute_props_sorted!` did not compute the number of particles
+* `pretty_print_pia` added
+* `AbstractNCDataHolder` abstract type added, `NCDataHolder` and `NCDataHolderSurf` are subtypes thereof
+* Example for 1-D variable weight DSMC simulation added
+
 ## v0.6.3
 * Documentation improvements
 * Function to restore continuity to indices in a `ParticleVector`/`ParticleIndexerArray` pair

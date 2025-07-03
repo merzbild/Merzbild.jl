@@ -27,7 +27,7 @@ Scatter two particles using VHS (isotropic) scattering.
 end
 
 """
-    scatter_vhs!(rng, collision_data, interaction, p1, p2)
+    scatter_electron_vhs!(rng, collision_data, particles_electron, g_new)
 
 Scatter an electron off of a neutral particle using VHS (isotropic) scattering and
 re-scale its relative velocity to `g_new`.
@@ -48,20 +48,7 @@ re-scale its relative velocity to `g_new`.
     ctheta = 2.0 * rand(rng, Float64) - 1.0
     stheta = sqrt(1.0 - ctheta^2)
 
-    ratio = g_new / collision_data.g
-    ur = particles_electron.v[1] * ratio
-    vr = particles_electron.v[2] * ratio
-    wr = particles_electron.v[3] * ratio
-
-    denominator = sqrt(vr*vr + wr*wr)    
-
-    if (denominator < eps()*g_new)
-        particles_electron.v = SVector{3, Float64}(ctheta * ur + stheta * sphi * denominator,
-                                                      ctheta * vr + stheta * (g_new * wr * cphi - ur * vr * sphi) / denominator,
-                                                      ctheta * wr - stheta * (g_new * vr * cphi + ur * wr * sphi) / denominator) + collision_data.v_com
-    else
-        particles_electron.v = SVector{3, Float64}(ctheta * ur, stheta * cphi * ur, stheta * sphi * ur) + collision_data.v_com
-    end
+    particles_electron.v = SVector{3, Float64}(ctheta * g_new, stheta * cphi * g_new, stheta * sphi * g_new) + collision_data.v_com
 end
 
 """

@@ -23,6 +23,7 @@ ParticleIndexerArray(n_particles::Integer)
 ParticleIndexerArray(n_particles::T) where T<:AbstractVector
 ParticleIndexerArray(grid, species_data::Array{Species}) 
 squash_pia!
+pretty_print_pia
 ```
 
 ## Loading species and interaction data
@@ -45,12 +46,15 @@ sample_maxwellian_on_grid!
 sample_particles_equal_weight!
 ```
 
-## Computing macroscopic properties
+## Computing grid and surface macroscopic properties
 ```@docs
 PhysProps
 PhysProps(n_cells, n_species, moments_list; Tref=300.0)
 PhysProps(pia, moments_list; Tref=300.0)
 PhysProps(pia)
+SurfProps
+SurfProps(n_elements, n_species, areas, normals)
+SurfProps(pia, grid::Grid1DUniform)
 compute_props!
 compute_props_with_total_moments!
 compute_props_sorted!
@@ -124,6 +128,7 @@ OctreeN2Merge(split::Merzbild.OctreeBinSplit;
               init_bin_bounds=OctreeInitBinMinMaxVel,
               bin_bounds_compute=OctreeBinBoundsInherit,
               max_Nbins=4096, max_depth=10)
+merge_octree_N2_based!
 ```
 
 ## Grids and particle sorting
@@ -154,11 +159,18 @@ write_grid
 IOSkipList
 IOSkipList(list_of_variables_to_skip)
 IOSkipList()
+IOSkipListSurf
+IOSkipListSurf(list_of_variables_to_skip)
+IOSkipListSurf()
 NCDataHolder
 NCDataHolder(nc_filename, names_skip_list, species_data, phys_props; global_attributes=Dict{Any,Any}())
 NCDataHolder(nc_filename, species_data, phys_props; global_attributes=Dict{Any,Any}())
+NCDataHolderSurf
+NCDataHolderSurf(nc_filename, names_skip_list, species_data, surf_props; global_attributes=Dict{Any,Any}())
+NCDataHolderSurf(nc_filename, species_data, surf_props; global_attributes=Dict{Any,Any}())
 close_netcdf
 write_netcdf_phys_props
+write_netcdf_surf_props
 ```
 
 ## Particle-in-Cell

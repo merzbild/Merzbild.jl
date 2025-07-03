@@ -5,7 +5,7 @@
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)
 
-    grid = Grid1DUniform(4, 8)
+    grid = Grid1DUniform(4.0, 8)
 
     @test grid.L == 4
     @test grid.n_cells == 8

@@ -26,6 +26,7 @@ include("test_octree_sorting.jl")  # then we test sorting in octree merging
 include("test_octree_merging.jl")  # then we test computation of props and octree merging
 include("test_octree_merging_buffer_sorting.jl")  # then we test that particles are freed correctly in octree merging
 include("test_bkw_varweight_octree.jl")  # then we test variable-weight NTC collisions+octree merging in 0D (BKW relaxation)
+include("test_2species_varweight_octree.jl")  # 2-species variable-weight elastic collisions and merging
 include("test_nnls_merging.jl")  # test NNLS-based merging
 include("test_nnls_merging_buffer_sorting.jl")  # then we test that particles are freed correctly in NNLS-based merging
 include("test_bkw_varweight_nnls.jl")  # test NNLS-based merging
@@ -39,7 +40,11 @@ include("test_grid_sorting.jl")  # test particle sorting routines
 include("test_convection_1D.jl")  # test particle convection and surface interaction on a 1D grid
 include("test_collisions_1D.jl")  # test particle collisions on a grid
 include("test_io_multidim.jl")  # test netCDF I/O of physical properties on a grid
+include("test_octree_merging_1D.jl")  # test octree merging in 1-D
+include("test_surface_props_1D_uniform.jl")  # test surface properties for 1-D uniform grid
+include("test_io_surf.jl")  # test I/O of surface properties
 include("test_1D_couette.jl")  # test Couette flow
+include("test_1D_couette_varweight.jl")  # test 1-D Couette flow, variable-weight DSMC, surface computes
 include("test_misc.jl")  # various misc utility functions
 include("test_collision_fp.jl")
 include("test_aqua.jl")

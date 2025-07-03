@@ -15,6 +15,7 @@ Merzbild.update_particle_buffer_new_particle(pv::ParticleVector, position)
 Merzbild.update_particle_buffer_new_particle(pv::ParticleVector, pia, species)
 Merzbild.update_particle_buffer_new_particle(pv::Vector{Particle}, pia, species)
 Merzbild.update_particle_buffer_new_particle(pv::Vector{Particle}, position)
+Merzbild.update_buffer_index_new_particle!
 Merzbild.delete_particle!
 Merzbild.delete_particle_end!
 Merzbild.delete_particle_end_group1!
@@ -112,7 +113,6 @@ Merzbild.split_bin!
 Merzbild.compute_bin_props!
 Merzbild.get_bin_post_merge_np
 Merzbild.init_octree!
-Merzbild.merge_octree_N2_based!
 ```
 
 ## Grids
@@ -131,6 +131,14 @@ Merzbild.convect_single_particle!
 Merzbild.specular_reflection_x!
 Merzbild.diffuse_reflection_x!
 Merzbild.reflect_particle_x!
+Merzbild.update_surface_incident!
+Merzbild.update_surface_reflected!
+Merzbild.surface_props_scale!
+```
+
+## I/O
+```@docs
+Merzbild.AbstractNCDataHolder
 ```
 
 ## Constants
