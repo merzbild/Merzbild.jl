@@ -454,7 +454,8 @@ end
 Delete the last particle of species `species` in cell `cell`: if particles are present in the 2nd
 group of the indices stored in the `ParticleIndexer` instance, it will delete the last particle in that group;
 otherwise it will delete the last particle in the 1st group of particles pointed to by the `ParticleIndexer` instance.
-If no particles are present in the cell, the function does nothing.
+If no particles are present in the cell, the function does nothing. This does not set the value of the `contiguous` field of
+`pia` to `false` even if `pia` becomes discontinuous; this has to be done outside of this function.
 
 # Positional arguments
 * `pv`: `ParticleVector` instance
@@ -476,7 +477,8 @@ end
 Delete particle with index `pia.indexer[cell, species].end1`` of species `species` in cell `cell`
 and update the particle indexers and buffers accordingly (i.e. delete the last particle in the 1st group of particles
 of a given species in a given cell). This also sets the weight of the deleted particle to 0.
-If no particles are present in the 1st group of particles, the function does nothing.
+If no particles are present in the 1st group of particles, the function does nothing. This does not set the value of the `contiguous` field of
+`pia` to `false` even if `pia` becomes discontinuous; this has to be done outside of this function.
 
 # Positional arguments
 * `pv`: `ParticleVector` instance
@@ -510,7 +512,8 @@ end
 Delete particle with index `pia.indexer[cell, species].end2`` of species `species` in cell `cell`
 and update the particle indexers and buffers accordingly (i.e. delete the last particle in the 2nd group of the particles
 of a given species in a given cell). This also sets the weight of the deleted particle to 0.
-If no particles are present in the 2nd group of particles, the function does nothing.
+If no particles are present in the 2nd group of particles, the function does nothing. This does not set the value of the `contiguous` field of
+`pia` to `false` even if `pia` becomes discontinuous; this has to be done outside of this function.
 
 # Positional arguments
 * `pv`: `ParticleVector` instance
@@ -535,7 +538,8 @@ If no particles are present in the 2nd group of particles, the function does not
 
     # deleted last particle from group2
     if pia.indexer[cell, species].end2 < pia.indexer[cell, species].start2
-        pia.indexer[cell, species].start2 = -1
+        pia.indexer[cell, species].start2 = 0
+        pia.indexer[cell, species].end2 = 0
     end
 
     # add the deleted particle to the buffer
@@ -682,6 +686,50 @@ function squash_pia!(particles, pia)
     for species in 1:length(pia.contiguous)
         if !pia.contiguous[species]
             squash_pia!(particles[species], pia, species)
+        end
+    end
+end
+
+"""
+    update_buffer_index_new_particle!(pv, pia, cell, species)
+
+Update a `ParticleIndexerArray` and the buffer in a `ParticleVector` instance
+when a particle of a given species in a given cell is created.
+See the documentation of [`update_particle_indexer_new_particle`](@ref update_particle_indexer_new_particle)
+and [`update_particle_buffer_new_particle`](@ref update_particle_buffer_new_particle)
+
+# Positional arguments
+* `pv`: `ParticleVector` instance
+* `pia`: the `ParticleIndexerArray` instance
+* `cell`: the index of the cell in which the particle is created
+* `species`: the index of the species of which the particle is created
+"""
+function update_buffer_index_new_particle!(pv, pia, cell, species)
+    update_particle_indexer_new_particle(pia, cell, species)
+    update_particle_buffer_new_particle(pv, pia, species)
+end
+
+"""
+    pretty_print_pia(pia)
+
+Display a `ParticleIndexerArray` instance by showing the starting/ending indices of the groups over all cells
+for a specific species.
+
+# Positional arguments
+* `pia`: the `ParticleIndexerArray` instance
+* `species`: the index of the species for which the indices are displayed
+"""
+function pretty_print_pia(pia, species)
+    n_cells = size(pia.indexer)[1]
+    println("Total: $(pia.n_total[species])")
+    for cell in 1:n_cells
+        if pia.indexer[cell,species].n_group1 > 0
+            println("Cell $cell: [$(pia.indexer[cell,species].start1), $(pia.indexer[cell,species].end1)]")
+        end
+    end
+    for cell in 1:n_cells
+        if pia.indexer[cell,species].n_group2 > 0
+            println("Cell $cell: [$(pia.indexer[cell,species].start2), $(pia.indexer[cell,species].end2)]")
         end
     end
 end

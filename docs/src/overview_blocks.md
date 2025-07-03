@@ -249,6 +249,11 @@ Finally, at the end of the simulation we need to close the file, so we call
 close_netcdf(ds)
 ```
 
+## Computing surface properties due to particle-surface interactions: SurfProps
+Details on calculation of surface properties due to particle-surface interactions can be found in the section on [1D DSMC simulations](@ref "1D DSMC simulations").
+Time-averaging works exactly the same as for `PhysProps`, via use of the `avg_props` function. Output is performed similarly,
+via an `NCDataHolderSurf` struct and calls to `write_netcdf_surf_props`.
+
 ## Example: bringing it all together
 An example of particle sampling, property computation, and output for a 0-D single-species gas is presented here.
 ```julia

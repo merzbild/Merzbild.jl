@@ -793,6 +793,109 @@ function compute_new_particles!(rng, octree::OctreeN2Merge, particles, pia, cell
     end
 end
 
+
+"""
+    compute_new_particles!(rng, octree::OctreeN2Merge, particles, pia, cell, species, grid)
+
+Compute post-merge particles particles based on octree bin properties; placing out-of-domain particles back into the domain.
+
+# Positional arguments:
+* `rng`: the random number generator instance
+* `octree`: the `OctreeN2Merge` instance
+* `particles`: the `ParticleVector` instance of the particles to be merged
+* `pia`: the `ParticleIndexerArray` instance
+* `cell`: the cell index
+* `species`: the species index
+* `grid`: the `Grid1DUniform` grid
+"""
+function compute_new_particles!(rng, octree::OctreeN2Merge, particles, pia, cell, species, grid::Grid1DUniform)
+    # given computed Octree, create new particles instead of the old ones
+    
+    for bin_id in 1:octree.Nbins
+        if (octree.bins[bin_id].np > 2)
+            octree.full_bins[bin_id].w1 = 0.5 * octree.bins[bin_id].w
+            octree.full_bins[bin_id].w2 = octree.full_bins[bin_id].w1
+
+            octree.full_bins[bin_id].v_std_sq = sqrt.(octree.full_bins[bin_id].v_std_sq)
+            octree.full_bins[bin_id].x_std_sq = sqrt.(octree.full_bins[bin_id].x_std_sq)
+            
+            octree.direction_vec = @SVector rand(rng, direction_signs, 3)
+            octree.full_bins[bin_id].v1 = octree.full_bins[bin_id].v_mean + octree.direction_vec .* octree.full_bins[bin_id].v_std_sq
+            octree.full_bins[bin_id].v2 = octree.full_bins[bin_id].v_mean - octree.direction_vec .* octree.full_bins[bin_id].v_std_sq
+
+            octree.direction_vec = @SVector rand(rng, direction_signs, 3)
+            octree.full_bins[bin_id].x1 = octree.full_bins[bin_id].x_mean + octree.direction_vec .* octree.full_bins[bin_id].x_std_sq
+            octree.full_bins[bin_id].x2 = octree.full_bins[bin_id].x_mean - octree.direction_vec .* octree.full_bins[bin_id].x_std_sq
+        elseif (octree.bins[bin_id].np == 2)
+            # get the particle indices we saved and just write data based on them
+            i = octree.full_bins[bin_id].particle_index1
+            octree.full_bins[bin_id].w1 = particles[i].w
+            octree.full_bins[bin_id].v1 = particles[i].v
+            octree.full_bins[bin_id].x1 = particles[i].x
+
+            i = octree.full_bins[bin_id].particle_index2
+            octree.full_bins[bin_id].w2 = particles[i].w
+            octree.full_bins[bin_id].v2 = particles[i].v
+            octree.full_bins[bin_id].x2 = particles[i].x
+        elseif (octree.bins[bin_id].np == 1)
+            # get the particle indices we saved and just write data based on them
+            i = octree.full_bins[bin_id].particle_index1
+            octree.full_bins[bin_id].w1 = particles[i].w
+            octree.full_bins[bin_id].v1 = particles[i].v
+            octree.full_bins[bin_id].x1 = particles[i].x
+        end
+    end
+
+    curr_particle_index = 0
+    for bin_id in 1:octree.Nbins
+        if (octree.bins[bin_id].np >= 2)
+            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
+            curr_particle_index += 1
+            particles[i].w = octree.full_bins[bin_id].w1
+            particles[i].v = octree.full_bins[bin_id].v1
+            particles[i].x = octree.full_bins[bin_id].x1
+
+            if (particles[i].x[1] < grid.min_x)
+                particles[i].x = [grid.min_x, particles[1].x[2], particles[1].x[3]]
+            elseif (particles[i].x[1] > grid.max_x)
+                particles[i].x = [grid.max_x, particles[1].x[2], particles[1].x[3]]
+            end
+
+            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
+            curr_particle_index += 1
+            particles[i].w = octree.full_bins[bin_id].w2
+            particles[i].v = octree.full_bins[bin_id].v2
+            particles[i].x = octree.full_bins[bin_id].x2
+
+            if (particles[i].x[1] < grid.min_x)
+                particles[i].x = [grid.min_x, particles[1].x[2], particles[1].x[3]]
+            elseif (particles[i].x[1] > grid.max_x)
+                particles[i].x = [grid.max_x, particles[1].x[2], particles[1].x[3]]
+            end
+        elseif (octree.bins[bin_id].np == 1)
+            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
+            curr_particle_index += 1
+            particles[i].w = octree.full_bins[bin_id].w1
+            particles[i].v = octree.full_bins[bin_id].v1
+            particles[i].x = octree.full_bins[bin_id].x1
+        end
+    end
+
+    old_count = pia.indexer[cell,species].n_local
+    n_particles_to_delete = old_count - curr_particle_index
+
+    # if we delete from particles in last cell AND we delete less particles than were in group 2
+    # then continuity is not broken
+    # !(A && B) == !A || !B
+    if !(cell == size(pia.indexer)[1]) || (n_particles_to_delete > pia.indexer[cell,species].n_group2)
+        pia.contiguous[species] = false
+    end
+
+    for _ in 1:n_particles_to_delete
+        delete_particle_end!(particles, pia, cell, species)
+    end
+end
+
 """
     init_octree!(octree, particles, pia, cell, species)
 
@@ -904,4 +1007,69 @@ function merge_octree_N2_based!(rng, octree, particles, pia, cell, species, targ
         compute_bin_props!(octree, bin_id, particles)
     end
     compute_new_particles!(rng, octree, particles, pia, cell, species)
+end
+
+
+"""
+    merge_octree_N2_based!(rng, octree, particles, pia, cell, species, target_np, grid)
+
+Perform N:2 merging, checking whether particle positions end up outside of the simulation domain, and pushing them back into the domain
+if needed.
+
+# Positional arguments
+* `rng`: the random number generator instance
+* `octree`: the `OctreeN2Merge` instance
+* `particles`: the `ParticleVector` instance containing the particles to be merged
+* `pia`: the `ParticleIndexerArray` instance
+* `cell`: the index of the grid cell in which particles are being merged
+* `species`: the index of the species being merged
+* `target_np`: the target post-merge number of particles; the post-merge number of particles will not exceed this value
+    but may be not exactly equal to it
+* `grid`: the `Grid1DUniform` grid
+"""
+function merge_octree_N2_based!(rng, octree, particles, pia, cell, species, target_np, grid::Grid1DUniform)
+    clear_octree!(octree)
+    resize_octree_buffers!(octree, pia.indexer[cell,species].n_local)
+    init_octree!(octree, particles, pia, cell, species)
+
+    while true
+        refine_id = -1
+        max_w = -1.0
+        for bin_id in 1:octree.Nbins
+            # find bin with largest number density, needs to be refine-able
+            if ((octree.bins[bin_id].w > max_w) && octree.bins[bin_id].can_be_refined)
+               max_w = octree.bins[bin_id].w
+               refine_id = bin_id
+           end
+        end
+
+        if refine_id == -1
+            # found no bin to refine, i.e. ran out of particles
+            break
+        elseif (octree.total_post_merge_np + 14 > target_np)
+            # refining a bin can produce up to 16 particles, so we don't do it if threshold exceeded
+            # but if we have a bin it has potentially 2 particles already, so refinement increases count
+            # only by 14
+            break
+        else
+            split_bin!(octree, refine_id, particles)
+        end
+
+        if octree.Nbins + 7 > octree.max_Nbins
+            # reach max number of bins possible
+            break
+        end
+    end
+
+    if octree.Nbins == 1
+        octree.bins[1].w = 0.0
+        for pi in octree.particle_indexes_sorted[1:octree.n_particles]
+            octree.bins[1].w += particles[pi].w
+        end
+    end
+    
+    for bin_id in 1:octree.Nbins
+        compute_bin_props!(octree, bin_id, particles)
+    end
+    compute_new_particles!(rng, octree, particles, pia, cell, species, grid)
 end

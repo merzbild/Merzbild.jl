@@ -32,10 +32,12 @@ stats_style	    step cpu np nattempt ncoll nscoll nscheck
 
 
 compute 1 thermal/grid all species temp press
-compute 2 grid all species n nrho u v 
+compute 2 grid all species n nrho u v
+compute 3 boundary all nflux mflux press shx shy shz ke
 
 fix 1 ave/grid all 1 36000 50000 c_1[*] c_2[*]
+fix 2 ave/time 1 36000 50000 c_3[*] mode vector file boundary.tmp
 
-dump 1 grid all 50000 avg_seed_12345.grid.* id f_1[*]
+dump 1 grid all 50000 avg_seed_12345.grid_2.* id f_1[*]
 
 run 50000

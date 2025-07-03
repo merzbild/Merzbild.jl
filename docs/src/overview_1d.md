@@ -1,6 +1,7 @@
 # 1D DSMC simulations
 
-In this section, setting up DSMC simulations on a uniform 1D grid will be discussed. Some of the
+In this section, setting up fixed-weight DSMC simulations on a uniform 1D grid will be discussed,
+along with computation of surface properties due to particle-surface interactions. Some of the
 concepts and algorithms used here are also applicable to other grids (upcoming), but
 some things are specific to the uniform 1D grids.
 
@@ -79,8 +80,29 @@ the wall velocity in the `x` and `z` directions is 0, but a non-zero `y` velocit
 A `MaxwellWalls1D` instance can be initialized like this (this will create two walls with equal temperatures
 and `y` velocities in opposite directions):
 ```julia
-
 boundaries = MaxwellWalls1D(species_data, T_wall, T_wall, -v_wall, v_wall, 1.0, 1.0)
+```
+
+## Calculation of surface properties
+To compute surface properties due to particle-surface interactions, one needs to first set up the corresponding struct
+that will hold the computed values. This is done by.
+```julia
+surf_props = SurfProps(pia, grid)
+```
+If one wants to compute the properties on a given timestep, the structure needs to be passed to the convection
+routine --- otherwise they will not be computed, as one needs to know the particle properties before and after
+its interaction with a surface.
+
+## I/O of surface properties
+To set up NetCDF output of computed surface properties, one has code similar to the one used for the output of
+grid quantities:
+```julia
+ds_surf = NCDataHolderSurf("scratch/data/couette_example_surf.nc", species_data, surf_props)
+
+for t in 1:n_timesteps
+# simulation loop here
+    write_netcdf_surf_props(ds_surf, surf_props, t)  # write computed surface properties to file
+end
 ```
 
 ## Performing convection
@@ -92,12 +114,18 @@ The convection should be followed by particle sorting before any computations of
 convect_particles!(rng, grid, boundaries, particles[species_id], pia, species_id, species_data, Δt)
 ```
 
+The function `convect_particles` as called above will **not** compute surface properties. To do that,
+a `SurfProps` instance needs to be passed:
+```julia
+convect_particles!(rng, grid, boundaries, particles[species_id], pia, species_id, species_data, surf_props, Δt)
+```
+
 ## Bringing it all together
 Now we can combine all the pieces to set up a simulation of a single-species Couette flow in a channel
 with a width of 0.5 mm, discretized with 50 cells. The y-velocity of the left wall is assumed to be -500 m/s,
 and that of the right wall 500 m/s; the temperature of both walls is 300 K. The solution is initialized with 100
 particles per cell and a number density of 5e22 1/m^3. A timestep of 2.59 ns is used.
-The simulation runs for 50K steps and the solution time-averaged is averaged after the first 14K steps.
+The simulation runs for 50K steps and the solution is time-averaged after the first 14K steps.
 
 ```julia
 using Merzbild
@@ -152,9 +180,19 @@ phys_props = PhysProps(pia)
 # create second struct for averaging of physical properties
 phys_props_avg = PhysProps(pia)
 
-# create struct for time-averaged output netCDF
-ds_avg = NCDataHolder("couette_example.nc",
-                        species_data, phys_props)
+# create struct for computation of surface properties
+surf_props = SurfProps(pia, grid)
+
+# create second struct for averaging of surface properties
+surf_props_avg = SurfProps(pia, grid)
+
+# create struct for time-averaged output netCDF for grid properties
+ds_avg = NCDataHolder("scratch/data/couette_example.nc",
+                      species_data, phys_props)
+
+# create struct for time-averaged output netCDF for surface properties
+ds_surf_avg = NCDataHolderSurf("scratch/data/couette_example_surf.nc",
+                               species_data, surf_props)
 
 # init collision factors
 collision_factors = create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum)
@@ -179,7 +217,7 @@ for t in 1:n_timesteps
     end
 
     # convect particles
-    convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, Δt)
+    convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, surf_props, Δt)
 
     # sort particles
     sort_particles!(gridsorter, grid, particles[1], pia, 1)
@@ -188,10 +226,13 @@ for t in 1:n_timesteps
     if (t >= avg_start)
         compute_props_sorted!(particles, pia, species_data, phys_props)
         avg_props!(phys_props_avg, phys_props, n_avg)
+        avg_props!(surf_props_avg, surf_props, n_avg)
     end
 end
 
 write_netcdf_phys_props(ds_avg, phys_props_avg, n_timesteps)
+write_netcdf_surf_props(ds_surf_avg, surf_props_avg, n_timesteps)
 
 close_netcdf(ds_avg)
+close_netcdf(ds_surf_avg)
 ```

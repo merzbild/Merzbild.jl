@@ -435,10 +435,40 @@ Uses the same methodology as the estimate for a two-species interaction.
 # Keyword arguments
 * `mult_factor`: a factor by which to multiply the result (default value is 1.0)
 """
-function estimate_sigma_g_w_max!(collision_factors, interactions, species_data, T_list, Fnum; mult_factor=1.0)
+function estimate_sigma_g_w_max!(collision_factors, interactions, species_data, T_list, Fnum::Number; mult_factor=1.0)
     for (k, species2) in enumerate(species_data)
         for (i, species1) in enumerate(species_data)
             sigma_g_w_max = estimate_sigma_g_w_max(interactions[i,k], species1, species2, T_list[i], T_list[k], Fnum, mult_factor=mult_factor)
+
+            for cell in 1:length(collision_factors[i,k,:])
+                collision_factors[i,k,cell].sigma_g_w_max = sigma_g_w_max
+            end
+        end
+    end
+end
+
+"""
+    estimate_sigma_g_w_max!(collision_factors, interactions, species_data, T_list, Fnum; mult_factor=1.0)
+
+Estimate ``(\\sigma g w)_{max}`` for all species in all cells, assuming
+a species-specific computational weights `Fnum`, a VHS cross-section, and that each species' temperature is constant across all cells.
+Uses the same methodology as the estimate for a two-species interaction.
+
+# Positional arguments
+* `collision_factors`: 3-dimensional array of `CollisionFactors` of shape `(n_species, n_species, n_cells)`
+* `interactions`: the 2-dimensional array of `Interaction` instances (of shape `(n_species, n_species)`) of all the pair-wise interactions
+* `species_data`: the vector of `Species` instances of the species in the flow 
+* `T_list`: the list of temperatures of the species
+* `Fnum`: a list of the computational weights of the species
+
+# Keyword arguments
+* `mult_factor`: a factor by which to multiply the result (default value is 1.0)
+"""
+function estimate_sigma_g_w_max!(collision_factors, interactions, species_data, T_list, Fnum::Vector; mult_factor=1.0)
+    for (k, species2) in enumerate(species_data)
+        for (i, species1) in enumerate(species_data)
+            sigma_g_w_max = estimate_sigma_g_w_max(interactions[i,k], species1, species2, T_list[i], T_list[k],
+                                                   max(Fnum[i], Fnum[k]), mult_factor=mult_factor)
 
             for cell in 1:length(collision_factors[i,k,:])
                 collision_factors[i,k,cell].sigma_g_w_max = sigma_g_w_max
