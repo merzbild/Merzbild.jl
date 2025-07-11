@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.6.5
+* Possible to compute number density in cell when computing calling `compute_props_sorted!` and passing in a grid
+* Documentation improvements
+* Improved test coverage
+
 ## v0.6.4
 * Now possible to compute surface properties due to particle-surface interactions.
 * Unified `update_particle_indexer_new_particle` and `update_particle_buffer_new_particle`

@@ -7,11 +7,27 @@ Cell element of a 1-D grid
 * `xlo`: coordinate of the left end of the element
 * `xhi`: coordinate of the right end of the element 
 * `V`: cell volume
+* `inv_V`: inverse of cell volume
 """
 struct Cell1D
     xlo::Float64
     xhi::Float64
     V::Float64
+    inv_V::Float64
+
+    @doc """
+        Cell1D(xlo, xhi, V)
+
+    Create cell of 1-D uniform grid
+
+    # Positional arguments
+    * `xlo`: coordinate of the left end of the element
+    * `xhi`: coordinate of the right end of the element 
+    * `V`: cell volume
+    """
+    function Cell1D(xlo, xhi, V)
+        return new(xlo, xhi, V, 1.0/V)
+    end
 end
 
 """

@@ -1,5 +1,5 @@
 
-@testset "couette test" begin
+@testset "couette test variable weight" begin
 
     T_wall = 300.0
     v_wall = 500.0

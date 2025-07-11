@@ -853,24 +853,26 @@ function compute_new_particles!(rng, octree::OctreeN2Merge, particles, pia, cell
             curr_particle_index += 1
             particles[i].w = octree.full_bins[bin_id].w1
             particles[i].v = octree.full_bins[bin_id].v1
-            particles[i].x = octree.full_bins[bin_id].x1
 
-            if (particles[i].x[1] < grid.min_x)
-                particles[i].x = [grid.min_x, particles[1].x[2], particles[1].x[3]]
-            elseif (particles[i].x[1] > grid.max_x)
-                particles[i].x = [grid.max_x, particles[1].x[2], particles[1].x[3]]
+            if (octree.full_bins[bin_id].x1[1] < grid.min_x)
+                particles[i].x = [grid.min_x, octree.full_bins[bin_id].x1[2], octree.full_bins[bin_id].x1[3]]
+            elseif (octree.full_bins[bin_id].x1[1] > grid.max_x)
+                particles[i].x = [grid.max_x, octree.full_bins[bin_id].x1[2], octree.full_bins[bin_id].x1[3]]
+            else
+                particles[i].x = octree.full_bins[bin_id].x1
             end
 
             i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
             curr_particle_index += 1
             particles[i].w = octree.full_bins[bin_id].w2
             particles[i].v = octree.full_bins[bin_id].v2
-            particles[i].x = octree.full_bins[bin_id].x2
 
-            if (particles[i].x[1] < grid.min_x)
-                particles[i].x = [grid.min_x, particles[1].x[2], particles[1].x[3]]
-            elseif (particles[i].x[1] > grid.max_x)
-                particles[i].x = [grid.max_x, particles[1].x[2], particles[1].x[3]]
+            if (octree.full_bins[bin_id].x2[1] < grid.min_x)
+                particles[i].x = [grid.min_x, octree.full_bins[bin_id].x2[2], octree.full_bins[bin_id].x2[3]]
+            elseif (octree.full_bins[bin_id].x2[1] > grid.max_x)
+                particles[i].x = [grid.max_x, octree.full_bins[bin_id].x2[2], octree.full_bins[bin_id].x2[3]]
+            else
+                particles[i].x = octree.full_bins[bin_id].x2
             end
         elseif (octree.bins[bin_id].np == 1)
             i = map_cont_index(pia.indexer[cell,species], curr_particle_index)

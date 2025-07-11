@@ -109,4 +109,7 @@
     @test maximum(abs.(phys_props_avg.np)) == 0.0
     @test maximum(abs.(phys_props_avg.lpa)) == 0.0
     @test maximum(abs.(phys_props_avg.v)) == 0.0
+
+    phys_props_ndens = PhysProps(pia, [2, 3, 4], Tref=600.0; ndens_not_Np=true)
+    @test_throws ErrorException avg_props!(phys_props_avg, phys_props_ndens, 2)
 end
