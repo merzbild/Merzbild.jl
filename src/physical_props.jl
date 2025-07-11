@@ -7,7 +7,7 @@ using LinearAlgebra
 Structure to store computed physical properties in a physical cell.
 
 # Fields
-* `ndens_not_Np`: whether the `n` field stores number density and not the number of physical particles in a cell
+* `ndens_not_Np`: whether the `n` field stores number density (if `true`) and not the number of physical particles in a cell (if `false`)
 * `n_cells`: number of physical cells
 * `n_species`: number of species
 * `n_moments`: number of total moments computed
@@ -36,7 +36,7 @@ mutable struct PhysProps
 end
 
 """
-    PhysProps(n_cells, n_species, moments_list; Tref=300.0)
+    PhysProps(n_cells, n_species, moments_list; ndens_not_Np=false, Tref=300.0)
 
 Construct physical properties given the number of cells and species, as well as the
 list of the orders of total moments to compute. The total moment of order ``M`` is
@@ -47,16 +47,17 @@ defined as ``\\int \\sqrt{v_x^2+v_y^2+v_z^2}^M f(v_x,v_y,v_z)dv_x dv_y dv_z``.
 * `n_species`: number of species
 
 # Keyword arguments
+* `ndens_not_Np`: whether the `n` field stores number density (if `true`) and not the number of physical particles in a cell (if `false`)
 * `Tref`: reference temperature used to compute the total moments of a Maxwellian distribution which
     are used to scale the total moments
 """
-PhysProps(n_cells, n_species, moments_list; Tref=300.0) = PhysProps(false, n_cells, n_species,
+PhysProps(n_cells, n_species, moments_list; ndens_not_Np=false, Tref=300.0) = PhysProps(ndens_not_Np, n_cells, n_species,
                                                                     length(moments_list), zeros(n_species), zeros(n_cells, n_species),
                                                                     zeros(n_cells, n_species), zeros(3, n_cells, n_species), zeros(n_cells, n_species),
                                                                     moments_list, zeros(length(moments_list), n_cells, n_species), Tref)
 
 """
-    PhysProps(pia, moments_list; Tref=300.0)
+    PhysProps(pia, moments_list; ndens_not_Np=false, Tref=300.0)
 
 Construct physical properties given a `ParticleIndexerArray` instance, as well as the
 list of the orders of total moments to compute. The total moment of order ``M`` is
@@ -67,21 +68,25 @@ defined as ``\\int \\sqrt{v_x^2+v_y^2+v_z^2}^M f(v_x,v_y,v_z)dv_x dv_y dv_z``.
 * `n_species`: number of species
 
 # Keyword arguments
+* `ndens_not_Np`: whether the `n` field stores number density (if `true`) and not the number of physical particles in a cell (if `false`)
 * `Tref`: reference temperature used to compute the total moments of a Maxwellian distribution which
     are used to scale the total moments
 """
-PhysProps(pia, moments_list; Tref=300.0) = PhysProps(size(pia.indexer)[1], size(pia.indexer)[2], moments_list, Tref=Tref)
+PhysProps(pia, moments_list; ndens_not_Np=false, Tref=300.0) = PhysProps(size(pia.indexer)[1], size(pia.indexer)[2], moments_list, ndens_not_Np=ndens_not_Np, Tref=Tref)
 
 """
-    PhysProps(pia)
+    PhysProps(pia; ndens_not_Np=false)
 
 Construct physical properties given a `ParticleIndexerArray` instance, with no computation
 of the total moments.
 
 # Positional arguments
 * `pia`: the `ParticleIndexerArray` instance
+
+# Keyword arguments
+* `ndens_not_Np`: whether the `n` field stores number density (if `true`) and not the number of physical particles in a cell (if `false`)
 """
-PhysProps(pia) = PhysProps(pia, [])
+PhysProps(pia; ndens_not_Np=false) = PhysProps(pia, [], ndens_not_Np=ndens_not_Np)
 
 """
     compute_props!(particles, pia, species_data, phys_props)
@@ -267,6 +272,10 @@ it is divided by `n_avg_timesteps` and added to `phys_props_avg`.
 * `phys_props`: the `PhysProps` instance holding the current values of the properties
     to be used for the averaging at the current timestep
 * `n_avg_timesteps`: the number of timesteps over which the averaging is performed
+
+# Throws
+`ErrorException` if `phys_props_avg` computes number density and `phys_props` computes number of physical
+particles, or vice versa.
 """
 function avg_props!(phys_props_avg::PhysProps, phys_props::PhysProps, n_avg_timesteps)
     if (phys_props_avg.ndens_not_Np != phys_props.ndens_not_Np)
@@ -287,7 +296,7 @@ function avg_props!(phys_props_avg::PhysProps, phys_props::PhysProps, n_avg_time
 end
 
 """
-    compute_props!(particles, pia, species_data, phys_props)
+    compute_props_sorted!(particles, pia, species_data, phys_props)
 
 Compute the physical properties of all species in all cells and store the result in a `PhysProps` instance,
 assuming the particles are sorted.
@@ -334,10 +343,64 @@ function compute_props_sorted!(particles, pia, species_data, phys_props)
 end
 
 """
+    compute_props_sorted!(particles, pia, species_data, phys_props, grid)
+
+Compute the physical properties of all species in all cells and store the result in a `PhysProps` instance,
+assuming the particles are sorted.
+This function does not compute the total moments, even if `phys_props.n_moments > 0`.
+If `ndens_not_Np` is `true`, the number density will be computed based on the volumes of the grid cells;
+otherwise, the number of physical particles in each cell will be computed.
+
+# Positional arguments
+* `particles`: the `Vector` of `ParticleVector`s containing all the particles in a simulation
+* `pia`: the `ParticleIndexerArray` instance
+* `species_data`: the `Vector` of `SpeciesData`
+* `phys_props`: the `PhysProps` instance in which the computed physical properties are stored
+* `grid`: the physical grid
+"""
+function compute_props_sorted!(particles, pia, species_data, phys_props, grid)
+
+    if !phys_props.ndens_not_Np
+        compute_props_sorted!(particles, pia, species_data, phys_props)
+    else
+        for species in 1:phys_props.n_species
+            for cell in 1:phys_props.n_cells
+                n = 0.0
+                np = 0.0
+                E = 0.0
+                T = 0.0
+                v = SVector{3,Float64}(0.0, 0.0, 0.0)
+
+                for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
+                    n += particles[species][i].w
+                    v = v + particles[species][i].v * particles[species][i].w
+                    np += 1.0
+                end
+
+                if (n > 0.0)
+                    v /= n
+                    for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
+                        E += particles[species][i].w * ((particles[species][i].v[1] - v[1])^2
+                                                    + (particles[species][i].v[2] - v[2])^2
+                                                    + (particles[species][i].v[3] - v[3])^2)
+                    end
+                    E *= 0.5 * species_data[species].mass / (n * k_B)
+                    T = (2.0/3.0) * E
+                end
+        
+                phys_props.np[cell,species] = np
+                phys_props.n[cell,species] = n * grid.cells[cell].inv_V
+                phys_props.v[:,cell,species] = v
+                phys_props.T[cell,species] = T
+            end
+        end
+    end
+end
+
+"""
     compute_mixed_moment(particles, pia, cell, species, powers; sum_scaler=1.0, res_scaler=1.0)
 
-Compute mixed velocity moment of particles in a cell: ``\\sum_i w_i v_{x,i}^{p_x} v_{y,i}^{p_y} v_{z,i}^{p_z}``
-
+Compute mixed velocity moment of particles in a cell: ``\\sum_i w_i v_{x,i}^{p_x} v_{y,i}^{p_y} v_{z,i}^{p_z}``.
 
 # Positional arguments
 * `particles`: the `Vector` of `ParticleVector`s containing all the particles in a simulation

@@ -167,23 +167,20 @@ An instance of `PhysProps` has the following fields:
 One can see that the definition of the `n` field is somewhat ambiguous - it
 can either mean the total number of particles in a cell, or the number density in a cell (equal to the number
 of particles in the cell divided by the cell volume). To distinguish between these two cases, the following convention
-is assumed: if a `PhysProps` instance is initialized with a constructor that has the physical grid amongst its arguments,
-then `n` will mean the number density in a cell, and `ndens_not_NP` will be equal to `true`.
-If a constructor is called without passing the physical grid, then `n` will mean the number of physical particles in a cell,
-and `ndens_not_NP` will be equal to `false`.
-
-The [`compute_props!`](@ref) function computes the macroscopical physical properties
-of all species in all cells in the simulation.
-Depending on whether the grid is passed as a parameter, it will compute either the number of particles in a cell
-or the number density in a cell (as the cell volume is needed to compute the latter).
-If there is an inconsistency between the value of the `ndens_not_NP` field of the `PhysProps`
-instance passed to the [`compute_props!`](@ref) function and the meaning of the computed value
-of `n` (i.e., the `PhysProps` instance has `ndens_not_NP` equal to `false`,
-but a grid is passed to [`compute_props!`](@ref)), the code will raise an error.
+is assumed, one can provide a value of `ndens_not_NP` during instantiation (by default it is `false`, i.e. the number of physical particles
+is computed and not the number density).
 
 If we don't need to compute the total moments, then we can create a `PhysProps` instance by simply
 passing a `ParticleIndexerArray` instance to the constructor, as it already has the required information
 on the number of grid cells and species. So we can simply do this: `props = PhysProps(pia)`.
+
+The [`compute_props!`](@ref) function computes the macroscopical physical properties
+of all species in all cells in the simulation. **Currently this computes only the number of particles in a cell, regardless of the value of the `ndens_not_Np` field.**
+
+There is an optimized version of this function, which assumes the particles are only indexed by
+the first group of a `ParticleIndexer` instance: [`compute_props_sorted!`](@ref); it also does not computed any moments. This is the case immediately after sorting the particles on a grid.
+If a grid is passed as a parameter, it will compute either the number of particles in a cell
+or the number density in a cell depending on the value of `ndens_not_NP` field of the `PhysProps` instance passed to the function.
 
 The [`avg_props!`](@ref) function can also be used to time-average physical properties; this requires use of two
 `PhysProps` instances, one of which holds the values of the physical properties at the current timestep,
@@ -206,6 +203,8 @@ Support for computing mixed moments of the form
 M_{abc} = \frac{1}{\sum_i w_i}\sum_i w_i v_{x,i}^a v_{y,i}^b v_{z,i}^c
 ```
 is planned in future versions of Merzbild.jl.
+
+**NOTE**: the computation of total moments is planned to be decoupled from `PhysProps` and moved into a separate structure.
 
 ## Writing output: NCDataHolder
 Finally, once the properties have been computed, we need to output them.

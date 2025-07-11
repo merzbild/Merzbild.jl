@@ -18,6 +18,7 @@
         @test grid.cells[i].xlo == xlo
         @test grid.cells[i].xhi == xlo + 0.5
         @test grid.cells[i].V == 0.5
+        @test grid.cells[i].inv_V == 2.0
 
         xlo += 0.5
     end
@@ -69,6 +70,26 @@
     end
 
     @test sum(phys_props.np) == ppc * grid.n_cells
+
+    phys_props_ndens::PhysProps = PhysProps(grid.n_cells, 1, [], Tref=1, ndens_not_Np=true)
+    compute_props_sorted!(particles, pia, species_data, phys_props_ndens, grid)
+
+    @test phys_props_ndens.n_species == 1
+    @test phys_props_ndens.n_cells == grid.n_cells
+    @test phys_props_ndens.ndens_not_Np == true
+
+    cell_volume = 0.5
+    for i in 1:grid.n_cells
+        @test abs(phys_props_ndens.n[i, 1] - n_per_cell / cell_volume) < 2*eps()
+        @test phys_props_ndens.np[i, 1] == ppc
+        @test abs(phys_props_ndens.T[i, 1] - phys_props.T[i, 1]) / phys_props.T[i, 1] < 2*eps()
+
+        @test abs((phys_props_ndens.v[1,i,1] - phys_props.v[1,i,1])) < 2*eps()
+        @test abs((phys_props_ndens.v[2,i,1] - phys_props.v[2,i,1])) < 2*eps()
+        @test abs((phys_props_ndens.v[3,i,1] - phys_props.v[3,i,1])) < 2*eps()
+    end
+
+    @test sum(phys_props_ndens.np) == ppc * grid.n_cells
 
     @test Merzbild.get_cell(grid, [0.001, 0.0, 0.0]) == 1
     @test Merzbild.get_cell(grid, [0.4, 0.0, 0.0]) == 1

@@ -68,6 +68,16 @@
     @test iosl2.skip_kinetic_energy_flux == false
 
 
+    names_skip_list_3 = ["fluxes", "normal_pressure", "kinetic_energy_flux"]
+    iosl3 = IOSkipListSurf(names_skip_list_3)
+    @test iosl3.skip_number_of_particles == false
+    @test iosl3.skip_fluxes == true
+    @test iosl3.skip_force == false
+    @test iosl3.skip_normal_pressure == true
+    @test iosl3.skip_shear_pressure == false
+    @test iosl3.skip_kinetic_energy_flux == true
+
+
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
     species_data = load_species_data(particles_data_path, "Ar")
 

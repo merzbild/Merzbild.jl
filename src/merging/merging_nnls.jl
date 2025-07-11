@@ -993,9 +993,3 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging,
                                        nnls_merging, particles, pia, cell, species)
     return 1
 end
-
-
-# TODO: ResizableArray versions
-# TODO: spatial moments!
-
-# TODO: preallocate particle weight vector / vx, vy, vz vector, octree splitting, write out particles

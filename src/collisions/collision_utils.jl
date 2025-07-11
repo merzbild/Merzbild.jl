@@ -129,6 +129,9 @@ the function throws an error.
 
 # Returns
 * 2-dimensional array of `Interaction` instances of size `(n_species, n_species)`
+
+# Throws
+`KeyError` if interaction data not found in the file.
 """
 function load_interaction_data(interactions_filename, species_data)
     interactions_data = TOML.parsefile(interactions_filename)

@@ -118,6 +118,7 @@ Merzbild.init_octree!
 ## Grids
 ```@docs
 Merzbild.Cell1D
+Merzbild.Cell1D(xlo, xhi, V)
 Merzbild.get_cell
 ```
 

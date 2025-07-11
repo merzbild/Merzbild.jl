@@ -4,7 +4,17 @@ using NetCDF
 """
     IOSkipList
 
-Struct that holds track of which variables are not to be written to NetCDF file
+Struct that holds track of which variables are not to be written to NetCDF file for physical properties
+computed on a grid.
+If the field value is `true`, the corresponding physical grid property will not be output to the file.
+
+# Fields
+* `skip_length_particle_array`: whether the length of the particle array should be skipped
+* `skip_moments`: whether the output of the total moments should be skipped
+* `skip_number_of_particles`: whether the output of the number of particles should be skipped
+* `skip_number_density`: whether the output of the number density/number of physical particles should be skipped
+* `skip_velocity`: whether the output of the velocity should be skipped
+* `skip_temperature`: whether the output of the temperature should be skipped
 """
 struct IOSkipList
     skip_length_particle_array::Bool
@@ -17,7 +27,12 @@ struct IOSkipList
     @doc """
         IOSkipList(list_of_variables_to_skip)
     
-    Construct an `IOSkipList` from a list of variable names
+    Construct an `IOSkipList` from a list of variable names.
+    The possible names are: `length_particle_array`, `moments`,
+    `np` or `nparticles`, `ndens`, `v`, `T`.
+
+    # Positional arguments
+    * `list_of_variables_to_skip`: list of variable names to skip
     """
     function IOSkipList(list_of_variables_to_skip)
 
@@ -59,7 +74,7 @@ struct IOSkipList
     @doc """
         IOSkipList()
     
-    Construct an empty `IOSkipList`
+    Construct an empty `IOSkipList`.
     """
     function IOSkipList()
         return IOSkipList([])
@@ -74,9 +89,36 @@ Abstract type that holds NetCDF-output related data for I/O
 abstract type AbstractNCDataHolder end
 
 """
-    NCDataHolder
+    NCDataHolder <: AbstractNCDataHolder
 
-Struct that holds NetCDF-output related data for physical properties (grid properties) I/O
+Struct that holds NetCDF-output related data for physical properties (grid properties) I/O.
+
+# Fields
+* `filehandle`: handle to the open NetCDF file
+* `ndens_not_Np`: whether the number density or the number of physical particles is being output
+* `timestep_dim`: timestep dimension that used to keep track of the number of output steps
+* `v_spn`: variable to hold species' names (dimension `n_species`)
+* `v_timestep`: variable to hold the simulation timestep number (dimension `time`)
+* `v_lpa`: variable to hold lengths of particle arrays (dimension `n_species x time`)
+* `v_mompows`: variable to hold list of total moment powers (dimension `n_moments`)
+* `v_moments`: variable to hold total moments (dimension `n_moments x n_cells x n_species x time`)
+* `v_np`:  variable to hold number of particles (dimension ` n_cells x n_species x time`)
+* `v_ndens`: variable to hold number density or the number of physical particles (dimension ` n_cells x n_species x time`)
+* `v_v`: variable to hold velocity (dimension `3 x n_cells x n_species x time`)
+* `v_T`: variable to hold temperature (dimension `n_cells x n_species x time`)
+* `n_species_1`: constant vector `[n_species, 1]` (used for offsets during I/O)
+* `n_cells_n_species_1`: constant vector `[n_cells, n_species, 1]` (used for offsets during I/O)
+* `n_v_n_cells_n_species_1`: constant vector `[3, n_cells, n_species, 1]` (used for offsets during I/O)
+* `currtimesteps`: vector `[n_t_output]`, where `n_t_output` is the current output timestep (i.e. how many times the
+    properties have already been output, not the simulation timestep) (used for offsets during I/O)
+* `currtimesteps_1`: vector `[1, n_t_output]`, where `n_t_output` is the current output timestep (i.e. how many times the
+    properties have already been output, not the simulation timestep) (used for offsets during I/O)
+* `currtimesteps_1_1`: vector `[1, 1, n_t_output]`, where `n_t_output` is the current output timestep (i.e. how many times the
+    properties have already been output, not the simulation timestep) (used for offsets during I/O)
+* `currtimesteps_1_1_1`: vector `[1, 1, 1, n_t_output]`, where `n_t_output` is the current output timestep (i.e. how many times the
+    properties have already been output, not the simulation timestep) (used for offsets during I/O)
+* `timestep`: vector storing the current simulation timestep
+* `skip_list`: `IOSkipList` instance of variables to skip during output
 """
 mutable struct NCDataHolder <: AbstractNCDataHolder
     filehandle::NcFile
@@ -107,7 +149,16 @@ mutable struct NCDataHolder <: AbstractNCDataHolder
     @doc """
         NCDataHolder(nc_filename, names_skip_list, species_data, phys_props; global_attributes=Dict{Any,Any}())
 
-    Construct a `NCDataHolder` instance
+    Construct a `NCDataHolder` instance with a list of variables to skip.
+
+    # Positional arguments
+    * `nc_filename`: filename to write output to
+    * `names_skip_list`: list of variable names to skip, see [`IOSkipList`](@ref) for more details
+    * `species_data`: the vector of `Species` data for the species in the simulation
+    * `phys_props`: the `PhysProps` instance which will be used for the computation and output of physical properties
+    
+    # Keyword arguments
+    * `global_attributes`: dictionary of any additional attributes to write to the netCDF file as a global attribute
     """
     function NCDataHolder(nc_filename, names_skip_list, species_data, phys_props; global_attributes=Dict{Any,Any}())
         skip_list = IOSkipList(names_skip_list)
@@ -181,7 +232,15 @@ mutable struct NCDataHolder <: AbstractNCDataHolder
     @doc """
         NCDataHolder(nc_filename, species_data, phys_props; global_attributes=Dict{Any,Any}())
 
-    Construct a `NCDataHolder` instance with an empty list of variable to skip
+    Construct a `NCDataHolder` instance with an empty list of variable to skip,
+
+    # Positional arguments
+    * `nc_filename`: filename to write output to
+    * `species_data`: the vector of `Species` data for the species in the simulation
+    * `phys_props`: the `PhysProps` instance which will be used for the computation and output of physical properties
+    
+    # Keyword arguments
+    * `global_attributes`: dictionary of any additional attributes to write to the netCDF file as a global attribute
     """
     function NCDataHolder(nc_filename, species_data, phys_props; global_attributes=Dict{Any,Any}())
         return NCDataHolder(nc_filename, [], species_data, phys_props; global_attributes=global_attributes)
@@ -191,7 +250,10 @@ end
 """
     close_netcdf(ds::AbstractNCDataHolder)
 
-Close NetCDF file
+Close NetCDF file.
+
+# Positional arguments
+* `ds`: an `AbstractNCDataHolder` instance to close.
 """
 function close_netcdf(ds::AbstractNCDataHolder)
     finalize(ds.filehandle)
@@ -200,7 +262,21 @@ end
 """
      write_netcdf_phys_props(ds, phys_props, timestep; sync_freq=0)
 
-Write PhysProps to NetCDF file
+Write computed `PhysProps` to NetCDF file and synchronize file to disk if necessary.
+
+# Positional arguments
+* `ds`: the `NCDataHolder` for the file to which the output will be written
+* `phys_props`: the `PhysProps` instance containing the computed properties
+* `timestep`: the simulation timestep
+
+# Keyword arguments
+* `sync_freq`: if larger than 0 and if the number of timesteps output is proportional to `sync_freq`,
+    the data will be synchronized to disk. If set to 1, will sync data to disk at every timestep at which
+    data is written to the file.
+
+# Throws
+`ErrorException` if the `NCDataHolder` expects number density and the `phys_props` holds the number of physical
+particles, or vice versa.
 """
 function write_netcdf_phys_props(ds, phys_props, timestep; sync_freq=0)
     currtimesteps = ds.timestep_dim.dimlen + 1
@@ -251,7 +327,17 @@ end
 """
     IOSkipListSurf
 
-Struct that holds track of which surface variables are not to be written to NetCDF file
+Struct that holds track of which variables are not to be written to NetCDF file
+for computed surface properties.
+If the field value is `true`, the corresponding physical grid property will not be output to the file.
+
+# Fields
+* `skip_number_of_particles`: whether the output of the number of particles should be skipped
+* `skip_fluxes`: whether the output of the incident/reflected fluxes should be skipped
+* `skip_force`: whether the output of the force should be skipped
+* `skip_normal_pressure`: whether the output of the normal pressure should be skipped
+* `skip_shear_pressure`: whether the output of the shear pressure should be skipped
+* `skip_kinetic_energy_flux`: whether the output of the kinetic energy flux should be skipped
 """
 struct IOSkipListSurf
     skip_number_of_particles::Bool
@@ -264,7 +350,12 @@ struct IOSkipListSurf
     @doc """
         IOSkipListSurf(list_of_variables_to_skip)
     
-    Construct an `IOSkipListSurf` from a list of variable names
+    Construct an `IOSkipListSurf` from a list of variable names.
+    The possible names are:
+    `np` or `nparticles`, `fluxes`, `force`, `normal_pressure`, `shear_pressure`, "kinetic_energy_flux".
+
+    # Positional arguments
+    * `list_of_variables_to_skip`: list of variable names to skip
     """
     function IOSkipListSurf(list_of_variables_to_skip)
 
@@ -316,7 +407,33 @@ end
 """
     NCDataHolderSurf
 
-Struct that holds NetCDF-output related data for surface properties I/O
+Struct that holds NetCDF-output related data for surface properties I/O.
+
+# Fields
+* `filehandle`: handle to the open NetCDF file
+* `timestep_dim`: timestep dimension that used to keep track of the number of output steps
+* `v_spn`: variable to hold species' names (dimension `n_species`)
+* `v_timestep`: variable to hold the simulation timestep number (dimension `time`)
+* `v_np`:  variable to hold number of particles that hit the surface (dimension ` n_elements x n_species x time`)
+* `v_flux_incident`: variable to hold incident mass flux (dimension `n_elements x n_species x time`)
+* `v_flux_reflected`: variable to hold reflected mass flux (dimension `n_elements x n_species x time`)
+* `v_force`: variable to hold force (dimension `3 x n_elements x n_species x time`)
+* `v_normal_pressure`: variable to hold normal pressure (dimension `n_elements x n_species x time`)
+* `v_shear_pressure`: variable to hold shear pressure (dimension `3 x n_elements x n_species x time`)
+* `v_kinetic_energy_flux`: variable to hold kinetic energy flux (dimension `n_elements x n_species x time`)
+* `n_species_1`: constant vector `[n_species, 1]` (used for offsets during I/O)
+* `n_elements_n_species_1`: constant vector `[n_elements, n_species, 1]` (used for offsets during I/O)
+* `n_v_n_elements_n_species_1`: constant vector `[3, n_elements, n_species, 1]` (used for offsets during I/O)
+* `currtimesteps`: vector `[n_t_output]`, where `n_t_output` is the current output timestep (i.e. how many times the
+    properties have already been output, not the simulation timestep) (used for offsets during I/O)
+* `currtimesteps_1`: vector `[1, n_t_output]`, where `n_t_output` is the current output timestep (i.e. how many times the
+    properties have already been output, not the simulation timestep) (used for offsets during I/O)
+* `currtimesteps_1_1`: vector `[1, 1, n_t_output]`, where `n_t_output` is the current output timestep (i.e. how many times the
+    properties have already been output, not the simulation timestep) (used for offsets during I/O)
+* `currtimesteps_1_1_1`: vector `[1, 1, 1, n_t_output]`, where `n_t_output` is the current output timestep (i.e. how many times the
+    properties have already been output, not the simulation timestep) (used for offsets during I/O)
+* `timestep`: vector storing the current simulation timestep
+* `skip_list`: `IOSkipListSurf` instance of variables to skip during output
 """
 mutable struct NCDataHolderSurf <: AbstractNCDataHolder
     filehandle::NcFile
@@ -347,7 +464,16 @@ mutable struct NCDataHolderSurf <: AbstractNCDataHolder
     @doc """
         NCDataHolderSurf(nc_filename, names_skip_list, species_data, surf_props; global_attributes=Dict{Any,Any}())
 
-    Construct a `NCDataHolder` instance
+    Construct a `NCDataHolderSurf` instance with a list of variables to skip.
+
+    # Positional arguments
+    * `nc_filename`: filename to write output to
+    * `names_skip_list`: list of variable names to skip, see [`IOSkipListSurf`](@ref) for more details
+    * `species_data`: the vector of `Species` data for the species in the simulation
+    * `surf_props`: the `SurfProps` instance which will be used for the computation and output of surface properties
+    
+    # Keyword arguments
+    * `global_attributes`: dictionary of any additional attributes to write to the netCDF file as a global attribute
     """
     function NCDataHolderSurf(nc_filename, names_skip_list, species_data, surf_props; global_attributes=Dict{Any,Any}())
         skip_list = IOSkipListSurf(names_skip_list)
@@ -413,7 +539,17 @@ mutable struct NCDataHolderSurf <: AbstractNCDataHolder
     @doc """
         NCDataHolderSurf(nc_filename, species_data, surf_props; global_attributes=Dict{Any,Any}())
 
-    Construct a `NCDataHolderSurf` instance with an empty list of variable to skip
+    Construct a `NCDataHolderSurf` instance with an empty list of variable to skip.
+
+    # Positional arguments
+
+    # Positional arguments
+    * `nc_filename`: filename to write output to
+    * `species_data`: the vector of `Species` data for the species in the simulation
+    * `surf_props`: the `SurfProps` instance which will be used for the computation and output of surface properties
+    
+    # Keyword arguments
+    * `global_attributes`: dictionary of any additional attributes to write to the netCDF file as a global attribute
     """
     function NCDataHolderSurf(nc_filename, species_data, surf_props; global_attributes=Dict{Any,Any}())
         return NCDataHolderSurf(nc_filename, [], species_data, surf_props; global_attributes=global_attributes)
@@ -424,7 +560,17 @@ end
 """
     write_netcdf_surf_props(ds, surf_props, timestep; sync_freq=0)
     
-Write SurfProps to NetCDF file
+Write SurfProps to NetCDF file and synchronize file to disk if necessary.
+
+# Positional arguments
+* `ds`: the `NCDataHolderSurf` for the file to which the output will be written
+* `phys_props`: the `SurfProps` instance containing the computed properties
+* `timestep`: the simulation timestep
+
+# Keyword arguments
+* `sync_freq`: if larger than 0 and if the number of timesteps output is proportional to `sync_freq`,
+    the data will be synchronized to disk. If set to 1, will sync data to disk at every timestep at which
+    data is written to the file.
 """
 function write_netcdf_surf_props(ds, surf_props, timestep; sync_freq=0)
     currtimesteps = ds.timestep_dim.dimlen + 1
