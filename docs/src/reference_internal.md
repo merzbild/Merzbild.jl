@@ -33,9 +33,6 @@ Merzbild.compute_mu_ref
 Merzbild.UnitDVGrid
 Merzbild.DVGrid
 Merzbild.VDF
-Merzbild.create_unit_dvgrid
-Merzbild.create_noiseless_dvgrid
-Merzbild.create_vdf
 Merzbild.sample_bkw!
 Merzbild.evaluate_distribution_on_grid!
 Merzbild.sample_maxwellian!

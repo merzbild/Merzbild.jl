@@ -3,6 +3,10 @@
 ## v0.7.0
 * Added use of MuladdMacro (via `@muladd`), updated tolerances in tests and reference solutions
 * Removed unused functions `sample_maxwellian_single!`, `sample_maxwellian!(rng, particles, nparticles, m, T, v0)`
+* Removed `create_vdf`, `create_unit_dvgrid`, `create_noiseless_dvgrid`, replaced with constructors
+* `update_particle_indexer_new_particle` renamed to `update_particle_indexer_new_particle!`
+* `update_particle_indexer_new_lower_count` renamed to `update_particle_indexer_new_lower_count!`
+* `update_particle_buffer_new_particle` renamed to `update_particle_buffer_new_particle!`
 
 ## v0.6.6
 * Utility function `Merzbild.add_particle!` added

@@ -34,7 +34,8 @@ end
 """
     DVGrid
 
-Stores information about a uniform discrete 3-dimensional velocity grid with extent ``[-v_{x,max},v_{x,max}]\\times[-v_{y,max},v_{y,max}]\\times[-v_{z,max},v_{z,max}]``.
+Stores information about a uniform discrete 3-dimensional symmetric
+velocity grid with extent ``[-v_{x,max},v_{x,max}]\\times[-v_{y,max},v_{y,max}]\\times[-v_{z,max},v_{z,max}]``.
 
 # Fields
 * `base_grid`: the underlying unit (non-scaled) `UnitDVGrid` uniform grid 
@@ -80,9 +81,16 @@ mutable struct VDF
 end
 
 """
-generate a grid with extent [-1.0,1.0]x[-1.0,1.0]x[-1.0,1.0]
+    UnitDVGrid(nx, ny, nz)
+
+Generate a velocity grid with extent `[-1.0,1.0]x[-1.0,1.0]x[-1.0,1.0]` of type `UnitDVGrid`.
+
+# Positional arguments
+* `nx`: the number of grid elements in the x direction
+* `ny`: the number of grid elements in the y direction
+* `nz`: the number of grid elements in the z direction
 """
-function create_unit_dvgrid(nx, ny, nz)
+function UnitDVGrid(nx, ny, nz)
     vx = Vector(LinRange(-1.0, 1.0, nx))
     vy = Vector(LinRange(-1.0, 1.0, ny))
     vz = Vector(LinRange(-1.0, 1.0, nz))
@@ -92,19 +100,37 @@ function create_unit_dvgrid(nx, ny, nz)
 end
 
 """
-generate a grid [-vx_max, vx_max]x[-vy_max, vy_max]x[-vz_max, vz_max]
+    DVGrid(nx, ny, nz, vx_max, vy_max, vz_max)
+
+Generate a symmetric velocity grid with extent
+``[-v_{x,max},v_{x,max}]\\times[-v_{y,max},v_{y,max}]\\times[-v_{z,max},v_{z,max}]``.
+
+# Positional arguments
+* `nx`: the number of grid elements in the x direction
+* `ny`: the number of grid elements in the y direction
+* `nz`: the number of grid elements in the z direction
+* `vx_max`: extent of the grid in the x direction
+* `vy_max`: extent of the grid in the y direction
+* `vz_max`: extent of the grid in the z direction
 """
-function create_noiseless_dvgrid(nx, ny, nz, vx_max, vy_max, vz_max)
-    unitgrid = create_unit_dvgrid(nx, ny, nz)
+function DVGrid(nx, ny, nz, vx_max, vy_max, vz_max)
+    unitgrid = UnitDVGrid(nx, ny, nz)
     return DVGrid(unitgrid, vx_max, vy_max, vz_max,
                   unitgrid.dx * vx_max, unitgrid.dy * vy_max, unitgrid.dz * vz_max,
                   unitgrid.vx_grid * vx_max, unitgrid.vy_grid * vy_max, unitgrid.vz_grid * vz_max)
 end
 
 """
-create an empty VDF of size nx * ny * nz
+    VDF(nx, ny, nz)
+
+Create an empty `VDF` instance of size `nx * ny * nz`.
+
+# Positional arguments
+* `nx`: the number of grid elements in the x direction
+* `ny`: the number of grid elements in the y direction
+* `nz`: the number of grid elements in the z direction
 """
-function create_vdf(nx, ny, nz)
+function VDF(nx, ny, nz)
     return VDF(nx, ny, nz, zeros(nx, ny, nz))
 end
 
@@ -287,9 +313,9 @@ function sample_on_grid!(rng, vdf_func, particles, nv, m, T, n_total,
                          xlo, xhi, ylo, yhi, zlo, zhi; v_mult=3.5, cutoff_mult=3.5, noise=0.0,
                          v_offset=[0.0, 0.0, 0.0])
 
-    vdf = create_vdf(nv, nv, nv)
+    vdf = VDF(nv, nv, nv)
     v_thermal = compute_thermal_velocity(m, T)
-    v_grid = create_noiseless_dvgrid(nv, nv, nv, v_thermal * v_mult, v_thermal * v_mult, v_thermal * v_mult)
+    v_grid = DVGrid(nv, nv, nv, v_thermal * v_mult, v_thermal * v_mult, v_thermal * v_mult)
 
     # maxwell_df = (vx,vy,vz) -> vdf_func(T, m, vx, vy, vz)
 

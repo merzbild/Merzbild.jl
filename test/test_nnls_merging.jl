@@ -4,7 +4,7 @@
         pv = ParticleVector(50)
 
         for i in 1:50
-            Merzbild.update_particle_buffer_new_particle(pv, i)
+            Merzbild.update_particle_buffer_new_particle!(pv, i)
             pv.particles[i] = Particle(1.0, [i, 5 - 2.0 * i, -100.0 + 0.25 * i^2], [-0.5 * i, 27 + i, 400.0 - 0.5 * i^2])
         end
 
@@ -32,7 +32,7 @@
                         Particle(1.0, [-2.0, -2.0, -2.0], [0.0, 0.0, 0.0])]
 
         for i in 1:16
-            Merzbild.update_particle_buffer_new_particle(pv, i)
+            Merzbild.update_particle_buffer_new_particle!(pv, i)
         end
         
         return pv

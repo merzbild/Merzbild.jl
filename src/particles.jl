@@ -286,7 +286,7 @@ function Base.resize!(pv::ParticleVector, n::Integer)
 end
 
 """
-    update_particle_buffer_new_particle(pv::ParticleVector, position)
+    update_particle_buffer_new_particle!(pv::ParticleVector, position)
 
 Update the buffer in a `ParticleVector` instance when a new particle is created. This writes the index of the new particle
 (the last index stored in the active part of the buffer) to the `index` vector at position `position`, and reduces
@@ -296,14 +296,14 @@ the length of the active part of the buffer by 1.
 * `pv`: `ParticleVector` instance
 * `position`: the position in the `index` vector to which to write the index of the new particle
 """
-@inline function update_particle_buffer_new_particle(pv::ParticleVector, position)
+@inline function update_particle_buffer_new_particle!(pv::ParticleVector, position)
     # position is where we will be writing to
     @inbounds pv.index[position] = pv.buffer[pv.nbuffer]
     pv.nbuffer -= 1
 end
 
 """
-    update_particle_buffer_new_particle(pv::ParticleVector, pia, species)
+    update_particle_buffer_new_particle!(pv::ParticleVector, pia, species)
 
 Update the buffer in a `ParticleVector` instance when a new particle is created at the end of the particle array, and reduces
 the length of the active part of the buffer by 1.
@@ -315,26 +315,26 @@ as the index of the new particle taken from the buffer is written to `pv.index.[
 * `pia`: the `ParticleIndexerArray` instance
 * `species`: the index of the species of which a new particle is created
 """
-@inline function update_particle_buffer_new_particle(pv::ParticleVector, pia, species)
-    update_particle_buffer_new_particle(pv, pia.n_total[species])
+@inline function update_particle_buffer_new_particle!(pv::ParticleVector, pia, species)
+    update_particle_buffer_new_particle!(pv, pia.n_total[species])
 end
 
 """
-    update_particle_buffer_new_particle(pv::Vector{Particle}, pia, species)
+    update_particle_buffer_new_particle!(pv::Vector{Particle}, pia, species)
 
 Dummy function in case `Vector{Particle}` is used and not a `ParticleVector`, just to make the simplest 0-D examples work.
 """
-@inline function update_particle_buffer_new_particle(pv::Vector{Particle}, pia, species)
+@inline function update_particle_buffer_new_particle!(pv::Vector{Particle}, pia, species)
     # dummy function, might remove it at some point
     nothing
 end
 
 """
-    update_particle_buffer_new_particle(pv::Vector{Particle}, position)
+    update_particle_buffer_new_particle!(pv::Vector{Particle}, position)
 
 Dummy function in case `Vector{Particle}` is used and not a `ParticleVector`, just to make the simplest 0-D examples work.
 """
-@inline function update_particle_buffer_new_particle(pv::Vector{Particle}, position)
+@inline function update_particle_buffer_new_particle!(pv::Vector{Particle}, position)
     # dummy function, might remove it at some point
     nothing
 end
@@ -370,7 +370,7 @@ for particles of a specific species in a specific cell.
 end
 
 """
-    update_particle_indexer_new_lower_count(pia, cell, species, new_lower_count)
+    update_particle_indexer_new_lower_count!(pia, cell, species, new_lower_count)
 
 Update a `ParticleIndexerArray` instance when the particle count of a given species in a given cell is reduced.
 
@@ -380,7 +380,7 @@ Update a `ParticleIndexerArray` instance when the particle count of a given spec
 * `species`: the index of the particles' species
 * `new_lower_count`: the new number of particles of the given species in the given cell
 """
-function update_particle_indexer_new_lower_count(pia, cell, species, new_lower_count)
+function update_particle_indexer_new_lower_count!(pia, cell, species, new_lower_count)
     @inbounds diff = pia.indexer[cell, species].n_local - new_lower_count
     @inbounds pia.indexer[cell, species].n_local = new_lower_count
 
@@ -401,7 +401,7 @@ function update_particle_indexer_new_lower_count(pia, cell, species, new_lower_c
 end
 
 """
-    update_particle_indexer_new_particle(pia, cell, species)
+    update_particle_indexer_new_particle!(pia, cell, species)
 
 Update a `ParticleIndexerArray` instance when a particle of a given species in a given cell is created.
 This places the particle index in the 2-nd group of particle indices in the `ParticleIndexer` instance.
@@ -411,7 +411,7 @@ This places the particle index in the 2-nd group of particle indices in the `Par
 * `cell`: the index of the cell in which the particle is created
 * `species`: the index of the species of which the particle is created
 """
-@inline function update_particle_indexer_new_particle(pia, cell, species)
+@inline function update_particle_indexer_new_particle!(pia, cell, species)
     @inbounds pia.n_total[species] += 1
     @inbounds pia.indexer[cell, species].n_local += 1
     @inbounds pia.indexer[cell, species].n_group2 += 1
@@ -691,8 +691,8 @@ end
 Update a `ParticleIndexerArray` and the buffer in a `ParticleVector` instance
 when a particle of a given species in a given cell is created. The particle index is added
 to the second group of particles pointed to by the `ParticleIndexer`.
-See the documentation of [`update_particle_indexer_new_particle`](@ref update_particle_indexer_new_particle)
-and [`update_particle_buffer_new_particle`](@ref update_particle_buffer_new_particle)
+See the documentation of [`update_particle_indexer_new_particle!`](@ref update_particle_indexer_new_particle!)
+and [`update_particle_buffer_new_particle!`](@ref update_particle_buffer_new_particle!)
 
 # Positional arguments
 * `pv`: `ParticleVector` instance
@@ -701,8 +701,8 @@ and [`update_particle_buffer_new_particle`](@ref update_particle_buffer_new_part
 * `species`: the index of the species of which the particle is created
 """
 @inline function update_buffer_index_new_particle!(pv, pia, cell, species)
-    update_particle_indexer_new_particle(pia, cell, species)
-    update_particle_buffer_new_particle(pv, pia, species)
+    update_particle_indexer_new_particle!(pia, cell, species)
+    update_particle_buffer_new_particle!(pv, pia, species)
 end
 
 """
@@ -710,7 +710,7 @@ end
 
 Create a new particle in a `ParticleVector` instance at position `position`.
 The `ParticleIndexer`/`ParticleIndexerArray` instances should be updated
-independently. See [`update_particle_buffer_new_particle`](@ref) for more information
+independently. See [`update_particle_buffer_new_particle!`](@ref) for more information
 regarding how the buffer of the `ParticleVector` is updated. This should not be used
 to update an existing particle. Particles at positions before `position` should exist
 in the `ParticleVector` array.
@@ -722,7 +722,7 @@ in the `ParticleVector` array.
 * `v`: the velocity of the particle to create
 """
 @inline function add_particle!(pv, position, w, v, x)
-    update_particle_buffer_new_particle(pv, position)
+    update_particle_buffer_new_particle!(pv, position)
     @inbounds pv[position] = Particle(w, v, x)
 end
 
