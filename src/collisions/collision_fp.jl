@@ -38,14 +38,18 @@ function fp!(rng, collision_data_fp, interaction, species_data, particles, pia, 
     collision_data_fp.vel_ave = collision_data_fp.vel_ave / local_w
 
     for part_id in n_begin:n_end
-        particles[part_id].v -= collision_data_fp.vel_ave
-        es_old += 0.5 * dot(particles[part_id].v, particles[part_id].v) * particles[part_id].w
+        particles[part_id].v = particles[part_id].v - collision_data_fp.vel_ave
+        es_old = es_old + 0.5 * (particles[part_id].v[1]^2
+                                + particles[part_id].v[2]^2
+                                + particles[part_id].v[3]^2) * particles[part_id].w
     end
 
     if indexer.n_group2 > 0
         for part_id in indexer.start2:indexer.end2
-            particles[part_id].v -= collision_data_fp.vel_ave
-            es_old += 0.5 * dot(particles[part_id].v, particles[part_id].v) * particles[part_id].w
+            particles[part_id].v = particles[part_id].v - collision_data_fp.vel_ave
+            es_old = es_old + 0.5 * (particles[part_id].v[1]^2
+                                    + particles[part_id].v[2]^2
+                                    + particles[part_id].v[3]^2) * particles[part_id].w
         end
     end
 
@@ -61,7 +65,9 @@ function fp!(rng, collision_data_fp, interaction, species_data, particles, pia, 
         i = part_id - n_begin + 1
 
         particles[part_id].v = particles[part_id].v*A + C*rands[i, :]
-        es_new += 0.5*dot(particles[part_id].v, particles[part_id].v) * particles[part_id].w
+        es_new = es_new + 0.5 * (particles[part_id].v[1]^2
+                                 + particles[part_id].v[2]^2
+                                 + particles[part_id].v[3]^2) * particles[part_id].w
     end
 
     if indexer.n_group2 > 0
@@ -69,7 +75,9 @@ function fp!(rng, collision_data_fp, interaction, species_data, particles, pia, 
             i = part_id - n_begin + 1
 
             particles[part_id].v = particles[part_id].v*A + C*rands[i, :]
-            es_new += 0.5*dot(particles[part_id].v, particles[part_id].v) * particles[part_id].w
+            es_new = es_new + 0.5 * (particles[part_id].v[1]^2
+                                    + particles[part_id].v[2]^2
+                                    + particles[part_id].v[3]^2) * particles[part_id].w
         end
     end
 
@@ -90,7 +98,7 @@ function fp!(rng, collision_data_fp, interaction, species_data, particles, pia, 
     return nothing
 end
 
-function compute_relaxation_time(interaction, species_data, particles, pia, cell, species, V, es_old, local_w)
+@inline function compute_relaxation_time(interaction, species_data, particles, pia, cell, species, V, es_old, local_w)
     T = es_old * species_data[species].mass / ((3.0 / 2.0) * k_B)
 
     nrho = local_w / V
