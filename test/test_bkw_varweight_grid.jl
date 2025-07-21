@@ -76,7 +76,7 @@
 
     sol_path = joinpath(@__DIR__, "data", "tmp_bkw_grid.nc")
     ds = NCDataHolder(sol_path, species_data, phys_props)
-    write_netcdf_phys_props(ds, phys_props, 0)
+    write_netcdf(ds, phys_props, 0)
 
     collision_factors::CollisionFactors = CollisionFactors()
     collision_data::CollisionData = CollisionData()
@@ -95,7 +95,7 @@
         end
         
         compute_props_with_total_moments!(particles, pia, species_data, phys_props)
-        write_netcdf_phys_props(ds, phys_props, ts)
+        write_netcdf(ds, phys_props, ts)
     end
     close_netcdf(ds)
 

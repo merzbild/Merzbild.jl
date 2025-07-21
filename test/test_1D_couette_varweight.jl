@@ -71,7 +71,7 @@
 
     # compute and write data at t=0
     compute_props!(particles, pia, species_data, phys_props)
-    write_netcdf_phys_props(ds, phys_props, 0)
+    write_netcdf(ds, phys_props, 0)
 
     # n_avg = n_timesteps - avg_start + 1
 
@@ -99,12 +99,12 @@
         end
 
         if (t % output_freq == 0)
-            write_netcdf_phys_props(ds, phys_props, t)
-            write_netcdf_surf_props(ds_surf, surf_props, t)
+            write_netcdf(ds, phys_props, t)
+            write_netcdf(ds_surf, surf_props, t)
         end
     end
 
-    # write_netcdf_phys_props(ds_avg, phys_props_avg, n_timesteps)
+    # write_netcdf(ds_avg, phys_props_avg, n_timesteps)
 
     close_netcdf(ds)
     close_netcdf(ds_surf)

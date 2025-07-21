@@ -168,9 +168,8 @@ NCDataHolder(nc_filename, species_data, phys_props; global_attributes=Dict{Any,A
 NCDataHolderSurf
 NCDataHolderSurf(nc_filename, names_skip_list, species_data, surf_props; global_attributes=Dict{Any,Any}())
 NCDataHolderSurf(nc_filename, species_data, surf_props; global_attributes=Dict{Any,Any}())
+write_netcdf
 close_netcdf
-write_netcdf_phys_props
-write_netcdf_surf_props
 ```
 
 ## Particle-in-Cell

@@ -25,7 +25,7 @@ function run(seed)
     println(phys_props.T)
 
     ds = NCDataHolder("scratch/data/test_sampling_io.nc", species_data, phys_props)
-    write_netcdf_phys_props(ds, phys_props, 1)
+    write_netcdf(ds, phys_props, 1)
     close_netcdf(ds)
 end
 

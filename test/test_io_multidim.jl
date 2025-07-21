@@ -23,7 +23,7 @@
 
     sol_path = joinpath(@__DIR__, "data", "tmp_1dgrid.nc")
     ds = NCDataHolder(sol_path, species_data, phys_props)
-    write_netcdf_phys_props(ds, phys_props, 0)
+    write_netcdf(ds, phys_props, 0)
     close_netcdf(ds)
 
     sol = NCDataset(sol_path, "r")

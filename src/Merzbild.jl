@@ -8,11 +8,11 @@ include("particles.jl")
 include("distributions_and_sampling.jl")
 include("physical_props.jl")
 include("collisions/collisions.jl")
-include("io.jl")
 include("grids/grids.jl")
 include("merging/merging.jl")
 include("pic/pic.jl")
 include("surface_props.jl")
+include("io.jl")
 include("convection/convection.jl")
 
 const OCTREE_DEFAULT_BUFFER_SIZE::Int32 = 8192
@@ -27,7 +27,7 @@ export ParticleIndexer, ParticleIndexerArray, PhysProps, CollisionFactors, Colli
 export SurfProps
 export squash_pia!
 export NCDataHolder, NCDataHolderSurf, IOSkipList, IOSkipListSurf
-export write_netcdf_phys_props, write_netcdf_surf_props
+export write_netcdf
 export close_netcdf
 export load_interaction_data, load_interaction_data_with_dummy, load_species_and_interaction_data
 export create_collision_factors_array

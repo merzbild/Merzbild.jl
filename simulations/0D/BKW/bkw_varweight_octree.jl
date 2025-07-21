@@ -68,7 +68,7 @@ function run(seed::Int64, threshold::Int64, Ntarget::Int64)
     compute_props!(particles, pia, species_data, phys_props)
 
     ds = NCDataHolder("scratch/data/octree_median_$(threshold)_$(Ntarget)_$(seed).nc", species_data, phys_props)
-    write_netcdf_phys_props(ds, phys_props, 0)
+    write_netcdf(ds, phys_props, 0)
 
     collision_factors::CollisionFactors = CollisionFactors()
     collision_data::CollisionData = CollisionData()
@@ -90,7 +90,7 @@ function run(seed::Int64, threshold::Int64, Ntarget::Int64)
         end
         
         compute_props!(particles, pia, species_data, phys_props)
-        write_netcdf_phys_props(ds, phys_props, ts)
+        write_netcdf(ds, phys_props, ts)
     end
     close_netcdf(ds)
 end

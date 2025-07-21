@@ -77,7 +77,7 @@ function run(seed, n_up_to_total, n_full_up_to_total, threshold, ntarget_octree)
 
     ds = NCDataHolder("scratch/data/tmp_nnls_$(n_full_up_to_total)full_upto$(n_up_to_total)_$(threshold)_$(seed).nc", species_data, phys_props)
 
-    write_netcdf_phys_props(ds, phys_props, 0)
+    write_netcdf(ds, phys_props, 0)
 
     collision_factors::CollisionFactors = CollisionFactors()
     collision_data::CollisionData = CollisionData()
@@ -113,7 +113,7 @@ function run(seed, n_up_to_total, n_full_up_to_total, threshold, ntarget_octree)
         end
         
         compute_props!(particles, pia, species_data, phys_props)
-        write_netcdf_phys_props(ds, phys_props, ts)
+        write_netcdf(ds, phys_props, ts)
     end
     close_netcdf(ds)
     print_timer()

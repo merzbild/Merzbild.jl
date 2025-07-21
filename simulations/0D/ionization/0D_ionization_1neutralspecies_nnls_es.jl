@@ -138,7 +138,7 @@ function run(seed, E_Tn, n_t,
     compute_props!(particles, pia, species_data, phys_props)
 
     ds = NCDataHolder(fname, species_data, phys_props)
-    write_netcdf_phys_props(ds, phys_props, 0)
+    write_netcdf(ds, phys_props, 0)
 
     collision_factors = create_collision_factors_array(3)
     collision_data = CollisionData()
@@ -223,7 +223,7 @@ function run(seed, E_Tn, n_t,
                                      E_field, Δt)
         
         @timeit "props" compute_props!(particles, pia, species_data, phys_props)
-        @timeit "I/O" Merzbild.write_netcdf_phys_props(ds, phys_props, ts, sync_freq=5000)
+        @timeit "I/O" Merzbild.write_netcdf(ds, phys_props, ts, sync_freq=5000)
 
     end
     print_timer()
