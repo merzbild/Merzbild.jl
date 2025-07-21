@@ -180,7 +180,7 @@ function sample_bkw!(rng, particles, nparticles, offset, m, T, v0)
     vz = v_abs .* cos.(Θ)
 
     for i in 1:nparticles
-        particles[i+offset].v = vscale * SVector{3,Float64}(vx[i], vy[i], vz[i]) .+ v0
+        @inbounds particles[i+offset].v = vscale * SVector{3,Float64}(vx[i], vy[i], vz[i]) .+ v0
     end
 end
 
@@ -227,9 +227,9 @@ function evaluate_distribution_on_grid!(vdf, distribution_function, grid, w_tota
     for k in 1:grid.base_grid.nz
         for j in 1:grid.base_grid.ny
             for i in 1:grid.base_grid.nx
-                if (sqrt(grid.vx_grid[i]^2 + grid.vy_grid[j]^2 + grid.vz_grid[k]^2) <= cutoff_v)
-                    vdf.w[i,j,k] = distribution_function(grid.vx_grid[i], grid.vy_grid[j], grid.vz_grid[k])
-                    w += vdf.w[i,j,k]
+                @inbounds if (sqrt(grid.vx_grid[i]^2 + grid.vy_grid[j]^2 + grid.vz_grid[k]^2) <= cutoff_v)
+                    @inbounds vdf.w[i,j,k] = distribution_function(grid.vx_grid[i], grid.vy_grid[j], grid.vz_grid[k])
+                    @inbounds w += vdf.w[i,j,k]
                 end
             end
         end
@@ -298,19 +298,17 @@ function sample_on_grid!(rng, vdf_func, particles, nv, m, T, n_total,
     for k in 1:v_grid.base_grid.nz
         for j in 1:v_grid.base_grid.ny
             for i in 1:v_grid.base_grid.nx
-                if vdf.w[i,j,k] > 0.0
+                @inbounds if vdf.w[i,j,k] > 0.0
                     pid += 1
                     n_sampled += 1
-                    update_particle_buffer_new_particle(particles, pid)
 
-                    particles[pid] = Particle(vdf.w[i,j,k],
-                                            # add random noise to velocity
-                                            SVector{3}(v_grid.vx_grid[i] + noise * v_grid.dx * (0.5 - rand(rng, Float64)) + v_offset[1],
-                                            v_grid.vy_grid[j] + noise * v_grid.dy * (0.5 - rand(rng, Float64)) + v_offset[2],
-                                            v_grid.vz_grid[k] + noise * v_grid.dz * (0.5 - rand(rng, Float64)) + v_offset[3]),
-                                            SVector{3}(xlo + rand(rng, Float64) * (xhi - xlo),
-                                                    ylo + rand(rng, Float64) * (yhi - ylo),
-                                                    zlo + rand(rng, Float64) * (zhi - zlo)))
+                    @inbounds add_particle!(particles, pid, vdf.w[i,j,k],
+                                  SVector{3}(v_grid.vx_grid[i] + noise * v_grid.dx * (0.5 - rand(rng, Float64)) + v_offset[1],
+                                             v_grid.vy_grid[j] + noise * v_grid.dy * (0.5 - rand(rng, Float64)) + v_offset[2],
+                                             v_grid.vz_grid[k] + noise * v_grid.dz * (0.5 - rand(rng, Float64)) + v_offset[3]),
+                                  SVector{3}(xlo + rand(rng, Float64) * (xhi - xlo),
+                                             ylo + rand(rng, Float64) * (yhi - ylo),
+                                             zlo + rand(rng, Float64) * (zhi - zlo)))
                 end
             end
         end
@@ -408,9 +406,9 @@ function sample_maxwellian_single!(rng, v, m, T, v0)
     theta1 = twopi * rand(rng, Float64)
     theta2 = twopi * rand(rng, Float64)
 
-    v[1] = vn * cos(theta1) + v0[1]
-    v[2] = vr * cos(theta2) + v0[2]
-    v[3] = vr * sin(theta2) + v0[3]
+    @inbounds v[1] = vn * cos(theta1) + v0[1]
+    @inbounds v[2] = vr * cos(theta2) + v0[2]
+    @inbounds v[3] = vr * sin(theta2) + v0[3]
 end
 
 
@@ -439,7 +437,7 @@ function sample_maxwellian!(rng, particles, nparticles, offset, m, T, v0)
         theta1 = twopi * rand(rng, Float64)
         theta2 = twopi * rand(rng, Float64)
 
-        particles[i+offset].v = vscale * SVector{3,Float64}(vn * cos(theta1), vr * cos(theta2), vr * sin(theta2)) + v0
+        @inbounds particles[i+offset].v = vscale * SVector{3,Float64}(vn * cos(theta1), vr * cos(theta2), vr * sin(theta2)) + v0
     end
 end
 
@@ -500,26 +498,26 @@ function sample_particles_equal_weight!(rng, particles, pia, cell, species,
                                         nparticles, m, T, Fnum, xlo, xhi, ylo, yhi, zlo, zhi;
                                         distribution=:Maxwellian, vx0=0.0, vy0=0.0, vz0=0.0)
 
-    start = pia.n_total[species] + 1                                    
-    pia.indexer[cell, species].n_local = nparticles
-    pia.n_total[species] += nparticles
+    @inbounds start = pia.n_total[species] + 1                                    
+    @inbounds pia.indexer[cell, species].n_local = nparticles
+    @inbounds pia.n_total[species] += nparticles
 
-    pia.indexer[cell, species].start1 = start
-    pia.indexer[cell, species].end1 = start - 1 + nparticles
-    pia.indexer[cell, species].n_group1 = nparticles
+    @inbounds pia.indexer[cell, species].start1 = start
+    @inbounds pia.indexer[cell, species].end1 = start - 1 + nparticles
+    @inbounds pia.indexer[cell, species].n_group1 = nparticles
 
-    pia.indexer[cell, species].start2 = 0
-    pia.indexer[cell, species].end2 = 0
-    pia.indexer[cell, species].n_group2 = 0
+    @inbounds pia.indexer[cell, species].start2 = 0
+    @inbounds pia.indexer[cell, species].end2 = 0
+    @inbounds pia.indexer[cell, species].n_group2 = 0
 
     offset = start - 1
 
     for i in 1:nparticles
-        update_particle_buffer_new_particle(particles, i+offset)  # grab next particle index from buffer
-        particles[i+offset] = Particle(Fnum,  SVector{3}(0.0, 0.0, 0.0),  SVector{3}(xlo + rand(rng, Float64) * (xhi - xlo),
-                                                                                     ylo + rand(rng, Float64) * (yhi - ylo),
-                                                                                     zlo + rand(rng, Float64) * (zhi - zlo)))
-        particles.cell[i+offset] = cell
+        add_particle!(particles, i+offset, Fnum,  SVector{3}(0.0, 0.0, 0.0),
+                      SVector{3}(xlo + rand(rng, Float64) * (xhi - xlo),
+                                 ylo + rand(rng, Float64) * (yhi - ylo),
+                                 zlo + rand(rng, Float64) * (zhi - zlo)))
+        @inbounds particles.cell[i+offset] = cell
     end
 
     v0 = SVector{3}(vx0, vy0, vz0)

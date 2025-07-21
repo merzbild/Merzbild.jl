@@ -25,6 +25,7 @@
     phys_props::PhysProps = PhysProps(1, 1, [], Tref=1)
     phys_props_no_moments::PhysProps = PhysProps(1, 1, [], Tref=1)
     compute_props!(particles, pia, species_data, phys_props)
+    @test abs((phys_props.np[1,1] - n_particles) / n_particles) <= eps()
     @test abs((phys_props.n[1,1] - n_dens) / n_dens) < Δsmall
     @test abs((phys_props.v[1,1,1] - v0[1])) < Δsmall
     @test abs((phys_props.v[2,1,1] - v0[2])) < Δsmall
@@ -32,6 +33,7 @@
     @test abs((phys_props.T[1,1])) < eps()
 
     compute_props_sorted!(particles, pia, species_data, phys_props_no_moments)
+    @test abs(phys_props_no_moments.np[1,1] - phys_props.np[1,1]) < eps()
     @test abs(phys_props_no_moments.n[1,1] - phys_props.n[1,1]) < eps()
     @test abs((phys_props_no_moments.v[1,1,1] - phys_props.v[1,1,1])) < Δsmall
     @test abs((phys_props_no_moments.v[2,1,1] - phys_props.v[2,1,1])) < Δsmall

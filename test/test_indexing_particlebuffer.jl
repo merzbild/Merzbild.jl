@@ -165,8 +165,8 @@
     compute_props!(particles, pia, species_data, phys_props)
     @test phys_props.np[1,1] == 0.0
     @test abs(phys_props.n[1,1] - 0.0) < 1e-15
-    @test pia.indexer[1,1].start1 == 1
-    @test pia.indexer[1,1].end1 == 0
+    @test pia.indexer[1,1].start1 == 0
+    @test pia.indexer[1,1].end1 == -1
     @test pia.indexer[1,1].start2 == 0
     @test pia.indexer[1,1].n_group2 == 0
     @test pia.indexer[1,1].n_group1 == 0
@@ -181,8 +181,8 @@
     compute_props!(particles, pia, species_data, phys_props)
     @test phys_props.np[1,1] == 0.0
     @test abs(phys_props.n[1,1] - 0.0) < 1e-15
-    @test pia.indexer[1,1].start1 == 1
-    @test pia.indexer[1,1].end1 == 0
+    @test pia.indexer[1,1].start1 == 0
+    @test pia.indexer[1,1].end1 == -1
     @test pia.indexer[1,1].start2 == 0
     @test pia.indexer[1,1].n_group2 == 0
     @test pia.indexer[1,1].n_group1 == 0

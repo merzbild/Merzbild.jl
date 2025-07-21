@@ -216,13 +216,13 @@
     pia = ParticleIndexerArray(grid.n_cells, 1)
 
     for i in 1:10
-        particles[1][i] = Particle(1.0, [1.0, 0.0, 0.0], [0.75, 0.0, 0.0])
+        Merzbild.add_particle!(particles[1], i, 1.0, [1.0, 0.0, 0.0], [0.75, 0.0, 0.0])
     end
     for i in 11:25
-        particles[1][i] = Particle(10000.0, [-1000.0, 0.0, 0.0], [0.75, 0.0, 0.0])
+        Merzbild.add_particle!(particles[1], i, 10000.0, [-1000.0, 0.0, 0.0], [0.75, 0.0, 0.0])
     end
     for i in 26:30
-        particles[1][i] = Particle(1.0, [1.0, 0.0, 0.0], [0.75, 0.0, 0.0])
+        Merzbild.add_particle!(particles[1], i, 1.0, [1.0, 0.0, 0.0], [0.75, 0.0, 0.0])
     end
 
     pia.n_total[1] = 15

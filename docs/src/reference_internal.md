@@ -11,6 +11,7 @@ Base.getindex
 Base.setindex!
 Base.length
 Base.resize!
+Merzbild.add_particle!
 Merzbild.update_particle_buffer_new_particle(pv::ParticleVector, position)
 Merzbild.update_particle_buffer_new_particle(pv::ParticleVector, pia, species)
 Merzbild.update_particle_buffer_new_particle(pv::Vector{Particle}, pia, species)
@@ -113,6 +114,7 @@ Merzbild.split_bin!
 Merzbild.compute_bin_props!
 Merzbild.get_bin_post_merge_np
 Merzbild.init_octree!
+Merzbild.compute_octree!
 ```
 
 ## Grids

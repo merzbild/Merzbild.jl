@@ -25,8 +25,8 @@
     @test abs(collision_data.g - 3.0) < eps()
 
     seed = 1234
-    Random.seed!(seed)
-    rng::Xoshiro = Xoshiro(seed)
+    # Random.seed!(seed)
+    rng = StableRNG(seed)
 
     # test that scattering doesn't change v_com and g magnitude
     Merzbild.scatter_vhs!(rng, collision_data, interaction_data[1,1], p1, p2)
@@ -133,4 +133,29 @@
     end
     @test flag == false
     # collision_data = CollisionData()
+
+
+    # test VHS electron scattering
+    collision_data.v_com = SVector{3,Float64}(0.0, 0.0, 0.0)
+    collision_data.g_new_1 = 783.0
+    collision_data.g_new_2 = 47.5
+
+    particles_electron = ParticleVector(2)
+    Merzbild.update_particle_buffer_new_particle(particles_electron, 1)
+    particles_electron[1] = Particle(2.0,  SVector{3}(1000.0, 2000.0, 3000.0), SVector{3}(0.0, 0.0, 0.0))
+    Merzbild.update_particle_buffer_new_particle(particles_electron, 2)
+    particles_electron[2] = Particle(4.0,  SVector{3}(-50000.0, -60000.0, -70000.0), SVector{3}(100.0, 200.0, 400.0))
+
+    Merzbild.scatter_ionization_electrons!(rng, collision_data, particles_electron, 1, 2)
+    Merzbild.scatter_electron_vhs!(rng, collision_data, particles_electron[1], collision_data.g_new_1)
+    Merzbild.scatter_electron_vhs!(rng, collision_data, particles_electron[2], collision_data.g_new_2)
+
+    @test (sqrt(sum(particles_electron[1].v.^2)) - collision_data.g_new_1) / collision_data.g_new_1 < 2*eps()
+    @test (sqrt(sum(particles_electron[2].v.^2)) - collision_data.g_new_2) / collision_data.g_new_2 < 2*eps()
+
+    @test maximum(abs.(particles_electron[1].x .- [0.0, 0.0, 0.0])) < 2*eps()
+    @test maximum(abs.(particles_electron[2].x .- [100.0, 200.0, 400.0])) < 2*eps()
+
+    @test particles_electron[1].w == 2.0
+    @test particles_electron[2].w == 4.0
 end

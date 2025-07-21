@@ -127,6 +127,8 @@
     @test ndens_conservation == true
     @test maximum(abs.(ref_sol["ndens"][:, 1, 1:5] .- sol["ndens"][:, 1, 1:5])) < 2 * eps()
     @test maximum(abs.(ref_sol["T"][:, 1, 1:5] .- sol["T"][:, 1, 1:5])) < 2.4e-13
+    # this is # of physical particles, should not change
+    @test abs(sum(ref_sol["ndens"][:, 1, 1:5]) - sum(sol["ndens"][:, 1, 1:5]))/sum(sol["ndens"][:, 1, 1:5]) <= eps()
 
     close(sol)
     rm(sol_path)
@@ -139,7 +141,9 @@
     @test maximum(abs.(ref_sol["np"][:, 1, 1:5] .- sol["np"][:, 1, 1:5])) < 2 * eps()
     @test maximum(abs.(ref_sol["kinetic_energy_flux"][:, 1, 1:5] .- sol["kinetic_energy_flux"][:, 1, 1:5])) < 4.5e-11
 
-    @test maximum(abs.(ref_sol["flux_incident"][:, 1, 1:5] + sol["flux_reflected"][:, 1, 1:5])) < 2 * eps()
+    @test maximum(abs.(sol["flux_incident"][:, 1, 1:5] - ref_sol["flux_incident"][:, 1, 1:5])) < 2 * eps()
+
+    @test maximum(abs.(sol["flux_incident"][:, 1, 1:5] + sol["flux_reflected"][:, 1, 1:5])) < 2 * eps()
 
     close(sol)
     rm(sol_path_surf)
