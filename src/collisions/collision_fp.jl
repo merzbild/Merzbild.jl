@@ -3,7 +3,7 @@
 """
 Model single-species elastic collisions using a linear Fokker-Planck approximation 
 """
-function fp!(rng, collision_data_fp, interaction, species_data, particles, pia, cell, species, Δt, V)
+function fp_linear!(rng, collision_data_fp, interaction, species_data, particles, pia, cell, species, Δt, V)
     @inbounds indexer = pia.indexer[cell, species]
     n_local = indexer.n_local
     n_begin = indexer.start1

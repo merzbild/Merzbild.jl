@@ -69,7 +69,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
 
         # collide particles
         for cell in 1:grid.n_cells
-            @timeit "collide" fp!(rng, collision_data_fp, interaction_data[1, 1], species_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
+            @timeit "collide" fp_linear!(rng, collision_data_fp, interaction_data[1, 1], species_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
         end
 
         # convect particles
