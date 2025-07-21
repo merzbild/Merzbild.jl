@@ -94,7 +94,7 @@
 
     for species in 1:2
         diff = abs.(ref_T[1, species, :] - sol_T[1, species, :])
-        @test maximum(diff) < 1.2e-13
+        @test maximum(diff) < 9.3e-13
     end
 
     for species in 1:2

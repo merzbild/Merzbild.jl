@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.7.0
+* Added use of MuladdMacro (via `@muladd`), updated tolerances in tests and reference solutions
+* Removed unused functions `sample_maxwellian_single!`, `sample_maxwellian!(rng, particles, nparticles, m, T, v0)`
+
 ## v0.6.6
 * Utility function `Merzbild.add_particle!` added
 * Improved test coverage
