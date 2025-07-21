@@ -47,4 +47,5 @@ include("test_1D_couette.jl")  # test Couette flow
 include("test_1D_couette_varweight.jl")  # test 1-D Couette flow, variable-weight DSMC, surface computes
 include("test_misc.jl")  # various misc utility functions
 include("test_collision_fp.jl")
+include("test_1D_couette_fp.jl")
 include("test_aqua.jl")
