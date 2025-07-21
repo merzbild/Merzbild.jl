@@ -143,8 +143,8 @@ For now, the repository can be cited as
 }
 ```
 
-Depending on the specific functionality used, other citations may be warranted (please look at the "Overview of capabilities" section
-in the documentation).
+Depending on the specific functionality used, other citations may be warranted: please take a look
+at the ["Overview of capabilities"](https://merzbild.github.io/Merzbild.jl/dev/overview_capabilities/) section in the documentation.
 
 ## Contributing
 Please see [`CONTRIBUTING.MD`](CONTRIBUTING.MD) about some general guidelines on contributing to the development of Merzbild.jl.

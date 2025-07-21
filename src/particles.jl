@@ -133,7 +133,7 @@ mutable struct ParticleIndexerArray
 
         for j in 1:n_species
             for i in 1:n_cells
-                pia_indexer[i, j] = ParticleIndexer()
+                @inbounds pia_indexer[i, j] = ParticleIndexer()
             end
         end
         return new(pia_indexer, [0 for i in 1:n_species], [true for i in 1:n_species])
@@ -381,22 +381,22 @@ Update a `ParticleIndexerArray` instance when the particle count of a given spec
 * `new_lower_count`: the new number of particles of the given species in the given cell
 """
 function update_particle_indexer_new_lower_count(pia, cell, species, new_lower_count)
-    diff = pia.indexer[cell, species].n_local - new_lower_count
-    pia.indexer[cell, species].n_local = new_lower_count
+    @inbounds diff = pia.indexer[cell, species].n_local - new_lower_count
+    @inbounds pia.indexer[cell, species].n_local = new_lower_count
 
-    pia.n_total[species] -= diff
+    @inbounds pia.n_total[species] -= diff
 
-    if (new_lower_count > pia.indexer[cell, species].n_group1)
-        pia.indexer[cell, species].end2 -= diff
-        pia.indexer[cell, species].n_group2 -= diff
+    @inbounds if (new_lower_count > pia.indexer[cell, species].n_group1)
+        @inbounds pia.indexer[cell, species].end2 -= diff
+        @inbounds pia.indexer[cell, species].n_group2 -= diff
     else
-        diff -= pia.indexer[cell, species].n_group2
-        pia.indexer[cell, species].start2 = 0
-        pia.indexer[cell, species].end2 = 0
-        pia.indexer[cell, species].n_group2 = 0
+        @inbounds diff -= pia.indexer[cell, species].n_group2
+        @inbounds pia.indexer[cell, species].start2 = 0
+        @inbounds pia.indexer[cell, species].end2 = 0
+        @inbounds pia.indexer[cell, species].n_group2 = 0
 
-        pia.indexer[cell, species].end1 -= diff
-        pia.indexer[cell, species].n_group1 -= diff
+        @inbounds pia.indexer[cell, species].end1 -= diff
+        @inbounds pia.indexer[cell, species].n_group1 -= diff
     end
 end
 
@@ -412,12 +412,12 @@ This places the particle index in the 2-nd group of particle indices in the `Par
 * `species`: the index of the species of which the particle is created
 """
 @inline function update_particle_indexer_new_particle(pia, cell, species)
-    pia.n_total[species] += 1
-    pia.indexer[cell, species].n_local += 1
-    pia.indexer[cell, species].n_group2 += 1
+    @inbounds pia.n_total[species] += 1
+    @inbounds pia.indexer[cell, species].n_local += 1
+    @inbounds pia.indexer[cell, species].n_group2 += 1
 
-    pia.indexer[cell, species].start2 = pia.indexer[cell, species].start2 > 0 ? pia.indexer[cell, species].start2 : pia.n_total[species]
-    pia.indexer[cell, species].end2 = pia.n_total[species]
+    @inbounds pia.indexer[cell, species].start2 = pia.indexer[cell, species].start2 > 0 ? pia.indexer[cell, species].start2 : pia.n_total[species]
+    @inbounds pia.indexer[cell, species].end2 = pia.n_total[species]
 end
 
 """
@@ -436,14 +436,14 @@ and update the particle indexers and buffers accordingly. This changes the order
 @inline function delete_particle!(pv::ParticleVector, pia, cell, species, i)
     # check in which group we are in
     if (pia.indexer[cell, species].n_group2 > 0) && (i >= pia.indexer[cell, species].start2) && (i <= pia.indexer[cell, species].end2)
-        last_index_group2 = pv.index[pia.indexer[cell, species].end2]
-        pv.index[pia.indexer[cell, species].end2] = pv.index[i]
-        pv.index[i] = last_index_group2
+        @inbounds last_index_group2 = pv.index[pia.indexer[cell, species].end2]
+        @inbounds pv.index[pia.indexer[cell, species].end2] = pv.index[i]
+        @inbounds pv.index[i] = last_index_group2
         delete_particle_end_group2!(pv, pia, cell, species)
     else
-        last_index_group1 = pv.index[pia.indexer[cell, species].end1]
-        pv.index[pia.indexer[cell, species].end1] = pv.index[i]
-        pv.index[i] = last_index_group1
+        @inbounds last_index_group1 = pv.index[pia.indexer[cell, species].end1]
+        @inbounds pv.index[pia.indexer[cell, species].end1] = pv.index[i]
+        @inbounds pv.index[i] = last_index_group1
         delete_particle_end_group1!(pv, pia, cell, species)
     end
 end
@@ -487,23 +487,29 @@ If no particles are present in the 1st group of particles, the function does not
 * `species`: the index of the species of which the particle is deleted
 """
 @inline function delete_particle_end_group1!(pv::ParticleVector, pia, cell, species)
-    if pia.indexer[cell, species].n_group1 == 0
+    @inbounds if pia.indexer[cell, species].n_group1 == 0
         return
     end
 
-    index_of_deleted = pia.indexer[cell, species].end1
+    @inbounds index_of_deleted = pia.indexer[cell, species].end1
 
     # set weight to 0
-    pv[index_of_deleted].w = 0.0
+    @inbounds pv[index_of_deleted].w = 0.0
 
-    pia.indexer[cell, species].n_local -= 1
-    pia.indexer[cell, species].end1 -= 1
-    pia.indexer[cell, species].n_group1 -= 1
-    pia.n_total[species] -= 1
+    @inbounds pia.indexer[cell, species].n_local -= 1
+    @inbounds pia.indexer[cell, species].end1 -= 1
+    @inbounds pia.indexer[cell, species].n_group1 -= 1
+    @inbounds pia.n_total[species] -= 1
+
+    # deleted last particle from group1
+    @inbounds if pia.indexer[cell, species].end1 < pia.indexer[cell, species].start1
+        @inbounds pia.indexer[cell, species].start1 = 0
+        @inbounds pia.indexer[cell, species].end1 = -1
+    end
 
     # add the deleted particle to the buffer
     pv.nbuffer += 1
-    pv.buffer[pv.nbuffer] = pv.index[index_of_deleted]
+    @inbounds pv.buffer[pv.nbuffer] = pv.index[index_of_deleted]
 end
 
 """
@@ -522,29 +528,29 @@ If no particles are present in the 2nd group of particles, the function does not
 * `species`: the index of the species of which the particle is deleted
 """
 @inline function delete_particle_end_group2!(pv::ParticleVector, pia, cell, species)
-    if pia.indexer[cell, species].n_group2 == 0
+    @inbounds if pia.indexer[cell, species].n_group2 == 0
         return
     end
 
-    index_of_deleted = pia.indexer[cell, species].end2
+    @inbounds index_of_deleted = pia.indexer[cell, species].end2
 
     # set weight to 0
-    pv[index_of_deleted].w = 0.0
+    @inbounds pv[index_of_deleted].w = 0.0
 
-    pia.indexer[cell, species].n_local -= 1
-    pia.indexer[cell, species].end2 -= 1
-    pia.indexer[cell, species].n_group2 -= 1
-    pia.n_total[species] -= 1
+    @inbounds pia.indexer[cell, species].n_local -= 1
+    @inbounds pia.indexer[cell, species].end2 -= 1
+    @inbounds pia.indexer[cell, species].n_group2 -= 1
+    @inbounds pia.n_total[species] -= 1
 
     # deleted last particle from group2
-    if pia.indexer[cell, species].end2 < pia.indexer[cell, species].start2
-        pia.indexer[cell, species].start2 = 0
-        pia.indexer[cell, species].end2 = 0
+    @inbounds if pia.indexer[cell, species].end2 < pia.indexer[cell, species].start2
+        @inbounds pia.indexer[cell, species].start2 = 0
+        @inbounds pia.indexer[cell, species].end2 = 0
     end
 
     # add the deleted particle to the buffer
-    pv.nbuffer += 1
-    pv.buffer[pv.nbuffer] = pv.index[index_of_deleted]
+    @inbounds pv.nbuffer += 1
+    @inbounds pv.buffer[pv.nbuffer] = pv.index[index_of_deleted]
 end
 
 """
@@ -607,67 +613,56 @@ function squash_pia!(pv, pia, species)
     else
         n_cells = size(pia.indexer)[1]
         if n_cells == 1
-            if pia.indexer[1, species].n_group2 > 0
-                offset = pia.indexer[1, species].start2 - (pia.indexer[1, species].end1 + 1)
+            @inbounds if pia.indexer[1, species].n_group2 > 0
+                @inbounds e1 = pia.indexer[1, species].end1 > 0 ? pia.indexer[1, species].end1 : 0
+                @inbounds offset = pia.indexer[1, species].start2 - (e1 + 1)
 
                 if offset > 0
-                    pia.indexer[1, species].start2 -= offset
-                    pia.indexer[1, species].end2 -= offset
+                    @inbounds pia.indexer[1, species].start2 -= offset
+                    @inbounds pia.indexer[1, species].end2 -= offset
 
-                    for j in pia.indexer[1, species].start2:pia.indexer[1, species].end2
-                        pv.index[j] = pv.index[j+offset]
+                    @inbounds s2 = pia.indexer[1, species].start2
+                    @inbounds e2 = pia.indexer[1, species].end2
+                    for j in s2:e2
+                        @inbounds pv.index[j] = pv.index[j+offset]
                     end
                 end
             end
         else
-            offset = 0
+            last_end = pia.indexer[1, species].end1 > 0 ? pia.indexer[1, species].end1 : 0
             for i in 1:n_cells-1
-                offset = pia.indexer[i+1, species].start1 - (pia.indexer[i, species].end1 + 1)
+                @inbounds offset = pia.indexer[i+1, species].start1 - (last_end + 1)
                 if offset > 0
-                    pia.indexer[i+1, species].start1 -= offset
-                    pia.indexer[i+1, species].end1 -= offset
+                    @inbounds pia.indexer[i+1, species].start1 -= offset
+                    @inbounds pia.indexer[i+1, species].end1 -= offset
 
-                    for j in pia.indexer[i+1, species].start1:pia.indexer[i+1, species].end1
-                        pv.index[j] = pv.index[j+offset]
+                    @inbounds s1 = pia.indexer[i+1, species].start1
+                    @inbounds e1 = pia.indexer[i+1, species].end1
+                    for j in s1:e1
+                        @inbounds pv.index[j] = pv.index[j+offset]
                     end
                 end
+                @inbounds last_end = pia.indexer[i+1, species].end1 > 0 ? pia.indexer[i+1, species].end1 : last_end
             end
 
-            offset = 0
-            last_end = pia.indexer[n_cells, species].end1 # keep track of last previous end
-            if pia.indexer[1, species].n_group2 > 0
-                offset = pia.indexer[1, species].start2 - (last_end + 1)
-                if offset > 0
-                    pia.indexer[1, species].start2 -= offset
-                    pia.indexer[1, species].end2 -= offset
-
-                    for j in pia.indexer[1, species].start2:pia.indexer[1, species].end2
-                        pv.index[j] = pv.index[j+offset]
-                    end
-                end
-
-                last_end = pia.indexer[1, species].end2
-            end
-
-            for i in 2:n_cells
-                if pia.indexer[i, species].n_group2 > 0
+            for i in 1:n_cells
+                @inbounds if pia.indexer[i, species].n_group2 > 0
                     offset = pia.indexer[i, species].start2 - (last_end + 1)
-
                     if offset > 0
-                        pia.indexer[i, species].start2 -= offset
-                        pia.indexer[i, species].end2 -= offset
+                        @inbounds pia.indexer[i, species].start2 -= offset
+                        @inbounds pia.indexer[i, species].end2 -= offset
                         
-
-                        for j in pia.indexer[i, species].start2:pia.indexer[i, species].end2
-                            pv.index[j] = pv.index[j+offset]
+                        @inbounds s2 = pia.indexer[i, species].start2
+                        @inbounds e2 = pia.indexer[i, species].end2
+                        @inbounds for j in s2:e2
+                            @inbounds pv.index[j] = pv.index[j+offset]
                         end
                     end
-
-                    last_end = pia.indexer[i, species].end2
+                    @inbounds last_end = pia.indexer[i, species].end2 > 0 ? pia.indexer[i, species].end2 : last_end
                 end
             end
         end
-        pia.contiguous[species] = true
+        @inbounds pia.contiguous[species] = true
     end
 end
 
@@ -684,8 +679,8 @@ If for a specific species the instance has `contiguous == true`, nothing will be
 """
 function squash_pia!(particles, pia)
     for species in 1:length(pia.contiguous)
-        if !pia.contiguous[species]
-            squash_pia!(particles[species], pia, species)
+        @inbounds if !pia.contiguous[species]
+            @inbounds squash_pia!(particles[species], pia, species)
         end
     end
 end
@@ -694,7 +689,8 @@ end
     update_buffer_index_new_particle!(pv, pia, cell, species)
 
 Update a `ParticleIndexerArray` and the buffer in a `ParticleVector` instance
-when a particle of a given species in a given cell is created.
+when a particle of a given species in a given cell is created. The particle index is added
+to the second group of particles pointed to by the `ParticleIndexer`.
 See the documentation of [`update_particle_indexer_new_particle`](@ref update_particle_indexer_new_particle)
 and [`update_particle_buffer_new_particle`](@ref update_particle_buffer_new_particle)
 
@@ -704,10 +700,32 @@ and [`update_particle_buffer_new_particle`](@ref update_particle_buffer_new_part
 * `cell`: the index of the cell in which the particle is created
 * `species`: the index of the species of which the particle is created
 """
-function update_buffer_index_new_particle!(pv, pia, cell, species)
+@inline function update_buffer_index_new_particle!(pv, pia, cell, species)
     update_particle_indexer_new_particle(pia, cell, species)
     update_particle_buffer_new_particle(pv, pia, species)
 end
+
+"""
+    add_particle!(pv, position, w, v, x)
+
+Create a new particle in a `ParticleVector` instance at position `position`.
+The `ParticleIndexer`/`ParticleIndexerArray` instances should be updated
+independently. See [`update_particle_buffer_new_particle`](@ref) for more information
+regarding how the buffer of the `ParticleVector` is updated. This should not be used
+to update an existing particle. Particles at positions before `position` should exist
+in the `ParticleVector` array.
+
+# Positional arguments
+* `pv`: `ParticleVector` instance
+* `position`: the position in the `index` vector to which to write the index of the new particle
+* `w`: the computational weight of the particle to create
+* `v`: the velocity of the particle to create
+"""
+@inline function add_particle!(pv, position, w, v, x)
+    update_particle_buffer_new_particle(pv, position)
+    @inbounds pv[position] = Particle(w, v, x)
+end
+
 
 """
     pretty_print_pia(pia)

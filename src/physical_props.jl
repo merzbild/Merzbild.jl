@@ -285,12 +285,14 @@ function avg_props!(phys_props_avg::PhysProps, phys_props::PhysProps, n_avg_time
     inv_nt_avg = 1.0 / n_avg_timesteps
 
     for species in 1:phys_props.n_species
-        phys_props_avg.lpa[species] += phys_props.lpa[species] * inv_nt_avg
+        @inbounds phys_props_avg.lpa[species] += phys_props.lpa[species] * inv_nt_avg
         for cell in 1:phys_props.n_cells
-            phys_props_avg.np[cell,species] += phys_props.np[cell,species] * inv_nt_avg
-            phys_props_avg.n[cell,species] += phys_props.n[cell,species] * inv_nt_avg
-            phys_props_avg.v[:,cell,species] += phys_props.v[:,cell,species] * inv_nt_avg
-            phys_props_avg.T[cell,species] += phys_props.T[cell,species] * inv_nt_avg
+            @inbounds phys_props_avg.np[cell,species] += phys_props.np[cell,species] * inv_nt_avg
+            @inbounds phys_props_avg.n[cell,species] += phys_props.n[cell,species] * inv_nt_avg
+            @inbounds phys_props_avg.v[1,cell,species] += phys_props.v[1,cell,species] * inv_nt_avg
+            @inbounds phys_props_avg.v[2,cell,species] += phys_props.v[2,cell,species] * inv_nt_avg
+            @inbounds phys_props_avg.v[3,cell,species] += phys_props.v[3,cell,species] * inv_nt_avg
+            @inbounds phys_props_avg.T[cell,species] += phys_props.T[cell,species] * inv_nt_avg
         end
     end
 end
@@ -317,27 +319,30 @@ function compute_props_sorted!(particles, pia, species_data, phys_props)
             T = 0.0
             v = SVector{3,Float64}(0.0, 0.0, 0.0)
 
-            for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
-                n += particles[species][i].w
-                v = v + particles[species][i].v * particles[species][i].w
-                np += 1.0
+            @inbounds s1 = pia.indexer[cell,species].start1
+            @inbounds e1 = pia.indexer[cell,species].end1
+            for i in s1:e1
+                @inbounds n += particles[species][i].w
+                @inbounds v = v + particles[species][i].v * particles[species][i].w
             end
+
+            np = e1 >= s1 ? e1-s1 + 1.0 : 0.0
 
             if (n > 0.0)
                 v /= n
-                for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
-                    E += particles[species][i].w * ((particles[species][i].v[1] - v[1])^2
-                                                  + (particles[species][i].v[2] - v[2])^2
-                                                  + (particles[species][i].v[3] - v[3])^2)
+                for i in s1:e1
+                    @inbounds E += particles[species][i].w * ((particles[species][i].v[1] - v[1])^2
+                                                              + (particles[species][i].v[2] - v[2])^2
+                                                              + (particles[species][i].v[3] - v[3])^2)
                 end
-                E *= 0.5 * species_data[species].mass / (n * k_B)
+                @inbounds E *= 0.5 * species_data[species].mass / (n * k_B)
                 T = (2.0/3.0) * E
             end
     
-            phys_props.np[cell,species] = np
-            phys_props.n[cell,species] = n
-            phys_props.v[:,cell,species] = v
-            phys_props.T[cell,species] = T
+            @inbounds phys_props.np[cell,species] = np
+            @inbounds phys_props.n[cell,species] = n
+            @inbounds phys_props.v[:,cell,species] = v
+            @inbounds phys_props.T[cell,species] = T
         end
     end
 end
@@ -371,27 +376,29 @@ function compute_props_sorted!(particles, pia, species_data, phys_props, grid)
                 T = 0.0
                 v = SVector{3,Float64}(0.0, 0.0, 0.0)
 
-                for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
-                    n += particles[species][i].w
-                    v = v + particles[species][i].v * particles[species][i].w
+                @inbounds s1 = pia.indexer[cell,species].start1
+                @inbounds e1 = pia.indexer[cell,species].end1
+                for i in s1:e1
+                    @inbounds n += particles[species][i].w
+                    @inbounds v = v + particles[species][i].v * particles[species][i].w
                     np += 1.0
                 end
 
                 if (n > 0.0)
                     v /= n
-                    for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
-                        E += particles[species][i].w * ((particles[species][i].v[1] - v[1])^2
-                                                    + (particles[species][i].v[2] - v[2])^2
-                                                    + (particles[species][i].v[3] - v[3])^2)
+                    for i in s1:e1
+                        @inbounds E += particles[species][i].w * ((particles[species][i].v[1] - v[1])^2
+                                                                   + (particles[species][i].v[2] - v[2])^2
+                                                                   + (particles[species][i].v[3] - v[3])^2)
                     end
-                    E *= 0.5 * species_data[species].mass / (n * k_B)
+                    @inbounds E *= 0.5 * species_data[species].mass / (n * k_B)
                     T = (2.0/3.0) * E
                 end
         
-                phys_props.np[cell,species] = np
-                phys_props.n[cell,species] = n * grid.cells[cell].inv_V
-                phys_props.v[:,cell,species] = v
-                phys_props.T[cell,species] = T
+                @inbounds phys_props.np[cell,species] = np
+                @inbounds phys_props.n[cell,species] = n * grid.cells[cell].inv_V
+                @inbounds phys_props.v[:,cell,species] = v
+                @inbounds phys_props.T[cell,species] = T
             end
         end
     end
@@ -421,15 +428,21 @@ function compute_mixed_moment(particles, pia, cell, species, powers; sum_scaler=
     # e.g. sum_scaler=(1.0/ndens) (computed separately), res_scaler=1.0 would compute normalized moment
     result = 0.0
 
-    for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
-        result += particles[species][i].w * sum_scaler * (particles[species][i].v[1]^powers[1]) *
+
+    @inbounds s1 = pia.indexer[cell,species].start1
+    @inbounds e1 = pia.indexer[cell,species].end1
+
+    for i in s1:e1
+        @inbounds result += particles[species][i].w * sum_scaler * (particles[species][i].v[1]^powers[1]) *
                   (particles[species][i].v[2]^powers[2]) *
                   (particles[species][i].v[3]^powers[3])
     end
 
-    if pia.indexer[cell,species].n_group2 > 0
-        for i in pia.indexer[cell,species].start2:pia.indexer[cell,species].end2
-            result += particles[species][i].w * sum_scaler * (particles[species][i].v[1]^powers[1]) *
+    @inbounds if pia.indexer[cell,species].n_group2 > 0
+        @inbounds s2 = pia.indexer[cell,species].start2
+        @inbounds e2 = pia.indexer[cell,species].end2
+        for i in s2:e2
+            @inbounds result += particles[species][i].w * sum_scaler * (particles[species][i].v[1]^powers[1]) *
                       (particles[species][i].v[2]^powers[2]) *
                       (particles[species][i].v[3]^powers[3])
         end

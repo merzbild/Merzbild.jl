@@ -429,4 +429,171 @@
     @test abs(phys_props.T[1,1] - T_computed[1])/T_computed[1] < 1e-14
     @test abs(phys_props.T[2,1] - T_computed[2])/T_computed[2] < 1e-14
     @test abs(phys_props.T[3,1] - T_computed[3])/T_computed[3] < 1e-14
+
+
+    # 3-cell case that looks like this
+    # 111 2 333 222
+    particles = [ParticleVector(10)]
+    cell_positions = [1.0, 1.0, 1.0, 2.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0]
+    for i in 1:10
+        particles[1].particles[i] = Particle(i, [0.0, 0.0, 0.0], [cell_positions[i], 0.0, 1.0])
+    end
+
+    particles[1].nbuffer = 0  # set buffer to 0 manually
+
+    pia = ParticleIndexerArray(3, 1)  # 3 cell 1 species
+    # fix particle indexer manually
+    pia.indexer[1,1].n_local = 3
+    pia.indexer[1,1].start1 = 1
+    pia.indexer[1,1].end1 = 3
+    pia.indexer[1,1].n_group1 = 3
+
+    pia.indexer[1,1].start2 = -1
+    pia.indexer[1,1].end2 = -1
+    pia.indexer[1,1].n_group2 = 0
+
+    pia.indexer[2,1].n_local = 4
+    pia.indexer[2,1].start1 = 4
+    pia.indexer[2,1].end1 = 4
+    pia.indexer[2,1].n_group1 = 1
+
+    pia.indexer[2,1].start2 = 8
+    pia.indexer[2,1].end2 = 10
+    pia.indexer[2,1].n_group2 = 3
+
+    pia.indexer[3,1].n_local = 3
+    pia.indexer[3,1].start1 = 5
+    pia.indexer[3,1].end1 = 7
+    pia.indexer[3,1].n_group1 = 3
+
+    pia.indexer[3,1].start2 = -1
+    pia.indexer[3,1].end2 = -1
+    pia.indexer[3,1].n_group2 = 0
+    
+    pia.n_total[1] = 10
+
+    phys_props = PhysProps(pia)
+    compute_props!(particles, pia, species_data, phys_props)
+    @test phys_props.np[1,1] == 3.0
+    @test phys_props.np[2,1] == 4.0
+    @test phys_props.np[3,1] == 3.0
+
+    @test phys_props.n[1,1] == 6.0
+    @test phys_props.n[2,1] == 31.0
+    @test phys_props.n[3,1] == 18.0
+
+
+    # now we delete some stuff so it looks like
+    # *** 2 333 222
+    Merzbild.delete_particle_end!(particles[1], pia, 1, 1)
+    Merzbild.delete_particle_end!(particles[1], pia, 1, 1)
+    Merzbild.delete_particle_end!(particles[1], pia, 1, 1)
+    pia.contiguous[1] = false
+
+    squash_pia!(particles, pia)
+    # should get
+    # 2 333 222
+    @test pia.indexer[1,1].n_local == 0
+    @test pia.indexer[1,1].start1 == 0
+    @test pia.indexer[1,1].end1 == -1
+    @test pia.indexer[1,1].n_group1 == 0
+    @test pia.indexer[1,1].n_group2 == 0
+    
+    @test pia.indexer[2,1].n_local == 4
+    @test pia.indexer[2,1].n_group1 == 1
+    @test pia.indexer[2,1].start1 == 1
+    @test pia.indexer[2,1].end1 == 1
+    @test pia.indexer[2,1].start2 == 5
+    @test pia.indexer[2,1].end2 == 7
+    @test pia.indexer[2,1].n_group2 == 3
+    
+    @test pia.indexer[3,1].n_local == 3
+    @test pia.indexer[3,1].start1 == 2
+    @test pia.indexer[3,1].end1 == 4
+    @test pia.indexer[3,1].n_group1 == 3
+    @test pia.indexer[3,1].n_group2 == 0
+
+    # more tests
+    # 3-cell case that looks like this
+    # 111 2 333 222
+    particles = [ParticleVector(10)]
+    cell_positions = [1.0, 1.0, 1.0, 2.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0]
+    for i in 1:10
+        particles[1].particles[i] = Particle(i, [0.0, 0.0, 0.0], [cell_positions[i], 0.0, 1.0])
+    end
+
+    particles[1].nbuffer = 0  # set buffer to 0 manually
+
+    pia = ParticleIndexerArray(3, 1)  # 3 cell 1 species
+    # fix particle indexer manually
+    pia.indexer[1,1].n_local = 3
+    pia.indexer[1,1].start1 = 1
+    pia.indexer[1,1].end1 = 3
+    pia.indexer[1,1].n_group1 = 3
+
+    pia.indexer[1,1].start2 = -1
+    pia.indexer[1,1].end2 = -1
+    pia.indexer[1,1].n_group2 = 0
+
+    pia.indexer[2,1].n_local = 4
+    pia.indexer[2,1].start1 = 4
+    pia.indexer[2,1].end1 = 4
+    pia.indexer[2,1].n_group1 = 1
+
+    pia.indexer[2,1].start2 = 8
+    pia.indexer[2,1].end2 = 10
+    pia.indexer[2,1].n_group2 = 3
+
+    pia.indexer[3,1].n_local = 3
+    pia.indexer[3,1].start1 = 5
+    pia.indexer[3,1].end1 = 7
+    pia.indexer[3,1].n_group1 = 3
+
+    pia.indexer[3,1].start2 = -1
+    pia.indexer[3,1].end2 = -1
+    pia.indexer[3,1].n_group2 = 0
+    
+    pia.n_total[1] = 10
+
+    phys_props = PhysProps(pia)
+    compute_props!(particles, pia, species_data, phys_props)
+    @test phys_props.np[1,1] == 3.0
+    @test phys_props.np[2,1] == 4.0
+    @test phys_props.np[3,1] == 3.0
+
+    @test phys_props.n[1,1] == 6.0
+    @test phys_props.n[2,1] == 31.0
+    @test phys_props.n[3,1] == 18.0
+
+
+    # now we delete some stuff so it looks like
+    # 11* 2 *** 222
+    Merzbild.delete_particle_end!(particles[1], pia, 1, 1)
+    Merzbild.delete_particle_end!(particles[1], pia, 3, 1)
+    Merzbild.delete_particle_end!(particles[1], pia, 3, 1)
+    Merzbild.delete_particle_end!(particles[1], pia, 3, 1)
+    pia.contiguous[1] = false
+
+    squash_pia!(particles, pia)
+    # should get
+    # 11 2 222
+    @test pia.indexer[1,1].n_local == 2
+    @test pia.indexer[1,1].start1 == 1
+    @test pia.indexer[1,1].end1 == 2
+    @test pia.indexer[1,1].n_group1 == 2
+    @test pia.indexer[1,1].n_group2 == 0
+    
+    @test pia.indexer[2,1].n_local == 4
+    @test pia.indexer[2,1].n_group1 == 1
+    @test pia.indexer[2,1].start1 == 3
+    @test pia.indexer[2,1].end1 == 3
+    @test pia.indexer[2,1].start2 == 4
+    @test pia.indexer[2,1].end2 == 6
+    @test pia.indexer[2,1].n_group2 == 3
+    
+    @test pia.indexer[3,1].n_local == 0
+    @test pia.indexer[3,1].start1 == 0
+    @test pia.indexer[3,1].end1 == -1
+    @test pia.indexer[3,1].n_group1 == 0
+    @test pia.indexer[3,1].n_group2 == 0
 end

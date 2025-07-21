@@ -93,13 +93,13 @@ Find in which cell of 1-D uniform grid the coordinate is located
 * `x_pos`: the 3-D coordinate vector for the which the cell index is to be determined (only the first component is used)
 """
 @inline function get_cell(grid1duniform::Grid1DUniform, x_pos)
-    return floor(Int64, x_pos[1] * grid1duniform.inv_Δx) + 1
+    @inbounds return floor(Int64, x_pos[1] * grid1duniform.inv_Δx) + 1
 end
 
 """
     sample_particles_equal_weight!(rng, grid1duniform, particles, pia, species, species_data, ppc::Integer, T, Fnum)
 
-Sample particles from a Maxwellian distribution in each cell of 1-D uniform grid given the number of particles per cell
+Sample particles from a Maxwellian distribution in each cell of 1-D uniform grid given the number of particles per cell.
 
 # Positional arguments
 * `rng`: the random number generator
@@ -116,12 +116,12 @@ function sample_particles_equal_weight!(rng, grid1duniform, particles, pia, spec
                                         species_data, ppc::Integer, T, Fnum)
 
     for cell in 1:grid1duniform.n_cells
-        sample_particles_equal_weight!(rng, particles, pia, cell, species,
-                                       ppc, species_data[species].mass, T, Fnum,
-                                       grid1duniform.cells[cell].xlo, grid1duniform.cells[cell].xhi,
-                                       0.0, 1.0,
-                                       0.0, 1.0;
-                                       distribution=:Maxwellian, vx0=0.0, vy0=0.0, vz0=0.0)
+        @inbounds sample_particles_equal_weight!(rng, particles, pia, cell, species,
+                                                 ppc, species_data[species].mass, T, Fnum,
+                                                 grid1duniform.cells[cell].xlo, grid1duniform.cells[cell].xhi,
+                                                 0.0, 1.0,
+                                                 0.0, 1.0;
+                                                 distribution=:Maxwellian, vx0=0.0, vy0=0.0, vz0=0.0)
     end
 end
 
@@ -147,7 +147,7 @@ function sample_particles_equal_weight!(rng, grid1duniform, particles, pia, spec
                                         species_data, ndens::Float64, T, Fnum)
     # ndens is target ndensity per cell
     for cell in 1:grid1duniform.n_cells
-        n_in_cell = ndens * grid1duniform.cells[cell].V
+        @inbounds n_in_cell = ndens * grid1duniform.cells[cell].V
 
         ppc = n_in_cell / Fnum
         ppc_int = floor(Int64, ppc)
@@ -158,7 +158,7 @@ function sample_particles_equal_weight!(rng, grid1duniform, particles, pia, spec
             ppc_int += 1
         end
 
-        sample_particles_equal_weight!(rng, particles, pia, cell, species,
+        @inbounds sample_particles_equal_weight!(rng, particles, pia, cell, species,
                                        ppc_int, species_data[species].mass, T, Fnum,
                                        grid1duniform.cells[cell].xlo, grid1duniform.cells[cell].xhi,
                                        0.0, 1.0,

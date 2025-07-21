@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.6.6
+* Utility function `Merzbild.add_particle!` added
+* Improved test coverage
+* Internal code improvements (use of `inbounds`, minor speed-up of `compute_props_sorted!`)
+* `Merzbild.compute_octree!` function added to reduce code duplication
+* `Merzbild.bin_bounds_recompute!` function fixed, as it could give erroneous bounds
+* `squash_pia!` now correctly deals with empty cells
+* Grid sorting logic simplified and now simply calls `squash_pia`! if non-contiguous indices
+* No more memory allocations in `avg_props!`
+
 ## v0.6.5
 * Possible to compute number density in cell when computing calling `compute_props_sorted!` and passing in a grid
 * Documentation improvements

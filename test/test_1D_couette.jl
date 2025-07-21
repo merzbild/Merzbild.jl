@@ -106,6 +106,7 @@
     ref_sol = NCDataset(ref_sol_path, "r")
     sol = NCDataset(sol_path, "r")
  
+    @test maximum(ref_sol["np"][:, 1, 1] .- sol["np"][:, 1, 1]) < eps()
     @test maximum(ref_sol["ndens"][:, 1, 1:5] .- sol["ndens"][:, 1, 1:5]) < 2 * eps()
     @test maximum(ref_sol["T"][:, 1, 1:5] .- sol["T"][:, 1, 1:5]) < 2.4e-13
 

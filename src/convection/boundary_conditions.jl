@@ -59,7 +59,7 @@ Perform specular reflection of a particle in the x direction.
 * `particle`: the `Particle` instance for which the velocity is reflected
 """
 @inline function specular_reflection_x!(particle)
-    particle.v = SVector{3, Float64}(-particle.v[1], particle.v[2], particle.v[3])
+    @inbounds particle.v = SVector{3, Float64}(-particle.v[1], particle.v[2], particle.v[3])
 end
 
 """
@@ -75,6 +75,7 @@ Perform diffuse reflection of a particle, assuming the wall is orthogonal to the
 * `wall_v`: wall velocity vector
 """
 function diffuse_reflection_x!(rng, particle, wall_reflection_v_sq, wall_normal_sign, wall_v)
+    # Note: inlining this function via @inline slows the code down!
     R = max(1e-50, rand(rng))
 
     v_normal = wall_normal_sign * sqrt(-wall_reflection_v_sq * log(R))
@@ -86,7 +87,7 @@ function diffuse_reflection_x!(rng, particle, wall_reflection_v_sq, wall_normal_
     v_tang1 = sin(R) * v_tang 
     v_tang2 = cos(R) * v_tang
 
-    particle.v = SVector{3, Float64}(v_normal + wall_v[1], v_tang1 + wall_v[2], v_tang2 + wall_v[3])
+    @inbounds particle.v = SVector{3, Float64}(v_normal + wall_v[1], v_tang1 + wall_v[2], v_tang2 + wall_v[3])
 end
 
 """

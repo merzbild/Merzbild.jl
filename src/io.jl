@@ -281,11 +281,11 @@ particles, or vice versa.
 function write_netcdf_phys_props(ds, phys_props, timestep; sync_freq=0)
     currtimesteps = ds.timestep_dim.dimlen + 1
 
-    ds.currtimesteps[1] = currtimesteps
-    ds.currtimesteps_1[2] = currtimesteps
-    ds.currtimesteps_1_1[3] = currtimesteps
-    ds.currtimesteps_1_1_1[4] = currtimesteps
-    ds.timestep[1] = timestep
+    @inbounds ds.currtimesteps[1] = currtimesteps
+    @inbounds ds.currtimesteps_1[2] = currtimesteps
+    @inbounds ds.currtimesteps_1_1[3] = currtimesteps
+    @inbounds ds.currtimesteps_1_1_1[4] = currtimesteps
+    @inbounds ds.timestep[1] = timestep
 
     NetCDF.putvar(ds.v_timestep, ds.timestep, start=ds.currtimesteps)
 
@@ -575,11 +575,11 @@ Write SurfProps to NetCDF file and synchronize file to disk if necessary.
 function write_netcdf_surf_props(ds, surf_props, timestep; sync_freq=0)
     currtimesteps = ds.timestep_dim.dimlen + 1
 
-    ds.currtimesteps[1] = currtimesteps
-    ds.currtimesteps_1[2] = currtimesteps
-    ds.currtimesteps_1_1[3] = currtimesteps
-    ds.currtimesteps_1_1_1[4] = currtimesteps
-    ds.timestep[1] = timestep
+    @inbounds ds.currtimesteps[1] = currtimesteps
+    @inbounds ds.currtimesteps_1[2] = currtimesteps
+    @inbounds ds.currtimesteps_1_1[3] = currtimesteps
+    @inbounds ds.currtimesteps_1_1_1[4] = currtimesteps
+    @inbounds ds.timestep[1] = timestep
 
     NetCDF.putvar(ds.v_timestep, ds.timestep, start=ds.currtimesteps)
 
