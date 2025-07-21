@@ -78,7 +78,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
         end
     end
 
-    @timeit "I/O" write_netcdf_phys_props(ds_avg, phys_props_avg, n_timesteps)
+    @timeit "I/O" write_netcdf(ds_avg, phys_props_avg, n_timesteps)
 
     close_netcdf(ds_avg)
 

@@ -230,8 +230,8 @@ for t in 1:n_timesteps
     end
 end
 
-write_netcdf_phys_props(ds_avg, phys_props_avg, n_timesteps)
-write_netcdf_surf_props(ds_surf_avg, surf_props_avg, n_timesteps)
+write_netcdf(ds_avg, phys_props_avg, n_timesteps)
+write_netcdf(ds_surf_avg, surf_props_avg, n_timesteps)
 
 close_netcdf(ds_avg)
 close_netcdf(ds_surf_avg)

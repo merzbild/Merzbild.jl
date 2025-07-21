@@ -237,7 +237,7 @@ the NetCDF file), a more detailed description is given in the [public API refere
 
 In order to write the physical properties to a file at a certain timestep, we need to call
 ```julia
-write_netcdf_phys_props(ds, phys_props, timestep)
+write_netcdf(ds, phys_props, timestep)
 ```
 Here `ds` is the `NCDataHolder` instance, and timestep is the number of the timestep of the simulation
 (it also gets written to the output). Additionally, the `sync_freq` keyword parameter can be set

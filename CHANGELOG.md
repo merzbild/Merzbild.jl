@@ -7,6 +7,7 @@
 * `update_particle_indexer_new_particle` renamed to `update_particle_indexer_new_particle!`
 * `update_particle_indexer_new_lower_count` renamed to `update_particle_indexer_new_lower_count!`
 * `update_particle_buffer_new_particle` renamed to `update_particle_buffer_new_particle!`
+* `write_netcdf_surf_props`, `write_netcdf_phys_props` replaced with `write_netcdf`
 
 ## v0.6.6
 * Utility function `Merzbild.add_particle!` added
