@@ -5,17 +5,17 @@ The public API functions are exported by the module
 ## Particle indexing
 ```@docs
 Merzbild.map_cont_index
-Merzbild.update_particle_indexer_new_lower_count
-Merzbild.update_particle_indexer_new_particle
+Merzbild.update_particle_indexer_new_lower_count!
+Merzbild.update_particle_indexer_new_particle!
 Base.getindex
 Base.setindex!
 Base.length
 Base.resize!
 Merzbild.add_particle!
-Merzbild.update_particle_buffer_new_particle(pv::ParticleVector, position)
-Merzbild.update_particle_buffer_new_particle(pv::ParticleVector, pia, species)
-Merzbild.update_particle_buffer_new_particle(pv::Vector{Particle}, pia, species)
-Merzbild.update_particle_buffer_new_particle(pv::Vector{Particle}, position)
+Merzbild.update_particle_buffer_new_particle!(pv::ParticleVector, position)
+Merzbild.update_particle_buffer_new_particle!(pv::ParticleVector, pia, species)
+Merzbild.update_particle_buffer_new_particle!(pv::Vector{Particle}, pia, species)
+Merzbild.update_particle_buffer_new_particle!(pv::Vector{Particle}, position)
 Merzbild.update_buffer_index_new_particle!
 Merzbild.delete_particle!
 Merzbild.delete_particle_end!

@@ -85,7 +85,7 @@ ntc!(rng, collision_factors, collision_data, interaction,
               cell, species1, species2, Δt, V)
 ntc_n_e!
 ntc_n_e_es!
-fp!
+fp_linear!
 ```
 
 ## Electron-neutral interactions
