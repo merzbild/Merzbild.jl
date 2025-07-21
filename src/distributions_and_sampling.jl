@@ -387,33 +387,6 @@ function compute_thermal_velocity(m, T)
     return sqrt(2 * k_B * T / m)
 end
 
-
-"""
-    sample_maxwellian_single!(rng, v, m, T, v0)
-
-Sample a single particle from a Maxwellian distribution with temperature T for a species with mass m
-    and add a velocity offset.
-
-# Positional arguments
-* `rng`: The random number generator
-* `v`: the 3-dimensional vector to store the sampled velocity
-* `m`: the molecular mass of the species
-* `T`: the temperature
-* `v_offset`: the offset velocity vector to be added to the sampled velocity
-"""
-function sample_maxwellian_single!(rng, v, m, T, v0)
-    vscale = sqrt(2 * k_B * T / m)
-    vn = vscale * sqrt(-log(rand(rng, Float64)))
-    vr = vscale * sqrt(-log(rand(rng, Float64)))
-    theta1 = twopi * rand(rng, Float64)
-    theta2 = twopi * rand(rng, Float64)
-
-    @inbounds v[1] = vn * cos(theta1) + v0[1]
-    @inbounds v[2] = vr * cos(theta2) + v0[2]
-    @inbounds v[3] = vr * sin(theta2) + v0[3]
-end
-
-
 """
     sample_maxwellian!(rng, particles, nparticles, offset, m, T, v0)
 
@@ -444,34 +417,13 @@ function sample_maxwellian!(rng, particles, nparticles, offset, m, T, v0)
 end
 
 """
-    sample_maxwellian!(rng, particles, nparticles, m, T, v0)
-
-Sample `nparticles` particles from a Maxwellian with temperature T for a species with mass m
-and add a velocity offset.
-Note: This does not update the particle weights, positions, or any indexing structures.
-The sampled particles are written to the start of the `particles` array.
-
-# Positional arguments
-* `rng`: the random number generator
-* `particles`: the `Vector`-like structure holding the particles
-* `nparticles`: the number of particles to sample
-* `m`: species' mass
-* `T`: temperature
-* `v0`: the 3-dimensional velocity to add to the sampled velocities
-"""
-function sample_maxwellian!(rng, particles, nparticles, m, T, v0)
-    sample_maxwellian!(rng, particles, nparticles, 0, m, T, v0)
-end
-
-"""
     sample_particles_equal_weight!(rng, particles, pia, cell, species,
                                         nparticles, m, T, Fnum, xlo, xhi, ylo, yhi, zlo, zhi;
                                         distribution=:Maxwellian, vx0=0.0, vy0=0.0, vz0=0.0)
 
-Sample equal-weight  particles of a specific species in a specific cell from a distribution.
+Sample equal-weight particles of a specific species in a specific cell from a distribution.
 The positions of the particles are assumed to be randomly distributed in a cuboid.
-Note: this does not work if applied twice in a row to the same cell
-
+Note: this does not work if applied twice in a row to the same cell.
 
 # Positional arguments
 * `rng`: the random number generator

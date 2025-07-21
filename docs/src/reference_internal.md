@@ -38,7 +38,6 @@ Merzbild.create_noiseless_dvgrid
 Merzbild.create_vdf
 Merzbild.sample_bkw!
 Merzbild.evaluate_distribution_on_grid!
-Merzbild.sample_maxwellian_single!
 Merzbild.sample_maxwellian!
 ```
 
