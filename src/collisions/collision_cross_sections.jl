@@ -1,5 +1,7 @@
 using XML
 
+@muladd begin
+
 """
     DataMissingException
 
@@ -736,4 +738,6 @@ The `ElectronEnergySplit` value for the specific electron-neutral interaction.
 function get_electron_energy_split(electron_neutral_interactions, neutral_species_index)
     # the neutral_species_index is the absolute one (i.e. index in the list of all species)
     return electron_neutral_interactions.ionization[electron_neutral_interactions.neutral_indexer[neutral_species_index]].split
+end
+
 end

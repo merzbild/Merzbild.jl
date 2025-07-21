@@ -1,5 +1,7 @@
 module Merzbild
 
+using MuladdMacro
+
 include("constants.jl")
 include("utils.jl")
 include("particles.jl")

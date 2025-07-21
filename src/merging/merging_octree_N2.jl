@@ -1,4 +1,4 @@
-using StaticArrays
+@muladd begin
 
 """
     OctreeBinSplit OctreeBinMidSplit=1 OctreeBinMeanSplit=2 OctreeBinMedianSplit=3
@@ -1054,4 +1054,6 @@ function merge_octree_N2_based!(rng, octree, particles, pia, cell, species, targ
     init_octree!(octree, particles, pia, cell, species)
     compute_octree!(octree, particles, target_np)
     compute_new_particles!(rng, octree, particles, pia, cell, species, grid)
+end
+
 end

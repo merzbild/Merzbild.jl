@@ -1,3 +1,5 @@
+@muladd begin
+
 """
 Model single-species elastic collisions using a linear Fokker-Planck approximation 
 """
@@ -123,4 +125,6 @@ function scale_norm_rands!(collision_data_fp, norm_rands)
         norm_rands[i, 2] *= collision_data_fp.stddev[2];
         norm_rands[i, 3] *= collision_data_fp.stddev[3];
     end
+end
+
 end

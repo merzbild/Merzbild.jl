@@ -2,6 +2,8 @@ using SpecialFunctions: gamma
 using TOML
 using StaticArrays
 
+@muladd begin
+
 """
     CollisionData
 
@@ -502,4 +504,6 @@ function compute_g_new_ionization!(collision_data, interaction, E_i, energy_spli
         collision_data.g_new_1 = sqrt(2 * E_new_coll / e_mass_div_electron_volt)
         collision_data.g_new_2 = 0.0
     end
+end
+
 end

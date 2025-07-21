@@ -1,4 +1,4 @@
-using StaticArrays
+@muladd begin
 
 """
     GridCell
@@ -466,4 +466,6 @@ function merge_grid_based!(rng, merging_grid, particles, pia, cell, species, spe
     compute_velocity_extent!(merging_grid, cell, species, species_data, phys_props)
     compute_grid!(merging_grid, particles, pia, cell, species)
     compute_new_particles!(rng, merging_grid, particles, pia, cell, species)
+end
+
 end

@@ -1,3 +1,5 @@
+@muladd begin
+
 """
     convect_single_particle!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particle, species, Δt)
 
@@ -200,4 +202,6 @@ function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D
     end
 
     @inbounds surface_props_scale!(species, surf_props, species_data, Δt)
+end
+
 end

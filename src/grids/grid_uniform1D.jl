@@ -1,3 +1,5 @@
+@muladd begin
+
 """
     Cell1D
 
@@ -165,4 +167,6 @@ function sample_particles_equal_weight!(rng, grid1duniform, particles, pia, spec
                                        0.0, 1.0;
                                        distribution=:Maxwellian, vx0=0.0, vy0=0.0, vz0=0.0)
     end
+end
+
 end

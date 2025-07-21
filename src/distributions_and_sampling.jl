@@ -1,6 +1,8 @@
 using Random
 import Distributions
 
+@muladd begin
+
 """
     UnitDVGrid
 
@@ -526,4 +528,6 @@ function sample_particles_equal_weight!(rng, particles, pia, cell, species,
     elseif distribution == :BKW
         sample_bkw!(rng, particles, nparticles, m, T, v0)
     end
+end
+
 end

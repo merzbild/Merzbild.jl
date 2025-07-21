@@ -1,3 +1,5 @@
+@muladd begin
+
 """
     SurfProps
 
@@ -205,4 +207,6 @@ function avg_props!(surf_props_avg, surf_props, n_avg_timesteps)
             @inbounds surf_props_avg.kinetic_energy_flux[element,species] += surf_props.kinetic_energy_flux[element,species] * inv_nt_avg
         end
     end
+end
+
 end

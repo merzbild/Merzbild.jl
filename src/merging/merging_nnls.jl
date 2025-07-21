@@ -1,3 +1,4 @@
+@muladd begin
 
 """
     NNLSMerge
@@ -1015,4 +1016,6 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging,
     compute_post_merge_particles_nnls!(lhs_ncols, lhs_matrix,
                                        nnls_merging, particles, pia, cell, species)
     return 1
+end
+
 end

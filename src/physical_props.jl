@@ -1,5 +1,6 @@
-using StaticArrays
 using LinearAlgebra
+
+@muladd begin
 
 """
     PhysProps
@@ -449,4 +450,6 @@ function compute_mixed_moment(particles, pia, cell, species, powers; sum_scaler=
     end
 
     return result * res_scaler
+end
+
 end
