@@ -34,7 +34,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
 
     # create collision structs
     collision_factors = create_collision_factors_array(1, grid.n_cells)
-    collision_data_fp = CollisionDataFP()
+    collision_data_fp = CollisionDataFP(ppc * 2)
     
     # create struct for computation of physical properties
     phys_props = PhysProps(pia)
@@ -43,10 +43,10 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
     phys_props_avg = PhysProps(pia)
 
     # create struct for netCDF output
-    ds = NCDataHolder("couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc).nc", species_data, phys_props)
+    ds = NCDataHolder("couette_FP_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc).nc", species_data, phys_props)
 
     # create struct for second netCDF, this one is for time-averaged 
-    ds_avg = NCDataHolder("avg_couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc)_after$(avg_start).nc",
+    ds_avg = NCDataHolder("avg_couette_FP_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc)_after$(avg_start).nc",
                           species_data, phys_props)
 
     # init collision structs

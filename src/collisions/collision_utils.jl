@@ -41,11 +41,17 @@ Structure to store temporary collision data for the particle Fokker-Planck appro
 * `vel_ave`: average velocity of the particles in the cell
 * `mean`: mean value of the sampled velocities
 * `stddev`: standard deviation of the sampled velocities
+* `xvel_rand`: pre-allocated storage for sampled x-velocity components
+* `yvel_rand`: pre-allocated storage for sampled y-velocity components
+* `zvel_rand`: pre-allocated storage for sampled z-velocity components
 """
 mutable struct CollisionDataFP
     vel_ave::SVector{3,Float64}
     mean::SVector{3,Float64}
     stddev::SVector{3,Float64}
+    xvel_rand::Vector{Float64}
+    yvel_rand::Vector{Float64}
+    zvel_rand::Vector{Float64}
 end
 
 """
@@ -112,7 +118,24 @@ Create an empty CollisionDataFP instance.
 """
 CollisionDataFP() = CollisionDataFP(SVector{3,Float64}(0.0, 0.0, 0.0),
                                     SVector{3,Float64}(0.0, 0.0, 0.0),
-                                    SVector{3,Float64}(0.0, 0.0, 0.0))
+                                    SVector{3,Float64}(0.0, 0.0, 0.0),
+                                    [0.0], [0.0], [0.0])
+
+"""
+    CollisionDataFP(n_particles_in_cell)
+    
+Create an empty CollisionDataFP instance, pre-allocating the arrays for sampled normal variables
+for `n_particles_in_cell`.
+
+# Positional arguments
+* `n_particles_in_cell`: estimate of expected maximum number of particles in cell
+"""
+CollisionDataFP(n_particles_in_cell) = CollisionDataFP(SVector{3,Float64}(0.0, 0.0, 0.0),
+                                    SVector{3,Float64}(0.0, 0.0, 0.0),
+                                    SVector{3,Float64}(0.0, 0.0, 0.0),
+                                    zeros(n_particles_in_cell),
+                                    zeros(n_particles_in_cell),
+                                    zeros(n_particles_in_cell))
 
 """
     load_interaction_data(interactions_filename, species_data)
