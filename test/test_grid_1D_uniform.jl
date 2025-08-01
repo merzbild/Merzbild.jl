@@ -47,7 +47,7 @@
         @test pia.indexer[i, 1].n_group1 == ppc
 
         @test pia.indexer[i, 1].start2 == 0
-        @test pia.indexer[i, 1].end2 == 0
+        @test pia.indexer[i, 1].end2 == -1
         @test pia.indexer[i, 1].n_group2 == 0
 
         @test particles[1].cell[(i-1)*ppc + 1] == i

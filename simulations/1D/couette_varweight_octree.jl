@@ -58,7 +58,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     ds_surf_avg = NCDataHolderSurf("scratch/data/avg_couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(merge_threshold)_$(merge_target)_surf_after$(avg_start).nc",
                                    species_data, surf_props_avg)
 
-    # create and estime collision factors
+    # create and estimate collision factors
     collision_factors = create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum)
 
 
@@ -105,6 +105,11 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
 
         # sort particles
         @timeit "sort" sort_particles!(gridsorter, grid, particles[1], pia, 1)
+
+        # count % of particles where indexing is disordered
+        if t % 1000 == 0
+            println(count_disordered_particles(particles[1], pia, 1) / pia.n_total[1] * 100.0)
+        end
 
         # compute props and do I/O
         if (t < avg_start)

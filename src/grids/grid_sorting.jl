@@ -13,7 +13,21 @@ mutable struct GridSortInPlace
 end
 
 @doc """
-    GridSortInPlace(grid, n_particles::Integer)
+    GridSortInPlace(n_cells::Integer, n_particles::Integer)
+
+Create a `GridSortInPlace` instance given a number of grid cells and number of particles.
+
+# Positional arguments
+* `n_cells`: the number of grid cells
+* `n_particles`: the (expected) number of particles in the simulation
+    (to pre-allocate the `sorted_indices` vector) - it is recommended
+    to set this to the maximum expected number of particles in the simulation to avoid resizing of arrays
+    during a simulation
+"""
+GridSortInPlace(n_cells::Integer, n_particles::Integer) = GridSortInPlace(zeros(Int64, n_cells + 1), zeros(Int64, n_particles))
+
+@doc """
+    GridSortInPlace(grid::G, n_particles::Integer) where {G<:AbstractGrid}
 
 Create a `GridSortInPlace` instance given a grid and number of particles.
 
@@ -24,7 +38,7 @@ Create a `GridSortInPlace` instance given a grid and number of particles.
     to set this to the maximum expected number of particles in the simulation to avoid resizing of arrays
     during a simulation
 """
-GridSortInPlace(grid, n_particles::Integer) = GridSortInPlace(zeros(Int64, grid.n_cells + 1), zeros(Int64, n_particles))
+GridSortInPlace(grid::G, n_particles::Integer) where {G<:AbstractGrid} = GridSortInPlace(grid.n_cells, n_particles)
 
 """
     sort_particles!(gridsort::GridSortInPlace, grid, particles, pia, species)

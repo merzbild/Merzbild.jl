@@ -209,4 +209,36 @@ function avg_props!(surf_props_avg, surf_props, n_avg_timesteps)
     end
 end
 
+"""
+    reduce_surf_props!(surf_props_target, surf_props_chunks)
+
+Sum up the values of the computed surface properties for all `SurfProps` instances in 
+a `surf_props_chunks` list and store the sums in `surf_props_target`.
+
+# Positional arguments
+* `surf_props_target`: the `SurfProps` instance which will hold the reduced values
+* `surf_props_chunks`: the list `SurfProps` instances to use for the reduction operation
+"""
+function reduce_surf_props!(surf_props_target, surf_props_chunks)
+    clear_props!(surf_props_target)
+
+    for surf_props in surf_props_chunks
+        for species in 1:surf_props.n_species
+            for element in 1:surf_props.n_elements
+                @inbounds surf_props_target.np[element,species] += surf_props.np[element,species]
+                @inbounds surf_props_target.flux_incident[element,species] += surf_props.flux_incident[element,species]
+                @inbounds surf_props_target.flux_reflected[element,species] += surf_props.flux_reflected[element,species]
+                @inbounds surf_props_target.force[1,element,species] += surf_props.force[1,element,species]
+                @inbounds surf_props_target.force[2,element,species] += surf_props.force[2,element,species]
+                @inbounds surf_props_target.force[3,element,species] += surf_props.force[3,element,species]
+                @inbounds surf_props_target.normal_pressure[element,species] += surf_props.normal_pressure[element,species]
+                @inbounds surf_props_target.shear_pressure[1,element,species] += surf_props.shear_pressure[1,element,species]
+                @inbounds surf_props_target.shear_pressure[2,element,species] += surf_props.shear_pressure[2,element,species]
+                @inbounds surf_props_target.shear_pressure[3,element,species] += surf_props.shear_pressure[3,element,species]
+                @inbounds surf_props_target.kinetic_energy_flux[element,species] += surf_props.kinetic_energy_flux[element,species]
+            end
+        end
+    end
+end
+
 end

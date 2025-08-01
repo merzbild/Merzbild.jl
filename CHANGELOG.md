@@ -10,6 +10,9 @@
 * `write_netcdf_surf_props`, `write_netcdf_phys_props` replaced with `write_netcdf`
 * Fokker-Planck speed-up via use of pre-allocated arrays to store sampled velocities
 * `fp!` renamed to `fp_linear!`
+* `count_disordered_particles` added
+* `check_pia_is_correct` and `check_unique_index` functions added for diagnostics
+* Multithreaded simulations now possible (currently not verified for variable-weight simulations)
 * Documentation improvements
 * Improved test coverage
 

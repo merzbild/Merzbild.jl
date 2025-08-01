@@ -10,6 +10,8 @@ PIC and Stochastic Fokker-Planck capabilities are in development.
 The goals are to provide a modular, thoroughly tested, easy-to-read and easy-to-extend code
 for quick implementation and testing of new ideas.
 
+Serial and multithreaded simulations are possible.
+
 ## Brief overview of capabilities
 Currently the code supports spatially homogeneous (0D) and 1D uniform grid simulations.
 The table below lists support for the fixed- and variable-weight versions of the code,
@@ -18,7 +20,7 @@ with different supported particle merging algorithms listed for the different si
 |                        | **0D**                                        | **1D** |
 |:----------------------:|:-----------------------------------------:|:----:|
 | Fixed-weight DSMC      | ✅                                        | ✅ |
-| Variable-weight DSMC   | ✅ | ❌ |
+| Variable-weight DSMC   | ✅ | ✅ |
 | Fixed-weight Fokker-Planck| Linear | Linear |
 
 A more detailed overview of the capabilities is given on the [Overview of capabilities](@ref) page.

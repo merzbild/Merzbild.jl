@@ -115,6 +115,7 @@ Merzbild.compute_octree!
 
 ## Grids
 ```@docs
+Merzbild.AbstractGrid
 Merzbild.Cell1D
 Merzbild.Cell1D(xlo, xhi, V)
 Merzbild.get_cell
@@ -138,6 +139,13 @@ Merzbild.surface_props_scale!
 ## I/O
 ```@docs
 Merzbild.AbstractNCDataHolder
+```
+
+## Parallel computations
+```@docs
+Merzbild.swap_particles!
+Merzbild.update_swap_indexing!
+Merzbild.push_particles!
 ```
 
 ## Constants
