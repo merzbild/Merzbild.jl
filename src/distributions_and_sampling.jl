@@ -487,7 +487,7 @@ function sample_particles_equal_weight!(rng, particles, pia, cell, species,
     @inbounds pia.indexer[cell, species].n_group1 = nparticles
 
     @inbounds pia.indexer[cell, species].start2 = 0
-    @inbounds pia.indexer[cell, species].end2 = 0
+    @inbounds pia.indexer[cell, species].end2 = -1
     @inbounds pia.indexer[cell, species].n_group2 = 0
 
     offset = start - 1

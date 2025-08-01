@@ -17,8 +17,9 @@ makedocs(
             "Fokker-Planck simulations" => "overview_fp.md",
         ],
         "Tutorials" => [
-            "Contiguous indexing" => "contiguous_indexing.md"
-            "Modelling ionization reactions" => "modelling_ionization.md"
+            "Contiguous indexing" => "contiguous_indexing.md",
+            "Modelling ionization reactions" => "modelling_ionization.md",
+            "Multithreaded simualtions" => "multithreaded.md",
         ],
         "API reference" => [
             "Public API reference" => "reference_public.md",

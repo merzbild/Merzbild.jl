@@ -43,11 +43,12 @@ Convect a singe particle on a 1-D uniform grid.
 
     # if a particle is too near a wall, we offset it a bit to avoid particles
     # that are exactly at a wall screwing up counters, etc.
-    if x_new < grid.min_x
-        x_new = grid.min_x
-    elseif x_new > grid.max_x
-        x_new = grid.max_x
-    end
+    x_new = clamp(x_new, grid.min_x, grid.max_x)
+    # if x_new < grid.min_x
+    #     x_new = grid.min_x
+    # elseif x_new > grid.max_x
+    #     x_new = grid.max_x
+    # end
 
     @inbounds particle.x = SVector{3,Float64}(x_new, particle.x[2], particle.x[3])
 end

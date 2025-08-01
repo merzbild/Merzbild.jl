@@ -299,21 +299,24 @@ function avg_props!(phys_props_avg::PhysProps, phys_props::PhysProps, n_avg_time
 end
 
 """
-    compute_props_sorted!(particles, pia, species_data, phys_props)
+    compute_props_sorted!(particles, pia, species_data, phys_props, cell_chunk)
 
-Compute the physical properties of all species in all cells and store the result in a `PhysProps` instance,
+Compute the physical properties of all species in a
+subset of cells and store the result in a `PhysProps` instance,
 assuming the particles are sorted.
-This function does not compute the total moments, even if `phys_props.n_moments > 0`.
+This function does not compute the total moments, even if `phys_props.n_moments > 0`. Currently this does not
+compute the length of the particle array.
 
 # Positional arguments
 * `particles`: the `Vector` of `ParticleVector`s containing all the particles in a simulation
 * `pia`: the `ParticleIndexerArray` instance
 * `species_data`: the `Vector` of `SpeciesData`
 * `phys_props`: the `PhysProps` instance in which the computed physical properties are stored
+* `cell_chunk`: the list of cell indices or range of cell indices in which to compute the properties
 """
-function compute_props_sorted!(particles, pia, species_data, phys_props)
+function compute_props_sorted!(particles, pia, species_data, phys_props, cell_chunk)
     for species in 1:phys_props.n_species
-        for cell in 1:phys_props.n_cells
+        for cell in cell_chunk
             n = 0.0
             np = 0.0
             E = 0.0
@@ -349,13 +352,33 @@ function compute_props_sorted!(particles, pia, species_data, phys_props)
 end
 
 """
-    compute_props_sorted!(particles, pia, species_data, phys_props, grid)
+    compute_props_sorted!(particles, pia, species_data, phys_props)
 
 Compute the physical properties of all species in all cells and store the result in a `PhysProps` instance,
 assuming the particles are sorted.
+This function does not compute the total moments, even if `phys_props.n_moments > 0`. Currently this does not
+compute the length of the particle array.
+
+# Positional arguments
+* `particles`: the `Vector` of `ParticleVector`s containing all the particles in a simulation
+* `pia`: the `ParticleIndexerArray` instance
+* `species_data`: the `Vector` of `SpeciesData`
+* `phys_props`: the `PhysProps` instance in which the computed physical properties are stored
+"""
+@inline function compute_props_sorted!(particles, pia, species_data, phys_props)
+    compute_props_sorted!(particles, pia, species_data, phys_props, 1:phys_props.n_cells)
+end
+
+"""
+    compute_props_sorted!(particles, pia, species_data, phys_props, grid::G, cell_chunk) where {G<:AbstractGrid}
+
+Compute the physical properties of all species in a
+subset of cells and store the result in a `PhysProps` instance,
+assuming the particles are sorted.
 This function does not compute the total moments, even if `phys_props.n_moments > 0`.
 If `ndens_not_Np` is `true`, the number density will be computed based on the volumes of the grid cells;
-otherwise, the number of physical particles in each cell will be computed.
+otherwise, the number of physical particles in each cell will be computed. Currently this does not
+compute the length of the particle array.
 
 # Positional arguments
 * `particles`: the `Vector` of `ParticleVector`s containing all the particles in a simulation
@@ -363,14 +386,14 @@ otherwise, the number of physical particles in each cell will be computed.
 * `species_data`: the `Vector` of `SpeciesData`
 * `phys_props`: the `PhysProps` instance in which the computed physical properties are stored
 * `grid`: the physical grid
+* `cell_chunk`: the list of cell indices or range of cell indices in which to compute the properties
 """
-function compute_props_sorted!(particles, pia, species_data, phys_props, grid)
-
+function compute_props_sorted!(particles, pia, species_data, phys_props, grid::G, cell_chunk) where {G<:AbstractGrid}
     if !phys_props.ndens_not_Np
         compute_props_sorted!(particles, pia, species_data, phys_props)
     else
         for species in 1:phys_props.n_species
-            for cell in 1:phys_props.n_cells
+            for cell in cell_chunk
                 n = 0.0
                 np = 0.0
                 E = 0.0
@@ -403,6 +426,27 @@ function compute_props_sorted!(particles, pia, species_data, phys_props, grid)
             end
         end
     end
+end
+
+"""
+    compute_props_sorted!(particles, pia, species_data, phys_props, grid::AbstractGrid)
+
+Compute the physical properties of all species in all cells and store the result in a `PhysProps` instance,
+assuming the particles are sorted.
+This function does not compute the total moments, even if `phys_props.n_moments > 0`.
+If `ndens_not_Np` is `true`, the number density will be computed based on the volumes of the grid cells;
+otherwise, the number of physical particles in each cell will be computed. Currently this does not
+compute the length of the particle array.
+
+# Positional arguments
+* `particles`: the `Vector` of `ParticleVector`s containing all the particles in a simulation
+* `pia`: the `ParticleIndexerArray` instance
+* `species_data`: the `Vector` of `SpeciesData`
+* `phys_props`: the `PhysProps` instance in which the computed physical properties are stored
+* `grid`: the physical grid
+"""
+@inline function compute_props_sorted!(particles, pia, species_data, phys_props, grid::G) where {G<:AbstractGrid}
+    compute_props_sorted!(particles, pia, species_data, phys_props, grid, 1:phys_props.n_cells)
 end
 
 """

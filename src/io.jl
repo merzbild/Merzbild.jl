@@ -82,13 +82,6 @@ struct IOSkipList
 end
 
 """
-    AbstractNCDataHolder
-
-Abstract type that holds NetCDF-output related data for I/O
-"""
-abstract type AbstractNCDataHolder end
-
-"""
     NCDataHolder <: AbstractNCDataHolder
 
 Struct that holds NetCDF-output related data for physical properties (grid properties) I/O.
@@ -255,7 +248,7 @@ Close NetCDF file.
 # Positional arguments
 * `ds`: an `AbstractNCDataHolder` instance to close.
 """
-function close_netcdf(ds::AbstractNCDataHolder)
+function close_netcdf(ds::T) where {T<:AbstractNCDataHolder}
     finalize(ds.filehandle)
 end
 

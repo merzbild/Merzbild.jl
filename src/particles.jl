@@ -143,7 +143,7 @@ end
 """
     ParticleIndexerArray(n_particles::Integer)
 
-Create a single-species/single-cell `ParticleIndexerArray`.
+Create a single-species/single-cell `ParticleIndexerArray` and set up the indexing for `n_particles` in group 1 in cell 1.
 
 # Positional arguments
 * `n_particles`: the number of particles (integer number)
@@ -154,7 +154,8 @@ ParticleIndexerArray(n_particles::Integer) = ParticleIndexerArray(hcat(ParticleI
 """
     ParticleIndexerArray(n_particles::T) where T<:AbstractVector
 
-Create a multi-species/single-cell `ParticleIndexerArray`.
+Create a multi-species/single-cell `ParticleIndexerArray` and set up the indexing for `n_particles[species]` in group 1 in cell 1
+for all `species`.
 
 # Positional arguments
 * `n_particles`: the number of particles of each species (vector-like)
@@ -596,7 +597,7 @@ function load_species_data(species_filename, species_name::String)
 end
 
 """
-    squash_pia!(pia, species)
+    squash_pia!(pv, pia, species)
 
 Restore the continuity of indices in a `ParticleVector and associated
 `ParticleIndexerArray` instance for a specific species.
@@ -667,7 +668,7 @@ function squash_pia!(pv, pia, species)
 end
 
 """
-    squash_pia!(pia)
+    squash_pia!(particles, pia)
 
 Restore the continuity of indices in a list of `ParticleVector`s and the associated
 `ParticleIndexerArray` instance for all species.
@@ -750,4 +751,216 @@ function pretty_print_pia(pia, species)
             println("Cell $cell: [$(pia.indexer[cell,species].start2), $(pia.indexer[cell,species].end2)]")
         end
     end
+end
+
+"""
+    count_disordered_particles(pv, pia, species)
+
+Count number of particles of species for which `pv.index[i] != i + offset(cell)`. The larger this
+count, the less orderly the layout of particles in memory, which can potentially lead
+to decreased performance. This only considers particles present in the simulation,
+i.e. `i<=pia.n_total[species]`, assumes contiguous indexing, and that particles
+are only pointed to by the first group of a `ParticleIndexer`, which is the case after
+particles have been sorted.
+
+In case `use_offset` is `false`, the value of `offset` is always 0, so the function simply
+counts all particles where `pv.index[i] != i`. If `use_offset` is set to `true`,
+for each cell `cell`, the offset is whilst iterating over the particles in a cell. So in case the indexing in a cell
+is simply offset by a constant value, or a subset of indices are offset by a constant value,
+and particles are still laid out continuously in memory,
+this provides a more accurate measurement of the degree of fragmentation of the particle array.
+
+# Positional arguments
+* `pv`: the `ParticleVector` instance for which to compute the metric
+* `pia`: the `ParticleIndexerArray` instance
+* `species`: the index of the species for which the metric is computed
+
+# Keyword arguments
+* `use_offset`: whether to account for cell-specific offsets in the indexing
+
+# Returns
+The number of particles where the index to the `index` array and
+the value of the `index` array do not coincide.
+"""
+function count_disordered_particles(pv, pia, species; use_offset=true)
+    count = 0
+
+    if use_offset
+        n_cells = size(pia.indexer)[1]
+        for cell in 1:n_cells
+            offset = 0
+            if pia.indexer[cell,species].n_group1 > 0
+                s1 = pia.indexer[cell,species].start1
+                e1 = pia.indexer[cell,species].end1
+                offset = pv.index[s1] - s1
+                # we skip the 1st particle because for it the condition holds
+                # by definition of the offset
+                for i in s1+1:e1
+                    if pv.index[i] != i + offset
+                        count += 1
+                        # we try to find a subset that still is laid out correctly
+                        # so for that we set offset to a new value
+                        offset = pv.index[i] - i
+                    end
+                end
+            end
+        end
+    else
+        for i in 1:pia.n_total[species]
+            if pv.index[i] != i
+                count += 1
+            end
+        end
+    end
+
+    return count
+end
+
+"""
+    check_pia_is_correct(pia, species)
+
+Check that a `ParticleIndexerArray` instance entries are correct. This means that
+for each cell for each species, the following should hold:
+    * `n_local == n_group1 + n_group2`
+    * if `n_group1 > 0`, then `n_group1 == end1 - start1 + 1`
+    * if `n_group1 == 0`, then `start1 == 0`, `end1 == -1`
+    * if `n_group2 > 0`, then `n_group1 == end2 - start2 + 1`
+    * if `n_group2 == 0`, then `start2 == 0`, `end2 == -1`
+    * `pia.n_total[species] == sum([pia.indexer[cell, species].n_local for cell in 1:n_cells])`
+
+# Positional arguments
+* `pia`: the `ParticleIndexerArray` instance for which to check consistency
+* `species`: the species for which to check indexing
+
+# Returns
+If indexing is incorrect in a cell `i`, returns `(false, i)`.
+
+If the total number of particles as given by cell-wise particle indices
+is not equal to `pia.n_total[species]`, returns `(false, 0)`.
+
+If indexing is correct, returns `(true, 0)`.
+"""
+function check_pia_is_correct(pia, species)
+    # the code here explicitly does not use @inbounds
+    # as we aim for correctness, not efficiency
+    n_cells = size(pia.indexer)[1]
+
+    n_tot = 0
+    for i in 1:n_cells
+        if pia.indexer[i,species].n_local != pia.indexer[i,species].n_group1 + pia.indexer[i,species].n_group2
+            return false, i
+        end
+
+        n_tot += pia.indexer[i,species].n_local
+
+        s1 = pia.indexer[i,species].start1
+        e1 = pia.indexer[i,species].end1
+        if pia.indexer[i,species].n_group1 > 0
+            if pia.indexer[i,species].n_group1 != e1 - s1 + 1
+                return false, i
+            end
+        else
+            if s1 != 0 || e1 != -1
+                return false, i
+            end
+        end
+
+        
+        s2 = pia.indexer[i,species].start2
+        e2 = pia.indexer[i,species].end2
+        if pia.indexer[i,species].n_group2 > 0
+            if pia.indexer[i,species].n_group2 != e2 - s2 + 1
+                return false, i
+            end
+        else
+            if s2 != 0 || e2 != -1
+                return false, i
+            end
+        end
+    end
+
+    if n_tot != pia.n_total[species]
+        return false, 0
+    end
+
+    return true, 0
+end
+
+"""
+    check_unique_index(pv, pia, species)
+
+Test that for all particles in a simulation, no two indices
+are the same, i.e. no two particles `i` and `j`, `i!=j` point
+to the same underlying particle.
+This function allocates a temporary array and is thus intended for
+debugging/verifying code and not for efficient simulations.
+It also checks that any particles present in the buffer are not
+pointed to by the indexing.
+
+# Positional arguments
+* `pv`: the `ParticleVector` instance for which to check indexing
+* `pia`: the `ParticleIndexerArray` instance
+* `species`: the species for which to check indexing
+
+# Returns
+If a particle exists to which more than 1 index is pointing,
+and particles in the buffer ARE NOT pointed to by the indicies,
+returns `(false, n_index)`, where `n_index` is the number
+of indices pointing to the same particle.
+
+If a particle exists to which more than 1 index is pointing,
+and particles in the buffer ARE pointed to by the indicies,
+returns `(false, -n_index)`, where `n_index` is the number
+of indices pointing to the same particle.
+
+If no particles exist to which more than 1 index is pointing,
+but a particle in a buffer is pointed to by the indexing,
+returns `(false, -1)`.
+
+If indexing is correct, returns `(true, 0)`.
+"""
+function check_unique_index(pv, pia, species)
+    # the code here explicitly does not use @inbounds
+    # as we aim for correctness, not efficiency
+    n_cells = size(pia.indexer)[1]
+
+    n_counts = zeros(Int64, length(pv.index))
+
+    retcode = 1
+    for cell in 1:n_cells
+        s1 = pia.indexer[cell, species].start1
+        e1 = pia.indexer[cell, species].end1
+
+        for i in s1:e1
+            true_index = pv.index[i]
+            n_counts[true_index] += 1
+        end
+
+        s2 = pia.indexer[cell, species].start2
+        e2 = pia.indexer[cell, species].end2
+
+        for i in s2:e2
+            true_index = pv.index[i]
+            n_counts[true_index] += 1
+        end
+    end
+
+    n_index = maximum(n_counts)
+
+    for pid in pv.buffer[1:pv.nbuffer]
+        if n_counts[pid] > 0
+            retcode = -1
+            break
+        end
+    end
+    
+    if n_index > 1
+        return false, n_index*retcode
+    end
+
+    if retcode == -1
+        return false, -1
+    end
+
+    return true, 0
 end

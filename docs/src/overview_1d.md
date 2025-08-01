@@ -64,6 +64,11 @@ species_id = 1
 sort_particles!(gridsorter, grid, particles[species_id], pia, species_id)
 ```
 
+Since sorting indices only can lead to increase fragmentation of the particle layout in memory,
+a function [`count_disordered_particles`](@ref) is available that counts the number of 
+non-continuously laid out particles; this can serve as a metric as to whether the underlying
+particles (and not just their indices) need to be re-sorted (currently not implemented).
+
 ## Creating boundary conditions
 Next, we need to create boundary conditions for the left and right walls.
 Currently, a diffusely reflecting wall is implemented with a user-defined accommodation coefficient

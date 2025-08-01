@@ -45,11 +45,11 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
     ds_avg = NCDataHolder("scratch/data/avg_couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc)_after$(avg_start).nc",
                           species_data, phys_props)
 
-    # create and estime collision factors
+    # create and estimate collision factors
     collision_factors = create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum)
 
     # compute data at t=0
-    compute_props!(particles, pia, species_data, phys_props)
+    compute_props_sorted!(particles, pia, species_data, phys_props)
 
     n_avg = n_timesteps - avg_start + 1
 

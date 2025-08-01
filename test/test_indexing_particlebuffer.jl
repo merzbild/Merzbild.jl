@@ -309,4 +309,43 @@
     compute_props!(particles, pia, species_data, phys_props)
     @test phys_props.np[1,1] == 0.0
     @test abs(phys_props.n[1,1]) < 1e-15
+
+    pia = ParticleIndexerArray(4,1)  # 4 cells
+    particles = [ParticleVector(4)]
+
+    # create in cell 1
+    particles[1][1] = Particle(1.0, [2.0, 2.0, 2.0], [0.1, 0.0, 0.0])
+    Merzbild.update_buffer_index_new_particle!(particles[1], pia, 1, 1)
+
+    # create in cell 3
+    particles[1][2] = Particle(2.0, [2.0, 2.0, 2.0], [1.1, 0.0, 0.0])
+    Merzbild.update_buffer_index_new_particle!(particles[1], pia, 3, 1)
+
+    @test particles[1].nbuffer == 2
+    @test particles[1].buffer[1] == 4
+    @test particles[1].buffer[2] == 3
+    @test particles[1][1].w == 1.0
+    @test particles[1][2].w == 2.0
+    @test pia.n_total[1] == 2
+    @test pia.indexer[1,1].n_local == 1
+    @test pia.indexer[1,1].n_group2 == 1
+    @test pia.indexer[1,1].start2 == 1
+    @test pia.indexer[1,1].end2 == 1
+    @test pia.indexer[1,1].n_group1 == 0
+    @test pia.indexer[1,1].start1 == 0
+    @test pia.indexer[1,1].end1 == -1
+    @test pia.indexer[2,1].n_local == 0
+    @test pia.indexer[2,1].n_group1 == 0
+    @test pia.indexer[2,1].start1 == 0
+    @test pia.indexer[2,1].end1 == -1
+    @test pia.indexer[2,1].n_group2 == 0
+    @test pia.indexer[2,1].start2 == 0
+    @test pia.indexer[2,1].end2 == -1
+    @test pia.indexer[3,1].n_local == 1
+    @test pia.indexer[3,1].n_group2 == 1
+    @test pia.indexer[3,1].start2 == 2
+    @test pia.indexer[3,1].end2 == 2
+    @test pia.indexer[3,1].n_group1 == 0
+    @test pia.indexer[3,1].start1 == 0
+    @test pia.indexer[3,1].end1 == -1
 end

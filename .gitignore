@@ -9,3 +9,4 @@ simulations/tests
 scratch/
 **/*.jl.*.cov
 coverage_report/
+simulations/1D/multithread_debugging.jl
