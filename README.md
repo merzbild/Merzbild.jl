@@ -6,11 +6,12 @@
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 # Merzbild.jl
-**Merzbild.jl** is a work-in-progress DSMC code fully written in Julia,
+**Merzbild.jl** is a work-in-progress **variable-weight** DSMC code fully written in Julia,
 designed to provide all the necessary components to build your own simulations.
 This means that things like implementing a time loop over timesteps are left to the end user,
 and the code provides only functionality such as
 particle sampling and indexing, collisions, merging, computation of physical properties and I/O.
+Currently the code supports serial and multithreaded operation.
 
 ## Installation
 For now, **Merzbild.jl** needs to be cloned to be run. Once cloned, navigate to the directory, run `julia --project=.`, and in the
