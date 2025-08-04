@@ -178,3 +178,13 @@ Shown is the speed-up compared to a serial execution on the same computer (see a
 |                               | **2 cores** |  **4 cores** |  **8 cores** |
 |:-----------------------------:|:-----------:|:------------:|:------------:|
 | `n_chunks=n_threads`, no DLB  |     1.89    |   3.31       |    5.16      |         
+
+
+
+### M1 Pro (Macbook Pro), 32 GB RAM
+MacOS 15.4.1, Julia version 1.11.2.
+Shown is the speed-up compared to a serial execution on the same computer (see above). `DLB` denotes dynamic load balancing (currently not used).
+
+|                               | **2 cores** |  **4 cores** |  **8 cores** |
+|:-----------------------------:|:-----------:|:------------:|:------------:|
+| `n_chunks=n_threads`, no DLB  |     2.26    |   3.78       |    5.7      |      
