@@ -27,6 +27,7 @@ include("test_octree_merging.jl")  # then we test computation of props and octre
 include("test_octree_merging_buffer_sorting.jl")  # then we test that particles are freed correctly in octree merging
 include("test_bkw_varweight_octree.jl")  # then we test variable-weight NTC collisions+octree merging in 0D (BKW relaxation)
 include("test_2species_varweight_octree.jl")  # 2-species variable-weight elastic collisions and merging
+include("test_nnls_utils.jl")  # test NNLS-based merging utils first
 include("test_nnls_merging.jl")  # test NNLS-based merging
 include("test_nnls_merging_buffer_sorting.jl")  # then we test that particles are freed correctly in NNLS-based merging
 include("test_bkw_varweight_nnls.jl")  # test NNLS-based merging
