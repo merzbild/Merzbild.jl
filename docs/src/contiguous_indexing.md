@@ -110,7 +110,7 @@ might lead to erroneous results.
 Several utility functions are available to verify/help debug simulations.
 
 [`pretty_print_pia`](@ref) prints out the start/end indices for all groups in all cells for particles of a given
-species. [`test_pia_is_correct`](@ref) verifies that the indexing of groups is consistent.
+species. [`check_pia_is_correct`](@ref) verifies that the indexing of groups is consistent.
 [`check_unique_index`](@ref) checks that no two indices point to the same particle, as well as
 that no particles in the buffer are pointed to by indices used in the simulation. This function allocates
 a temporary array and is therefore slow for large numbers of particles.

@@ -3,7 +3,7 @@ using Merzbild
 
 makedocs(
     sitename = "Merzbild",
-    format = Documenter.HTML(),
+    format = Documenter.HTML(; size_threshold=400_000),
     modules = [Merzbild],
     remotes = nothing,
     pages = [
@@ -19,7 +19,7 @@ makedocs(
         "Tutorials" => [
             "Contiguous indexing" => "contiguous_indexing.md",
             "Modelling ionization reactions" => "modelling_ionization.md",
-            "Multithreaded simualtions" => "multithreaded.md",
+            "Multithreaded simulations" => "multithreaded.md",
         ],
         "API reference" => [
             "Public API reference" => "reference_public.md",

@@ -61,6 +61,13 @@ Merzbild.get_ionization_threshold
 Merzbild.get_electron_energy_split
 ```
 
+## Fokker-Planck computations
+```@docs
+Merzbild.sample_normal_rands!
+Merzbild.scale_norm_rands!
+Merzbild.compute_relaxation_time
+```
+
 ## Electron-neutral interactions
 ```@docs
 Merzbild.TabulatedCSData
@@ -115,7 +122,6 @@ Merzbild.compute_octree!
 
 ## Grids
 ```@docs
-Merzbild.AbstractGrid
 Merzbild.Cell1D
 Merzbild.Cell1D(xlo, xhi, V)
 Merzbild.get_cell

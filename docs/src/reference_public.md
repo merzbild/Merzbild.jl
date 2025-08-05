@@ -25,7 +25,7 @@ ParticleIndexerArray(grid, species_data::Array{Species})
 squash_pia!
 count_disordered_particles
 check_unique_index
-test_pia_is_correct
+check_pia_is_correct
 pretty_print_pia
 ```
 
@@ -89,6 +89,10 @@ ntc!(rng, collision_factors, collision_data, interaction,
               cell, species1, species2, Δt, V)
 ntc_n_e!
 ntc_n_e_es!
+```
+
+## Fokker-Planck computations
+```@docs
 fp_linear!
 ```
 
@@ -137,6 +141,7 @@ merge_octree_N2_based!
 
 ## Grids and particle sorting
 ```@docs
+AbstractGrid
 Grid1DUniform
 Grid1DUniform(L, nx; wall_offset=1e-12)
 GridSortInPlace
