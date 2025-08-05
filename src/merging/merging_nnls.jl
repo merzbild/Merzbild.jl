@@ -679,9 +679,9 @@ function compute_lhs_particles_additional_rate_preserving!(rng, col_index, nnls_
             vy = check_speed_bound(vys * nnls_merging.Ey, nnls_merging.minvy, nnls_merging.maxvy, v_mult)
             vz = check_speed_bound(vzs * nnls_merging.Ez, nnls_merging.minvz, nnls_merging.maxvz, v_mult)
             for n_mom in 1:nnls_merging.n_moments
-                lhs_matrix[n_mom, col_index] = ccm(vx, vy, vz,
-                                                0.0, 0.0, 0.0,
-                                                nnls_merging.mim[n_mom])
+                @inbounds lhs_matrix[n_mom, col_index] = ccm(vx, vy, vz,
+                                                             0.0, 0.0, 0.0,
+                                                             nnls_merging.mim[n_mom])
             end
 
             @inbounds g = sqrt((nnls_merging.v0[1] + vx)^2 + (nnls_merging.v0[2] + vy)^2 + (nnls_merging.v0[3] + vz)^2)
@@ -712,8 +712,8 @@ function compute_lhs_particles_additional_rate_preserving!(rng, col_index, nnls_
 
             @inbounds g = sqrt((nnls_merging.v0[1] + vx)^2 + (nnls_merging.v0[2] + vy)^2 + (nnls_merging.v0[3] + vz)^2)
             compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index)
-            lhs_matrix[nnls_merging.n_moments+1, col_index] = get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g
-            lhs_matrix[nnls_merging.n_moments+2, col_index] = get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g
+            @inbounds lhs_matrix[nnls_merging.n_moments+1, col_index] = get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g
+            @inbounds lhs_matrix[nnls_merging.n_moments+2, col_index] = get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g
             
         end
         col_index += 1
