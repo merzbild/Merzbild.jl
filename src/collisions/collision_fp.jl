@@ -1,7 +1,21 @@
 @muladd begin
 
 """
-Model single-species elastic collisions using a linear Fokker-Planck approximation 
+    fp_linear!(rng, collision_data_fp, interaction, species_data, particles, pia, cell, species, Δt, V)
+
+Model single-species elastic collisions using a linear Fokker-Planck approximation.
+
+Positional arguments
+* `rng`: the random number generator
+* `collision_data_fp`: `CollisionDataFP` instance used for storing collisional quantities
+* `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
+* `species_data`: the vector of `SpeciesData`
+* `particles`: `ParticleVector` of the particles being collided
+* `pia`: the `ParticleIndexerArray`
+* `cell`: the index of the cell in which collisions are performed
+* `species`: the index of the species for which collisions are performed
+* `Δt`: timestep
+* `V`: cell volume
 """
 function fp_linear!(rng, collision_data_fp, interaction, species_data, particles, pia, cell, species, Δt, V)
     @inbounds indexer = pia.indexer[cell, species]
@@ -61,7 +75,7 @@ function fp_linear!(rng, collision_data_fp, interaction, species_data, particles
 
     es_old = es_old / local_w
 
-    τ = compute_relaxation_time(interaction, species_data, particles, pia, cell, species, V, es_old, local_w)
+    τ = compute_relaxation_time(interaction, species_data, species, V, es_old, local_w)
     A = exp(-Δt/τ)
     B = (1.0 - A)*τ
 
@@ -106,7 +120,23 @@ function fp_linear!(rng, collision_data_fp, interaction, species_data, particles
     end
 end
 
-@inline function compute_relaxation_time(interaction, species_data, particles, pia, cell, species, V, es_old, local_w)
+"""
+    compute_relaxation_time(interaction, species_data, species, V, es_old, local_w)
+
+Compute the relaxation time for a single-species flow, as given by ``\\tau = 2\\mu / p``.
+
+# Positional arguments
+* `interaction`: the `Interaction` instance for the self-interaction of the species in question
+* `species_data`: the vector of `SpeciesData`
+* `species`: the index of the species for which collisions are performed
+* `V`: cell volume
+* `es_old`: the total kinetic energy of the particles in the cell, divided by the species' molecular mass
+* `local_w`: the total computational weight of the particles in the cell
+
+# Returns
+The elastic collision relaxation time.
+"""
+@inline function compute_relaxation_time(interaction, species_data, species, V, es_old, local_w)
     T = es_old * species_data[species].mass / ((3.0 / 2.0) * k_B)
 
     nrho = local_w / V
@@ -116,6 +146,17 @@ end
     return 2.0 * μ / p;
 end
 
+"""
+    sample_normal_rands!(rng, collision_data_fp, n_local)
+
+Sample `3*n_local` normally distributed random numbers (with mean 0 and variance 1), one for each velocity component,
+and write them to a `CollisionDataFP` instance.
+
+# Positional arguments
+* `rng`: the random number generator
+* `collision_data_fp`: `CollisionDataFP` instance used for storing collisional quantities
+* `n_local`: the number of particles to sample the numbers for
+"""
 @inline function sample_normal_rands!(rng, collision_data_fp, n_local)
     for i in 1:n_local
         @inbounds collision_data_fp.xvel_rand[i] = randn(rng)
@@ -124,6 +165,16 @@ end
     end
 end
 
+"""
+    scale_norm_rands!(collision_data_fp, n_local)
+
+Scale sampled normally distributed random numbers velocity component-wise, so that their
+means for each component are exactly 0, and their variances are exactly 1.
+
+# Positional arguments
+* `collision_data_fp`: `CollisionDataFP` instance used for storing collisional quantities
+* `n_local`: the number of particles for which the numbers were sampled for
+"""
 @inline function scale_norm_rands!(collision_data_fp, n_local)
     collision_data_fp.mean = SVector{3,Float64}(0.0, 0.0, 0.0)
     collision_data_fp.stddev = SVector{3,Float64}(0.0, 0.0, 0.0)
