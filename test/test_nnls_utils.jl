@@ -6,7 +6,7 @@
 
     @test length(base_mim) == length(ref_mom_indices)
     for ref_index in ref_mom_indices
-        @test (ref_index in base_mim) == true
+        @test ref_index in base_mim
     end
 
     @test Merzbild.vx_sign(1) == -1
@@ -48,4 +48,21 @@
     @test Merzbild.check_speed_bound(-20.0, -4.0, 8.0, 0.5) == -2.0
     @test Merzbild.check_speed_bound(20.0, -4.0, 8.0, 0.5) == 4.0
     @test Merzbild.check_speed_bound(-6.0, -4.0, 8.0, 0.5) == -3.0
+
+    mim = Merzbild.compute_multi_index_moments(3)
+
+    for x in mim
+        @test sum(x) == 3
+    end
+    @test [3,0,0] in mim
+    @test [0,3,0] in mim
+    @test [0,0,3] in mim
+    @test [2,1,0] in mim
+    @test [0,1,2] in mim
+    @test [1,0,2] in mim
+    @test [2,0,1] in mim
+    @test [0,2,1] in mim
+    @test [1,2,0] in mim
+    @test [1,1,1] in mim
+    @test length(mim) == 10
 end
