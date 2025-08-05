@@ -50,7 +50,7 @@ export ElectronEnergySplitEqual, ElectronEnergySplitZeroE
 export accelerate_constant_field_x!
 export estimate_sigma_g_w_max_ntc_n_e!, ntc_n_e!, ntc_n_e_es!
 export ParticleVector
-export Grid1DUniform, write_grid
+export AbstractGrid, Grid1DUniform, write_grid
 export GridSortInPlace, sort_particles!
 export MaxwellWallBC, MaxwellWalls1D, convect_particles!
 export pretty_print_pia
