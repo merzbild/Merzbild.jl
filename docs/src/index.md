@@ -14,8 +14,7 @@ Serial and multithreaded simulations are possible.
 
 ## Brief overview of capabilities
 Currently the code supports spatially homogeneous (0D) and 1D uniform grid simulations.
-The table below lists support for the fixed- and variable-weight versions of the code,
-with different supported particle merging algorithms listed for the different simulation types.
+The table below lists support for the fixed- and variable-weight versions of the code.
 
 |                        | **0D**                                        | **1D** |
 |:----------------------:|:-----------------------------------------:|:----:|

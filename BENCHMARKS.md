@@ -125,6 +125,22 @@ I/O                             52   8.21ms    0.0%   158μs   12.2KiB    0.0%  
 ──────────────────────────────────────────────────────────────────────────────────────
 ```
 
+#### SPARTA
+```
+Loop time of 1155.34 on 1 procs for 50000 steps with 500000 particles
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Move    | 598.55     | 598.55     | 598.55     |   0.0 | 51.81
+Coll    | 262.52     | 262.52     | 262.52     |   0.0 | 22.72
+Sort    | 87.103     | 87.103     | 87.103     |   0.0 |  7.54
+Comm    | 0.018935   | 0.018935   | 0.018935   |   0.0 |  0.00
+Modify  | 207.14     | 207.14     | 207.14     |   0.0 | 17.93
+Output  | 0.002845   | 0.002845   | 0.002845   |   0.0 |  0.00
+Other   |            | 0.01218    |            |       |  0.00
+```
+
 ### M1 Pro (Macbook Pro), 32 GB RAM
 
 MacOS 15.4.1, Julia version 1.11.2, SPARTA compiled with Apple clang version 17.0.0.
