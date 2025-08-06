@@ -150,9 +150,11 @@ function surface_props_scale!(species, surf_props, species_data, Δt)
         @inbounds surf_props.flux_incident[surface_element_id, species] *= factor
         @inbounds surf_props.flux_reflected[surface_element_id, species] *= factor
 
-        @inbounds surf_props.force[:,surface_element_id,species] .*= factor
+        for i in 1:3
+            @inbounds surf_props.force[i,surface_element_id,species] *= factor
+            @inbounds surf_props.shear_pressure[i,surface_element_id,species] *= factor
+        end
         @inbounds surf_props.normal_pressure[surface_element_id,species] *= factor
-        @inbounds surf_props.shear_pressure[:,surface_element_id,species] .*= factor
         @inbounds surf_props.kinetic_energy_flux[surface_element_id,species] *= factor
     end
 end
