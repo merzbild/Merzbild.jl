@@ -109,19 +109,19 @@ Ubuntu 22.04.5, Julia version 1.11.2, SPARTA compiled with gcc version 11.4.0.
 ──────────────────────────────────────────────────────────────────────────────────────
                                              Time                    Allocations      
                                     ───────────────────────   ────────────────────────
-         Tot / % measured:                816s /  99.4%            334MiB /  11.8%    
+         Tot / % measured:                831s /  99.4%            192MiB /  17.1%    
 
 Section                     ncalls     time    %tot     avg     alloc    %tot      avg
 ──────────────────────────────────────────────────────────────────────────────────────
-sort                         50.0k     271s   33.5%  5.43ms     0.00B    0.0%    0.00B
-convect + surface compute    36.0k     217s   26.8%  6.03ms   8.79MiB   22.4%     256B
-props compute                36.0k     134s   16.5%  3.72ms     0.00B    0.0%    0.00B
-collide                       100M     115s   14.2%  1.15μs     0.00B    0.0%    0.00B
-convect                      14.0k    73.1s    9.0%  5.22ms     0.00B    0.0%    0.00B
-avg physprops                36.0k    207ms    0.0%  5.75μs     0.00B    0.0%    0.00B
-sampling                         1   27.8ms    0.0%  27.8ms   30.5MiB   77.6%  30.5MiB
-avg surfprops                36.0k   12.4ms    0.0%   345ns     0.00B    0.0%    0.00B
-I/O                             52   8.21ms    0.0%   158μs   12.2KiB    0.0%     241B
+sort                         50.0k     279s   33.7%  5.57ms     0.00B    0.0%    0.00B
+convect + surface compute    36.0k     220s   26.7%  6.12ms   2.20MiB    6.7%    64.0B
+props compute                36.0k     136s   16.5%  3.78ms     0.00B    0.0%    0.00B
+collide                       100M     118s   14.3%  1.18μs     0.00B    0.0%    0.00B
+convect                      14.0k    73.1s    8.8%  5.22ms     0.00B    0.0%    0.00B
+avg physprops                36.0k    205ms    0.0%  5.70μs     0.00B    0.0%    0.00B
+sampling                         1   36.2ms    0.0%  36.2ms   30.5MiB   93.3%  30.5MiB
+avg surfprops                36.0k   12.4ms    0.0%   344ns     0.00B    0.0%    0.00B
+I/O                             15   2.21ms    0.0%   148μs   3.58KiB    0.0%     244B
 ──────────────────────────────────────────────────────────────────────────────────────
 ```
 
