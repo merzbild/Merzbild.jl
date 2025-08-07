@@ -254,15 +254,15 @@ Resets all data for a merging grid instance.
 """
 function clear_merging_grid!(merging_grid)
     Ntot = merging_grid.Ntotal
-    for index in 1:Ntot
-        @inbounds merging_grid.cells[index].w = 0.0
-        @inbounds merging_grid.cells[index].v_mean = SVector{3,Float64}(0.0, 0.0, 0.0)
-        @inbounds merging_grid.cells[index].v_std_sq = SVector{3,Float64}(0.0, 0.0, 0.0)
-        @inbounds merging_grid.cells[index].x_mean = SVector{3,Float64}(0.0, 0.0, 0.0)
-        @inbounds merging_grid.cells[index].x_std_sq = SVector{3,Float64}(0.0, 0.0, 0.0)
-        @inbounds merging_grid.cells[index].np = 0
-        @inbounds merging_grid.cells[index].particle_index1 = 0
-        @inbounds merging_grid.cells[index].particle_index2 = 0
+    @inbounds for index in 1:Ntot
+        merging_grid.cells[index].w = 0.0
+        merging_grid.cells[index].v_mean = SVector{3,Float64}(0.0, 0.0, 0.0)
+        merging_grid.cells[index].v_std_sq = SVector{3,Float64}(0.0, 0.0, 0.0)
+        merging_grid.cells[index].x_mean = SVector{3,Float64}(0.0, 0.0, 0.0)
+        merging_grid.cells[index].x_std_sq = SVector{3,Float64}(0.0, 0.0, 0.0)
+        merging_grid.cells[index].np = 0
+        merging_grid.cells[index].particle_index1 = 0
+        merging_grid.cells[index].particle_index2 = 0
     end
 end
 
@@ -283,70 +283,70 @@ function compute_grid!(merging_grid::GridN2Merge, particles, pia, cell, species)
 
     @inbounds s1 = pia.indexer[cell,species].start1
     @inbounds e1 = pia.indexer[cell,species].end1
-    for i in s1:e1
-        @inbounds index = compute_grid_index(merging_grid, particles[i].v)
+    @inbounds for i in s1:e1
+        index = compute_grid_index(merging_grid, particles[i].v)
 
-        @inbounds merging_grid.cells[index].np += 1
-        @inbounds merging_grid.cells[index].w += particles[i].w
-        @inbounds merging_grid.cells[index].v_mean = merging_grid.cells[index].v_mean + particles[i].v * particles[i].w
-        @inbounds merging_grid.cells[index].x_mean = merging_grid.cells[index].x_mean + particles[i].x * particles[i].w
+        merging_grid.cells[index].np += 1
+        merging_grid.cells[index].w += particles[i].w
+        merging_grid.cells[index].v_mean = merging_grid.cells[index].v_mean + particles[i].v * particles[i].w
+        merging_grid.cells[index].x_mean = merging_grid.cells[index].x_mean + particles[i].x * particles[i].w
 
-        @inbounds if (merging_grid.cells[index].np == 1)
-            @inbounds merging_grid.cells[index].particle_index1 = i
+        if (merging_grid.cells[index].np == 1)
+            merging_grid.cells[index].particle_index1 = i
         elseif (merging_grid.cells[index].np == 2)
-            @inbounds merging_grid.cells[index].particle_index2 = i
+            merging_grid.cells[index].particle_index2 = i
         end
     end
 
     @inbounds if pia.indexer[cell,species].start2 > 0
         @inbounds s2 = pia.indexer[cell,species].start2
-        @inbounds e2 = pia.indexer[cell,species].end2
+        @inbounds @inbounds e2 = pia.indexer[cell,species].end2
         for i in s2:e2
-            @inbounds index = compute_grid_index(merging_grid, particles[i].v)
+            index = compute_grid_index(merging_grid, particles[i].v)
 
-            @inbounds merging_grid.cells[index].np += 1
-            @inbounds merging_grid.cells[index].w += particles[i].w
-            @inbounds merging_grid.cells[index].v_mean = merging_grid.cells[index].v_mean + particles[i].v * particles[i].w
-            @inbounds merging_grid.cells[index].x_mean = merging_grid.cells[index].x_mean + particles[i].x * particles[i].w
+            merging_grid.cells[index].np += 1
+            merging_grid.cells[index].w += particles[i].w
+            merging_grid.cells[index].v_mean = merging_grid.cells[index].v_mean + particles[i].v * particles[i].w
+            merging_grid.cells[index].x_mean = merging_grid.cells[index].x_mean + particles[i].x * particles[i].w
 
-            @inbounds if (merging_grid.cells[index].np == 1)
-                @inbounds merging_grid.cells[index].particle_index1 = i
+            if (merging_grid.cells[index].np == 1)
+                merging_grid.cells[index].particle_index1 = i
             elseif (merging_grid.cells[index].np == 2)
-                @inbounds merging_grid.cells[index].particle_index2 = i
+                merging_grid.cells[index].particle_index2 = i
             end
         end
     end
 
     Ntot = merging_grid.Ntotal
-    for index in 1:Ntot
-        @inbounds if (merging_grid.cells[index].w > 0.0)
-            @inbounds merging_grid.cells[index].v_mean = merging_grid.cells[index].v_mean / merging_grid.cells[index].w
-            @inbounds merging_grid.cells[index].x_mean = merging_grid.cells[index].x_mean / merging_grid.cells[index].w
+    @inbounds for index in 1:Ntot
+        if (merging_grid.cells[index].w > 0.0)
+            merging_grid.cells[index].v_mean = merging_grid.cells[index].v_mean / merging_grid.cells[index].w
+            merging_grid.cells[index].x_mean = merging_grid.cells[index].x_mean / merging_grid.cells[index].w
         end
     end
 
-    for i in s1:e1
-        @inbounds index = compute_grid_index(merging_grid, particles[i].v)
+    @inbounds for i in s1:e1
+        index = compute_grid_index(merging_grid, particles[i].v)
 
-        @inbounds merging_grid.cells[index].v_std_sq = merging_grid.cells[index].v_std_sq + (particles[i].v - merging_grid.cells[index].v_mean).^2 * particles[i].w
-        @inbounds merging_grid.cells[index].x_std_sq = merging_grid.cells[index].x_std_sq + (particles[i].x - merging_grid.cells[index].x_mean).^2 * particles[i].w
+        merging_grid.cells[index].v_std_sq = merging_grid.cells[index].v_std_sq + (particles[i].v - merging_grid.cells[index].v_mean).^2 * particles[i].w
+        merging_grid.cells[index].x_std_sq = merging_grid.cells[index].x_std_sq + (particles[i].x - merging_grid.cells[index].x_mean).^2 * particles[i].w
     end
 
     @inbounds if pia.indexer[cell,species].start2 > 0
         @inbounds s2 = pia.indexer[cell,species].start2
         @inbounds e2 = pia.indexer[cell,species].end2
-        for i in s2:e2
-            @inbounds index = compute_grid_index(merging_grid, particles[i].v)
+        @inbounds for i in s2:e2
+            index = compute_grid_index(merging_grid, particles[i].v)
 
-            @inbounds merging_grid.cells[index].v_std_sq = merging_grid.cells[index].v_std_sq + (particles[i].v - merging_grid.cells[index].v_mean).^2 * particles[i].w
-            @inbounds merging_grid.cells[index].x_std_sq = merging_grid.cells[index].x_std_sq + (particles[i].x - merging_grid.cells[index].x_mean).^2 * particles[i].w
+            merging_grid.cells[index].v_std_sq = merging_grid.cells[index].v_std_sq + (particles[i].v - merging_grid.cells[index].v_mean).^2 * particles[i].w
+            merging_grid.cells[index].x_std_sq = merging_grid.cells[index].x_std_sq + (particles[i].x - merging_grid.cells[index].x_mean).^2 * particles[i].w
         end
     end
 
-    for index in 1:Ntot
-        @inbounds if (merging_grid.cells[index].w > 0.0)
-            @inbounds merging_grid.cells[index].v_std_sq = merging_grid.cells[index].v_std_sq / merging_grid.cells[index].w
-            @inbounds merging_grid.cells[index].x_std_sq = merging_grid.cells[index].x_std_sq / merging_grid.cells[index].w
+    @inbounds for index in 1:Ntot
+        if (merging_grid.cells[index].w > 0.0)
+            merging_grid.cells[index].v_std_sq = merging_grid.cells[index].v_std_sq / merging_grid.cells[index].w
+            merging_grid.cells[index].x_std_sq = merging_grid.cells[index].x_std_sq / merging_grid.cells[index].w
         end
     end
 end
@@ -369,61 +369,61 @@ function compute_new_particles!(rng, merging_grid::GridN2Merge, particles, pia, 
     # no limits on particle location, i.e. 0-D
 
     Ntot = merging_grid.Ntotal
-    for index in 1:Ntot
-        @inbounds if (merging_grid.cells[index].np > 2)
-            @inbounds merging_grid.cells[index].w1 = 0.5 * merging_grid.cells[index].w
-            @inbounds merging_grid.cells[index].w2 = merging_grid.cells[index].w1
+    @inbounds for index in 1:Ntot
+        if (merging_grid.cells[index].np > 2)
+            merging_grid.cells[index].w1 = 0.5 * merging_grid.cells[index].w
+            merging_grid.cells[index].w2 = merging_grid.cells[index].w1
 
-            @inbounds merging_grid.cells[index].v_std_sq = sqrt.(merging_grid.cells[index].v_std_sq)
-            @inbounds merging_grid.cells[index].x_std_sq = sqrt.(merging_grid.cells[index].x_std_sq)
+            merging_grid.cells[index].v_std_sq = sqrt.(merging_grid.cells[index].v_std_sq)
+            merging_grid.cells[index].x_std_sq = sqrt.(merging_grid.cells[index].x_std_sq)
             
-            @inbounds merging_grid.direction_vec = @SVector rand(rng, direction_signs, 3)
-            @inbounds merging_grid.cells[index].v1 = merging_grid.cells[index].v_mean + merging_grid.direction_vec .* merging_grid.cells[index].v_std_sq
-            @inbounds merging_grid.cells[index].v2 = merging_grid.cells[index].v_mean - merging_grid.direction_vec .* merging_grid.cells[index].v_std_sq
+            merging_grid.direction_vec = @SVector rand(rng, direction_signs, 3)
+            merging_grid.cells[index].v1 = merging_grid.cells[index].v_mean + merging_grid.direction_vec .* merging_grid.cells[index].v_std_sq
+            merging_grid.cells[index].v2 = merging_grid.cells[index].v_mean - merging_grid.direction_vec .* merging_grid.cells[index].v_std_sq
 
-            @inbounds merging_grid.direction_vec = @SVector rand(rng, direction_signs, 3)
-            @inbounds merging_grid.cells[index].x1 = merging_grid.cells[index].x_mean + merging_grid.direction_vec .* merging_grid.cells[index].x_std_sq
-            @inbounds merging_grid.cells[index].x2 = merging_grid.cells[index].x_mean - merging_grid.direction_vec .* merging_grid.cells[index].x_std_sq
+            merging_grid.direction_vec = @SVector rand(rng, direction_signs, 3)
+            merging_grid.cells[index].x1 = merging_grid.cells[index].x_mean + merging_grid.direction_vec .* merging_grid.cells[index].x_std_sq
+            merging_grid.cells[index].x2 = merging_grid.cells[index].x_mean - merging_grid.direction_vec .* merging_grid.cells[index].x_std_sq
         elseif (merging_grid.cells[index].np == 2)
             # get the particle indices we saved and just write data based on them
-            @inbounds i = merging_grid.cells[index].particle_index1
-            @inbounds merging_grid.cells[index].w1 = particles[i].w
-            @inbounds merging_grid.cells[index].v1 = particles[i].v
-            @inbounds merging_grid.cells[index].x1 = particles[i].x
+            i = merging_grid.cells[index].particle_index1
+            merging_grid.cells[index].w1 = particles[i].w
+            merging_grid.cells[index].v1 = particles[i].v
+            merging_grid.cells[index].x1 = particles[i].x
 
-            @inbounds i = merging_grid.cells[index].particle_index2
-            @inbounds merging_grid.cells[index].w2 = particles[i].w
-            @inbounds merging_grid.cells[index].v2 = particles[i].v
-            @inbounds merging_grid.cells[index].x2 = particles[i].x
+            i = merging_grid.cells[index].particle_index2
+            merging_grid.cells[index].w2 = particles[i].w
+            merging_grid.cells[index].v2 = particles[i].v
+            merging_grid.cells[index].x2 = particles[i].x
         elseif (merging_grid.cells[index].np == 1)
             # get the particle indices we saved and just write data based on them
-            @inbounds i = merging_grid.cells[index].particle_index1
-            @inbounds merging_grid.cells[index].w1 = particles[i].w
-            @inbounds merging_grid.cells[index].v1 = particles[i].v
-            @inbounds merging_grid.cells[index].x1 = particles[i].x
+            i = merging_grid.cells[index].particle_index1
+            merging_grid.cells[index].w1 = particles[i].w
+            merging_grid.cells[index].v1 = particles[i].v
+            merging_grid.cells[index].x1 = particles[i].x
         end
     end
 
     curr_particle_index = 0
-    for index in 1:Ntot
-        @inbounds if (merging_grid.cells[index].np >= 2)
-            @inbounds i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
-            @inbounds curr_particle_index += 1
-            @inbounds particles[i].w = merging_grid.cells[index].w1
-            @inbounds particles[i].v = merging_grid.cells[index].v1
-            @inbounds particles[i].x = merging_grid.cells[index].x1
+    @inbounds for index in 1:Ntot
+        if (merging_grid.cells[index].np >= 2)
+            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
+            curr_particle_index += 1
+            particles[i].w = merging_grid.cells[index].w1
+            particles[i].v = merging_grid.cells[index].v1
+            particles[i].x = merging_grid.cells[index].x1
 
-            @inbounds i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
-            @inbounds curr_particle_index += 1
-            @inbounds particles[i].w = merging_grid.cells[index].w2
-            @inbounds particles[i].v = merging_grid.cells[index].v2
-            @inbounds particles[i].x = merging_grid.cells[index].x2
+            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
+            curr_particle_index += 1
+            particles[i].w = merging_grid.cells[index].w2
+            particles[i].v = merging_grid.cells[index].v2
+            particles[i].x = merging_grid.cells[index].x2
         elseif (merging_grid.cells[index].np == 1)
-            @inbounds i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
-            @inbounds curr_particle_index += 1
-            @inbounds particles[i].w = merging_grid.cells[index].w1
-            @inbounds particles[i].v = merging_grid.cells[index].v1
-            @inbounds particles[i].x = merging_grid.cells[index].x1
+            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
+            curr_particle_index += 1
+            particles[i].w = merging_grid.cells[index].w1
+            particles[i].v = merging_grid.cells[index].v1
+            particles[i].x = merging_grid.cells[index].x1
         end
     end
 

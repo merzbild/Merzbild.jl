@@ -130,8 +130,8 @@ Convect particles on a 1-D uniform grid.
 function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particles, pia, species, species_data, Δt)
     # @inbounds @simd for i in 1:pia.n_total[species]
     
-    if pia.contiguous[species]
-        n_tot = pia.n_total[species]
+    @inbounds if pia.contiguous[species]
+        @inbounds n_tot = pia.n_total[species]
         @inbounds @simd for i in 1:n_tot
             convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt) 
         end
@@ -177,7 +177,7 @@ function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D
     # @inbounds @simd for i in 1:pia.n_total[species]
     
     clear_props!(surf_props)
-    if pia.contiguous[species]
+    @inbounds if pia.contiguous[species]
         @inbounds n_tot = pia.n_total[species]
         @inbounds @simd for i in 1:n_tot
             convect_single_particle!(rng, grid, boundaries, particles[i], species, surf_props, species_data[species].mass, Δt) 

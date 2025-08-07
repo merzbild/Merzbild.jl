@@ -20,17 +20,17 @@ Ubuntu 22.04.5, Julia version 1.11.2, SPARTA compiled with gcc version 11.4.0.
 ──────────────────────────────────────────────────────────────────────────
                                  Time                    Allocations      
                         ───────────────────────   ────────────────────────
-   Tot / % measured:         28.1s /  97.3%            126MiB /   9.8%    
+   Tot / % measured:         28.2s /  97.3%            126MiB /   9.8%    
 
 Section         ncalls     time    %tot     avg     alloc    %tot      avg
 ──────────────────────────────────────────────────────────────────────────
-sort             50.0k    10.4s   38.0%   208μs     0.00B    0.0%    0.00B
-convect          50.0k    5.92s   21.6%   118μs     0.00B    0.0%    0.00B
-collide          2.50M    5.89s   21.5%  2.36μs     0.00B    0.0%    0.00B
-props compute    36.0k    5.07s   18.5%   141μs     0.00B    0.0%    0.00B
+sort             50.0k    10.6s   38.5%   211μs     0.00B    0.0%    0.00B
+convect          50.0k    5.98s   21.8%   120μs     0.00B    0.0%    0.00B
+collide          2.50M    5.91s   21.6%  2.37μs     0.00B    0.0%    0.00B
+props compute    36.0k    4.89s   17.8%   136μs     0.00B    0.0%    0.00B
 I/O                  1   84.8ms    0.3%  84.8ms   9.32MiB   75.3%  9.32MiB
-avg physprops    36.0k   5.56ms    0.0%   154ns     0.00B    0.0%    0.00B
-sampling             1   2.44ms    0.0%  2.44ms   3.05MiB   24.7%  3.05MiB
+avg physprops    36.0k   5.51ms    0.0%   153ns     0.00B    0.0%    0.00B
+sampling             1   2.55ms    0.0%  2.55ms   3.05MiB   24.7%  3.05MiB
 ──────────────────────────────────────────────────────────────────────────
 ```
 
@@ -193,7 +193,7 @@ Shown is the speed-up compared to a serial execution on the same computer (see a
 
 |                               | **2 cores** |  **4 cores** |  **8 cores** |
 |:-----------------------------:|:-----------:|:------------:|:------------:|
-| `n_chunks=n_threads`, no DLB  |     1.89    |   3.31       |    5.16      |         
+| `n_chunks=n_threads`, no DLB  |     1.93    |     3.39     |    5.26      |         
 
 
 
@@ -203,4 +203,4 @@ Shown is the speed-up compared to a serial execution on the same computer (see a
 
 |                               | **2 cores** |  **4 cores** |  **8 cores** |
 |:-----------------------------:|:-----------:|:------------:|:------------:|
-| `n_chunks=n_threads`, no DLB  |     2.26    |   3.78       |    5.7      |      
+| `n_chunks=n_threads`, no DLB  |         |          |          |      
