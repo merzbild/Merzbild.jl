@@ -465,7 +465,7 @@ If no particles are present in the cell, the function does nothing. This does no
 * `species`: the index of the species of which the particle is deleted
 """
 @inline function delete_particle_end!(pv::ParticleVector, pia, cell, species)
-    if pia.indexer[cell, species].n_group2 > 0
+    @inbounds if pia.indexer[cell, species].n_group2 > 0
         delete_particle_end_group2!(pv, pia, cell, species)
     else
         delete_particle_end_group1!(pv, pia, cell, species)
@@ -612,7 +612,7 @@ function squash_pia!(pv, pia, species)
     if pia.contiguous[species]
         return
     else
-        n_cells = size(pia.indexer)[1]
+        @inbounds n_cells = size(pia.indexer)[1]
         if n_cells == 1
             @inbounds if pia.indexer[1, species].n_group2 > 0
                 @inbounds e1 = pia.indexer[1, species].end1 > 0 ? pia.indexer[1, species].end1 : 0
@@ -624,13 +624,13 @@ function squash_pia!(pv, pia, species)
 
                     @inbounds s2 = pia.indexer[1, species].start2
                     @inbounds e2 = pia.indexer[1, species].end2
-                    for j in s2:e2
-                        @inbounds pv.index[j] = pv.index[j+offset]
+                    @inbounds for j in s2:e2
+                        pv.index[j] = pv.index[j+offset]
                     end
                 end
             end
         else
-            last_end = pia.indexer[1, species].end1 > 0 ? pia.indexer[1, species].end1 : 0
+            @inbounds last_end = pia.indexer[1, species].end1 > 0 ? pia.indexer[1, species].end1 : 0
             for i in 1:n_cells-1
                 @inbounds offset = pia.indexer[i+1, species].start1 - (last_end + 1)
                 if offset > 0
@@ -639,8 +639,8 @@ function squash_pia!(pv, pia, species)
 
                     @inbounds s1 = pia.indexer[i+1, species].start1
                     @inbounds e1 = pia.indexer[i+1, species].end1
-                    for j in s1:e1
-                        @inbounds pv.index[j] = pv.index[j+offset]
+                    @inbounds for j in s1:e1
+                        pv.index[j] = pv.index[j+offset]
                     end
                 end
                 @inbounds last_end = pia.indexer[i+1, species].end1 > 0 ? pia.indexer[i+1, species].end1 : last_end
@@ -648,7 +648,7 @@ function squash_pia!(pv, pia, species)
 
             for i in 1:n_cells
                 @inbounds if pia.indexer[i, species].n_group2 > 0
-                    offset = pia.indexer[i, species].start2 - (last_end + 1)
+                    @inbounds offset = pia.indexer[i, species].start2 - (last_end + 1)
                     if offset > 0
                         @inbounds pia.indexer[i, species].start2 -= offset
                         @inbounds pia.indexer[i, species].end2 -= offset
@@ -656,7 +656,7 @@ function squash_pia!(pv, pia, species)
                         @inbounds s2 = pia.indexer[i, species].start2
                         @inbounds e2 = pia.indexer[i, species].end2
                         @inbounds for j in s2:e2
-                            @inbounds pv.index[j] = pv.index[j+offset]
+                            pv.index[j] = pv.index[j+offset]
                         end
                     end
                     @inbounds last_end = pia.indexer[i, species].end2 > 0 ? pia.indexer[i, species].end2 : last_end
