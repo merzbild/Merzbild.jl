@@ -82,7 +82,7 @@
     for i in 1:grid.n_cells
         @test abs(phys_props_ndens.n[i, 1] - n_per_cell / cell_volume) < 2*eps()
         @test phys_props_ndens.np[i, 1] == ppc
-        @test abs(phys_props_ndens.T[i, 1] - phys_props.T[i, 1]) / phys_props.T[i, 1] < 2*eps()
+        @test abs(phys_props_ndens.T[i, 1] - phys_props.T[i, 1]) / phys_props.T[i, 1] < 2.5*eps()
 
         @test abs((phys_props_ndens.v[1,i,1] - phys_props.v[1,i,1])) < 2*eps()
         @test abs((phys_props_ndens.v[2,i,1] - phys_props.v[2,i,1])) < 2*eps()

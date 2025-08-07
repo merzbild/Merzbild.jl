@@ -65,40 +65,40 @@ function sort_particles!(gridsort::GridSortInPlace, grid, particles, pia, specie
         squash_pia!(particles, pia, species)
     end
 
-    @simd for i in 1:n_tot
-        @inbounds newcell = get_cell(grid, particles[i].x)
-        @inbounds particles.cell[i] = newcell
-        @inbounds gridsort.cell_counts[newcell+1] += 1
+    @inbounds @simd for i in 1:n_tot
+        newcell = get_cell(grid, particles[i].x)
+        particles.cell[i] = newcell
+        gridsort.cell_counts[newcell+1] += 1
     end
 
-    for cell in 1:grid.n_cells
-        @inbounds gridsort.cell_counts[cell+1] = gridsort.cell_counts[cell+1] + gridsort.cell_counts[cell]
+    @inbounds for cell in 1:grid.n_cells
+        gridsort.cell_counts[cell+1] = gridsort.cell_counts[cell+1] + gridsort.cell_counts[cell]
 
-        @inbounds cell_start = gridsort.cell_counts[cell] + 1
-        @inbounds cell_np = gridsort.cell_counts[cell+1] - gridsort.cell_counts[cell]
-        @inbounds cell_end = gridsort.cell_counts[cell+1]
+        cell_start = gridsort.cell_counts[cell] + 1
+        cell_np = gridsort.cell_counts[cell+1] - gridsort.cell_counts[cell]
+        cell_end = gridsort.cell_counts[cell+1]
 
-        @inbounds pia.indexer[cell,species].start2 = 0
-        @inbounds pia.indexer[cell,species].end2 = -1
-        @inbounds pia.indexer[cell,species].n_group2 = 0
+        pia.indexer[cell,species].start2 = 0
+        pia.indexer[cell,species].end2 = -1
+        pia.indexer[cell,species].n_group2 = 0
 
         if cell_np > 0
-            @inbounds pia.indexer[cell,species].start1 = cell_start
-            @inbounds pia.indexer[cell,species].end1 = cell_end
+            pia.indexer[cell,species].start1 = cell_start
+            pia.indexer[cell,species].end1 = cell_end
         else
             # this is done so that we can safely write for i in e1:s1 without worrying about accessing particles at index 0
-            @inbounds pia.indexer[cell,species].start1 = 0
-            @inbounds pia.indexer[cell,species].end1 = -1
+            pia.indexer[cell,species].start1 = 0
+            pia.indexer[cell,species].end1 = -1
         end
-        @inbounds pia.indexer[cell,species].n_group1 = cell_np
-        @inbounds pia.indexer[cell,species].n_local = cell_np
+        pia.indexer[cell,species].n_group1 = cell_np
+        pia.indexer[cell,species].n_local = cell_np
     end
 
-    for i in n_tot:-1:1
-        @inbounds curr_cell = particles.cell[i]
-        @inbounds gridsort.sorted_indices[gridsort.cell_counts[curr_cell+1]] = particles.index[i]
+    @inbounds for i in n_tot:-1:1
+        curr_cell = particles.cell[i]
+        gridsort.sorted_indices[gridsort.cell_counts[curr_cell+1]] = particles.index[i]
 
-        @inbounds gridsort.cell_counts[curr_cell+1] -= 1
+        gridsort.cell_counts[curr_cell+1] -= 1
     end
 
     @inbounds @simd for i in 1:n_tot

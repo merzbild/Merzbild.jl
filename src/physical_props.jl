@@ -287,13 +287,13 @@ function avg_props!(phys_props_avg::PhysProps, phys_props::PhysProps, n_avg_time
 
     for species in 1:phys_props.n_species
         @inbounds phys_props_avg.lpa[species] += phys_props.lpa[species] * inv_nt_avg
-        for cell in 1:phys_props.n_cells
-            @inbounds phys_props_avg.np[cell,species] += phys_props.np[cell,species] * inv_nt_avg
-            @inbounds phys_props_avg.n[cell,species] += phys_props.n[cell,species] * inv_nt_avg
-            @inbounds phys_props_avg.v[1,cell,species] += phys_props.v[1,cell,species] * inv_nt_avg
-            @inbounds phys_props_avg.v[2,cell,species] += phys_props.v[2,cell,species] * inv_nt_avg
-            @inbounds phys_props_avg.v[3,cell,species] += phys_props.v[3,cell,species] * inv_nt_avg
-            @inbounds phys_props_avg.T[cell,species] += phys_props.T[cell,species] * inv_nt_avg
+        @inbounds @simd for cell in 1:phys_props.n_cells
+            phys_props_avg.np[cell,species] += phys_props.np[cell,species] * inv_nt_avg
+            phys_props_avg.n[cell,species] += phys_props.n[cell,species] * inv_nt_avg
+            phys_props_avg.v[1,cell,species] += phys_props.v[1,cell,species] * inv_nt_avg
+            phys_props_avg.v[2,cell,species] += phys_props.v[2,cell,species] * inv_nt_avg
+            phys_props_avg.v[3,cell,species] += phys_props.v[3,cell,species] * inv_nt_avg
+            phys_props_avg.T[cell,species] += phys_props.T[cell,species] * inv_nt_avg
         end
     end
 end
@@ -323,23 +323,23 @@ function compute_props_sorted!(particles, pia, species_data, phys_props, cell_ch
             T = 0.0
             v = SVector{3,Float64}(0.0, 0.0, 0.0)
 
-            @inbounds s1 = pia.indexer[cell,species].start1
-            @inbounds e1 = pia.indexer[cell,species].end1
-            for i in s1:e1
-                @inbounds n += particles[species][i].w
-                @inbounds v = v + particles[species][i].v * particles[species][i].w
+            s1 = pia.indexer[cell,species].start1
+            e1 = pia.indexer[cell,species].end1
+            @inbounds @simd for i in s1:e1
+                n += particles[species][i].w
+                v = v + particles[species][i].v * particles[species][i].w
             end
 
             np = e1 >= s1 ? e1-s1 + 1.0 : 0.0
 
             if (n > 0.0)
                 v /= n
-                for i in s1:e1
-                    @inbounds E += particles[species][i].w * ((particles[species][i].v[1] - v[1])^2
+                @inbounds @simd for i in s1:e1
+                    E += particles[species][i].w * ((particles[species][i].v[1] - v[1])^2
                                                               + (particles[species][i].v[2] - v[2])^2
                                                               + (particles[species][i].v[3] - v[3])^2)
                 end
-                @inbounds E *= 0.5 * species_data[species].mass / (n * k_B)
+                E *= 0.5 * species_data[species].mass / (n * k_B)
                 T = (2.0/3.0) * E
             end
     
@@ -400,22 +400,22 @@ function compute_props_sorted!(particles, pia, species_data, phys_props, grid::G
                 T = 0.0
                 v = SVector{3,Float64}(0.0, 0.0, 0.0)
 
-                @inbounds s1 = pia.indexer[cell,species].start1
-                @inbounds e1 = pia.indexer[cell,species].end1
-                for i in s1:e1
-                    @inbounds n += particles[species][i].w
-                    @inbounds v = v + particles[species][i].v * particles[species][i].w
+                s1 = pia.indexer[cell,species].start1
+                e1 = pia.indexer[cell,species].end1
+                @inbounds @simd for i in s1:e1
+                    n += particles[species][i].w
+                    v = v + particles[species][i].v * particles[species][i].w
                     np += 1.0
                 end
 
                 if (n > 0.0)
                     v /= n
-                    for i in s1:e1
-                        @inbounds E += particles[species][i].w * ((particles[species][i].v[1] - v[1])^2
-                                                                   + (particles[species][i].v[2] - v[2])^2
-                                                                   + (particles[species][i].v[3] - v[3])^2)
+                    @inbounds @simd for i in s1:e1
+                        E += particles[species][i].w * ((particles[species][i].v[1] - v[1])^2
+                                                         + (particles[species][i].v[2] - v[2])^2
+                                                         + (particles[species][i].v[3] - v[3])^2)
                     end
-                    @inbounds E *= 0.5 * species_data[species].mass / (n * k_B)
+                    E *= 0.5 * species_data[species].mass / (n * k_B)
                     T = (2.0/3.0) * E
                 end
         
@@ -474,22 +474,22 @@ function compute_mixed_moment(particles, pia, cell, species, powers; sum_scaler=
     result = 0.0
 
 
-    @inbounds s1 = pia.indexer[cell,species].start1
-    @inbounds e1 = pia.indexer[cell,species].end1
+    s1 = pia.indexer[cell,species].start1
+    e1 = pia.indexer[cell,species].end1
 
-    for i in s1:e1
-        @inbounds result += particles[species][i].w * sum_scaler * (particles[species][i].v[1]^powers[1]) *
+    @inbounds for i in s1:e1
+        result += particles[species][i].w * sum_scaler * (particles[species][i].v[1]^powers[1]) *
                   (particles[species][i].v[2]^powers[2]) *
                   (particles[species][i].v[3]^powers[3])
     end
 
-    @inbounds if pia.indexer[cell,species].n_group2 > 0
-        @inbounds s2 = pia.indexer[cell,species].start2
-        @inbounds e2 = pia.indexer[cell,species].end2
-        for i in s2:e2
-            @inbounds result += particles[species][i].w * sum_scaler * (particles[species][i].v[1]^powers[1]) *
-                      (particles[species][i].v[2]^powers[2]) *
-                      (particles[species][i].v[3]^powers[3])
+    if pia.indexer[cell,species].n_group2 > 0
+        s2 = pia.indexer[cell,species].start2
+        e2 = pia.indexer[cell,species].end2
+        @inbounds for i in s2:e2
+            result += particles[species][i].w * sum_scaler * (particles[species][i].v[1]^powers[1]) *
+                        (particles[species][i].v[2]^powers[2]) *
+                        (particles[species][i].v[3]^powers[3])
         end
     end
 
