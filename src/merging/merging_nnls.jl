@@ -989,7 +989,7 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging,
         return -1
     end
 
-    if nonzero == pia.indexer[cell, species].n_local
+    @inbounds if nonzero == pia.indexer[cell, species].n_local
         # println("Non-sparse solution ", error)
         return -1
     end
