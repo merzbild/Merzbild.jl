@@ -258,58 +258,58 @@ function compute_w_total_v0!(nnls_merging, particles, pia, cell, species)
 
     @inbounds s1 = pia.indexer[cell,species].start1
     @inbounds e1 = pia.indexer[cell,species].end1
-    for i in s1:e1
-        @inbounds nnls_merging.w_total += particles[i].w
-        @inbounds nnls_merging.v0 = nnls_merging.v0 + particles[i].w * particles[i].v
+    @inbounds for i in s1:e1
+        nnls_merging.w_total += particles[i].w
+        nnls_merging.v0 = nnls_merging.v0 + particles[i].w * particles[i].v
 
-        @inbounds if (particles[i].v[1] > nnls_merging.maxvx)
-            @inbounds nnls_merging.maxvx = particles[i].v[1]
+        if (particles[i].v[1] > nnls_merging.maxvx)
+            nnls_merging.maxvx = particles[i].v[1]
         end
-        @inbounds if (particles[i].v[1] < nnls_merging.minvx)
-            @inbounds nnls_merging.minvx = particles[i].v[1]
-        end
-
-        @inbounds if (particles[i].v[2] > nnls_merging.maxvy)
-            @inbounds nnls_merging.maxvy = particles[i].v[2]
-        end
-        @inbounds if (particles[i].v[2] < nnls_merging.minvy)
-            @inbounds nnls_merging.minvy = particles[i].v[2]
+        if (particles[i].v[1] < nnls_merging.minvx)
+            nnls_merging.minvx = particles[i].v[1]
         end
 
-        @inbounds if (particles[i].v[3] > nnls_merging.maxvz)
-            @inbounds nnls_merging.maxvz = particles[i].v[3]
+        if (particles[i].v[2] > nnls_merging.maxvy)
+            nnls_merging.maxvy = particles[i].v[2]
         end
-        @inbounds if (particles[i].v[3] < nnls_merging.minvz)
-            @inbounds nnls_merging.minvz = particles[i].v[3]
+        if (particles[i].v[2] < nnls_merging.minvy)
+            nnls_merging.minvy = particles[i].v[2]
+        end
+
+        if (particles[i].v[3] > nnls_merging.maxvz)
+            nnls_merging.maxvz = particles[i].v[3]
+        end
+        if (particles[i].v[3] < nnls_merging.minvz)
+            nnls_merging.minvz = particles[i].v[3]
         end
     end
 
     @inbounds if pia.indexer[cell,species].n_group2 > 0
         @inbounds s2 = pia.indexer[cell,species].start2
         @inbounds e2 = pia.indexer[cell,species].end2
-        for i in s2:e2
-            @inbounds nnls_merging.w_total += particles[i].w
-            @inbounds nnls_merging.v0 = nnls_merging.v0 + particles[i].w * particles[i].v
+        @inbounds for i in s2:e2
+            nnls_merging.w_total += particles[i].w
+            nnls_merging.v0 = nnls_merging.v0 + particles[i].w * particles[i].v
 
-            @inbounds if (particles[i].v[1] > nnls_merging.maxvx)
-                @inbounds nnls_merging.maxvx = particles[i].v[1]
+            if (particles[i].v[1] > nnls_merging.maxvx)
+                nnls_merging.maxvx = particles[i].v[1]
             end
-            @inbounds if (particles[i].v[1] < nnls_merging.minvx)
-                @inbounds nnls_merging.minvx = particles[i].v[1]
-            end
-
-            @inbounds if (particles[i].v[2] > nnls_merging.maxvy)
-                @inbounds nnls_merging.maxvy = particles[i].v[2]
-            end
-            @inbounds if (particles[i].v[2] < nnls_merging.minvy)
-                @inbounds nnls_merging.minvy = particles[i].v[2]
+            if (particles[i].v[1] < nnls_merging.minvx)
+                nnls_merging.minvx = particles[i].v[1]
             end
 
-            @inbounds if (particles[i].v[3] > nnls_merging.maxvz)
-                @inbounds nnls_merging.maxvz = particles[i].v[3]
+            if (particles[i].v[2] > nnls_merging.maxvy)
+                nnls_merging.maxvy = particles[i].v[2]
             end
-            @inbounds if (particles[i].v[3] < nnls_merging.minvz)
-                @inbounds nnls_merging.minvz = particles[i].v[3]
+            if (particles[i].v[2] < nnls_merging.minvy)
+                nnls_merging.minvy = particles[i].v[2]
+            end
+
+            if (particles[i].v[3] > nnls_merging.maxvz)
+                nnls_merging.maxvz = particles[i].v[3]
+            end
+            if (particles[i].v[3] < nnls_merging.minvz)
+                nnls_merging.minvz = particles[i].v[3]
             end
         end
     end
@@ -394,17 +394,17 @@ function compute_lhs_and_rhs!(nnls_merging, lhs_matrix,
     @inbounds s1 = pia.indexer[cell,species].start1
     @inbounds e1 = pia.indexer[cell,species].end1
 
-    for i in s1:e1
+    @inbounds for i in s1:e1
         # w_total += particles[i].w
 
-        @inbounds nnls_merging.Ex += particles[i].w * (particles[i].v[1] - nnls_merging.v0[1])^2
-        @inbounds nnls_merging.Ey += particles[i].w * (particles[i].v[2] - nnls_merging.v0[2])^2
-        @inbounds nnls_merging.Ez += particles[i].w * (particles[i].v[3] - nnls_merging.v0[3])^2
+        nnls_merging.Ex = nnls_merging.Ex + particles[i].w * (particles[i].v[1] - nnls_merging.v0[1])^2
+        nnls_merging.Ey = nnls_merging.Ey + particles[i].w * (particles[i].v[2] - nnls_merging.v0[2])^2
+        nnls_merging.Ez = nnls_merging.Ez + particles[i].w * (particles[i].v[3] - nnls_merging.v0[3])^2
 
         for n_mom in 1:n_moms
-            @inbounds tmp_ccm = ccm(particles[i].v, nnls_merging.v0, nnls_merging.mim[n_mom])
-            @inbounds nnls_merging.rhs_vector[n_mom] += particles[i].w * tmp_ccm
-            @inbounds lhs_matrix[n_mom, col_index] = tmp_ccm
+            tmp_ccm = ccm(particles[i].v, nnls_merging.v0, nnls_merging.mim[n_mom])
+            nnls_merging.rhs_vector[n_mom] = nnls_merging.rhs_vector[n_mom] + particles[i].w * tmp_ccm
+            lhs_matrix[n_mom, col_index] = tmp_ccm
         end
         col_index += 1
     end
@@ -414,15 +414,15 @@ function compute_lhs_and_rhs!(nnls_merging, lhs_matrix,
         @inbounds s2 = pia.indexer[cell,species].start2
         @inbounds e2 = pia.indexer[cell,species].end2
 
-        for i in s2:e2
-            @inbounds nnls_merging.Ex += particles[i].w * (particles[i].v[1] - nnls_merging.v0[1])^2
-            @inbounds nnls_merging.Ey += particles[i].w * (particles[i].v[2] - nnls_merging.v0[2])^2
-            @inbounds nnls_merging.Ez += particles[i].w * (particles[i].v[3] - nnls_merging.v0[3])^2
+        @inbounds for i in s2:e2
+            nnls_merging.Ex = nnls_merging.Ex + particles[i].w * (particles[i].v[1] - nnls_merging.v0[1])^2
+            nnls_merging.Ey = nnls_merging.Ey + particles[i].w * (particles[i].v[2] - nnls_merging.v0[2])^2
+            nnls_merging.Ez = nnls_merging.Ez + particles[i].w * (particles[i].v[3] - nnls_merging.v0[3])^2
             # w_total += particles[i].w
             for n_mom in 1:nnls_merging.n_moments
-                @inbounds tmp_ccm = ccm(particles[i].v, nnls_merging.v0, nnls_merging.mim[n_mom])
-                @inbounds nnls_merging.rhs_vector[n_mom] += particles[i].w * tmp_ccm
-                @inbounds lhs_matrix[n_mom, col_index] = tmp_ccm
+                tmp_ccm = ccm(particles[i].v, nnls_merging.v0, nnls_merging.mim[n_mom])
+                nnls_merging.rhs_vector[n_mom] = nnls_merging.rhs_vector[n_mom] + particles[i].w * tmp_ccm
+                lhs_matrix[n_mom, col_index] = tmp_ccm
             end
             col_index += 1
         end
@@ -477,25 +477,27 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging, lhs_matrix,
     col_index = 1
     @inbounds s1 = pia.indexer[cell,species].start1
     @inbounds e1 = pia.indexer[cell,species].end1
-    for i in s1:e1
+    @inbounds for i in s1:e1
         # w_total += particles[i].w
 
-        @inbounds nnls_merging.Ex += particles[i].w * (particles[i].v[1] - nnls_merging.v0[1])^2
-        @inbounds nnls_merging.Ey += particles[i].w * (particles[i].v[2] - nnls_merging.v0[2])^2
-        @inbounds nnls_merging.Ez += particles[i].w * (particles[i].v[3] - nnls_merging.v0[3])^2
+        nnls_merging.Ex = nnls_merging.Ex + particles[i].w * (particles[i].v[1] - nnls_merging.v0[1])^2
+        nnls_merging.Ey = nnls_merging.Ey + particles[i].w * (particles[i].v[2] - nnls_merging.v0[2])^2
+        nnls_merging.Ez = nnls_merging.Ez + particles[i].w * (particles[i].v[3] - nnls_merging.v0[3])^2
 
         for n_mom in 1:n_moms
-            @inbounds tmp_ccm = ccm(particles[i].v, nnls_merging.v0, nnls_merging.mim[n_mom])
-            @inbounds nnls_merging.rhs_vector[n_mom] += particles[i].w * tmp_ccm
-            @inbounds lhs_matrix[n_mom, col_index] = tmp_ccm
+            tmp_ccm = ccm(particles[i].v, nnls_merging.v0, nnls_merging.mim[n_mom])
+            nnls_merging.rhs_vector[n_mom] = nnls_merging.rhs_vector[n_mom] + nnls_merging.rhs_vector[n_mom] + particles[i].w * tmp_ccm
+            lhs_matrix[n_mom, col_index] = tmp_ccm
         end
 
-        @inbounds g = norm(particles[i].v)
+        g = norm(particles[i].v)
         compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index)
-        @inbounds lhs_matrix[nnls_merging.n_moments+1, col_index] = get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g
-        @inbounds lhs_matrix[nnls_merging.n_moments+2, col_index] = get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g
-        @inbounds nnls_merging.rhs_vector[nnls_merging.n_moments+1] += get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g * particles[i].w
-        @inbounds nnls_merging.rhs_vector[nnls_merging.n_moments+2] += get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g * particles[i].w
+        lhs_matrix[nnls_merging.n_moments+1, col_index] = get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g
+        lhs_matrix[nnls_merging.n_moments+2, col_index] = get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g
+        nnls_merging.rhs_vector[nnls_merging.n_moments+1] = nnls_merging.rhs_vector[nnls_merging.n_moments+1] + get_cs_elastic(electron_neutral_interactions,
+                                                                                                                               computed_cs, neutral_species_index) * g * particles[i].w
+        nnls_merging.rhs_vector[nnls_merging.n_moments+2] = nnls_merging.rhs_vector[nnls_merging.n_moments+2] + get_cs_ionization(electron_neutral_interactions,
+                                                                                                                                  computed_cs, neutral_species_index) * g * particles[i].w
 
         col_index += 1
     end
@@ -504,23 +506,23 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging, lhs_matrix,
         @inbounds s2 = pia.indexer[cell,species].start2
         @inbounds e2 = pia.indexer[cell,species].end2
 
-        for i in s2:e2
-            @inbounds nnls_merging.Ex += particles[i].w * (particles[i].v[1] - nnls_merging.v0[1])^2
-            @inbounds nnls_merging.Ey += particles[i].w * (particles[i].v[2] - nnls_merging.v0[2])^2
-            @inbounds nnls_merging.Ez += particles[i].w * (particles[i].v[3] - nnls_merging.v0[3])^2
+        @inbounds for i in s2:e2
+            nnls_merging.Ex = nnls_merging.Ex + particles[i].w * (particles[i].v[1] - nnls_merging.v0[1])^2
+            nnls_merging.Ey = nnls_merging.Ey + particles[i].w * (particles[i].v[2] - nnls_merging.v0[2])^2
+            nnls_merging.Ez = nnls_merging.Ez + particles[i].w * (particles[i].v[3] - nnls_merging.v0[3])^2
             # w_total += particles[i].w
             for n_mom in 1:nnls_merging.n_moments
-                @inbounds tmp_ccm = ccm(particles[i].v, nnls_merging.v0, nnls_merging.mim[n_mom])
-                @inbounds nnls_merging.rhs_vector[n_mom] += particles[i].w * tmp_ccm
-                @inbounds lhs_matrix[n_mom, col_index] = tmp_ccm
+                tmp_ccm = ccm(particles[i].v, nnls_merging.v0, nnls_merging.mim[n_mom])
+                nnls_merging.rhs_vector[n_mom] = nnls_merging.rhs_vector[n_mom] + particles[i].w * tmp_ccm
+                lhs_matrix[n_mom, col_index] = tmp_ccm
             end
 
-            @inbounds g = norm(particles[i].v)
+            g = norm(particles[i].v)
             compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index)
-            @inbounds lhs_matrix[nnls_merging.n_moments+1, col_index] = get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g
-            @inbounds lhs_matrix[nnls_merging.n_moments+2, col_index] = get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g
-            @inbounds nnls_merging.rhs_vector[nnls_merging.n_moments+1] += get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g * particles[i].w
-            @inbounds nnls_merging.rhs_vector[nnls_merging.n_moments+2] += get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g * particles[i].w
+            lhs_matrix[nnls_merging.n_moments+1, col_index] = get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g
+            lhs_matrix[nnls_merging.n_moments+2, col_index] = get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g
+            nnls_merging.rhs_vector[nnls_merging.n_moments+1] += get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g * particles[i].w
+            nnls_merging.rhs_vector[nnls_merging.n_moments+2] += get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g * particles[i].w
 
             col_index += 1
         end
@@ -540,8 +542,8 @@ end
 
 """
     compute_lhs_particles_additional!(rng, col_index, nnls_merging, lhs_matrix,
-                                           particles, pia, cell, species,
-                                           n_rand_pairs)
+                                      particles, pia, cell, species,
+                                      n_rand_pairs, centered_at_mean, v_multipliers)
 
 Compute additional LHS columns for additional particles. One particle is added at the local zero velocity (
 i.e. mean velocity of the whole system of particles), 8 particles are added (1 per velocity space octant)
@@ -562,16 +564,18 @@ additional particles.
 * `cell`: the index of the grid cell in which particles are being merged
 * `species`: the index of the species being merged
 * `n_rand_pairs`: the number of random particle pairs to choose
+* `centered_at_mean`: whether to add a particle centered at the mean velocity of the system of particles
+* `v_multipliers`: 
 """
 function compute_lhs_particles_additional!(rng, col_index, nnls_merging, lhs_matrix,
                                            particles, pia, cell, species,
-                                           n_rand_pairs, centered_at_zero, v_multipliers)
+                                           n_rand_pairs, centered_at_mean, v_multipliers)
 
-    if centered_at_zero
+    if centered_at_mean
         n_moms = nnls_merging.n_moments
         # a particle centered at local zero
-        for n_mom in 1:n_moms
-            @inbounds lhs_matrix[n_mom, col_index] = 0.0
+        @inbounds for n_mom in 1:n_moms
+            lhs_matrix[n_mom, col_index] = 0.0
         end
         col_index += 1
     end
@@ -586,8 +590,8 @@ function compute_lhs_particles_additional!(rng, col_index, nnls_merging, lhs_mat
             vx = check_speed_bound(vxs * nnls_merging.Ex, nnls_merging.minvx, nnls_merging.maxvx, v_mult)
             vy = check_speed_bound(vys * nnls_merging.Ey, nnls_merging.minvy, nnls_merging.maxvy, v_mult)
             vz = check_speed_bound(vzs * nnls_merging.Ez, nnls_merging.minvz, nnls_merging.maxvz, v_mult)
-            for n_mom in 1:nnls_merging.n_moments
-                @inbounds lhs_matrix[n_mom, col_index] = ccm(vx, vy, vz,
+            @inbounds for n_mom in 1:nnls_merging.n_moments
+                lhs_matrix[n_mom, col_index] = ccm(vx, vy, vz,
                                                              0.0, 0.0, 0.0,
                                                              nnls_merging.mim[n_mom])
             end
@@ -606,8 +610,8 @@ function compute_lhs_particles_additional!(rng, col_index, nnls_merging, lhs_mat
             @inbounds vx = 0.5 * (particles[i].v[1] + particles[k].v[1])
             @inbounds vy = 0.5 * (particles[i].v[2] + particles[k].v[2])
             @inbounds vz = 0.5 * (particles[i].v[3] + particles[k].v[3])
-            for n_mom in 1:n_moms
-                @inbounds lhs_matrix[n_mom, col_index] = ccm(vx, vy, vz,
+            @inbounds for n_mom in 1:n_moms
+                lhs_matrix[n_mom, col_index] = ccm(vx, vy, vz,
                                                    nnls_merging.v0[1], nnls_merging.v0[2], nnls_merging.v0[3],
                                                    nnls_merging.mim[n_mom])
             end
@@ -620,7 +624,7 @@ end
     compute_lhs_particles_additional_rate_preserving!(rng, col_index, nnls_merging, lhs_matrix,
                                            interaction, electron_neutral_interactions, computed_cs, 
                                            particles, pia, cell, species, neutral_species_index,
-                                           n_rand_pairs, centered_at_zero, v_multipliers)
+                                           n_rand_pairs, centered_at_mean, v_multipliers)
 
 Compute additional LHS columns for additional particles for the rate-preserving NNLS merging (for electrons).
 One particle is added at the local zero velocity (i.e. mean velocity of the whole system of particles),
@@ -648,18 +652,20 @@ additional particles.
 * `neutral_species_index`: the index of the neutral species which is the collision partner in the electron-neutral
     collisions for which approximate rates are being preserved.
 * `n_rand_pairs`: the number of random particle pairs to choose
+* `centered_at_mean`: whether to add a particle centered at the mean velocity of the system of particles
+* `v_multipliers`: 
 """
 function compute_lhs_particles_additional_rate_preserving!(rng, col_index, nnls_merging, lhs_matrix,
                                            interaction, electron_neutral_interactions, computed_cs, 
                                            particles, pia, cell, species, neutral_species_index,
-                                           n_rand_pairs, centered_at_zero, v_multipliers)
+                                           n_rand_pairs, centered_at_mean, v_multipliers)
 
-    if centered_at_zero      
+    if centered_at_mean      
         n_moms = nnls_merging.n_moments
         v0 = norm(nnls_merging.v0)
         # a particle centered at local zero
-        for n_mom in 1:n_moms
-            @inbounds lhs_matrix[n_mom, col_index] = 0.0
+        @inbounds for n_mom in 1:n_moms
+            lhs_matrix[n_mom, col_index] = 0.0
         end
 
         compute_cross_sections_only!(computed_cs, interaction, v0, electron_neutral_interactions, neutral_species_index)
@@ -678,8 +684,8 @@ function compute_lhs_particles_additional_rate_preserving!(rng, col_index, nnls_
             vx = check_speed_bound(vxs * nnls_merging.Ex, nnls_merging.minvx, nnls_merging.maxvx, v_mult)
             vy = check_speed_bound(vys * nnls_merging.Ey, nnls_merging.minvy, nnls_merging.maxvy, v_mult)
             vz = check_speed_bound(vzs * nnls_merging.Ez, nnls_merging.minvz, nnls_merging.maxvz, v_mult)
-            for n_mom in 1:nnls_merging.n_moments
-                @inbounds lhs_matrix[n_mom, col_index] = ccm(vx, vy, vz,
+            @inbounds for n_mom in 1:nnls_merging.n_moments
+                lhs_matrix[n_mom, col_index] = ccm(vx, vy, vz,
                                                              0.0, 0.0, 0.0,
                                                              nnls_merging.mim[n_mom])
             end
@@ -704,8 +710,8 @@ function compute_lhs_particles_additional_rate_preserving!(rng, col_index, nnls_
             @inbounds vx = 0.5 * (particles[i].v[1] + particles[k].v[1])
             @inbounds vy = 0.5 * (particles[i].v[2] + particles[k].v[2])
             @inbounds vz = 0.5 * (particles[i].v[3] + particles[k].v[3])
-            for n_mom in 1:n_moms
-                @inbounds lhs_matrix[n_mom, col_index] = ccm(vx, vy, vz,
+            @inbounds for n_mom in 1:n_moms
+                lhs_matrix[n_mom, col_index] = ccm(vx, vy, vz,
                                                    nnls_merging.v0[1], nnls_merging.v0[2], nnls_merging.v0[3],
                                                    nnls_merging.mim[n_mom])
             end
@@ -733,10 +739,10 @@ a moment with multi-index `(i,j,k)` the total order is `i+j+k`).
 """
 function scale_lhs_rhs!(nnls_merging, lhs_matrix)
     n_moms = nnls_merging.n_moments
-    for n_mom in 1:n_moms
-        @inbounds ref_val = nnls_merging.inv_vref^nnls_merging.tot_order[n_mom]
-        @inbounds lhs_matrix[n_mom, :] .*= ref_val
-        @inbounds nnls_merging.rhs_vector[n_mom] *= ref_val
+    @inbounds for n_mom in 1:n_moms
+        ref_val = nnls_merging.inv_vref^nnls_merging.tot_order[n_mom]
+        lhs_matrix[n_mom, :] .*= ref_val
+        nnls_merging.rhs_vector[n_mom] *= ref_val
     end
 end
 
@@ -760,11 +766,11 @@ process ``p``.
 """
 function scale_lhs_rhs_rate_preserving!(nnls_merging, lhs_matrix, ref_cs_elastic, ref_cs_ion)
     scale_lhs_rhs!(nnls_merging, lhs_matrix)
-    lhs_matrix[nnls_merging.n_moments+1, :] .*= nnls_merging.inv_vref / ref_cs_elastic
-    lhs_matrix[nnls_merging.n_moments+2, :] .*= nnls_merging.inv_vref / ref_cs_ion
+    @inbounds lhs_matrix[nnls_merging.n_moments+1, :] .*= nnls_merging.inv_vref / ref_cs_elastic
+    @inbounds lhs_matrix[nnls_merging.n_moments+2, :] .*= nnls_merging.inv_vref / ref_cs_ion
 
-    nnls_merging.rhs_vector[nnls_merging.n_moments+1] *= nnls_merging.inv_vref / ref_cs_elastic
-    nnls_merging.rhs_vector[nnls_merging.n_moments+2] *= nnls_merging.inv_vref / ref_cs_ion
+    @inbounds nnls_merging.rhs_vector[nnls_merging.n_moments+1] *= nnls_merging.inv_vref / ref_cs_elastic
+    @inbounds nnls_merging.rhs_vector[nnls_merging.n_moments+2] *= nnls_merging.inv_vref / ref_cs_ion
 end
 
 """
@@ -792,12 +798,12 @@ function compute_post_merge_particles_nnls!(lhs_ncols, lhs_matrix,
     # row 2 are the vx components (Vx conservation)
     # row 3 are the vy components (Vy conservation)
     # row 4 are the vz components (Vz conservation)
-    for j in 1:lhs_ncols
-        @inbounds if nnls_merging.work.x[j] > 0.0
-            @inbounds i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
+    @inbounds for j in 1:lhs_ncols
+        if nnls_merging.work.x[j] > 0.0
+            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
             curr_particle_index += 1
-            @inbounds particles[i].w = nnls_merging.work.x[j] * nnls_merging.w_total
-            @inbounds particles[i].v = nnls_merging.v0 + SVector{3, Float64}(lhs_matrix[2, j],
+            particles[i].w = nnls_merging.work.x[j] * nnls_merging.w_total
+            particles[i].v = nnls_merging.v0 + SVector{3, Float64}(lhs_matrix[2, j],
                                                                    lhs_matrix[3, j],
                                                                    lhs_matrix[4, j]) * nnls_merging.vref
         end
@@ -810,7 +816,7 @@ function compute_post_merge_particles_nnls!(lhs_ncols, lhs_matrix,
     # then continuity is not broken
     # !(A && B) == !A || !B
     @inbounds if !(cell == size(pia.indexer)[1]) || (n_particles_to_delete > pia.indexer[cell,species].n_group2)
-        @inbounds pia.contiguous[species] = false
+        pia.contiguous[species] = false
     end
 
     for _ in 1:n_particles_to_delete
@@ -820,7 +826,7 @@ end
 
 """
     merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species, vref; n_rand_pairs=0, max_err=1e-11,
-                      centered_at_zero=true, v_multipliers=[0.5, 1.0])
+                      centered_at_mean=true, v_multipliers=[0.5, 1.0], iteration_mult=2)
 
 Perform NNLS-based merging. To improve stability, additional fictitious particles can be created
 by randomly choosing particle pairs and creating new particles with a velocity and position that is a mean
@@ -839,6 +845,10 @@ of the velocity and position of the randomly chosen pair; these particles are ad
 * `n_rand_pairs`: the number of additional random pairs to sample to create additional entries in the matrix
     to potentially improve the stability of the algorithm
 * `max_err`: maximum allowed value of the residual of the NNLS system
+* `centered_at_mean`: whether to add a particle centered at the mean velocity of the system of particles
+* `v_multipliers`: 
+* `iteration_mult`: the number by which the number of columns of the NNLS system matrix is multiplied, this gives the maximum
+    number of iterations of the NNLS algorithm
 
 # Returns
 If the residual exceeds `max_err` or
@@ -846,12 +856,12 @@ the number of non-zero elements in the solution vector is equal to the original 
 `-1` is returned to signify a failure of the merging algorithm.
 """
 function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species, vref;
-                           n_rand_pairs=0, max_err=1e-11, centered_at_zero=true, v_multipliers=[0.5, 1.0])
+                           n_rand_pairs=0, max_err=1e-11, centered_at_mean=true, v_multipliers=[0.5, 1.0], iteration_mult=2)
 
     # create LHS matrix
-    n_add = centered_at_zero ? 1 : 0
+    n_add = centered_at_mean ? 1 : 0
     n_add += 8 * length(v_multipliers)
-    lhs_ncols = pia.indexer[cell, species].n_local + n_add + n_rand_pairs
+    @inbounds lhs_ncols = pia.indexer[cell, species].n_local + n_add + n_rand_pairs
     lhs_matrix = zeros(nnls_merging.n_moments, lhs_ncols)
     nnls_merging.vref = vref
     nnls_merging.inv_vref = 1.0 / vref
@@ -861,16 +871,16 @@ function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species, vre
     # and add more columns
     compute_lhs_particles_additional!(rng, col_index, nnls_merging, lhs_matrix,
                                       particles, pia, cell, species, n_rand_pairs,
-                                      centered_at_zero, v_multipliers)
+                                      centered_at_mean, v_multipliers)
     scale_lhs_rhs!(nnls_merging, lhs_matrix)
 
     load!(nnls_merging.work, lhs_matrix, nnls_merging.rhs_vector)
-    solve!(nnls_merging.work, 2 * size(lhs_matrix, 2))
+    solve!(nnls_merging.work, iteration_mult * size(lhs_matrix, 2))
 
     nonzero = 0
     n_moms = nnls_merging.n_moments
-    for i in 1:n_moms
-        @inbounds if nnls_merging.work.x[i] > 0.0
+    for i in 1:lhs_ncols
+        if nnls_merging.work.x[i] > 0.0
             nonzero += 1
         end
     end
@@ -899,7 +909,7 @@ end
                                            interaction, electron_neutral_interactions, computed_cs,
                                            particles, pia, cell, species, neutral_species_index,
                                            vref, ref_cs_elatic, ref_cs_ion; n_rand_pairs=0, max_err=1e-11,
-                                           centered_at_zero, v_multipliers)
+                                           centered_at_mean=true, v_multipliers=[0.5, 1.0], iteration_mult=2)
 
 Perform NNLS-based merging of electrons that conserves approximate elastic scattering and electron-impact ionization rates.
 To improve stability, additional fictitious particles can be created
@@ -927,6 +937,10 @@ of the velocity and position of the randomly chosen pair; these particles are ad
 * `n_rand_pairs`: the number of additional random pairs to sample to create additional entries in the matrix
     to potentially improve the stability of the algorithm
 * `max_err`: maximum allowed value of the residual of the NNLS system
+* `centered_at_mean`: whether to add a particle centered at the mean velocity of the system of particles
+* `v_multipliers`: 
+* `iteration_mult`: the number by which the number of columns of the NNLS system matrix is multiplied, this gives the maximum
+    number of iterations of the NNLS algorithm
 
 # Returns
 If the residual exceeds `max_err` or
@@ -937,10 +951,10 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging,
                                            interaction, electron_neutral_interactions, computed_cs,
                                            particles, pia, cell, species, neutral_species_index,
                                            vref, ref_cs_elatic, ref_cs_ion; n_rand_pairs=0, max_err=1e-11,
-                                           centered_at_zero, v_multipliers)
+                                           centered_at_mean=true, v_multipliers=[0.5, 1.0], iteration_mult=2)
 
     # create LHS matrix
-    n_add = centered_at_zero ? 1 : 0
+    n_add = centered_at_mean ? 1 : 0
     n_add += 8 * length(v_multipliers)
     @inbounds lhs_ncols = pia.indexer[cell, species].n_local + n_add + n_rand_pairs
     lhs_matrix = zeros(nnls_merging.n_moments+2, lhs_ncols)
@@ -956,26 +970,18 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging,
     @inbounds compute_lhs_particles_additional_rate_preserving!(rng, col_index, nnls_merging, lhs_matrix,
                                       interaction[species,neutral_species_index], electron_neutral_interactions, computed_cs,
                                       particles, pia, cell, species, neutral_species_index, n_rand_pairs,
-                                      centered_at_zero, v_multipliers)
+                                      centered_at_mean, v_multipliers)
     scale_lhs_rhs_rate_preserving!(nnls_merging, lhs_matrix, ref_cs_elatic, ref_cs_ion)
 
     load!(nnls_merging.work, lhs_matrix, nnls_merging.rhs_vector)
     solve!(nnls_merging.work, 2 * size(lhs_matrix, 2))
 
-    # nnls_merging.residual .= lhs_matrix * nnls_merging.work.x
-
-    # error = 0.0
-    # for i in 1:nnls_merging.n_moments
-    #     error += abs(nnls_merging.residual[i] -  nnls_merging.rhs_vector[i])
-    # end
-
     nonzero = 0
-    for i in 1:nnls_merging.n_moments
+    for i in 1:lhs_ncols
         if nnls_merging.work.x[i] > 0.0
             nonzero += 1
         end
     end
-    # nonzero = sum(nnls_merging.work.x .> 0.0)
 
     # println(nnls_merging.work.rnorm, " / ", error)
     if nnls_merging.work.rnorm > max_err

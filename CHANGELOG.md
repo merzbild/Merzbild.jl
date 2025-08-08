@@ -13,6 +13,7 @@
 * `count_disordered_particles` added
 * `check_pia_is_correct` and `check_unique_index` functions added for diagnostics
 * Multithreaded simulations now possible (currently not verified for variable-weight simulations)
+* NNLS merging now accepts additional keyword arguments `centered_at_mean`, `v_multipliers`, `iteration_mult`
 * Documentation improvements
 * Improved test coverage
 
