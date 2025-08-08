@@ -20,17 +20,17 @@ Ubuntu 22.04.5, Julia version 1.11.2, SPARTA compiled with gcc version 11.4.0.
 ──────────────────────────────────────────────────────────────────────────
                                  Time                    Allocations      
                         ───────────────────────   ────────────────────────
-   Tot / % measured:         28.2s /  97.3%            126MiB /   9.8%    
+   Tot / % measured:         28.4s /  97.3%            126MiB /   9.8%    
 
 Section         ncalls     time    %tot     avg     alloc    %tot      avg
 ──────────────────────────────────────────────────────────────────────────
-sort             50.0k    10.6s   38.5%   211μs     0.00B    0.0%    0.00B
-convect          50.0k    5.98s   21.8%   120μs     0.00B    0.0%    0.00B
-collide          2.50M    5.91s   21.6%  2.37μs     0.00B    0.0%    0.00B
-props compute    36.0k    4.89s   17.8%   136μs     0.00B    0.0%    0.00B
-I/O                  1   84.8ms    0.3%  84.8ms   9.32MiB   75.3%  9.32MiB
-avg physprops    36.0k   5.51ms    0.0%   153ns     0.00B    0.0%    0.00B
-sampling             1   2.55ms    0.0%  2.55ms   3.05MiB   24.7%  3.05MiB
+sort             50.0k    10.5s   37.9%   209μs     0.00B    0.0%    0.00B
+convect          50.0k    6.29s   22.8%   126μs     0.00B    0.0%    0.00B
+collide          2.50M    5.90s   21.3%  2.36μs     0.00B    0.0%    0.00B
+props compute    36.0k    4.88s   17.7%   136μs     0.00B    0.0%    0.00B
+I/O                  1   85.4ms    0.3%  85.4ms   9.32MiB   75.3%  9.32MiB
+avg physprops    36.0k   5.54ms    0.0%   154ns     0.00B    0.0%    0.00B
+sampling             1   2.52ms    0.0%  2.52ms   3.05MiB   24.7%  3.05MiB
 ──────────────────────────────────────────────────────────────────────────
 ```
 
@@ -109,19 +109,19 @@ Ubuntu 22.04.5, Julia version 1.11.2, SPARTA compiled with gcc version 11.4.0.
 ──────────────────────────────────────────────────────────────────────────────────────
                                              Time                    Allocations      
                                     ───────────────────────   ────────────────────────
-         Tot / % measured:                831s /  99.4%            192MiB /  17.1%    
+         Tot / % measured:                795s /  99.5%            192MiB /  17.1%    
 
 Section                     ncalls     time    %tot     avg     alloc    %tot      avg
 ──────────────────────────────────────────────────────────────────────────────────────
-sort                         50.0k     279s   33.7%  5.57ms     0.00B    0.0%    0.00B
-convect + surface compute    36.0k     220s   26.7%  6.12ms   2.20MiB    6.7%    64.0B
-props compute                36.0k     136s   16.5%  3.78ms     0.00B    0.0%    0.00B
-collide                       100M     118s   14.3%  1.18μs     0.00B    0.0%    0.00B
-convect                      14.0k    73.1s    8.8%  5.22ms     0.00B    0.0%    0.00B
-avg physprops                36.0k    205ms    0.0%  5.70μs     0.00B    0.0%    0.00B
-sampling                         1   36.2ms    0.0%  36.2ms   30.5MiB   93.3%  30.5MiB
-avg surfprops                36.0k   12.4ms    0.0%   344ns     0.00B    0.0%    0.00B
-I/O                             15   2.21ms    0.0%   148μs   3.58KiB    0.0%     244B
+sort                         50.0k     269s   34.0%  5.37ms     0.00B    0.0%    0.00B
+convect + surface compute    36.0k     209s   26.4%  5.80ms   2.20MiB    6.7%    64.0B
+props compute                36.0k     131s   16.6%  3.63ms     0.00B    0.0%    0.00B
+collide                       100M     114s   14.4%  1.14μs     0.00B    0.0%    0.00B
+convect                      14.0k    68.1s    8.6%  4.86ms     0.00B    0.0%    0.00B
+avg physprops                36.0k    196ms    0.0%  5.43μs     0.00B    0.0%    0.00B
+sampling                         1   35.1ms    0.0%  35.1ms   30.5MiB   93.3%  30.5MiB
+avg surfprops                36.0k   12.6ms    0.0%   351ns     0.00B    0.0%    0.00B
+I/O                             15   2.26ms    0.0%   151μs   3.58KiB    0.0%     244B
 ──────────────────────────────────────────────────────────────────────────────────────
 ```
 
@@ -193,7 +193,7 @@ Shown is the speed-up compared to a serial execution on the same computer (see a
 
 |                               | **2 cores** |  **4 cores** |  **8 cores** |
 |:-----------------------------:|:-----------:|:------------:|:------------:|
-| `n_chunks=n_threads`, no DLB  |     1.93    |     3.39     |    5.26      |         
+| `n_chunks=n_threads`, no DLB  |         |          |          |         
 
 
 
