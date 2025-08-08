@@ -879,7 +879,7 @@ function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species, vre
 
     nonzero = 0
     n_moms = nnls_merging.n_moments
-    for i in 1:lhs_ncols
+    @inbounds for i in 1:lhs_ncols
         if nnls_merging.work.x[i] > 0.0
             nonzero += 1
         end
@@ -977,7 +977,7 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging,
     solve!(nnls_merging.work, iteration_mult * size(lhs_matrix, 2))
 
     nonzero = 0
-    for i in 1:lhs_ncols
+    @inbounds for i in 1:lhs_ncols
         if nnls_merging.work.x[i] > 0.0
             nonzero += 1
         end
