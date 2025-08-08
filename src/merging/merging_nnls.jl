@@ -43,7 +43,6 @@ mutable struct NNLSMerge
 
     n_moments::Int32
     rhs_vector::Vector{Float64}
-    residual::Vector{Float64}
     mim::Vector{Vector{Int32}}  # mult-index moments
     tot_order::Vector{Int32}
     work::NNLSWorkspace
@@ -79,7 +78,7 @@ mutable struct NNLSMerge
         return new(SVector{3,Float64}(0.0, 0.0, 0.0), 1.0, 1.0, 0.0, 0.0, 0.0, 0.0,
                    0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
                    n_total_conserved - add_length,
-                   zeros(n_total_conserved), zeros(n_total_conserved),
+                   zeros(n_total_conserved),
                    base_moments, tot_order,
                    NNLSWorkspace(zeros(n_total_conserved, init_np), zeros(n_total_conserved)))
     end

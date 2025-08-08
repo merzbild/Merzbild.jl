@@ -68,7 +68,8 @@
     mnnls = NNLSMerge(mim, 30)
     vref = sqrt(2 * k_B * 300.0 / species_data[1].mass)
     result = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1, vref)
-    
+    @test length(mnnls.rhs_vector) == length(mim) + 1  # we didn't construct 0-th order moment
+
     n0 = phys_props.n[1, 1]
     np0 = phys_props.np[1, 1]
     v0 = phys_props.v[:, 1, 1]
@@ -136,4 +137,15 @@
     @test abs(mnnls2.rhs_vector[8] - 0.0) < eps()
     @test abs(mnnls2.rhs_vector[9] - 0.0) < eps()
     @test abs(mnnls2.rhs_vector[10] - 0.0) < eps()
+
+
+    # check we always preserve the lowest-order moments
+    mnnls = NNLSMerge([], 30)
+    @test [0,0,0] in mnnls.mim
+    @test [1,0,0] in mnnls.mim
+    @test [0,1,0] in mnnls.mim
+    @test [0,0,1] in mnnls.mim
+    @test [2,0,0] in mnnls.mim
+    @test [0,2,0] in mnnls.mim
+    @test [0,0,2] in mnnls.mim
 end
