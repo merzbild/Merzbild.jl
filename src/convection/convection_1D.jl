@@ -144,7 +144,7 @@ function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D
                 convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt) 
             end
 
-            if pia.indexer[cell, species].n_group2 > 0
+            @inbounds if pia.indexer[cell, species].n_group2 > 0
                 @inbounds s = pia.indexer[cell, species].start2
                 @inbounds e = pia.indexer[cell, species].end2
             
@@ -191,7 +191,7 @@ function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D
                 convect_single_particle!(rng, grid, boundaries, particles[i], species, surf_props, species_data[species].mass, Δt) 
             end
 
-            if pia.indexer[cell, species].n_group2 > 0
+            @inbounds if pia.indexer[cell, species].n_group2 > 0
                 @inbounds s = pia.indexer[cell, species].start2
                 @inbounds e = pia.indexer[cell, species].end2
             

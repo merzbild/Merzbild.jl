@@ -300,8 +300,8 @@ function compute_grid!(merging_grid::GridN2Merge, particles, pia, cell, species)
 
     @inbounds if pia.indexer[cell,species].start2 > 0
         @inbounds s2 = pia.indexer[cell,species].start2
-        @inbounds @inbounds e2 = pia.indexer[cell,species].end2
-        for i in s2:e2
+        @inbounds e2 = pia.indexer[cell,species].end2
+        @inbounds for i in s2:e2
             index = compute_grid_index(merging_grid, particles[i].v)
 
             merging_grid.cells[index].np += 1
