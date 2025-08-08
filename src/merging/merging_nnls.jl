@@ -974,7 +974,7 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging,
     scale_lhs_rhs_rate_preserving!(nnls_merging, lhs_matrix, ref_cs_elatic, ref_cs_ion)
 
     load!(nnls_merging.work, lhs_matrix, nnls_merging.rhs_vector)
-    solve!(nnls_merging.work, 2 * size(lhs_matrix, 2))
+    solve!(nnls_merging.work, iteration_mult * size(lhs_matrix, 2))
 
     nonzero = 0
     for i in 1:lhs_ncols
