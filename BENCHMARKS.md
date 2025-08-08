@@ -193,7 +193,7 @@ Shown is the speed-up compared to a serial execution on the same computer (see a
 
 |                               | **2 cores** |  **4 cores** |  **8 cores** |
 |:-----------------------------:|:-----------:|:------------:|:------------:|
-| `n_chunks=n_threads`, no DLB  |         |          |          |         
+| `n_chunks=n_threads`, no DLB  |   1.85      |    3.24      |     5.06     |         
 
 
 
