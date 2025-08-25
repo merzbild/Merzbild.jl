@@ -874,10 +874,21 @@ end
     merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species, vref; n_rand_pairs=0, max_err=1e-11,
                       centered_at_mean=true, v_multipliers=[0.5, 1.0], iteration_mult=2)
 
-Perform NNLS-based merging. To improve stability, additional fictitious particles can be created
+Perform NNLS-based merging.
+The NNLS system is scaled to improve numerical stability, the scaling algorithm is set by the `scaling` parameter.
+Even if scaling is done using the computed variances, `vref` might be used in case those variances are small.
+
+To improve stability, additional fictitious particles can be created
 by randomly choosing particle pairs and creating new particles with a velocity and position that is a mean
 of the velocity and position of the randomly chosen pair; these particles are added as additional columns to the matrix.
-Even scaling is done using the computed variances, `vref` might be used in case those variances are small.
+An additional fictitious particle can be created at the local mean velocity via the `centered_at_mean` parameter.
+Additionally, particles can be created with velocities that are a multiple of the computed velocity variance of the system
+of pre-merge particles in each direction.
+For a given variance multiplier (an entry in the `v_multipliers` parameter, which is a vector of multipliers),
+8 particles are added, one in each octant. Each of the particles velocity components is given either by
+the value of the multiplier times the velocity variance of that component (times +1 or -1 depending on the octant),
+or, if this value is outside of the bounding box, the closest bounding value of the velocity component in that direction
+is used instead and also multiplied by the variance multiplier.
 
 # Positional arguments
 * `rng`: the random number generator instance
@@ -896,7 +907,7 @@ Even scaling is done using the computed variances, `vref` might be used in case 
     to potentially improve the stability of the algorithm
 * `max_err`: maximum allowed value of the residual of the NNLS system
 * `centered_at_mean`: whether to add a particle centered at the mean velocity of the system of particles
-* `v_multipliers`: 
+* `v_multipliers`: the multipliers for the velocity variances of the particles to add aditional particles to the system
 * `iteration_mult`: the number by which the number of columns of the NNLS system matrix is multiplied, this gives the maximum
     number of iterations of the NNLS algorithm
 
@@ -959,10 +970,20 @@ end
                                            centered_at_mean=true, v_multipliers=[0.5, 1.0], iteration_mult=2)
 
 Perform NNLS-based merging of electrons that conserves approximate elastic scattering and electron-impact ionization rates.
+The NNLS system is scaled to improve numerical stability, the scaling algorithm is set by the `scaling` parameter.
+Even if scaling is done using the computed variances, `vref` might be used in case those variances are small.
+
 To improve stability, additional fictitious particles can be created
 by randomly choosing particle pairs and creating new particles with a velocity and position that is a mean
 of the velocity and position of the randomly chosen pair; these particles are added as additional columns to the matrix.
-Even scaling is done using the computed variances, `vref` might be used in case those variances are small.
+An additional fictitious particle can be created at the local mean velocity via the `centered_at_mean` parameter.
+Additionally, particles can be created with velocities that are a multiple of the computed velocity variance of the system
+of pre-merge particles in each direction.
+For a given variance multiplier (an entry in the `v_multipliers` parameter, which is a vector of multipliers),
+8 particles are added, one in each octant. Each of the particles velocity components is given either by
+the value of the multiplier times the velocity variance of that component (times +1 or -1 depending on the octant),
+or, if this value is outside of the bounding box, the closest bounding value of the velocity component in that direction
+is used instead and also multiplied by the variance multiplier.
 
 # Positional arguments
 * `rng`: the random number generator instance
@@ -989,7 +1010,7 @@ Even scaling is done using the computed variances, `vref` might be used in case 
     to potentially improve the stability of the algorithm
 * `max_err`: maximum allowed value of the residual of the NNLS system
 * `centered_at_mean`: whether to add a particle centered at the mean velocity of the system of particles
-* `v_multipliers`: 
+* `v_multipliers`: the multipliers for the velocity variances of the particles to add aditional particles to the system
 * `iteration_mult`: the number by which the number of columns of the NNLS system matrix is multiplied, this gives the maximum
     number of iterations of the NNLS algorithm
 
