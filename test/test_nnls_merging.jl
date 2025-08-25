@@ -38,12 +38,31 @@
         return pv
     end
 
+
+
+    function create_particles3()
+        pv = ParticleVector(6)
+
+        pv.particles = [Particle(1.0, [3.0, 1.0, 1.0], [0.0, 0.0, 0.0]),
+                        Particle(1.0, [1.0, 4.0, -1.0], [0.0, 0.0, 0.0]),
+                        Particle(1.0, [1.0, -8.0, 1.0], [0.0, 0.0, 0.0]),
+                        Particle(1.0, [1.0, -1.0, -9.0], [0.0, 0.0, 0.0]),
+                        Particle(1.0, [-7.0, -11.0, 1.0], [0.0, 0.0, 0.0]),
+                        Particle(1.0, [-9.0, 6.0, -1.0], [0.0, 0.0, 0.0])]
+
+        for i in 1:6
+            Merzbild.update_particle_buffer_new_particle!(pv, i)
+        end
+        
+        return pv
+    end
+
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
     species_data::Vector{Species} = load_species_data(particles_data_path, "Ar")
 
     seed = 1234
     Random.seed!(seed)
-    rng::Xoshiro = Xoshiro(seed)
+    rng = StableRNG(seed)
 
     Nx = 2
     Ny = 2
@@ -148,4 +167,53 @@
     @test [2,0,0] in mnnls.mim
     @test [0,2,0] in mnnls.mim
     @test [0,0,2] in mnnls.mim
+    @test mnnls.n_moments == 7
+
+    # check computation of LHS/RHS of the system
+
+    particles = [create_particles3()]
+    pia = ParticleIndexerArray(length(particles[1]))
+
+    centered_at_mean = true
+    v_multipliers = [0.25, 0.5, 1.0]
+    n_add = centered_at_mean ? 1 : 0
+    n_rand_pairs = 0
+    n_add += 8 * length(v_multipliers)
+    lhs_ncols = pia.indexer[1, 1].n_local + n_add + n_rand_pairs
+    lhs_matrix = zeros(mnnls.n_moments, lhs_ncols)
+
+    Merzbild.compute_lhs_and_rhs!(mnnls, lhs_matrix,
+                                  particles[1], pia, 1, 1)
+    # we didn't compute anything using the additional particles
+    @test sum(abs.(lhs_matrix[:, pia.indexer[1, 1].n_local+1:end])) == 0
+
+    Merzbild.compute_lhs_particles_additional!(rng, pia.indexer[1, 1].n_local+1, mnnls, lhs_matrix,
+                                               particles[1], pia, 1, 1,
+                                               n_rand_pairs, centered_at_mean, v_multipliers)
+
+    # centered particle adds zero values
+    @test sum(abs.(lhs_matrix[:, pia.indexer[1, 1].n_local+1])) == 0
+
+    # the other particles add non-zero values
+    @test sum(abs.(lhs_matrix[:, pia.indexer[1, 1].n_local+2:end])) != 0
+
+    centered_at_mean = false
+    v_multipliers = [0.25, 0.5, 1.0]
+    n_add = centered_at_mean ? 1 : 0
+    n_rand_pairs = 0
+    n_add += 8 * length(v_multipliers)
+    lhs_ncols = pia.indexer[1, 1].n_local + n_add + n_rand_pairs
+    lhs_matrix = zeros(mnnls.n_moments, lhs_ncols)
+
+    Merzbild.compute_lhs_and_rhs!(mnnls, lhs_matrix,
+                                  particles[1], pia, 1, 1)
+    # we didn't compute anything using the additional particles
+    @test sum(abs.(lhs_matrix[:, pia.indexer[1, 1].n_local+1:end])) == 0
+
+    Merzbild.compute_lhs_particles_additional!(rng, pia.indexer[1, 1].n_local+1, mnnls, lhs_matrix,
+                                               particles[1], pia, 1, 1,
+                                               n_rand_pairs, centered_at_mean, v_multipliers)
+
+    # no centered particle, so no zero values
+    @test sum(abs.(lhs_matrix[:, pia.indexer[1, 1].n_local+1:end])) != 0
 end
