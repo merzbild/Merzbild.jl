@@ -57,6 +57,20 @@
         return pv
     end
 
+
+    function create_particles4()
+        pv = ParticleVector(2)
+
+        pv.particles = [Particle(1.0, [3.0, 1.0, -4.0], [0.0, 0.0, 0.0]),
+                        Particle(1.0, [-3.0, 1.0, 4.0], [0.0, 0.0, 0.0]),]
+
+        for i in 1:2
+            Merzbild.update_particle_buffer_new_particle!(pv, i)
+        end
+        
+        return pv
+    end
+
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
     species_data::Vector{Species} = load_species_data(particles_data_path, "Ar")
 
@@ -217,7 +231,70 @@
     # no centered particle, so no zero values
     @test sum(abs.(lhs_matrix[:, pia.indexer[1, 1].n_local+1:end])) != 0
 
+    mim = []
+    #  [[0, 0, 0],
+    # [1, 0, 0], [0, 1, 0], [0, 0, 1],
+    # [2, 0, 0], [0, 2, 0], [0, 0, 2]]
+    mnnls3 = NNLSMerge(mim, 30)
 
-    # scale_lhs_rhs_vref!
-    # scale_lhs_rhs_variance!
+    lhs_ncols = 2
+    # 7, 
+    lhs_matrix = zeros(mnnls3.n_moments, lhs_ncols)
+
+    particles = [create_particles4()]
+    pia = ParticleIndexerArray(length(particles[1]))
+
+    Merzbild.compute_lhs_and_rhs!(mnnls3, lhs_matrix,
+                                  particles[1], pia, 1, 1)
+
+    lhs_matrix_2 = copy(lhs_matrix)
+    rhs_vec_2 = copy(mnnls3.rhs_vector)
+    mnnls3.vref = 2.0
+    mnnls3.inv_vref = 1.0 / mnnls3.vref
+    Merzbild.scale_lhs_rhs!(mnnls3, lhs_matrix, :vref)
+    
+    @test abs(rhs_vec_2[1] - mnnls3.rhs_vector[1]) < 2*eps()
+    @test abs(rhs_vec_2[2] / mnnls3.vref - mnnls3.rhs_vector[2]) < 2*eps()
+    @test abs(rhs_vec_2[3] / mnnls3.vref - mnnls3.rhs_vector[3]) < 2*eps()
+    @test abs(rhs_vec_2[4] / mnnls3.vref - mnnls3.rhs_vector[4]) < 2*eps()
+    @test abs(rhs_vec_2[5] / mnnls3.vref^2 - mnnls3.rhs_vector[5]) < 2*eps()
+    @test abs(rhs_vec_2[6] / mnnls3.vref^2 - mnnls3.rhs_vector[6]) < 2*eps()
+    @test abs(rhs_vec_2[7] / mnnls3.vref^2 - mnnls3.rhs_vector[7]) < 2*eps()
+
+    for i in 1:2
+        @test maximum(abs.(lhs_matrix_2[1,i] - lhs_matrix[1,i])) < 2*eps()
+        @test maximum(abs.(lhs_matrix_2[2,i] / mnnls3.vref - lhs_matrix[2,i])) < 2*eps()
+        @test maximum(abs.(lhs_matrix_2[3,i] / mnnls3.vref - lhs_matrix[3,i])) < 2*eps()
+        @test maximum(abs.(lhs_matrix_2[4,i] / mnnls3.vref - lhs_matrix[4,i])) < 2*eps()
+        @test maximum(abs.(lhs_matrix_2[5,i] / mnnls3.vref^2 - lhs_matrix[5,i])) < 2*eps()
+        @test maximum(abs.(lhs_matrix_2[6,i] / mnnls3.vref^2 - lhs_matrix[6,i])) < 2*eps()
+        @test maximum(abs.(lhs_matrix_2[7,i] / mnnls3.vref^2 - lhs_matrix[7,i])) < 2*eps()
+    end
+
+    mnnls3.rhs_vector = copy(rhs_vec_2)
+    lhs_matrix = copy(lhs_matrix_2)
+
+    mnnls3.Ex = 2.0
+    mnnls3.Ey = 3.0
+    mnnls3.Ez = 4.0
+
+    Merzbild.scale_lhs_rhs!(mnnls3, lhs_matrix, :variance)
+
+    @test abs(rhs_vec_2[1] - mnnls3.rhs_vector[1]) < 2*eps()
+    @test abs(rhs_vec_2[2] / 2.0 - mnnls3.rhs_vector[2]) < 2*eps()
+    @test abs(rhs_vec_2[3] / 3.0 - mnnls3.rhs_vector[3]) < 2*eps()
+    @test abs(rhs_vec_2[4] / 4.0 - mnnls3.rhs_vector[4]) < 2*eps()
+    @test abs(rhs_vec_2[5] / 4.0 - mnnls3.rhs_vector[5]) < 2*eps()
+    @test abs(rhs_vec_2[6] / 9.0 - mnnls3.rhs_vector[6]) < 2*eps()
+    @test abs(rhs_vec_2[7] / 16.0 - mnnls3.rhs_vector[7]) < 2*eps()
+
+    for i in 1:2
+        @test maximum(abs.(lhs_matrix_2[1,i] - lhs_matrix[1,i])) < 2*eps()
+        @test maximum(abs.(lhs_matrix_2[2,i] / 2.0 - lhs_matrix[2,i])) < 2*eps()
+        @test maximum(abs.(lhs_matrix_2[3,i] / 3.0 - lhs_matrix[3,i])) < 2*eps()
+        @test maximum(abs.(lhs_matrix_2[4,i] / 4.0 - lhs_matrix[4,i])) < 2*eps()
+        @test maximum(abs.(lhs_matrix_2[5,i] / 4.0 - lhs_matrix[5,i])) < 2*eps()
+        @test maximum(abs.(lhs_matrix_2[6,i] / 9.0 - lhs_matrix[6,i])) < 2*eps()
+        @test maximum(abs.(lhs_matrix_2[7,i] / 16.0 - lhs_matrix[7,i])) < 2*eps()
+    end
 end
