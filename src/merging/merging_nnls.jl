@@ -726,7 +726,7 @@ function compute_lhs_particles_additional_rate_preserving!(rng, col_index, nnls_
 end
 
 """
-    scale_lhs_rhs!(nnls_merging, lhs_matrix)
+    scale_lhs_rhs_vref!(nnls_merging, lhs_matrix)
 
 Scale the LHS and RHS of the NNLS system using the reference velocity ``v_{ref}``. Each moment is scaled
 by ``(1/v_{ref})^{n_{tot}}``, where ``n_{tot}`` is the total order of the moment (i.e. for
@@ -736,12 +736,58 @@ a moment with multi-index `(i,j,k)` the total order is `i+j+k`).
 * `nnls_merging`: the `NNLSMerge` instance
 * `lhs_matrix`: the matrix of the LHS
 """
-function scale_lhs_rhs!(nnls_merging, lhs_matrix)
+function scale_lhs_rhs_vref!(nnls_merging, lhs_matrix)
     n_moms = nnls_merging.n_moments
     @inbounds for n_mom in 1:n_moms
         ref_val = nnls_merging.inv_vref^nnls_merging.tot_order[n_mom]
         lhs_matrix[n_mom, :] .*= ref_val
         nnls_merging.rhs_vector[n_mom] *= ref_val
+    end
+end
+
+"""
+    scale_lhs_rhs_variance!(nnls_merging, lhs_matrix)
+
+Scale the LHS and RHS of the NNLS system using the computed variances of the particles velocities
+in the ``x``, ``y``, ``z`` directions. If any of the variances is smaller than 1e-6, then
+``v_{ref}`` is used.
+Each moment with multi-index `(i,j,k)` is scaled
+by ``(1/Ex)^{i}(1/Ey)^{j}(1/Ez)^{k}``.
+
+# Positional arguments
+* `nnls_merging`: the `NNLSMerge` instance
+* `lhs_matrix`: the matrix of the LHS
+"""
+function scale_lhs_rhs_variance!(nnls_merging, lhs_matrix)
+    n_moms = nnls_merging.n_moments
+    inv_ex = nnls_merging.Ex > 1e-6 ? 1.0 / nnls_merging.Ex : nnls_merging.inv_vref
+    inv_ey = nnls_merging.Ey > 1e-6 ? 1.0 / nnls_merging.Ey : nnls_merging.inv_vref
+    inv_ez = nnls_merging.Ez > 1e-6 ? 1.0 / nnls_merging.Ez : nnls_merging.inv_vref
+    @inbounds for n_mom in 1:n_moms
+        ref_val = (inv_ex^nnls_merging.mim[n_mom][1]) * (inv_ey^nnls_merging.mim[n_mom][2]) * (inv_ez^nnls_merging.mim[n_mom][3])
+        lhs_matrix[n_mom, :] .*= ref_val
+        nnls_merging.rhs_vector[n_mom] *= ref_val
+    end
+end
+
+
+"""
+    scale_lhs_rhs!(nnls_merging, lhs_matrix, scaling_method)
+
+Scale the LHS and RHS of the NNLS system using either the reference velocity or the computed variances of the velocity
+in each direction.
+
+# Positional arguments
+* `nnls_merging`: the `NNLSMerge` instance
+* `lhs_matrix`: the matrix of the LHS
+* `scaling_method`: how to scale entries (`:vref` or `:variance`)
+"""
+function scale_lhs_rhs!(nnls_merging, lhs_matrix, scaling_method)
+
+    if scaling_method == :variance
+        scale_lhs_rhs_variance!(nnls_merging, lhs_matrix)
+    elseif scaling_method == :vref
+        scale_lhs_rhs_vref!(nnls_merging, lhs_matrix)
     end
 end
 
@@ -762,9 +808,10 @@ process ``p``.
 * `lhs_matrix`: the matrix of the LHS
 * `ref_cs_elastic`: the reference elastic scattering cross-section
 * `ref_cs_ion`: the reference ionization cross-section
+* `scaling_method`: how to scale entries (`:vref` or `:variance`)
 """
-function scale_lhs_rhs_rate_preserving!(nnls_merging, lhs_matrix, ref_cs_elastic, ref_cs_ion)
-    scale_lhs_rhs!(nnls_merging, lhs_matrix)
+function scale_lhs_rhs_rate_preserving!(nnls_merging, lhs_matrix, ref_cs_elastic, ref_cs_ion, scaling_method)
+    scale_lhs_rhs!(nnls_merging, lhs_matrix, scaling_method)
     @inbounds lhs_matrix[nnls_merging.n_moments+1, :] .*= nnls_merging.inv_vref / ref_cs_elastic
     @inbounds lhs_matrix[nnls_merging.n_moments+2, :] .*= nnls_merging.inv_vref / ref_cs_ion
 
@@ -830,6 +877,7 @@ end
 Perform NNLS-based merging. To improve stability, additional fictitious particles can be created
 by randomly choosing particle pairs and creating new particles with a velocity and position that is a mean
 of the velocity and position of the randomly chosen pair; these particles are added as additional columns to the matrix.
+Even scaling is done using the computed variances, `vref` might be used in case those variances are small.
 
 # Positional arguments
 * `rng`: the random number generator instance
@@ -838,9 +886,12 @@ of the velocity and position of the randomly chosen pair; these particles are ad
 * `pia`: the `ParticleIndexerArray` instance
 * `cell`: the index of the grid cell in which particles are being merged
 * `species`: the index of the species being merged
-* `vref`: the reference velocity used to scale the velocities
 
 # Keyword arguments
+* `vref`: the reference velocity used to scale the velocities
+* `scaling method`: how to scale entries in the LHS and RHS of the NNLS system - either based on
+    the reference velocity `vref` (`scaling_method=:vref`)
+    or on the computed variances in each direction (`scaling_method=:variance`)
 * `n_rand_pairs`: the number of additional random pairs to sample to create additional entries in the matrix
     to potentially improve the stability of the algorithm
 * `max_err`: maximum allowed value of the residual of the NNLS system
@@ -854,7 +905,8 @@ If the residual exceeds `max_err` or
 the number of non-zero elements in the solution vector is equal to the original number of particles,
 `-1` is returned to signify a failure of the merging algorithm.
 """
-function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species, vref;
+function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species;
+                           vref=1.0, scaling_method=:variance,
                            n_rand_pairs=0, max_err=1e-11, centered_at_mean=true, v_multipliers=[0.5, 1.0], iteration_mult=2)
 
     # create LHS matrix
@@ -871,7 +923,7 @@ function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species, vre
     compute_lhs_particles_additional!(rng, col_index, nnls_merging, lhs_matrix,
                                       particles, pia, cell, species, n_rand_pairs,
                                       centered_at_mean, v_multipliers)
-    scale_lhs_rhs!(nnls_merging, lhs_matrix)
+    scale_lhs_rhs!(nnls_merging, lhs_matrix, scaling_method)
 
     load!(nnls_merging.work, lhs_matrix, nnls_merging.rhs_vector)
     solve!(nnls_merging.work, iteration_mult * size(lhs_matrix, 2))
@@ -902,13 +954,15 @@ end
     merge_nnls_based_rate_preserving!(rng, nnls_merging,
                                            interaction, electron_neutral_interactions, computed_cs,
                                            particles, pia, cell, species, neutral_species_index,
-                                           vref, ref_cs_elatic, ref_cs_ion; n_rand_pairs=0, max_err=1e-11,
+                                           ref_cs_elatic, ref_cs_ion; scaling_method=:variance,
+                                           vref=1.0, n_rand_pairs=0, max_err=1e-11,
                                            centered_at_mean=true, v_multipliers=[0.5, 1.0], iteration_mult=2)
 
 Perform NNLS-based merging of electrons that conserves approximate elastic scattering and electron-impact ionization rates.
 To improve stability, additional fictitious particles can be created
 by randomly choosing particle pairs and creating new particles with a velocity and position that is a mean
 of the velocity and position of the randomly chosen pair; these particles are added as additional columns to the matrix.
+Even scaling is done using the computed variances, `vref` might be used in case those variances are small.
 
 # Positional arguments
 * `rng`: the random number generator instance
@@ -923,11 +977,14 @@ of the velocity and position of the randomly chosen pair; these particles are ad
 * `species`: the index of the species being merged
 * `neutral_species_index`: the index of the neutral species which is the collision partner in the electron-neutral
     collisions for which approximate rates are being preserved.
-* `vref`: the reference velocity used to scale the velocities
 * `ref_cs_elatic`: the reference elastic scattering cross-section used to scale the rates
 * `ref_cs_ion`: the reference electron-impact ionization cross-section used to scale the rates
 
 # Keyword arguments
+* `vref`: the reference velocity used to scale the velocities
+* `scaling method`: how to scale entries in the LHS and RHS of the NNLS system - either based on
+    the reference velocity `vref` (`scaling_method=:vref`)
+    or on the computed variances in each direction (`scaling_method=:variance`)
 * `n_rand_pairs`: the number of additional random pairs to sample to create additional entries in the matrix
     to potentially improve the stability of the algorithm
 * `max_err`: maximum allowed value of the residual of the NNLS system
@@ -944,7 +1001,8 @@ the number of non-zero elements in the solution vector is equal to the original 
 function merge_nnls_based_rate_preserving!(rng, nnls_merging,
                                            interaction, electron_neutral_interactions, computed_cs,
                                            particles, pia, cell, species, neutral_species_index,
-                                           vref, ref_cs_elatic, ref_cs_ion; n_rand_pairs=0, max_err=1e-11,
+                                           ref_cs_elatic, ref_cs_ion; vref=1.0, scaling_method=:variance,
+                                           n_rand_pairs=0, max_err=1e-11,
                                            centered_at_mean=true, v_multipliers=[0.5, 1.0], iteration_mult=2)
 
     # create LHS matrix
@@ -965,7 +1023,7 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging,
                                       interaction[species,neutral_species_index], electron_neutral_interactions, computed_cs,
                                       particles, pia, cell, species, neutral_species_index, n_rand_pairs,
                                       centered_at_mean, v_multipliers)
-    scale_lhs_rhs_rate_preserving!(nnls_merging, lhs_matrix, ref_cs_elatic, ref_cs_ion)
+    scale_lhs_rhs_rate_preserving!(nnls_merging, lhs_matrix, ref_cs_elatic, ref_cs_ion, scaling_method)
 
     load!(nnls_merging.work, lhs_matrix, nnls_merging.rhs_vector)
     solve!(nnls_merging.work, iteration_mult * size(lhs_matrix, 2))

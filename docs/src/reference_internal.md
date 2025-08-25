@@ -98,6 +98,8 @@ Merzbild.compute_lhs_and_rhs!
 Merzbild.compute_lhs_and_rhs_rate_preserving!
 Merzbild.compute_lhs_particles_additional!
 Merzbild.compute_lhs_particles_additional_rate_preserving!
+Merzbild.scale_lhs_rhs_variance!
+Merzbild.scale_lhs_rhs_vref!
 Merzbild.scale_lhs_rhs!
 Merzbild.scale_lhs_rhs_rate_preserving!
 Merzbild.compute_post_merge_particles_nnls!
