@@ -86,7 +86,7 @@
 
     mnnls = NNLSMerge(mim, 30)
     vref = sqrt(2 * k_B * 300.0 / species_data[1].mass)
-    result = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1, vref)
+    result = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1; vref=vref, scaling=:vref)
     @test length(mnnls.rhs_vector) == length(mim) + 1  # we didn't construct 0-th order moment
 
     n0 = phys_props.n[1, 1]
@@ -144,7 +144,7 @@
     pia2 = ParticleIndexerArray(length(particles2[1]))
     vref = 1.0
 
-    result = merge_nnls_based!(rng, mnnls2, particles2[1], pia2, 1, 1, vref)
+    result = merge_nnls_based!(rng, mnnls2, particles2[1], pia2, 1, 1; vref=vref, scaling=:vref)
     @test abs(mnnls2.rhs_vector[1] - 1.0) < eps()
 
     # mean velocity is 0.0
@@ -216,4 +216,8 @@
 
     # no centered particle, so no zero values
     @test sum(abs.(lhs_matrix[:, pia.indexer[1, 1].n_local+1:end])) != 0
+
+
+    # scale_lhs_rhs_vref!
+    # scale_lhs_rhs_variance!
 end

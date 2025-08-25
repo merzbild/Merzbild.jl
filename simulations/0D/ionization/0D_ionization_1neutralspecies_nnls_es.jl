@@ -194,9 +194,10 @@ function run(seed, E_Tn, n_t,
                     @timeit "NNLSmerge: 1st time" nnls_success_flag = merge_nnls_based_rate_preserving!(rng, mnnls_rp, 
                     interaction_data, n_e_interactions, n_e_cs,
                     particles[3], pia, 1, 3, index_neutral,
-                    vref, ref_cs_elastic, ref_cs_ionization)
+                    ref_cs_elastic, ref_cs_ionization; vref=vref, scaling=:vref)
                 else
-                    @timeit "NNLSmerge: 1st time" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[3], pia, 1, 3, vref)
+                    @timeit "NNLSmerge: 1st time" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[3], pia, 1, 3;
+                                                                                        vref=vref, scaling=:vref)
                 end
                 firstm = false
             else
@@ -204,9 +205,10 @@ function run(seed, E_Tn, n_t,
                     @timeit "NNLSmerge" nnls_success_flag = merge_nnls_based_rate_preserving!(rng, mnnls_rp, 
                     interaction_data, n_e_interactions, n_e_cs,
                     particles[3], pia, 1, 3, index_neutral,
-                    vref, ref_cs_elastic, ref_cs_ionization)
+                    ref_cs_elastic, ref_cs_ionization; vref=vref, scaling=:vref)
                 else
-                    @timeit "NNLSmerge" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[3], pia, 1, 3, vref)
+                    @timeit "NNLSmerge" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[3], pia, 1, 3;
+                                                                              vref=vref, scaling=:vref)
                 end
                 
             end

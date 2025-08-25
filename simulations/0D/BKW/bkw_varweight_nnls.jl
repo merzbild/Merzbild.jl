@@ -100,10 +100,12 @@ function run(seed, n_up_to_total, n_full_up_to_total, threshold, ntarget_octree)
 
         if phys_props.np[1,1] > threshold
             if firstm
-                @timeit "NNLSmerge: 1st time" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1, vref)
+                @timeit "NNLSmerge: 1st time" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1;
+                                                                                    vref=vref, scaling=:vref)
                 firstm = false
             else
-                @timeit "NNLSmerge" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1, vref)
+                @timeit "NNLSmerge" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1;
+                                                                          vref=vref, scaling=:vref)
             end
 
             if nnls_success_flag == -1

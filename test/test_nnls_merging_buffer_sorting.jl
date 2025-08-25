@@ -73,7 +73,7 @@
 
     mnnls = NNLSMerge(mim, 90)
     vref = 1.0
-    result = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1, vref)
+    result = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1; vref=vref, scaling=:vref)
     # print(result)
     @test result == 1
 
@@ -169,7 +169,7 @@
 
     @test particles[1].nbuffer == 0
 
-    result = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1, vref)
+    result = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1; vref=vref, scaling=:vref)
 
     @test result == 1
 

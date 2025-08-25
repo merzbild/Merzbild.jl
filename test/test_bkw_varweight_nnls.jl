@@ -110,7 +110,7 @@
         ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
 
         if phys_props.np[1,1] > threshold
-            nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1, vref)
+            nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1; vref=vref, scaling=:vref)
 
             if nnls_success_flag == -1
                 merge_octree_N2_based!(rng, ocm, particles[1], pia, 1, 1, ntarget_octree)
