@@ -485,7 +485,7 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging, lhs_matrix,
 
         for n_mom in 1:n_moms
             tmp_ccm = ccm(particles[i].v, nnls_merging.v0, nnls_merging.mim[n_mom])
-            nnls_merging.rhs_vector[n_mom] = nnls_merging.rhs_vector[n_mom] + nnls_merging.rhs_vector[n_mom] + particles[i].w * tmp_ccm
+            nnls_merging.rhs_vector[n_mom] = nnls_merging.rhs_vector[n_mom] + particles[i].w * tmp_ccm
             lhs_matrix[n_mom, col_index] = tmp_ccm
         end
 
@@ -950,7 +950,7 @@ function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species;
         return -1
     end
 
-    @inbounds if nonzero == pia.indexer[cell, species].n_local
+    @inbounds if nonzero >= pia.indexer[cell, species].n_local
         return -1
     end
 
@@ -984,6 +984,8 @@ For a given variance multiplier (an entry in the `v_multipliers` parameter, whic
 the value of the multiplier times the velocity variance of that component (times +1 or -1 depending on the octant),
 or, if this value is outside of the bounding box, the closest bounding value of the velocity component in that direction
 is used instead and also multiplied by the variance multiplier.
+The reference velocity is also used in conjunction with the reference cross-sections to scale the parts of
+the NNLS matrix and RHS corresponding to conservation of electron-neutral collision rates.
 
 # Positional arguments
 * `rng`: the random number generator instance
@@ -1002,7 +1004,7 @@ is used instead and also multiplied by the variance multiplier.
 * `ref_cs_ion`: the reference electron-impact ionization cross-section used to scale the rates
 
 # Keyword arguments
-* `vref`: the reference velocity used to scale the velocities
+* `vref`: the reference velocity used to scale the velocities and the electron-neutral collision rates
 * `scaling`: how to scale entries in the LHS and RHS of the NNLS system - either based on
     the reference velocity `vref` (`scaling=:vref`)
     or on the computed variances in each direction (`scaling=:variance`)
@@ -1060,7 +1062,7 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging,
         return -1
     end
 
-    @inbounds if nonzero == pia.indexer[cell, species].n_local
+    @inbounds if nonzero >= pia.indexer[cell, species].n_local
         return -1
     end
 
