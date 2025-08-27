@@ -149,6 +149,10 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
     n_avg = n_timesteps - avg_start + 1
 
     for t in 1:n_timesteps
+
+        if t % 500 == 0
+            println(t)
+        end
         
         # collide, convect, sort particles
         @timeit "collide+convect+sort" @threads for chunk_id in 1:n_chunks
