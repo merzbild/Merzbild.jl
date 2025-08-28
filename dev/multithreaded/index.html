@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Multithreaded simulations · Merzbild</title><meta name="title" content="Multithreaded simulations · Merzbild"/><meta property="og:title" content="Multithreaded simulations · Merzbild"/><meta property="twitter:title" content="Multithreaded simulations · Merzbild"/><meta name="description" content="Documentation for Merzbild."/><meta property="og:description" content="Documentation for Merzbild."/><meta property="twitter:description" content="Documentation for Merzbild."/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">Merzbild</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../overview_capabilities/">Overview of capabilities</a></li><li><span class="tocitem">Getting started</span><ul><li><a class="tocitem" href="../overview_blocks/">Overview of basic building blocks</a></li><li><a class="tocitem" href="../overview_fixedweight/">Fixed-weight DSMC simulations</a></li><li><a class="tocitem" href="../overview_varweight/">Variable-weight DSMC simulations</a></li><li><a class="tocitem" href="../overview_1d/">1D DSMC simulations</a></li><li><a class="tocitem" href="../overview_fp/">Fokker-Planck simulations</a></li></ul></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../contiguous_indexing/">Contiguous indexing</a></li><li><a class="tocitem" href="../modelling_ionization/">Modelling ionization reactions</a></li><li class="is-active"><a class="tocitem" href>Multithreaded simulations</a><ul class="internal"><li><a class="tocitem" href="#Overview"><span>Overview</span></a></li><li><a class="tocitem" href="#Example:-multithreaded-Couette-flow-simulation"><span>Example: multithreaded Couette flow simulation</span></a></li></ul></li></ul></li><li><span class="tocitem">API reference</span><ul><li><a class="tocitem" href="../reference_public/">Public API reference</a></li><li><a class="tocitem" href="../reference_internal/">Internal API reference</a></li></ul></li><li><a class="tocitem" href="../benchmarks/">Benchmarks</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Tutorials</a></li><li class="is-active"><a href>Multithreaded simulations</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Multithreaded simulations</a></li></ul></nav><div class="docs-right"><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Multithreaded-simulations"><a class="docs-heading-anchor" href="#Multithreaded-simulations">Multithreaded simulations</a><a id="Multithreaded-simulations-1"></a><a class="docs-heading-anchor-permalink" href="#Multithreaded-simulations" title="Permalink"></a></h1><h2 id="Overview"><a class="docs-heading-anchor" href="#Overview">Overview</a><a id="Overview-1"></a><a class="docs-heading-anchor-permalink" href="#Overview" title="Permalink"></a></h2><p>Multithreaded simulations are possible via use of standard Julia threads. The approach is relatively straightforward:</p><ol><li>The domain is decomposed into <code>n_chunks</code> &quot;cell chunks&quot;, which are lists of cells.  Within each chunk the cell indices should be continuous.  For example, a 4-cell domain may be decomposed into <code>[[1,2],[3,4]]</code> (2 chunks),  <code>[[1], [2,3], [4]</code> (3 chunks), <code>[[1], [2], [3], [4]]</code> (4 chunks), etc.</li><li>Several variables are instantiated for each chunk:<ul><li><code>n_chunks</code> arrays of <code>ParticleVector</code>s (each hold <code>n_species</code> <code>ParticleVector</code>s)</li><li><code>n_chunks</code> RNGs</li><li><code>n_chunks</code> <code>ParticleIndexerArray</code> instances</li><li><code>n_chunks</code> <code>GridSortInPlace</code> instances</li><li><code>n_chunks+1</code> <code>SurfProps</code> instances (one additional instance is required for the reduce operation)</li></ul></li><li>Collisions, convection, sorting are all performed per-chunk, completely independently,  so multithreading can be used</li><li>After particles have been sorted, some might need to be moved between chunks,  if they ended up in cells assigned to another chunk.  This is done in two steps: first, one calls <a href="../reference_public/#Merzbild.exchange_particles!"><code>exchange_particles!</code></a> to move the particle  data between chunks. This is done in serial mode to avoid race conditions.  Then, <a href="../reference_public/#Merzbild.sort_particles_after_exchange!"><code>sort_particles_after_exchange!</code></a> is called to reset indexing without having to  completely resort all the new particles. This can be done using multithreading.</li><li>Physical grid properties are computed using multithreading, as they can easily be computed  only for cells assigned to the chunk, thus avoiding any race conditions.  In case surface properties were computed during particle movement, a  reduce operation is needed to sum the per-chunk values. This is done by  a serial call to <a href="../reference_public/#Merzbild.reduce_surf_props!"><code>reduce_surf_props!</code></a>.</li></ol><p>The trade-off of the approach is that even in case no new particles are created in the simulation, particle data will be moved around, as when after a movement step a particle ends up in a cell corresponding to a different chunk, it needs to be moved to the <code>ParticleVector</code> for that chunk. In addition, some duplication of data structures (i.e. multiple <code>GridSortInPlace</code> instances) is required. A special struct <a href="../reference_public/#Merzbild.ChunkExchanger"><code>ChunkExchanger</code></a> is used to facilitate exchange of particles between chunks.</p><p>However, the code logic is more straightforward, as most of the data is independent and no race conditions can occur. Some of this functionality will be re-used to make MPI simulations possible.</p><h2 id="Example:-multithreaded-Couette-flow-simulation"><a class="docs-heading-anchor" href="#Example:-multithreaded-Couette-flow-simulation">Example: multithreaded Couette flow simulation</a><a id="Example:-multithreaded-Couette-flow-simulation-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-multithreaded-Couette-flow-simulation" title="Permalink"></a></h2><p>Below is an example of a multithreaded Couette flow simulation. To run in multithreaded mode, one should start julia specifying the number of threads: <code>julia --threads NTHREADS</code>. The file can also be found under <code>simulations/1D/couette_multithreaded.jl</code>.</p><p>The <a href="https://github.com/JuliaFolds2/ChunkSplitters.jl">ChunkSplitters.jl</a> library is used to perform domain decomposition, by splitting the range of cell indices <code>1:nx</code> into independent chunks. By default, the number of chunks is set equal to the number of threads; it can be set to a multiple of the number of threads by setting a value of the <code>chunk_count_multiplier</code> parameter. <code>preallocation_margin_multiplier</code> allocates additional unused particles in the per-chunk <code>ParticleVector</code> instances, since otherwise the transfer of particles might lead to frequent calls to <code>resize!</code> at the start of the simulation as the solution approaches steady state and the average number of particles in a chunk changes significantly. A value of <code>1.0</code> means no additional particle storage is allocated.</p><p>The surface properties are collected into <code>surf_props_reduced</code> via a call to <code>reduce_surf_props</code>. Before the start of the time loop, the sampling procedure is multithreaded via the <code>@threads</code> macro. The physical properties are also computed in multithreaded mode.</p><p>Inside the time loop, collisions, convection, and sorting are performed inside a <code>@threads</code> block. The <code>chunk_exchanger</code> data is also cleared in this multithreaded loop to prepare it for the movement of particles between chunks. Once the block finishes, the particles are moved between chunks via a serial call to <a href="../reference_public/#Merzbild.sort_particles_after_exchange!"><code>sort_particles_after_exchange!</code></a>. Finally, the indexing is reset, and physical grid properties are computed, again inside a <code>@threads</code> block. The reduction operation for the surface properties, as well as averaging of grid and surface properties, is performed serially at the end of the timestep.</p><pre><code class="language-julia hljs">using Merzbild
+using Random
+using TimerOutputs
+using Base.Threads
+using ChunkSplitters
+
+function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_start; chunk_count_multiplier=1,
+             preallocation_margin_multiplier=1.0)
+    reset_timer!()
+
+    n_threads = Threads.nthreads()
+    n_chunks = n_threads * chunk_count_multiplier
+    println(&quot;Running on $n_threads threads, will split cells into $n_chunks chunks&quot;)
+
+    rng_chunks = [Xoshiro(seed + i) for i in 0:n_chunks-1]
+
+    # load particle and interaction data
+    particles_data_path = joinpath(&quot;data&quot;, &quot;particles.toml&quot;)
+    species_data = load_species_data(particles_data_path, &quot;Ar&quot;)
+    interaction_data_path = joinpath(&quot;data&quot;, &quot;vhs.toml&quot;)
+    interaction_data::Array{Interaction, 2} = load_interaction_data(interaction_data_path, species_data)
+
+    # create our grid and BCs
+    grid = Grid1DUniform(L, nx)
+    boundaries = MaxwellWalls1D(species_data, T_wall, T_wall, -v_wall, v_wall, 1.0, 1.0)
+
+    # split cell indices into chunks
+    cell_indices = Vector(1:nx)
+    cell_chunks = chunks(cell_indices; n=n_chunks)
+
+    # init per-chunk particle vectors, particle indexers, grid particle sorters
+    n_particles_chunks = [floor(Int64, ppc * length(cell_chunk) * preallocation_margin_multiplier) for cell_chunk in cell_chunks]
+    particles_chunks = [[ParticleVector(n_particles)] for n_particles in n_particles_chunks]
+    pia_chunks = [ParticleIndexerArray(grid.n_cells, 1) for cell_chunk in cell_chunks]
+    gridsorter_chunks = [GridSortInPlace(grid, n_particles) for n_particles in n_particles_chunks]
+
+    # this is used for moving particles between chunks after they have been sorted into grid cells
+    chunk_exchanger = ChunkExchanger(cell_chunks, nx)
+
+    # sample particles
+    # Fnum * ppc = Np in cell = ndens * V_cell
+    Fnum = grid.cells[1].V * ndens / ppc
+
+    # sample particles per-chunk
+    @timeit &quot;sampling&quot; @threads for (chunk_id, cell_chunk) in enumerate(cell_chunks)
+        @inbounds sample_particles_equal_weight!(rng_chunks[chunk_id], grid, particles_chunks[chunk_id][1],
+                                                    pia_chunks[chunk_id],
+                                                    1, species_data, ndens, T_wall, Fnum, cell_chunk)
+    end
+     
+    # create collision structs
+    collision_data = [CollisionData() for cell_chunk in cell_chunks]
+    
+    # create struct for computation of physical properties, sizes of pia are the same
+    phys_props = PhysProps(pia_chunks[1])
+
+    # create second struct for averaging of physical properties, sizes of pia are the same
+    phys_props_avg = PhysProps(pia_chunks[1])
+
+    # create struct for computation of surface properties, need a SurfProps instance per chunk
+    surf_props_chunks = [SurfProps(pia_chunks[1], grid) for cell_chunk in cell_chunks]
+
+    # we sum up all the surf props here
+    surf_props_reduced = SurfProps(pia_chunks[1], grid)
+
+    # create second struct for averaging of physical properties
+    surf_props_avg = SurfProps(pia_chunks[1], grid)
+
+    # create struct for netCDF for time-averaged physical properties I/O
+    ds_avg = NCDataHolder(&quot;scratch/data/avg_mt_couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc)_after$(avg_start).nc&quot;,
+                          species_data, phys_props)
+
+    # create struct for netCDF for time-averaged surface properties I/O
+    ds_surf_avg = NCDataHolderSurf(&quot;scratch/data/avg_mt_couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc)_surf_after$(avg_start).nc&quot;,
+                                   species_data, surf_props_avg)
+
+    # create and estimate collision factors
+    collision_factors = [create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum)
+                         for pia in pia_chunks]
+
+    # compute data at t=0
+    @timeit &quot;props compute&quot; @threads for (chunk_id, cell_chunk) in enumerate(cell_chunks)
+        compute_props_sorted!(particles_chunks[chunk_id], pia_chunks[chunk_id], species_data, phys_props, cell_chunk)
+    end
+
+    n_avg = n_timesteps - avg_start + 1
+
+    for t in 1:n_timesteps
+
+        if t % 500 == 0
+            println(t)
+        end
+        
+        # collide, convect, sort particles
+        @timeit &quot;collide+convect+sort&quot; @threads for chunk_id in 1:n_chunks
+            for cell in cell_chunks[chunk_id]
+                @inbounds ntc!(rng_chunks[chunk_id], collision_factors[chunk_id][1, 1, cell],
+                               collision_data[chunk_id], interaction_data, particles_chunks[chunk_id][1],
+                               pia_chunks[chunk_id], cell, 1, Δt, grid.cells[cell].V)
+            end
+
+            if (t &gt;= avg_start)
+                @inbounds convect_particles!(rng_chunks[chunk_id], grid, boundaries,
+                                    particles_chunks[chunk_id][1], pia_chunks[chunk_id],
+                                    1, species_data, surf_props_chunks[chunk_id], Δt)
+            else
+                # we don&#39;t need to compute surface properties before we start averaging
+                @inbounds convect_particles!(rng_chunks[chunk_id], grid, boundaries,
+                                    particles_chunks[chunk_id][1], pia_chunks[chunk_id],
+                                    1, species_data, Δt)
+            end
+
+            # need to clear the data in the chunk exchanger
+            @inbounds reset!(chunk_exchanger, chunk_id)
+
+            # sort particles
+            @inbounds sort_particles!(gridsorter_chunks[chunk_id], grid, particles_chunks[chunk_id][1], pia_chunks[chunk_id], 1)
+        end
+
+        # move particles between chunks
+        @timeit &quot;exchange&quot; exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, 1)
+
+        # reset indexing, compute physical properties if needed
+        @timeit &quot;re-sort + compute props&quot; @threads for chunk_id in 1:n_chunks
+            sort_particles_after_exchange!(chunk_exchanger, gridsorter_chunks[chunk_id],
+                                           particles_chunks[chunk_id][1], pia_chunks[chunk_id],
+                                           cell_chunks[chunk_id], 1)
+            if (t &gt;= avg_start)
+                @inbounds compute_props_sorted!(particles_chunks[chunk_id], pia_chunks[chunk_id],
+                                                species_data, phys_props, cell_chunks[chunk_id])
+            end
+        end
+
+        # reduce surface properties, average grid and surface properties
+        if (t &gt;= avg_start)
+            @timeit &quot;avg physprops&quot; avg_props!(phys_props_avg, phys_props, n_avg)
+            @timeit &quot;reduce surf props&quot; reduce_surf_props!(surf_props_reduced, surf_props_chunks)
+            @timeit &quot;avg surfprops&quot; avg_props!(surf_props_avg, surf_props_reduced, n_avg)
+        end
+    end
+
+    @timeit &quot;I/O&quot; write_netcdf(ds_avg, phys_props_avg, n_timesteps)
+    @timeit &quot;I/O&quot; write_netcdf(ds_surf_avg, surf_props_avg, n_timesteps)
+
+    close_netcdf(ds_avg)
+    close_netcdf(ds_surf_avg)
+
+    print_timer()
+end
+
+run(1234, 300.0, 500.0, 5e-4, 5e22, 500, 500, 2.59e-9, 50000, 14000; chunk_count_multiplier=1, preallocation_margin_multiplier=1.5)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../modelling_ionization/">« Modelling ionization reactions</a><a class="docs-footer-nextpage" href="../reference_public/">Public API reference »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.14.1 on <span class="colophon-date" title="Thursday 28 August 2025 10:08">Thursday 28 August 2025</span>. Using Julia version 1.11.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
