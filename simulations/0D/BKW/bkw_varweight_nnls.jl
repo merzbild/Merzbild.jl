@@ -77,7 +77,7 @@ function run(seed, n_up_to_total, n_full_up_to_total, threshold, ntarget_octree)
 
     ds = NCDataHolder("scratch/data/tmp_nnls_$(n_full_up_to_total)full_upto$(n_up_to_total)_$(threshold)_$(seed).nc", species_data, phys_props)
 
-    write_netcdf_phys_props(ds, phys_props, 0)
+    write_netcdf(ds, phys_props, 0)
 
     collision_factors::CollisionFactors = CollisionFactors()
     collision_data::CollisionData = CollisionData()
@@ -100,10 +100,12 @@ function run(seed, n_up_to_total, n_full_up_to_total, threshold, ntarget_octree)
 
         if phys_props.np[1,1] > threshold
             if firstm
-                @timeit "NNLSmerge: 1st time" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1, vref)
+                @timeit "NNLSmerge: 1st time" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1;
+                                                                                    vref=vref, scaling=:vref)
                 firstm = false
             else
-                @timeit "NNLSmerge" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1, vref)
+                @timeit "NNLSmerge" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1;
+                                                                          vref=vref, scaling=:vref)
             end
 
             if nnls_success_flag == -1
@@ -113,7 +115,7 @@ function run(seed, n_up_to_total, n_full_up_to_total, threshold, ntarget_octree)
         end
         
         compute_props!(particles, pia, species_data, phys_props)
-        write_netcdf_phys_props(ds, phys_props, ts)
+        write_netcdf(ds, phys_props, ts)
     end
     close_netcdf(ds)
     print_timer()

@@ -1,3 +1,5 @@
+@muladd begin
+
 """
     CollisionFactors
 
@@ -743,4 +745,6 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
             end
         end
     end
+end
+
 end

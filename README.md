@@ -6,11 +6,12 @@
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 # Merzbild.jl
-**Merzbild.jl** is a work-in-progress DSMC code fully written in Julia,
+**Merzbild.jl** is a work-in-progress **variable-weight** DSMC code fully written in Julia,
 designed to provide all the necessary components to build your own simulations.
 This means that things like implementing a time loop over timesteps are left to the end user,
 and the code provides only functionality such as
 particle sampling and indexing, collisions, merging, computation of physical properties and I/O.
+Currently the code supports serial and multithreaded operation.
 
 ## Installation
 For now, **Merzbild.jl** needs to be cloned to be run. Once cloned, navigate to the directory, run `julia --project=.`, and in the
@@ -81,7 +82,7 @@ function run(seed)
 
     # create struct for output to netCDF file
     ds = NCDataHolder("output_multi_species.nc", species_data, phys_props)
-    write_netcdf_phys_props(ds, phys_props, 0)
+    write_netcdf(ds, phys_props, 0)
 
     # set up collision structs
     collision_factors = create_collision_factors_array(n_species)
@@ -104,7 +105,7 @@ function run(seed)
 
         # compute and write physical properties
         compute_props!(particles, pia, species_data, phys_props)
-        write_netcdf_phys_props(ds, phys_props, ts)
+        write_netcdf(ds, phys_props, ts)
     end
 
     # print properties at last timestep
@@ -120,14 +121,15 @@ run(1234)
 ```
 
 ### Usage notes
-For now, bound checking is not turned off (via the `@inbounds` macro) except for the convection and particle sorting routines, so simulations may benefit from running with `--check-bounds=no`.
+Simulations may benefit from running with `--check-bounds=no`, as some routines currently don't use `@inbounds`.
 Running with `-O3` might also speed up things.
 
 ## Testing
 The tests try to cover most of the functionality implemented in the code. They can be run by invoking by calling `using Pkg; Pkg.test()`.
 
 ## Speed
-Detailed benchmarks can be found in [`BENCHMARKS.md`](BENCHMARKS.md). For a serial 1-D Couette flow simulation, Merzbild.jl is up to 33% faster
+Detailed benchmarks can be found in [`BENCHMARKS.md`](BENCHMARKS.md).
+For a serial 1-D Couette flow simulation, Merzbild.jl is up to 30% faster
 than SPARTA.
 
 ## Citing

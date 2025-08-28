@@ -27,6 +27,7 @@ include("test_octree_merging.jl")  # then we test computation of props and octre
 include("test_octree_merging_buffer_sorting.jl")  # then we test that particles are freed correctly in octree merging
 include("test_bkw_varweight_octree.jl")  # then we test variable-weight NTC collisions+octree merging in 0D (BKW relaxation)
 include("test_2species_varweight_octree.jl")  # 2-species variable-weight elastic collisions and merging
+include("test_nnls_utils.jl")  # test NNLS-based merging utils first
 include("test_nnls_merging.jl")  # test NNLS-based merging
 include("test_nnls_merging_buffer_sorting.jl")  # then we test that particles are freed correctly in NNLS-based merging
 include("test_bkw_varweight_nnls.jl")  # test NNLS-based merging
@@ -35,6 +36,7 @@ include("test_acceleration.jl")  # test acceleration of charge particles
 include("test_indexing_particlevector.jl")  # test particle vector and multi-cell indexing
 include("test_indexing_particlebuffer.jl")  # test buffer in ParticleVector
 include("test_pia_contiguous.jl")  # test squash_pia
+include("test_debugging_functions.jl")  # test indexing debugging functions
 include("test_grid_1D_uniform.jl")  # test sampling and computes on 1D uniform grid
 include("test_grid_sorting.jl")  # test particle sorting routines
 include("test_convection_1D.jl")  # test particle convection and surface interaction on a 1D grid
@@ -46,5 +48,9 @@ include("test_io_surf.jl")  # test I/O of surface properties
 include("test_1D_couette.jl")  # test Couette flow
 include("test_1D_couette_varweight.jl")  # test 1-D Couette flow, variable-weight DSMC, surface computes
 include("test_misc.jl")  # various misc utility functions
-include("test_collision_fp.jl")
+include("test_collision_fp.jl")  # test Fokker-Planck collisions
+include("test_1D_couette_fp.jl")  # test  1-D Couette flow, particle Fokker-Planck collisions
+include("test_chunking.jl")  # test chunking, chunk-based computes, surface reduce, sampling on 1-D grid chunks
+include("test_particle_exchange.jl")  # test swapping and pushing of particles in chunked simulations
+include("test_particle_resort_after_exchange.jl")  # test re-sorting of particles after swap/push in chunked simulations
 include("test_aqua.jl")

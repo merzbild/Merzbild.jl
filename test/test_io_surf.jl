@@ -89,13 +89,13 @@
     ds = NCDataHolderSurf(sol_path, [], species_data, surf_props)
 
     set_surf_data!(surf_props, 0)
-    write_netcdf_surf_props(ds, surf_props, 0)
+    write_netcdf(ds, surf_props, 0)
 
     set_surf_data!(surf_props, 1)
-    write_netcdf_surf_props(ds, surf_props, 1, sync_freq=1)
+    write_netcdf(ds, surf_props, 1, sync_freq=1)
 
     set_surf_data!(surf_props, 2)
-    write_netcdf_surf_props(ds, surf_props, 2)
+    write_netcdf(ds, surf_props, 2)
     close_netcdf(ds)
 
     props_read =  NCDataset(sol_path, "r")
@@ -126,7 +126,7 @@
     ds = NCDataHolderSurf(sol_path, names_skip_list, species_data, surf_props)
 
     set_surf_data!(surf_props, 0)
-    write_netcdf_surf_props(ds, surf_props, 0)
+    write_netcdf(ds, surf_props, 0)
     close_netcdf(ds)
 
     props_read =  NCDataset(sol_path, "r")

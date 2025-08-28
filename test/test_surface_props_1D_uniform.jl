@@ -34,7 +34,7 @@
 
     # 4 particles in cell 1, with velocity -i^2
     for i in 1:4
-        Merzbild.update_particle_buffer_new_particle(particles[1], i)
+        Merzbild.update_particle_buffer_new_particle!(particles[1], i)
 
         w = i + 0.5
         particles[1][i] = Particle(w, [-i^2, i^2, 0], [0.25, 0.0, 0.0])
@@ -42,7 +42,7 @@
 
     # 4 particles in cell 8, with velocity 10.0
     for i in 5:8
-        Merzbild.update_particle_buffer_new_particle(particles[1], i)
+        Merzbild.update_particle_buffer_new_particle!(particles[1], i)
 
         w = i + 2.5
         particles[1][i] = Particle(w, [10.0, 0, 3.0], [3.9, 0.0, 0.0])
@@ -302,7 +302,7 @@
 
     # 4 particles in cell 1, all of them reach the wall
     for i in 1:4
-        Merzbild.update_particle_buffer_new_particle(particles[1], i)
+        Merzbild.update_particle_buffer_new_particle!(particles[1], i)
 
         w = 1.0
         particles[1][i] = Particle(w, [-1.0, 0, 0], [0.1, 0.0, 0.0])
@@ -310,7 +310,7 @@
 
     # 4 particles in cell 8, only one of them reaches the wall
     for i in 5:8
-        Merzbild.update_particle_buffer_new_particle(particles[1], i)
+        Merzbild.update_particle_buffer_new_particle!(particles[1], i)
 
         w = 3.0
         vx = 0.0
@@ -361,7 +361,7 @@
 
     # 4 particles in cell 1, all of them reach the wall
     for i in 1:4
-        Merzbild.update_particle_buffer_new_particle(particles[1], i)
+        Merzbild.update_particle_buffer_new_particle!(particles[1], i)
 
         w = 1.0
         particles[1][i] = Particle(w, [-1.0, 0, 0], [0.1, 0.0, 0.0])
@@ -369,7 +369,7 @@
 
     # 4 particles in cell 8, only one of them reaches the wall
     for i in 5:8
-        Merzbild.update_particle_buffer_new_particle(particles[1], i)
+        Merzbild.update_particle_buffer_new_particle!(particles[1], i)
 
         w = 3.0
         vx = 0.0

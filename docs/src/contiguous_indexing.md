@@ -105,3 +105,12 @@ the value of `pia.contiguous` and does nothing if that value is set to `true`.
 
 **Summary**: one needs to restore continuity of particle indexing if particles are deleted and created in a simulation, otherwise this
 might lead to erroneous results.
+
+## Debugging
+Several utility functions are available to verify/help debug simulations.
+
+[`pretty_print_pia`](@ref) prints out the start/end indices for all groups in all cells for particles of a given
+species. [`check_pia_is_correct`](@ref) verifies that the indexing of groups is consistent.
+[`check_unique_index`](@ref) checks that no two indices point to the same particle, as well as
+that no particles in the buffer are pointed to by indices used in the simulation. This function allocates
+a temporary array and is therefore slow for large numbers of particles.

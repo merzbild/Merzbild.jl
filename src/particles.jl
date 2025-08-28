@@ -143,7 +143,7 @@ end
 """
     ParticleIndexerArray(n_particles::Integer)
 
-Create a single-species/single-cell `ParticleIndexerArray`.
+Create a single-species/single-cell `ParticleIndexerArray` and set up the indexing for `n_particles` in group 1 in cell 1.
 
 # Positional arguments
 * `n_particles`: the number of particles (integer number)
@@ -154,7 +154,8 @@ ParticleIndexerArray(n_particles::Integer) = ParticleIndexerArray(hcat(ParticleI
 """
     ParticleIndexerArray(n_particles::T) where T<:AbstractVector
 
-Create a multi-species/single-cell `ParticleIndexerArray`.
+Create a multi-species/single-cell `ParticleIndexerArray` and set up the indexing for `n_particles[species]` in group 1 in cell 1
+for all `species`.
 
 # Positional arguments
 * `n_particles`: the number of particles of each species (vector-like)
@@ -286,7 +287,7 @@ function Base.resize!(pv::ParticleVector, n::Integer)
 end
 
 """
-    update_particle_buffer_new_particle(pv::ParticleVector, position)
+    update_particle_buffer_new_particle!(pv::ParticleVector, position)
 
 Update the buffer in a `ParticleVector` instance when a new particle is created. This writes the index of the new particle
 (the last index stored in the active part of the buffer) to the `index` vector at position `position`, and reduces
@@ -296,14 +297,14 @@ the length of the active part of the buffer by 1.
 * `pv`: `ParticleVector` instance
 * `position`: the position in the `index` vector to which to write the index of the new particle
 """
-@inline function update_particle_buffer_new_particle(pv::ParticleVector, position)
+@inline function update_particle_buffer_new_particle!(pv::ParticleVector, position)
     # position is where we will be writing to
     @inbounds pv.index[position] = pv.buffer[pv.nbuffer]
     pv.nbuffer -= 1
 end
 
 """
-    update_particle_buffer_new_particle(pv::ParticleVector, pia, species)
+    update_particle_buffer_new_particle!(pv::ParticleVector, pia, species)
 
 Update the buffer in a `ParticleVector` instance when a new particle is created at the end of the particle array, and reduces
 the length of the active part of the buffer by 1.
@@ -315,26 +316,26 @@ as the index of the new particle taken from the buffer is written to `pv.index.[
 * `pia`: the `ParticleIndexerArray` instance
 * `species`: the index of the species of which a new particle is created
 """
-@inline function update_particle_buffer_new_particle(pv::ParticleVector, pia, species)
-    update_particle_buffer_new_particle(pv, pia.n_total[species])
+@inline function update_particle_buffer_new_particle!(pv::ParticleVector, pia, species)
+    update_particle_buffer_new_particle!(pv, pia.n_total[species])
 end
 
 """
-    update_particle_buffer_new_particle(pv::Vector{Particle}, pia, species)
+    update_particle_buffer_new_particle!(pv::Vector{Particle}, pia, species)
 
 Dummy function in case `Vector{Particle}` is used and not a `ParticleVector`, just to make the simplest 0-D examples work.
 """
-@inline function update_particle_buffer_new_particle(pv::Vector{Particle}, pia, species)
+@inline function update_particle_buffer_new_particle!(pv::Vector{Particle}, pia, species)
     # dummy function, might remove it at some point
     nothing
 end
 
 """
-    update_particle_buffer_new_particle(pv::Vector{Particle}, position)
+    update_particle_buffer_new_particle!(pv::Vector{Particle}, position)
 
 Dummy function in case `Vector{Particle}` is used and not a `ParticleVector`, just to make the simplest 0-D examples work.
 """
-@inline function update_particle_buffer_new_particle(pv::Vector{Particle}, position)
+@inline function update_particle_buffer_new_particle!(pv::Vector{Particle}, position)
     # dummy function, might remove it at some point
     nothing
 end
@@ -370,7 +371,7 @@ for particles of a specific species in a specific cell.
 end
 
 """
-    update_particle_indexer_new_lower_count(pia, cell, species, new_lower_count)
+    update_particle_indexer_new_lower_count!(pia, cell, species, new_lower_count)
 
 Update a `ParticleIndexerArray` instance when the particle count of a given species in a given cell is reduced.
 
@@ -380,7 +381,7 @@ Update a `ParticleIndexerArray` instance when the particle count of a given spec
 * `species`: the index of the particles' species
 * `new_lower_count`: the new number of particles of the given species in the given cell
 """
-function update_particle_indexer_new_lower_count(pia, cell, species, new_lower_count)
+function update_particle_indexer_new_lower_count!(pia, cell, species, new_lower_count)
     @inbounds diff = pia.indexer[cell, species].n_local - new_lower_count
     @inbounds pia.indexer[cell, species].n_local = new_lower_count
 
@@ -401,7 +402,7 @@ function update_particle_indexer_new_lower_count(pia, cell, species, new_lower_c
 end
 
 """
-    update_particle_indexer_new_particle(pia, cell, species)
+    update_particle_indexer_new_particle!(pia, cell, species)
 
 Update a `ParticleIndexerArray` instance when a particle of a given species in a given cell is created.
 This places the particle index in the 2-nd group of particle indices in the `ParticleIndexer` instance.
@@ -411,7 +412,7 @@ This places the particle index in the 2-nd group of particle indices in the `Par
 * `cell`: the index of the cell in which the particle is created
 * `species`: the index of the species of which the particle is created
 """
-@inline function update_particle_indexer_new_particle(pia, cell, species)
+@inline function update_particle_indexer_new_particle!(pia, cell, species)
     @inbounds pia.n_total[species] += 1
     @inbounds pia.indexer[cell, species].n_local += 1
     @inbounds pia.indexer[cell, species].n_group2 += 1
@@ -464,7 +465,7 @@ If no particles are present in the cell, the function does nothing. This does no
 * `species`: the index of the species of which the particle is deleted
 """
 @inline function delete_particle_end!(pv::ParticleVector, pia, cell, species)
-    if pia.indexer[cell, species].n_group2 > 0
+    @inbounds if pia.indexer[cell, species].n_group2 > 0
         delete_particle_end_group2!(pv, pia, cell, species)
     else
         delete_particle_end_group1!(pv, pia, cell, species)
@@ -596,7 +597,7 @@ function load_species_data(species_filename, species_name::String)
 end
 
 """
-    squash_pia!(pia, species)
+    squash_pia!(pv, pia, species)
 
 Restore the continuity of indices in a `ParticleVector and associated
 `ParticleIndexerArray` instance for a specific species.
@@ -611,7 +612,7 @@ function squash_pia!(pv, pia, species)
     if pia.contiguous[species]
         return
     else
-        n_cells = size(pia.indexer)[1]
+        @inbounds n_cells = size(pia.indexer)[1]
         if n_cells == 1
             @inbounds if pia.indexer[1, species].n_group2 > 0
                 @inbounds e1 = pia.indexer[1, species].end1 > 0 ? pia.indexer[1, species].end1 : 0
@@ -623,13 +624,13 @@ function squash_pia!(pv, pia, species)
 
                     @inbounds s2 = pia.indexer[1, species].start2
                     @inbounds e2 = pia.indexer[1, species].end2
-                    for j in s2:e2
-                        @inbounds pv.index[j] = pv.index[j+offset]
+                    @inbounds for j in s2:e2
+                        pv.index[j] = pv.index[j+offset]
                     end
                 end
             end
         else
-            last_end = pia.indexer[1, species].end1 > 0 ? pia.indexer[1, species].end1 : 0
+            @inbounds last_end = pia.indexer[1, species].end1 > 0 ? pia.indexer[1, species].end1 : 0
             for i in 1:n_cells-1
                 @inbounds offset = pia.indexer[i+1, species].start1 - (last_end + 1)
                 if offset > 0
@@ -638,8 +639,8 @@ function squash_pia!(pv, pia, species)
 
                     @inbounds s1 = pia.indexer[i+1, species].start1
                     @inbounds e1 = pia.indexer[i+1, species].end1
-                    for j in s1:e1
-                        @inbounds pv.index[j] = pv.index[j+offset]
+                    @inbounds for j in s1:e1
+                        pv.index[j] = pv.index[j+offset]
                     end
                 end
                 @inbounds last_end = pia.indexer[i+1, species].end1 > 0 ? pia.indexer[i+1, species].end1 : last_end
@@ -647,7 +648,7 @@ function squash_pia!(pv, pia, species)
 
             for i in 1:n_cells
                 @inbounds if pia.indexer[i, species].n_group2 > 0
-                    offset = pia.indexer[i, species].start2 - (last_end + 1)
+                    @inbounds offset = pia.indexer[i, species].start2 - (last_end + 1)
                     if offset > 0
                         @inbounds pia.indexer[i, species].start2 -= offset
                         @inbounds pia.indexer[i, species].end2 -= offset
@@ -655,7 +656,7 @@ function squash_pia!(pv, pia, species)
                         @inbounds s2 = pia.indexer[i, species].start2
                         @inbounds e2 = pia.indexer[i, species].end2
                         @inbounds for j in s2:e2
-                            @inbounds pv.index[j] = pv.index[j+offset]
+                            pv.index[j] = pv.index[j+offset]
                         end
                     end
                     @inbounds last_end = pia.indexer[i, species].end2 > 0 ? pia.indexer[i, species].end2 : last_end
@@ -667,7 +668,7 @@ function squash_pia!(pv, pia, species)
 end
 
 """
-    squash_pia!(pia)
+    squash_pia!(particles, pia)
 
 Restore the continuity of indices in a list of `ParticleVector`s and the associated
 `ParticleIndexerArray` instance for all species.
@@ -691,8 +692,8 @@ end
 Update a `ParticleIndexerArray` and the buffer in a `ParticleVector` instance
 when a particle of a given species in a given cell is created. The particle index is added
 to the second group of particles pointed to by the `ParticleIndexer`.
-See the documentation of [`update_particle_indexer_new_particle`](@ref update_particle_indexer_new_particle)
-and [`update_particle_buffer_new_particle`](@ref update_particle_buffer_new_particle)
+See the documentation of [`update_particle_indexer_new_particle!`](@ref update_particle_indexer_new_particle!)
+and [`update_particle_buffer_new_particle!`](@ref update_particle_buffer_new_particle!)
 
 # Positional arguments
 * `pv`: `ParticleVector` instance
@@ -701,8 +702,8 @@ and [`update_particle_buffer_new_particle`](@ref update_particle_buffer_new_part
 * `species`: the index of the species of which the particle is created
 """
 @inline function update_buffer_index_new_particle!(pv, pia, cell, species)
-    update_particle_indexer_new_particle(pia, cell, species)
-    update_particle_buffer_new_particle(pv, pia, species)
+    update_particle_indexer_new_particle!(pia, cell, species)
+    update_particle_buffer_new_particle!(pv, pia, species)
 end
 
 """
@@ -710,7 +711,7 @@ end
 
 Create a new particle in a `ParticleVector` instance at position `position`.
 The `ParticleIndexer`/`ParticleIndexerArray` instances should be updated
-independently. See [`update_particle_buffer_new_particle`](@ref) for more information
+independently. See [`update_particle_buffer_new_particle!`](@ref) for more information
 regarding how the buffer of the `ParticleVector` is updated. This should not be used
 to update an existing particle. Particles at positions before `position` should exist
 in the `ParticleVector` array.
@@ -722,7 +723,7 @@ in the `ParticleVector` array.
 * `v`: the velocity of the particle to create
 """
 @inline function add_particle!(pv, position, w, v, x)
-    update_particle_buffer_new_particle(pv, position)
+    update_particle_buffer_new_particle!(pv, position)
     @inbounds pv[position] = Particle(w, v, x)
 end
 
@@ -750,4 +751,216 @@ function pretty_print_pia(pia, species)
             println("Cell $cell: [$(pia.indexer[cell,species].start2), $(pia.indexer[cell,species].end2)]")
         end
     end
+end
+
+"""
+    count_disordered_particles(pv, pia, species)
+
+Count number of particles of species for which `pv.index[i] != i + offset(cell)`. The larger this
+count, the less orderly the layout of particles in memory, which can potentially lead
+to decreased performance. This only considers particles present in the simulation,
+i.e. `i<=pia.n_total[species]`, assumes contiguous indexing, and that particles
+are only pointed to by the first group of a `ParticleIndexer`, which is the case after
+particles have been sorted.
+
+In case `use_offset` is `false`, the value of `offset` is always 0, so the function simply
+counts all particles where `pv.index[i] != i`. If `use_offset` is set to `true`,
+for each cell `cell`, the offset is whilst iterating over the particles in a cell. So in case the indexing in a cell
+is simply offset by a constant value, or a subset of indices are offset by a constant value,
+and particles are still laid out continuously in memory,
+this provides a more accurate measurement of the degree of fragmentation of the particle array.
+
+# Positional arguments
+* `pv`: the `ParticleVector` instance for which to compute the metric
+* `pia`: the `ParticleIndexerArray` instance
+* `species`: the index of the species for which the metric is computed
+
+# Keyword arguments
+* `use_offset`: whether to account for cell-specific offsets in the indexing
+
+# Returns
+The number of particles where the index to the `index` array and
+the value of the `index` array do not coincide.
+"""
+function count_disordered_particles(pv, pia, species; use_offset=true)
+    count = 0
+
+    if use_offset
+        n_cells = size(pia.indexer)[1]
+        for cell in 1:n_cells
+            offset = 0
+            if pia.indexer[cell,species].n_group1 > 0
+                s1 = pia.indexer[cell,species].start1
+                e1 = pia.indexer[cell,species].end1
+                offset = pv.index[s1] - s1
+                # we skip the 1st particle because for it the condition holds
+                # by definition of the offset
+                for i in s1+1:e1
+                    if pv.index[i] != i + offset
+                        count += 1
+                        # we try to find a subset that still is laid out correctly
+                        # so for that we set offset to a new value
+                        offset = pv.index[i] - i
+                    end
+                end
+            end
+        end
+    else
+        for i in 1:pia.n_total[species]
+            if pv.index[i] != i
+                count += 1
+            end
+        end
+    end
+
+    return count
+end
+
+"""
+    check_pia_is_correct(pia, species)
+
+Check that a `ParticleIndexerArray` instance entries are correct. This means that
+for each cell for each species, the following should hold:
+    * `n_local == n_group1 + n_group2`
+    * if `n_group1 > 0`, then `n_group1 == end1 - start1 + 1`
+    * if `n_group1 == 0`, then `start1 == 0`, `end1 == -1`
+    * if `n_group2 > 0`, then `n_group1 == end2 - start2 + 1`
+    * if `n_group2 == 0`, then `start2 == 0`, `end2 == -1`
+    * `pia.n_total[species] == sum([pia.indexer[cell, species].n_local for cell in 1:n_cells])`
+
+# Positional arguments
+* `pia`: the `ParticleIndexerArray` instance for which to check consistency
+* `species`: the species for which to check indexing
+
+# Returns
+If indexing is incorrect in a cell `i`, returns `(false, i)`.
+
+If the total number of particles as given by cell-wise particle indices
+is not equal to `pia.n_total[species]`, returns `(false, 0)`.
+
+If indexing is correct, returns `(true, 0)`.
+"""
+function check_pia_is_correct(pia, species)
+    # the code here explicitly does not use @inbounds
+    # as we aim for correctness, not efficiency
+    n_cells = size(pia.indexer)[1]
+
+    n_tot = 0
+    for i in 1:n_cells
+        if pia.indexer[i,species].n_local != pia.indexer[i,species].n_group1 + pia.indexer[i,species].n_group2
+            return false, i
+        end
+
+        n_tot += pia.indexer[i,species].n_local
+
+        s1 = pia.indexer[i,species].start1
+        e1 = pia.indexer[i,species].end1
+        if pia.indexer[i,species].n_group1 > 0
+            if pia.indexer[i,species].n_group1 != e1 - s1 + 1
+                return false, i
+            end
+        else
+            if s1 != 0 || e1 != -1
+                return false, i
+            end
+        end
+
+        
+        s2 = pia.indexer[i,species].start2
+        e2 = pia.indexer[i,species].end2
+        if pia.indexer[i,species].n_group2 > 0
+            if pia.indexer[i,species].n_group2 != e2 - s2 + 1
+                return false, i
+            end
+        else
+            if s2 != 0 || e2 != -1
+                return false, i
+            end
+        end
+    end
+
+    if n_tot != pia.n_total[species]
+        return false, 0
+    end
+
+    return true, 0
+end
+
+"""
+    check_unique_index(pv, pia, species)
+
+Test that for all particles in a simulation, no two indices
+are the same, i.e. no two particles `i` and `j`, `i!=j` point
+to the same underlying particle.
+This function allocates a temporary array and is thus intended for
+debugging/verifying code and not for efficient simulations.
+It also checks that any particles present in the buffer are not
+pointed to by the indexing.
+
+# Positional arguments
+* `pv`: the `ParticleVector` instance for which to check indexing
+* `pia`: the `ParticleIndexerArray` instance
+* `species`: the species for which to check indexing
+
+# Returns
+If a particle exists to which more than 1 index is pointing,
+and particles in the buffer ARE NOT pointed to by the indicies,
+returns `(false, n_index)`, where `n_index` is the number
+of indices pointing to the same particle.
+
+If a particle exists to which more than 1 index is pointing,
+and particles in the buffer ARE pointed to by the indicies,
+returns `(false, -n_index)`, where `n_index` is the number
+of indices pointing to the same particle.
+
+If no particles exist to which more than 1 index is pointing,
+but a particle in a buffer is pointed to by the indexing,
+returns `(false, -1)`.
+
+If indexing is correct, returns `(true, 0)`.
+"""
+function check_unique_index(pv, pia, species)
+    # the code here explicitly does not use @inbounds
+    # as we aim for correctness, not efficiency
+    n_cells = size(pia.indexer)[1]
+
+    n_counts = zeros(Int64, length(pv.index))
+
+    retcode = 1
+    for cell in 1:n_cells
+        s1 = pia.indexer[cell, species].start1
+        e1 = pia.indexer[cell, species].end1
+
+        for i in s1:e1
+            true_index = pv.index[i]
+            n_counts[true_index] += 1
+        end
+
+        s2 = pia.indexer[cell, species].start2
+        e2 = pia.indexer[cell, species].end2
+
+        for i in s2:e2
+            true_index = pv.index[i]
+            n_counts[true_index] += 1
+        end
+    end
+
+    n_index = maximum(n_counts)
+
+    for pid in pv.buffer[1:pv.nbuffer]
+        if n_counts[pid] > 0
+            retcode = -1
+            break
+        end
+    end
+    
+    if n_index > 1
+        return false, n_index*retcode
+    end
+
+    if retcode == -1
+        return false, -1
+    end
+
+    return true, 0
 end

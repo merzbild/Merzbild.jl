@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.7.0
+* Added use of MuladdMacro (via `@muladd`), updated tolerances in tests and reference solutions
+* Removed unused functions `sample_maxwellian_single!`, `sample_maxwellian!(rng, particles, nparticles, m, T, v0)`
+* Removed `create_vdf`, `create_unit_dvgrid`, `create_noiseless_dvgrid`, replaced with constructors
+* `update_particle_indexer_new_particle` renamed to `update_particle_indexer_new_particle!`
+* `update_particle_indexer_new_lower_count` renamed to `update_particle_indexer_new_lower_count!`
+* `update_particle_buffer_new_particle` renamed to `update_particle_buffer_new_particle!`
+* `write_netcdf_surf_props`, `write_netcdf_phys_props` replaced with `write_netcdf`
+* Fokker-Planck speed-up via use of pre-allocated arrays to store sampled velocities
+* `fp!` renamed to `fp_linear!`
+* `count_disordered_particles` added
+* `check_pia_is_correct` and `check_unique_index` functions added for diagnostics
+* Multithreaded simulations now possible (currently not verified for variable-weight simulations)
+* NNLS merging now accepts additional keyword arguments `centered_at_mean`, `v_multipliers`, `iteration_mult`, `scaling`
+    and defaults to a new scaling algorithm
+* Documentation improvements
+* Improved test coverage
+
 ## v0.6.6
 * Utility function `Merzbild.add_particle!` added
 * Improved test coverage

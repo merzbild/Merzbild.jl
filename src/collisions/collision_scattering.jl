@@ -1,3 +1,5 @@
+@muladd begin
+
 """
     scatter_vhs!(rng, collision_data, interaction, p1, p2)
 
@@ -69,4 +71,6 @@ Scatter two electrons off of a neutral using VHS (isotropic) scattering.
 function scatter_ionization_electrons!(rng, collision_data, particles_electron, i1, i2)
     scatter_electron_vhs!(rng, collision_data, particles_electron[i1], collision_data.g_new_1)
     scatter_electron_vhs!(rng, collision_data, particles_electron[i2], collision_data.g_new_2)
+end
+
 end

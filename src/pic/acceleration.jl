@@ -1,3 +1,5 @@
+@muladd begin
+
 """
     accelerate_constant_field_x!(particles, pia, cell, species, species_data, E, Δt)
 
@@ -29,4 +31,6 @@ function accelerate_constant_field_x!(particles, pia, cell, species, species_dat
                                                  particles[i].v[3])
         end
     end
+end
+
 end

@@ -92,7 +92,7 @@
 
     sol_path = joinpath(@__DIR__, "data", "tmp_bkw_nnls.nc")
     ds = NCDataHolder(sol_path, species_data, phys_props)
-    write_netcdf_phys_props(ds, phys_props, 0)
+    write_netcdf(ds, phys_props, 0)
 
     collision_factors::CollisionFactors = CollisionFactors()
     collision_data::CollisionData = CollisionData()
@@ -110,7 +110,7 @@
         ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
 
         if phys_props.np[1,1] > threshold
-            nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1, vref)
+            nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1; vref=vref, scaling=:vref)
 
             if nnls_success_flag == -1
                 merge_octree_N2_based!(rng, ocm, particles[1], pia, 1, 1, ntarget_octree)
@@ -118,7 +118,7 @@
         end
         
         compute_props_with_total_moments!(particles, pia, species_data, phys_props)
-        write_netcdf_phys_props(ds, phys_props, ts)
+        write_netcdf(ds, phys_props, ts)
     end
     close_netcdf(ds)
 
@@ -137,7 +137,7 @@
 
     for mom_no in 1:length(moments_list)
         diff = abs.(ref_mom[mom_no, 1, 1, :350] - sol_mom[mom_no, 1, 1, :350])
-        @test maximum(diff) <= 1e-5 # something weird going on in the test/prod environment  # * eps()
+        @test maximum(diff) <= 4.2e-5 # something weird going on in the test/prod environment  # * eps()
     end
 
     close(ref_sol)

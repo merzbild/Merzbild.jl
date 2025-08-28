@@ -23,6 +23,9 @@ ParticleIndexerArray(n_particles::Integer)
 ParticleIndexerArray(n_particles::T) where T<:AbstractVector
 ParticleIndexerArray(grid, species_data::Array{Species}) 
 squash_pia!
+count_disordered_particles
+check_unique_index
+check_pia_is_correct
 pretty_print_pia
 ```
 
@@ -70,6 +73,7 @@ CollisionFactors
 CollisionFactors()
 CollisionDataFP
 CollisionDataFP()
+CollisionDataFP(n_particles_in_cell)
 create_collision_factors_array(n_species)
 create_collision_factors_array(n_species, n_cells)
 create_collision_factors_array(pia::ParticleIndexerArray)
@@ -85,7 +89,11 @@ ntc!(rng, collision_factors, collision_data, interaction,
               cell, species1, species2, Δt, V)
 ntc_n_e!
 ntc_n_e_es!
-fp!
+```
+
+## Fokker-Planck computations
+```@docs
+fp_linear!
 ```
 
 ## Electron-neutral interactions
@@ -133,10 +141,12 @@ merge_octree_N2_based!
 
 ## Grids and particle sorting
 ```@docs
+AbstractGrid
 Grid1DUniform
 Grid1DUniform(L, nx; wall_offset=1e-12)
 GridSortInPlace
-GridSortInPlace(grid, n_particles::Integer)
+GridSortInPlace(n_cells::Integer, n_particles::Integer)
+GridSortInPlace(grid::G, n_particles::Integer) where {G<:AbstractGrid}
 sort_particles!
 ```
 
@@ -168,9 +178,19 @@ NCDataHolder(nc_filename, species_data, phys_props; global_attributes=Dict{Any,A
 NCDataHolderSurf
 NCDataHolderSurf(nc_filename, names_skip_list, species_data, surf_props; global_attributes=Dict{Any,Any}())
 NCDataHolderSurf(nc_filename, species_data, surf_props; global_attributes=Dict{Any,Any}())
+write_netcdf(ds, phys_props::PhysProps, timestep; sync_freq=0)
+write_netcdf(ds, surf_props::SurfProps, timestep; sync_freq=0)
 close_netcdf
-write_netcdf_phys_props
-write_netcdf_surf_props
+```
+
+## Parallel computations
+```@docs
+ChunkExchanger
+ChunkExchanger(chunks, n_cells) 
+exchange_particles!
+sort_particles_after_exchange!
+reset!
+reduce_surf_props!
 ```
 
 ## Particle-in-Cell

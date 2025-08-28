@@ -141,9 +141,9 @@
     collision_data.g_new_2 = 47.5
 
     particles_electron = ParticleVector(2)
-    Merzbild.update_particle_buffer_new_particle(particles_electron, 1)
+    Merzbild.update_particle_buffer_new_particle!(particles_electron, 1)
     particles_electron[1] = Particle(2.0,  SVector{3}(1000.0, 2000.0, 3000.0), SVector{3}(0.0, 0.0, 0.0))
-    Merzbild.update_particle_buffer_new_particle(particles_electron, 2)
+    Merzbild.update_particle_buffer_new_particle!(particles_electron, 2)
     particles_electron[2] = Particle(4.0,  SVector{3}(-50000.0, -60000.0, -70000.0), SVector{3}(100.0, 200.0, 400.0))
 
     Merzbild.scatter_ionization_electrons!(rng, collision_data, particles_electron, 1, 2)
