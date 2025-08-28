@@ -58,7 +58,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     ds_surf_avg = NCDataHolderSurf("scratch/data/avg_couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(merge_threshold)_$(merge_target)_surf_after$(avg_start).nc",
                                    species_data, surf_props_avg)
 
-    # create and estime collision factors
+    # create and estimate collision factors
     collision_factors = create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum)
 
 
@@ -75,7 +75,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
 
     # compute and write data at t=0
     compute_props!(particles, pia, species_data, phys_props)
-    write_netcdf_phys_props(ds, phys_props, 0)
+    write_netcdf(ds, phys_props, 0)
     write_grid("scratch/data/couette_$(L)_$(nx)_grid.nc", grid)
 
     n_avg = n_timesteps - avg_start + 1
@@ -106,6 +106,11 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
         # sort particles
         @timeit "sort" sort_particles!(gridsorter, grid, particles[1], pia, 1)
 
+        # count % of particles where indexing is disordered
+        if t % 1000 == 0
+            println(count_disordered_particles(particles[1], pia, 1) / pia.n_total[1] * 100.0)
+        end
+
         # compute props and do I/O
         if (t < avg_start)
             if (t % output_freq == 0)
@@ -118,12 +123,12 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
 
 
         if (t % output_freq == 0)
-            @timeit "I/O" write_netcdf_phys_props(ds, phys_props, t)
+            @timeit "I/O" write_netcdf(ds, phys_props, t)
         end
     end
 
-    @timeit "I/O" write_netcdf_phys_props(ds_avg, phys_props_avg, n_timesteps)
-    @timeit "I/O" write_netcdf_surf_props(ds_surf_avg, surf_props_avg, n_timesteps)
+    @timeit "I/O" write_netcdf(ds_avg, phys_props_avg, n_timesteps)
+    @timeit "I/O" write_netcdf(ds_surf_avg, surf_props_avg, n_timesteps)
 
     close_netcdf(ds)
     close_netcdf(ds_avg)

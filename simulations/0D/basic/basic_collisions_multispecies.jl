@@ -46,7 +46,7 @@ function run(seed)
     println(phys_props.T)
 
     ds = NCDataHolder("scratch/data/2species.nc", species_data, phys_props)
-    write_netcdf_phys_props(ds, phys_props, 0)
+    write_netcdf(ds, phys_props, 0)
 
     collision_factors::Array{CollisionFactors, 3} = create_collision_factors_array(n_species)
     collision_data::CollisionData = CollisionData()
@@ -69,7 +69,7 @@ function run(seed)
         end
 
         compute_props_sorted!(particles, pia, species_data, phys_props)
-        write_netcdf_phys_props(ds, phys_props, ts)
+        write_netcdf(ds, phys_props, ts)
     end
     println(phys_props.n)
     println(phys_props.v)

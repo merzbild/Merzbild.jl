@@ -5,17 +5,17 @@ The public API functions are exported by the module
 ## Particle indexing
 ```@docs
 Merzbild.map_cont_index
-Merzbild.update_particle_indexer_new_lower_count
-Merzbild.update_particle_indexer_new_particle
+Merzbild.update_particle_indexer_new_lower_count!
+Merzbild.update_particle_indexer_new_particle!
 Base.getindex
 Base.setindex!
 Base.length
 Base.resize!
 Merzbild.add_particle!
-Merzbild.update_particle_buffer_new_particle(pv::ParticleVector, position)
-Merzbild.update_particle_buffer_new_particle(pv::ParticleVector, pia, species)
-Merzbild.update_particle_buffer_new_particle(pv::Vector{Particle}, pia, species)
-Merzbild.update_particle_buffer_new_particle(pv::Vector{Particle}, position)
+Merzbild.update_particle_buffer_new_particle!(pv::ParticleVector, position)
+Merzbild.update_particle_buffer_new_particle!(pv::ParticleVector, pia, species)
+Merzbild.update_particle_buffer_new_particle!(pv::Vector{Particle}, pia, species)
+Merzbild.update_particle_buffer_new_particle!(pv::Vector{Particle}, position)
 Merzbild.update_buffer_index_new_particle!
 Merzbild.delete_particle!
 Merzbild.delete_particle_end!
@@ -33,12 +33,8 @@ Merzbild.compute_mu_ref
 Merzbild.UnitDVGrid
 Merzbild.DVGrid
 Merzbild.VDF
-Merzbild.create_unit_dvgrid
-Merzbild.create_noiseless_dvgrid
-Merzbild.create_vdf
 Merzbild.sample_bkw!
 Merzbild.evaluate_distribution_on_grid!
-Merzbild.sample_maxwellian_single!
 Merzbild.sample_maxwellian!
 ```
 
@@ -63,6 +59,13 @@ Merzbild.get_cs_elastic
 Merzbild.get_cs_ionization
 Merzbild.get_ionization_threshold
 Merzbild.get_electron_energy_split
+```
+
+## Fokker-Planck computations
+```@docs
+Merzbild.sample_normal_rands!
+Merzbild.scale_norm_rands!
+Merzbild.compute_relaxation_time
 ```
 
 ## Electron-neutral interactions
@@ -95,6 +98,8 @@ Merzbild.compute_lhs_and_rhs!
 Merzbild.compute_lhs_and_rhs_rate_preserving!
 Merzbild.compute_lhs_particles_additional!
 Merzbild.compute_lhs_particles_additional_rate_preserving!
+Merzbild.scale_lhs_rhs_variance!
+Merzbild.scale_lhs_rhs_vref!
 Merzbild.scale_lhs_rhs!
 Merzbild.scale_lhs_rhs_rate_preserving!
 Merzbild.compute_post_merge_particles_nnls!
@@ -142,6 +147,13 @@ Merzbild.surface_props_scale!
 ## I/O
 ```@docs
 Merzbild.AbstractNCDataHolder
+```
+
+## Parallel computations
+```@docs
+Merzbild.swap_particles!
+Merzbild.update_swap_indexing!
+Merzbild.push_particles!
 ```
 
 ## Constants

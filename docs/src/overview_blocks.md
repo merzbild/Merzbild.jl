@@ -56,11 +56,12 @@ end
 ```
 
 Some utility functions are available for updating particle indexer arrays for developing new functionality:
-[`Merzbild.update_particle_indexer_new_lower_count`](@ref) and [`Merzbild.update_particle_indexer_new_particle`](@ref).
+[`Merzbild.update_particle_indexer_new_lower_count!`](@ref) and [`Merzbild.update_particle_indexer_new_particle!`](@ref).
 It is assumed that if the number of particles in the second block pointed to by a `ParticleIndexer` instance is 0,
 then the value of `start2` is set to a value smaller than 0, so to iterate over the particles in the second block one can either
 do a check similar to the `pia.indexer[cell,species].start2 > 0` check seen above, or check
 if `pia.indexer[cell,species].n_group2 <= 0`.
+See also the section on [Particle buffers and contiguous indexing](@ref).
 
 ## Particles: Particle and ParticleVector
 Now that we can index particles, we need to create some lists of particles to index. For that, we need
@@ -237,7 +238,7 @@ the NetCDF file), a more detailed description is given in the [public API refere
 
 In order to write the physical properties to a file at a certain timestep, we need to call
 ```julia
-write_netcdf_phys_props(ds, phys_props, timestep)
+write_netcdf(ds, phys_props, timestep)
 ```
 Here `ds` is the `NCDataHolder` instance, and timestep is the number of the timestep of the simulation
 (it also gets written to the output). Additionally, the `sync_freq` keyword parameter can be set

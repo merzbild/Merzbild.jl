@@ -34,7 +34,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
 
     # create collision structs
     collision_factors = create_collision_factors_array(1, grid.n_cells)
-    collision_data_fp = CollisionDataFP()
+    collision_data_fp = CollisionDataFP(ppc * 2)
     
     # create struct for computation of physical properties
     phys_props = PhysProps(pia)
@@ -43,10 +43,10 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
     phys_props_avg = PhysProps(pia)
 
     # create struct for netCDF output
-    ds = NCDataHolder("couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc).nc", species_data, phys_props)
+    ds = NCDataHolder("couette_FP_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc).nc", species_data, phys_props)
 
     # create struct for second netCDF, this one is for time-averaged 
-    ds_avg = NCDataHolder("avg_couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc)_after$(avg_start).nc",
+    ds_avg = NCDataHolder("avg_couette_FP_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc)_after$(avg_start).nc",
                           species_data, phys_props)
 
     # init collision structs
@@ -57,7 +57,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
 
     # compute and write data at t=0
     compute_props!(particles, pia, species_data, phys_props)
-    write_netcdf_phys_props(ds, phys_props, 0)
+    write_netcdf(ds, phys_props, 0)
     write_grid("couette_$(L)_$(nx)_grid.nc", grid)
 
     n_avg = n_timesteps - avg_start + 1
@@ -69,7 +69,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
 
         # collide particles
         for cell in 1:grid.n_cells
-            @timeit "collide" fp!(rng, collision_data_fp, interaction_data[1, 1], species_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
+            @timeit "collide" fp_linear!(rng, collision_data_fp, interaction_data[1, 1], species_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
         end
 
         # convect particles
@@ -91,11 +91,11 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
 
 
         if (t % output_freq == 0)
-            @timeit "I/O" write_netcdf_phys_props(ds, phys_props, t)
+            @timeit "I/O" write_netcdf(ds, phys_props, t)
         end
     end
 
-    @timeit "I/O" write_netcdf_phys_props(ds_avg, phys_props_avg, n_timesteps)
+    @timeit "I/O" write_netcdf(ds_avg, phys_props_avg, n_timesteps)
 
     close_netcdf(ds)
     close_netcdf(ds_avg)

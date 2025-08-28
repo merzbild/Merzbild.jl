@@ -1,3 +1,5 @@
+@muladd begin
+
 """
     MaxwellWallBC
 
@@ -116,4 +118,6 @@ Reflect particle from a Maxwell wall orthogonal to the x axis.
             specular_reflection_x!(particle)
         end
     end
+end
+
 end

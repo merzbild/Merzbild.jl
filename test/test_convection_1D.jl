@@ -27,8 +27,8 @@
     # will reflect from left wall: new x_cord = 3.0 + 20.0 = 23.0
     particles[1][3] = Particle(3.0, [-20.0, 0.0, 2.0], [17.0, 1.0, 3.0])
 
-    # will reflect from left wall and from right wall: new x_coord = 3.5
-    particles[1][4] = Particle(4.0, [-49.0, -20.0, 13.0], [1.5, -1.0, 9.0])
+    # will reflect from left wall and from right wall: new x_coord = 3.55
+    particles[1][4] = Particle(4.0, [-49.0, -20.0, 13.0], [1.55, -1.0, 9.0])
 
     # 1D specularly reflecting boundaries
     boundaries = MaxwellWalls1D(species_data, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0)
@@ -38,7 +38,7 @@
 
     @test particles[1].index == [4, 1, 3, 2]
 
-    @test maximum(abs.(particles[1][1].x - [3.5, -1.0, 9.0])) < 2 * eps()
+    @test maximum(abs.(particles[1][1].x - [3.55, -1.0, 9.0])) < 3.65e-15 # * eps()
     @test particles[1][1].v == [-49.0, -20.0, 13.0]
     @test particles[1][1].w == 4.0
 

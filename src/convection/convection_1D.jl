@@ -1,3 +1,5 @@
+@muladd begin
+
 """
     convect_single_particle!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particle, species, Δt)
 
@@ -41,11 +43,12 @@ Convect a singe particle on a 1-D uniform grid.
 
     # if a particle is too near a wall, we offset it a bit to avoid particles
     # that are exactly at a wall screwing up counters, etc.
-    if x_new < grid.min_x
-        x_new = grid.min_x
-    elseif x_new > grid.max_x
-        x_new = grid.max_x
-    end
+    x_new = clamp(x_new, grid.min_x, grid.max_x)
+    # if x_new < grid.min_x
+    #     x_new = grid.min_x
+    # elseif x_new > grid.max_x
+    #     x_new = grid.max_x
+    # end
 
     @inbounds particle.x = SVector{3,Float64}(x_new, particle.x[2], particle.x[3])
 end
@@ -85,14 +88,14 @@ Convect a singe particle on a 1-D uniform grid, updating surface properties if i
             x_old = 0.0
         end
 
-        @inbounds update_surface_incident!(particle, species, surf_props, bc_id)
+        update_surface_incident!(particle, species, surf_props, bc_id)
 
         @inbounds reflect_particle_x!(rng, particle, boundaries.reflection_velocities_sq[bc_id, species],
                                     wall_normal,
                                     boundaries.boundaries[bc_id].v,
                                     boundaries.boundaries[bc_id].accommodation)
 
-        @inbounds update_surface_reflected!(particle, species, surf_props, bc_id)
+        update_surface_reflected!(particle, species, surf_props, bc_id)
 
         @inbounds x_new = x_old + particle.v[1] * t_rest
     end
@@ -127,26 +130,26 @@ Convect particles on a 1-D uniform grid.
 function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particles, pia, species, species_data, Δt)
     # @inbounds @simd for i in 1:pia.n_total[species]
     
-    if pia.contiguous[species]
+    @inbounds if pia.contiguous[species]
         @inbounds n_tot = pia.n_total[species]
-        @simd for i in 1:n_tot
-            @inbounds convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt) 
+        @inbounds @simd for i in 1:n_tot
+            convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt) 
         end
     else
         for cell in 1:grid.n_cells
             @inbounds s = pia.indexer[cell, species].start1
             @inbounds e = pia.indexer[cell, species].end1
             
-            @simd for i in s:e
-                @inbounds convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt) 
+            @inbounds @simd for i in s:e
+                convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt) 
             end
 
             @inbounds if pia.indexer[cell, species].n_group2 > 0
                 @inbounds s = pia.indexer[cell, species].start2
                 @inbounds e = pia.indexer[cell, species].end2
             
-                @simd for i in s:e
-                    @inbounds convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt) 
+                @inbounds @simd for i in s:e
+                    convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt) 
                 end
             end
         end
@@ -174,30 +177,32 @@ function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D
     # @inbounds @simd for i in 1:pia.n_total[species]
     
     clear_props!(surf_props)
-    if pia.contiguous[species]
+    @inbounds if pia.contiguous[species]
         @inbounds n_tot = pia.n_total[species]
-        @simd for i in 1:n_tot
-            @inbounds convect_single_particle!(rng, grid, boundaries, particles[i], species, surf_props, species_data[species].mass, Δt) 
+        @inbounds @simd for i in 1:n_tot
+            convect_single_particle!(rng, grid, boundaries, particles[i], species, surf_props, species_data[species].mass, Δt) 
         end
     else
         for cell in 1:grid.n_cells
             @inbounds s = pia.indexer[cell, species].start1
             @inbounds e = pia.indexer[cell, species].end1
             
-            @simd for i in s:e
-                @inbounds convect_single_particle!(rng, grid, boundaries, particles[i], species, surf_props, species_data[species].mass, Δt) 
+            @inbounds @simd for i in s:e
+                convect_single_particle!(rng, grid, boundaries, particles[i], species, surf_props, species_data[species].mass, Δt) 
             end
 
             @inbounds if pia.indexer[cell, species].n_group2 > 0
                 @inbounds s = pia.indexer[cell, species].start2
                 @inbounds e = pia.indexer[cell, species].end2
             
-                @simd for i in s:e
-                    @inbounds convect_single_particle!(rng, grid, boundaries, particles[i], species, surf_props, species_data[species].mass, Δt) 
+                @inbounds @simd for i in s:e
+                    convect_single_particle!(rng, grid, boundaries, particles[i], species, surf_props, species_data[species].mass, Δt) 
                 end
             end
         end
     end
 
-    @inbounds surface_props_scale!(species, surf_props, species_data, Δt)
+    surface_props_scale!(species, surf_props, species_data, Δt)
+end
+
 end

@@ -69,4 +69,67 @@
     @test particles[1][1].w == 20.0
     @test particles[1][2].w == 40.0
     @test particles[1].nbuffer == 1
+
+    particles = [ParticleVector(8)]
+    for i in 1:4
+        Merzbild.add_particle!(particles[1], i, i*1.0, [2.0, 2.0, 3.0], [11.0, 12.0, 14.0])
+    end
+
+    pia = ParticleIndexerArray(1, 1)
+    pia.n_total[1] = 4
+    pia.indexer[1,1].n_group1 = 1
+    pia.indexer[1,1].start1 = 1
+    pia.indexer[1,1].end1 = 4
+
+    @test count_disordered_particles(particles[1], pia, 1; use_offset=false) == 0
+
+    particles[1].index[2] = 3
+    particles[1].index[3] = 2
+    @test particles[1][1].w == 1
+    @test particles[1][2].w == 3
+    @test particles[1][3].w == 2
+    @test particles[1][4].w == 4
+
+    @test count_disordered_particles(particles[1], pia, 1; use_offset=false) == 2
+
+    particles[1].index[1] = 4
+    particles[1].index[4] = 1
+
+    # reduce n_total
+    pia.n_total[1] = 3
+    @test count_disordered_particles(particles[1], pia, 1; use_offset=false) == 3
+
+
+    particles = [ParticleVector(10)]
+    for i in 1:10
+        Merzbild.add_particle!(particles[1], i, i*1.0, [2.0, 2.0, 3.0], [11.0, 12.0, 14.0])
+    end
+
+
+    pia = ParticleIndexerArray(3, 1)
+
+    pia.n_total[1] = 10
+
+    pia.indexer[1,1].n_group1 = 3
+    pia.indexer[1,1].start1 = 1
+    pia.indexer[1,1].end1 = 3
+
+    pia.indexer[2,1].n_group1 = 4
+    pia.indexer[2,1].start1 = 4
+    pia.indexer[2,1].end1 = 7
+
+    pia.indexer[3,1].n_group1 = 2
+    pia.indexer[3,1].start1 = 8
+    pia.indexer[3,1].end1 = 10
+
+    # set indexing so that group 1 and 2 still work correctly
+    particles[1].index = [1, 2, 3, 5, 6, 7, 8, 4, 10, 9]
+
+    # without offset only 3 placed correctly: 10-3=6
+    @test count_disordered_particles(particles[1], pia, 1; use_offset=false) == 7
+
+    # with offset 7 placed correctly
+    # but we skip the first particle of the cell in the offset-based approach
+    # so it's only 2 particles out-of-place
+    @test count_disordered_particles(particles[1], pia, 1; use_offset=true) == 2
 end

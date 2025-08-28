@@ -82,13 +82,6 @@ struct IOSkipList
 end
 
 """
-    AbstractNCDataHolder
-
-Abstract type that holds NetCDF-output related data for I/O
-"""
-abstract type AbstractNCDataHolder end
-
-"""
     NCDataHolder <: AbstractNCDataHolder
 
 Struct that holds NetCDF-output related data for physical properties (grid properties) I/O.
@@ -255,12 +248,12 @@ Close NetCDF file.
 # Positional arguments
 * `ds`: an `AbstractNCDataHolder` instance to close.
 """
-function close_netcdf(ds::AbstractNCDataHolder)
+function close_netcdf(ds::T) where {T<:AbstractNCDataHolder}
     finalize(ds.filehandle)
 end
 
 """
-     write_netcdf_phys_props(ds, phys_props, timestep; sync_freq=0)
+     write_netcdf(ds, phys_props::PhysProps, timestep; sync_freq=0)
 
 Write computed `PhysProps` to NetCDF file and synchronize file to disk if necessary.
 
@@ -278,7 +271,7 @@ Write computed `PhysProps` to NetCDF file and synchronize file to disk if necess
 `ErrorException` if the `NCDataHolder` expects number density and the `phys_props` holds the number of physical
 particles, or vice versa.
 """
-function write_netcdf_phys_props(ds, phys_props, timestep; sync_freq=0)
+function write_netcdf(ds, phys_props::PhysProps, timestep; sync_freq=0)
     currtimesteps = ds.timestep_dim.dimlen + 1
 
     @inbounds ds.currtimesteps[1] = currtimesteps
@@ -558,13 +551,13 @@ end
 
 
 """
-    write_netcdf_surf_props(ds, surf_props, timestep; sync_freq=0)
+    write_netcdf(ds, surf_props::SurfProps, timestep; sync_freq=0)
     
 Write SurfProps to NetCDF file and synchronize file to disk if necessary.
 
 # Positional arguments
 * `ds`: the `NCDataHolderSurf` for the file to which the output will be written
-* `phys_props`: the `SurfProps` instance containing the computed properties
+* `surf_props`: the `SurfProps` instance containing the computed properties
 * `timestep`: the simulation timestep
 
 # Keyword arguments
@@ -572,7 +565,7 @@ Write SurfProps to NetCDF file and synchronize file to disk if necessary.
     the data will be synchronized to disk. If set to 1, will sync data to disk at every timestep at which
     data is written to the file.
 """
-function write_netcdf_surf_props(ds, surf_props, timestep; sync_freq=0)
+function write_netcdf(ds, surf_props::SurfProps, timestep; sync_freq=0)
     currtimesteps = ds.timestep_dim.dimlen + 1
 
     @inbounds ds.currtimesteps[1] = currtimesteps

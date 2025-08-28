@@ -7,13 +7,13 @@
 
         x_cell1 = [0.05, 0.05, 0.05, 0.45]
         for i in 1:4
-            Merzbild.update_particle_buffer_new_particle(vp, i)
+            Merzbild.update_particle_buffer_new_particle!(vp, i)
             vp[i] = Particle(2.0, [0.5, -3.0, 4.0], [x_cell1[i], 0.0, 0.0])
         end
 
         x_cell2 = [0.55, 0.95, 0.85, 0.99]
         for i in 5:8
-            Merzbild.update_particle_buffer_new_particle(vp, i)
+            Merzbild.update_particle_buffer_new_particle!(vp, i)
             vp[i] = Particle(3.0, [0.5, -3.0, 4.0], [x_cell2[i-4], 0.0, 0.0])
         end
 

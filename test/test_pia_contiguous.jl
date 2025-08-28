@@ -574,6 +574,9 @@
     Merzbild.delete_particle_end!(particles[1], pia, 3, 1)
     pia.contiguous[1] = false
 
+    @test particles[1].nbuffer == 4
+    @test particles[1].buffer[1:4] == [3, 7, 6, 5]
+
     squash_pia!(particles, pia)
     # should get
     # 11 2 222
@@ -596,4 +599,10 @@
     @test pia.indexer[3,1].end1 == -1
     @test pia.indexer[3,1].n_group1 == 0
     @test pia.indexer[3,1].n_group2 == 0
+
+    # when we iterate over particles we don't
+    # accidentally access particles in buffer
+    for i in 1:pia.n_total[1]
+        @test (particles[1].index[i] in [3, 7, 6, 5]) == false
+    end
 end

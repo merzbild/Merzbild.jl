@@ -30,13 +30,13 @@
         i = 0
         for octant in 1:8
             i += 1
-            Merzbild.update_particle_buffer_new_particle(vp, i)
+            Merzbild.update_particle_buffer_new_particle!(vp, i)
             vp[i] = create_particle_in_octant(octant, 9.0 - octant - 0.5, w=octant * 1.0)
             i += 1
-            Merzbild.update_particle_buffer_new_particle(vp, i)
+            Merzbild.update_particle_buffer_new_particle!(vp, i)
             vp[i] = create_particle_in_octant(octant, 9.0 - octant + 0.5, w=octant * 1.0)
             i += 1
-            Merzbild.update_particle_buffer_new_particle(vp, i)
+            Merzbild.update_particle_buffer_new_particle!(vp, i)
             vp[i] = create_particle_in_octant(octant, 9.0 - octant, w=octant * 1.0)
         end
 

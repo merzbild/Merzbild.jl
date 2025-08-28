@@ -120,7 +120,7 @@ ds = NCDataHolder("2species.nc", species_data, phys_props)
 
 # compute and write physical properties at t=0
 compute_props!(particles, pia, species_data, phys_props)
-write_netcdf_phys_props(ds, phys_props, 0)
+write_netcdf(ds, phys_props, 0)
 
 # load interaction data
 interaction_data = load_interaction_data("data/vhs.toml", species_data)
@@ -161,7 +161,7 @@ for ts in 1:n_t  # loop over time
     compute_props_sorted!(particles, pia, species_data, phys_props)
 
     # write to output
-    write_netcdf_phys_props(ds, phys_props, ts)
+    write_netcdf(ds, phys_props, ts)
 end
 
 # close output file

@@ -8,8 +8,8 @@
     @test pia.indexer[1,1].n_group1 == 20
     @test pia.indexer[1,1].n_group2 == 0
 
-    Merzbild.update_particle_indexer_new_particle(pia, 1, 1)
-    Merzbild.update_particle_indexer_new_particle(pia, 1, 1)
+    Merzbild.update_particle_indexer_new_particle!(pia, 1, 1)
+    Merzbild.update_particle_indexer_new_particle!(pia, 1, 1)
 
     @test pia.n_total[1] == 22
     @test pia.indexer[1,1].n_local == 22
@@ -62,7 +62,7 @@
         @test index == 31 + i0 - 5 - 1
     end
 
-    Merzbild.update_particle_indexer_new_lower_count(pia, 1, 1, 8)
+    Merzbild.update_particle_indexer_new_lower_count!(pia, 1, 1, 8)
     @test pia.n_total[1] == 8
     @test pia.indexer[1,1].n_local == 8
     @test pia.indexer[1,1].start1 == 24
@@ -73,7 +73,7 @@
     @test pia.indexer[1,1].n_group2 == 3
 
 
-    Merzbild.update_particle_indexer_new_lower_count(pia, 1, 1, 5)
+    Merzbild.update_particle_indexer_new_lower_count!(pia, 1, 1, 5)
     @test pia.n_total[1] == 5
     @test pia.indexer[1,1].n_local == 5
     @test pia.indexer[1,1].start1 == 24
@@ -93,7 +93,7 @@
     pia.indexer[1,1].end2 = 35
     pia.indexer[1,1].n_group2 = 5
 
-    Merzbild.update_particle_indexer_new_lower_count(pia, 1, 1, 2)
+    Merzbild.update_particle_indexer_new_lower_count!(pia, 1, 1, 2)
     @test pia.n_total[1] == 2
     @test pia.indexer[1,1].n_local == 2
     @test pia.indexer[1,1].start1 == 24

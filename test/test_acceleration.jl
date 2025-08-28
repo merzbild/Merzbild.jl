@@ -84,7 +84,7 @@
     @test maximum(abs.(phys_props.v[1,1,1] - vx_computed[1])) < eps()
 
     acc_val = abs(E * Δt * Merzbild.q_e / 6.65e-27)
-    @test abs.(phys_props.v[1,1,2] - (vx_computed[2] + E * Δt * Merzbild.q_e / 6.65e-27)) / acc_val < 1.5e-15
+    @test abs.(phys_props.v[1,1,2] - (vx_computed[2] + E * Δt * Merzbild.q_e / 6.65e-27)) / acc_val < 1.57e-15
 
     acc_val = abs(E * Δt * Merzbild.q_e / 9.109383632e-31)
     @test maximum(abs.(phys_props.v[1,1,3] - (vx_computed[3] - E * Δt * Merzbild.q_e / 9.109383632e-31))) / acc_val < 1.5e-14

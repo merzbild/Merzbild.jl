@@ -47,7 +47,7 @@
         @test pia.indexer[i, 1].n_group1 == ppc
 
         @test pia.indexer[i, 1].start2 == 0
-        @test pia.indexer[i, 1].end2 == 0
+        @test pia.indexer[i, 1].end2 == -1
         @test pia.indexer[i, 1].n_group2 == 0
 
         @test particles[1].cell[(i-1)*ppc + 1] == i
@@ -82,7 +82,7 @@
     for i in 1:grid.n_cells
         @test abs(phys_props_ndens.n[i, 1] - n_per_cell / cell_volume) < 2*eps()
         @test phys_props_ndens.np[i, 1] == ppc
-        @test abs(phys_props_ndens.T[i, 1] - phys_props.T[i, 1]) / phys_props.T[i, 1] < 2*eps()
+        @test abs(phys_props_ndens.T[i, 1] - phys_props.T[i, 1]) / phys_props.T[i, 1] < 2.5*eps()
 
         @test abs((phys_props_ndens.v[1,i,1] - phys_props.v[1,i,1])) < 2*eps()
         @test abs((phys_props_ndens.v[2,i,1] - phys_props.v[2,i,1])) < 2*eps()

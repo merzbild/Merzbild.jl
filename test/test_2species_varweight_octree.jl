@@ -46,7 +46,7 @@
     
     sol_path = joinpath(@__DIR__, "data", "tmp_2species_varweight_elastic.nc")
     ds = NCDataHolder(sol_path, species_data, phys_props)
-    write_netcdf_phys_props(ds, phys_props, 0)
+    write_netcdf(ds, phys_props, 0)
 
     collision_factors::Array{CollisionFactors, 3} = create_collision_factors_array(n_species)
     collision_data::CollisionData = CollisionData()
@@ -77,7 +77,7 @@
         end
 
         compute_props!(particles, pia, species_data, phys_props)
-        write_netcdf_phys_props(ds, phys_props, ts)
+        write_netcdf(ds, phys_props, ts)
     end
 
     close_netcdf(ds)
@@ -94,7 +94,7 @@
 
     for species in 1:2
         diff = abs.(ref_T[1, species, :] - sol_T[1, species, :])
-        @test maximum(diff) < 1.2e-13
+        @test maximum(diff) < 9.3e-13
     end
 
     for species in 1:2

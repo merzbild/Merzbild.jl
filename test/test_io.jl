@@ -46,9 +46,9 @@
     phys_props.lpa .= 30.0
     phys_props.v .= 30.0
 
-    write_netcdf_phys_props(ds, phys_props, 0)
-    write_netcdf_phys_props(ds, phys_props, 1)
-    write_netcdf_phys_props(ds, phys_props, 2)
+    write_netcdf(ds, phys_props, 0)
+    write_netcdf(ds, phys_props, 1)
+    write_netcdf(ds, phys_props, 2)
     close_netcdf(ds)
 
     props_read =  NCDataset(sol_path, "r")
@@ -85,7 +85,7 @@
 
     @test ds.ndens_not_Np == true
 
-    @test_throws ErrorException write_netcdf_phys_props(ds, phys_props, 0)
+    @test_throws ErrorException write_netcdf(ds, phys_props, 0)
     close_netcdf(ds)
     rm(sol_path)
 end

@@ -1,6 +1,8 @@
 using Random
 import Distributions
 
+@muladd begin
+
 """
     UnitDVGrid
 
@@ -32,7 +34,8 @@ end
 """
     DVGrid
 
-Stores information about a uniform discrete 3-dimensional velocity grid with extent ``[-v_{x,max},v_{x,max}]\\times[-v_{y,max},v_{y,max}]\\times[-v_{z,max},v_{z,max}]``.
+Stores information about a uniform discrete 3-dimensional symmetric
+velocity grid with extent ``[-v_{x,max},v_{x,max}]\\times[-v_{y,max},v_{y,max}]\\times[-v_{z,max},v_{z,max}]``.
 
 # Fields
 * `base_grid`: the underlying unit (non-scaled) `UnitDVGrid` uniform grid 
@@ -78,9 +81,16 @@ mutable struct VDF
 end
 
 """
-generate a grid with extent [-1.0,1.0]x[-1.0,1.0]x[-1.0,1.0]
+    UnitDVGrid(nx, ny, nz)
+
+Generate a velocity grid with extent `[-1.0,1.0]x[-1.0,1.0]x[-1.0,1.0]` of type `UnitDVGrid`.
+
+# Positional arguments
+* `nx`: the number of grid elements in the x direction
+* `ny`: the number of grid elements in the y direction
+* `nz`: the number of grid elements in the z direction
 """
-function create_unit_dvgrid(nx, ny, nz)
+function UnitDVGrid(nx, ny, nz)
     vx = Vector(LinRange(-1.0, 1.0, nx))
     vy = Vector(LinRange(-1.0, 1.0, ny))
     vz = Vector(LinRange(-1.0, 1.0, nz))
@@ -90,19 +100,37 @@ function create_unit_dvgrid(nx, ny, nz)
 end
 
 """
-generate a grid [-vx_max, vx_max]x[-vy_max, vy_max]x[-vz_max, vz_max]
+    DVGrid(nx, ny, nz, vx_max, vy_max, vz_max)
+
+Generate a symmetric velocity grid with extent
+``[-v_{x,max},v_{x,max}]\\times[-v_{y,max},v_{y,max}]\\times[-v_{z,max},v_{z,max}]``.
+
+# Positional arguments
+* `nx`: the number of grid elements in the x direction
+* `ny`: the number of grid elements in the y direction
+* `nz`: the number of grid elements in the z direction
+* `vx_max`: extent of the grid in the x direction
+* `vy_max`: extent of the grid in the y direction
+* `vz_max`: extent of the grid in the z direction
 """
-function create_noiseless_dvgrid(nx, ny, nz, vx_max, vy_max, vz_max)
-    unitgrid = create_unit_dvgrid(nx, ny, nz)
+function DVGrid(nx, ny, nz, vx_max, vy_max, vz_max)
+    unitgrid = UnitDVGrid(nx, ny, nz)
     return DVGrid(unitgrid, vx_max, vy_max, vz_max,
                   unitgrid.dx * vx_max, unitgrid.dy * vy_max, unitgrid.dz * vz_max,
                   unitgrid.vx_grid * vx_max, unitgrid.vy_grid * vy_max, unitgrid.vz_grid * vz_max)
 end
 
 """
-create an empty VDF of size nx * ny * nz
+    VDF(nx, ny, nz)
+
+Create an empty `VDF` instance of size `nx * ny * nz`.
+
+# Positional arguments
+* `nx`: the number of grid elements in the x direction
+* `ny`: the number of grid elements in the y direction
+* `nz`: the number of grid elements in the z direction
 """
-function create_vdf(nx, ny, nz)
+function VDF(nx, ny, nz)
     return VDF(nx, ny, nz, zeros(nx, ny, nz))
 end
 
@@ -285,9 +313,9 @@ function sample_on_grid!(rng, vdf_func, particles, nv, m, T, n_total,
                          xlo, xhi, ylo, yhi, zlo, zhi; v_mult=3.5, cutoff_mult=3.5, noise=0.0,
                          v_offset=[0.0, 0.0, 0.0])
 
-    vdf = create_vdf(nv, nv, nv)
+    vdf = VDF(nv, nv, nv)
     v_thermal = compute_thermal_velocity(m, T)
-    v_grid = create_noiseless_dvgrid(nv, nv, nv, v_thermal * v_mult, v_thermal * v_mult, v_thermal * v_mult)
+    v_grid = DVGrid(nv, nv, nv, v_thermal * v_mult, v_thermal * v_mult, v_thermal * v_mult)
 
     # maxwell_df = (vx,vy,vz) -> vdf_func(T, m, vx, vy, vz)
 
@@ -385,33 +413,6 @@ function compute_thermal_velocity(m, T)
     return sqrt(2 * k_B * T / m)
 end
 
-
-"""
-    sample_maxwellian_single!(rng, v, m, T, v0)
-
-Sample a single particle from a Maxwellian distribution with temperature T for a species with mass m
-    and add a velocity offset.
-
-# Positional arguments
-* `rng`: The random number generator
-* `v`: the 3-dimensional vector to store the sampled velocity
-* `m`: the molecular mass of the species
-* `T`: the temperature
-* `v_offset`: the offset velocity vector to be added to the sampled velocity
-"""
-function sample_maxwellian_single!(rng, v, m, T, v0)
-    vscale = sqrt(2 * k_B * T / m)
-    vn = vscale * sqrt(-log(rand(rng, Float64)))
-    vr = vscale * sqrt(-log(rand(rng, Float64)))
-    theta1 = twopi * rand(rng, Float64)
-    theta2 = twopi * rand(rng, Float64)
-
-    @inbounds v[1] = vn * cos(theta1) + v0[1]
-    @inbounds v[2] = vr * cos(theta2) + v0[2]
-    @inbounds v[3] = vr * sin(theta2) + v0[3]
-end
-
-
 """
     sample_maxwellian!(rng, particles, nparticles, offset, m, T, v0)
 
@@ -442,34 +443,13 @@ function sample_maxwellian!(rng, particles, nparticles, offset, m, T, v0)
 end
 
 """
-    sample_maxwellian!(rng, particles, nparticles, m, T, v0)
-
-Sample `nparticles` particles from a Maxwellian with temperature T for a species with mass m
-and add a velocity offset.
-Note: This does not update the particle weights, positions, or any indexing structures.
-The sampled particles are written to the start of the `particles` array.
-
-# Positional arguments
-* `rng`: the random number generator
-* `particles`: the `Vector`-like structure holding the particles
-* `nparticles`: the number of particles to sample
-* `m`: species' mass
-* `T`: temperature
-* `v0`: the 3-dimensional velocity to add to the sampled velocities
-"""
-function sample_maxwellian!(rng, particles, nparticles, m, T, v0)
-    sample_maxwellian!(rng, particles, nparticles, 0, m, T, v0)
-end
-
-"""
     sample_particles_equal_weight!(rng, particles, pia, cell, species,
                                         nparticles, m, T, Fnum, xlo, xhi, ylo, yhi, zlo, zhi;
                                         distribution=:Maxwellian, vx0=0.0, vy0=0.0, vz0=0.0)
 
-Sample equal-weight  particles of a specific species in a specific cell from a distribution.
+Sample equal-weight particles of a specific species in a specific cell from a distribution.
 The positions of the particles are assumed to be randomly distributed in a cuboid.
-Note: this does not work if applied twice in a row to the same cell
-
+Note: this does not work if applied twice in a row to the same cell.
 
 # Positional arguments
 * `rng`: the random number generator
@@ -507,7 +487,7 @@ function sample_particles_equal_weight!(rng, particles, pia, cell, species,
     @inbounds pia.indexer[cell, species].n_group1 = nparticles
 
     @inbounds pia.indexer[cell, species].start2 = 0
-    @inbounds pia.indexer[cell, species].end2 = 0
+    @inbounds pia.indexer[cell, species].end2 = -1
     @inbounds pia.indexer[cell, species].n_group2 = 0
 
     offset = start - 1
@@ -526,4 +506,6 @@ function sample_particles_equal_weight!(rng, particles, pia, cell, species,
     elseif distribution == :BKW
         sample_bkw!(rng, particles, nparticles, m, T, v0)
     end
+end
+
 end

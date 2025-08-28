@@ -1,3 +1,5 @@
+@muladd begin
+
 """
     Cell1D
 
@@ -44,7 +46,7 @@ end
 * `min_x`: minimum allowed `x` coordinate for particles (slightly larger than ``0``)
 * `max_x`: maximum allowed `x` coordinate for particles (slightly smaller than ``L``)
 """
-struct Grid1DUniform
+struct Grid1DUniform <: AbstractGrid
     L::Float64
     n_cells::Int64
     Δx::Float64
@@ -86,7 +88,7 @@ end
 """
     get_cell(grid1duniform::Grid1DUniform, x_pos)
 
-Find in which cell of 1-D uniform grid the coordinate is located
+Find in which cell of a 1-D uniform grid the coordinate is located
 
 # Positional arguments
 * `grid1duniform`: the 1-D uniform grid
@@ -99,7 +101,7 @@ end
 """
     sample_particles_equal_weight!(rng, grid1duniform, particles, pia, species, species_data, ppc::Integer, T, Fnum)
 
-Sample particles from a Maxwellian distribution in each cell of 1-D uniform grid given the number of particles per cell.
+Sample particles from a Maxwellian distribution in each cell of a 1-D uniform grid given the number of particles per cell.
 
 # Positional arguments
 * `rng`: the random number generator
@@ -112,10 +114,34 @@ Sample particles from a Maxwellian distribution in each cell of 1-D uniform grid
 * `T`: the temperature
 * `Fnum`: the computational weight of the particles
 """
-function sample_particles_equal_weight!(rng, grid1duniform, particles, pia, species,
+@inline function sample_particles_equal_weight!(rng, grid1duniform, particles, pia, species,
                                         species_data, ppc::Integer, T, Fnum)
+    sample_particles_equal_weight!(rng, grid1duniform, particles, pia, species,
+                                   species_data, ppc, T, Fnum, 1:grid1duniform.n_cells)
+end
 
-    for cell in 1:grid1duniform.n_cells
+"""
+    sample_particles_equal_weight!(rng, grid1duniform, particles, pia, species, species_data, ppc::Integer, T, Fnum, cell_chunk)
+
+Sample particles from a Maxwellian distribution in a
+sequentially ordered subset of cells of a 1-D uniform grid given the number of particles per cell.
+
+# Positional arguments
+* `rng`: the random number generator
+* `grid1duniform`: the 1-D uniform grid
+* `particles`: the `ParticleVector` of particles
+* `pia`: the `ParticleIndexerArray`
+* `species`: the index of the species to be sampled for
+* `species_data`: `Vector` of `Species` data
+* `ppc`: number of particles per cell to be sampled
+* `T`: the temperature
+* `Fnum`: the computational weight of the particles
+* `cell_chunk`: the list of cell indices or range in which to sample particles, should be ordered in increasing order
+"""
+@inline function sample_particles_equal_weight!(rng, grid1duniform, particles, pia, species,
+                                        species_data, ppc::Integer, T, Fnum, cell_chunk)
+
+    for cell in cell_chunk
         @inbounds sample_particles_equal_weight!(rng, particles, pia, cell, species,
                                                  ppc, species_data[species].mass, T, Fnum,
                                                  grid1duniform.cells[cell].xlo, grid1duniform.cells[cell].xhi,
@@ -123,6 +149,31 @@ function sample_particles_equal_weight!(rng, grid1duniform, particles, pia, spec
                                                  0.0, 1.0;
                                                  distribution=:Maxwellian, vx0=0.0, vy0=0.0, vz0=0.0)
     end
+end
+
+"""
+    sample_particles_equal_weight!(rng, grid1duniform, particles, pia, species, species_data, ndens::Float64, T, Fnum)
+
+Sample particles from a Maxwellian distribution in each cell in a
+sequentially ordered subset of cells of a 1-D uniform grid given the target number density.
+If the computed number of particles is not an integer value, the fractional remainder is used to
+probabilistically sample an extra particle, so that on average, the expected number density is achieved.
+
+# Positional arguments
+* `rng`: the random number generator
+* `grid1duniform`: the 1-D uniform grid
+* `particles`: the `ParticleVector` of particles
+* `pia`: the `ParticleIndexerArray`
+* `species`: the index of the species to be sampled for
+* `species_data`: `Vector` of `Species` data
+* `ndens`: target number density
+* `T`: the temperature
+* `Fnum`: the computational weight of the particles
+"""
+@inline function sample_particles_equal_weight!(rng, grid1duniform, particles, pia, species,
+                                        species_data, ndens::Float64, T, Fnum)
+    sample_particles_equal_weight!(rng, grid1duniform, particles, pia, species,
+                                   species_data, ndens, T, Fnum, 1:grid1duniform.n_cells)
 end
 
 """
@@ -142,11 +193,11 @@ probabilistically sample an extra particle, so that on average, the expected num
 * `ndens`: target number density
 * `T`: the temperature
 * `Fnum`: the computational weight of the particles
+* `cell_chunk`: the list of cell indices or range in which to sample particles, should be ordered in increasing order
 """
 function sample_particles_equal_weight!(rng, grid1duniform, particles, pia, species,
-                                        species_data, ndens::Float64, T, Fnum)
-    # ndens is target ndensity per cell
-    for cell in 1:grid1duniform.n_cells
+                                        species_data, ndens::Float64, T, Fnum, cell_chunk)
+    for cell in cell_chunk
         @inbounds n_in_cell = ndens * grid1duniform.cells[cell].V
 
         ppc = n_in_cell / Fnum
@@ -165,4 +216,6 @@ function sample_particles_equal_weight!(rng, grid1duniform, particles, pia, spec
                                        0.0, 1.0;
                                        distribution=:Maxwellian, vx0=0.0, vy0=0.0, vz0=0.0)
     end
+end
+
 end

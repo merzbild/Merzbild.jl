@@ -67,7 +67,7 @@ function run(seed)
     compute_props!(particles, pia, species_data, phys_props)
 
     ds = NCDataHolder("scratch/data/tmp_bkw_grid.nc", species_data, phys_props)
-    write_netcdf_phys_props(ds, phys_props, 0)
+    write_netcdf(ds, phys_props, 0)
 
     collision_factors::CollisionFactors = CollisionFactors()
     collision_data::CollisionData = CollisionData()
@@ -86,7 +86,7 @@ function run(seed)
         end
         
         compute_props!(particles, pia, species_data, phys_props)
-        write_netcdf_phys_props(ds, phys_props, ts)
+        write_netcdf(ds, phys_props, ts)
     end
     close_netcdf(ds)
 end

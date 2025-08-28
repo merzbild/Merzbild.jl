@@ -115,95 +115,90 @@ seed = 1
 Random.seed!(seed)
 rng = Xoshiro(seed)
 
-# our number density
-ndens = 1e23 
+species_data = load_species_data("data/particles.toml", ["Ar", "He"])
+n_species = length(species_data)
 
-# our temperature
-T0 = 300.0  
+# number of timesteps to run simulation for
+n_t = 5000
 
-# load species and interaction data
-species_data = load_species_data("data/particles.toml", "Ar")
-interaction_data = load_interaction_data("data/pseudo_maxwell.toml", species_data)
+# we will have the number density of argon = 1e15, the number density of helium = 5e15
+n_particles_Ar = 2000
+n_particles_He = 10000
+Fnum = 5e11
 
-# number of velocity grid points in each velocity direction
-nv = 20  
+# initial temperatures
+T0_Ar = 300.0
+T0_He = 2000.0
+T0_list = [T0_Ar, T0_He]
 
-# some initial guess on # of particles in simulation
-np_base = 40^3  
+# create the 2-element Vector of ParticleVectors for the 2 species
+particles = [ParticleVector(n_particles_Ar), ParticleVector(n_particles_He)]
 
-particles = [ParticleVector(np_base)]
+# create the 2-species 1-cell particle indexer array filled with zeros
+# as we haven't sampled any particles yet
+pia = ParticleIndexerArray([0, 0])
 
-# sample from a BKW distribution at t=0
-vdf0 = (vx, vy, vz) -> bkw(vx, vy, vz, species_data[1].mass, T0, 0.0)
+# sample particles from a Maxwellian distribution
+sample_particles_equal_weight!(rng, particles[1], pia, 1, 2, n_particles_Ar,
+                               species_data[1].mass, T0_Ar, Fnum,
+                               0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+sample_particles_equal_weight!(rng, particles[2], pia, 1, 2, n_particles_He,
+                               species_data[2].mass, T0_He, Fnum,
+                               0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
 
-# returns number of particles sampled
-n_sampled = sample_on_grid!(rng, vdf0, particles[1], nv, species_data[1].mass, T0, ndens,
-                            0.0, 1.0, 0.0, 1.0, 0.0, 1.0;
-                            v_mult=3.5, cutoff_mult=3.5, noise=0.0, v_offset=[0.0, 0.0, 0.0])
 
-# create the ParticleIndexerArray
-pia = ParticleIndexerArray(n_sampled)
+# create the PhysProps instance to store computed properties
+phys_props = PhysProps(1, 2, [], Tref=T0_Ar)
 
-# set up the merging algorithm
-oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel,
-                   bin_bounds_compute=OctreeBinBoundsInherit, max_Nbins=6000)
+# create struct for I/O
+ds = NCDataHolder("2species.nc", species_data, phys_props)
 
-# set Ntarget for merging
-Ntarget = 100
-
-# set Nthreshold for merging
-Nthreshold = 120
-
-# perform initial merge
-merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
-
-# set some reference values
-sigma_ref = π * (interaction_data[1,1].vhs_d^2)
-vref = sqrt(2 * k_B * T0 / species_data[1].mass)
-Lref = 1.0 / (ndens * sigma_ref)
-tref = Lref / vref
-
-# set up computation of physical properties
-phys_props = PhysProps(1, 1, [], Tref=T0)
+# compute and write physical properties at t=0
 compute_props!(particles, pia, species_data, phys_props)
+write_netcdf(ds, phys_props, 0)
 
-ds = NCDataHolder("output_bkw_octree.nc", species_data, phys_props)
-write_netcdf_phys_props(ds, phys_props, 0)
+# load interaction data
+interaction_data = load_interaction_data("data/vhs.toml", species_data)
 
-collision_factors = create_collision_factors_array(1)  # 1-species, 0-D
+# create the 3-D array of collision factors
+collision_factors::Array{CollisionFactors, 3} = create_collision_factors_array(n_species)
+
+# create the structure to store temporary collision data
 collision_data = CollisionData()
 
-# estimate average Fnum
-Fnum = ndens/n_sampled
+# estimate  (σ(g) * g * w)_max
+estimate_sigma_g_w_max!(collision_factors, interaction_data, species_data, T0_list, Fnum)
 
-# estimate (sigma_g_w)_max
-estimate_sigma_g_w_max!(collision_factors, interaction_data, species_data, [T0], Fnum)
+# set our timestep
+Δt = 2.5e-3
 
-
-# set number of timesteps and scaled timestep
-n_t = 100
-dt_scaled = 0.025
-
-# set timestep and cell volume (0D so V=1)
-Δt = dt_scaled * tref
+# set cell volume to 1.0 as we're doing a 0-D simulation
 V = 1.0
 
-# start time loop
-for ts in 1:n_t
-
-    # collide
-    ntc!(rng, collision_factors[1,1,1], collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
-
-    # check if we need to merge
-    if pia.indexer[1,1].n_local > Nthreshold
-        merge_octree_N2_based!(oc, particles[1], pia, 1, 1, Ntarget)
+for ts in 1:n_t  # loop over time
+    for s2 in 1:n_species  # loop over first species
+        for s1 in s2:n_species  # loop over second species
+            if (s1 == s2)
+                # collisions between particles of same species
+                ntc!(rng, collision_factors[s1,s1,1], collision_data,
+                     interaction_data, particles[s1], pia, 1, s1, Δt, V)
+            else
+                # collisions between particles of different species
+                ntc!(rng, collision_factors[s1,s2,1], collision_data,
+                     interaction_data, particles[s1], particles[s2],
+                     pia, 1, s1, s2, Δt, V)
+            end
+        end
     end
-    if ts % 10 == 0
-        println("t=$ts, np=$(pia.indexer[1,1].n_local)")
-    end
-    
-    compute_props!(particles, pia, species_data, phys_props)
-    write_netcdf_phys_props(ds, phys_props, ts)
+
+    # we don't do convection, so we can take advantage of the fact that the particles stay sorted
+    # and compute the physical properties slightly faster without having to sort the particles
+    compute_props_sorted!(particles, pia, species_data, phys_props)
+
+    # write to output
+    write_netcdf(ds, phys_props, ts)
 end
+
+# close output file
 close_netcdf(ds)
 ```

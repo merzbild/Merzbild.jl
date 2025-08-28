@@ -6,7 +6,7 @@ This page provides an overview of the main capabilities of the code.
 |                        | **0D**                                        | **1D** |
 |:----------------------:|:-----------------------------------------:|:----:|
 | Fixed-weight DSMC      | ✅                                        | ✅ |
-| Variable-weight DSMC   | ✅ | ❌ |
+| Variable-weight DSMC   | ✅ |  ✅ |
 
 Currently, simulations are either 0D (spatially homogeneous) or on a uniform 1D grid.
 For 1D simulations, specular and diffuse reflection models are available (along with a mixture of the two
@@ -52,3 +52,8 @@ Acceleration of charged particles by a constant electric field is supported.
 The code assumes the TOML format for the particle and VHS interaction data. XML is used
 for the LXCat data.
 Output of the computed macroscopic properties is in NetCDF4 format.
+
+## Parallel computations
+Multithreading is supported via domain decomposition,
+see [the section on setting up multithreaded simulations](@ref "Multithreaded simulations") for more details.
+Multithreaded variable-weight DSMC computations have not been tested yet.
