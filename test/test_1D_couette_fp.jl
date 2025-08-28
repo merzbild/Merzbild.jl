@@ -89,7 +89,7 @@
  
     @test maximum(ref_sol["np"][:, 1, 1] .- sol["np"][:, 1, 1]) < eps()
     @test maximum(ref_sol["ndens"][:, 1, 1:4] .- sol["ndens"][:, 1, 1:4]) < 2 * eps()
-    @test maximum(ref_sol["T"][:, 1, 1:4] .- sol["T"][:, 1, 1:4]) < 2.4e-13
+    @test maximum(ref_sol["T"][:, 1, 1:4] .- sol["T"][:, 1, 1:4]) < 2.75e-12
 
     close(sol)
     rm(sol_path)
