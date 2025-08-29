@@ -520,8 +520,8 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging, lhs_matrix,
             compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index)
             lhs_matrix[nnls_merging.n_moments+1, col_index] = get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g
             lhs_matrix[nnls_merging.n_moments+2, col_index] = get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g
-            nnls_merging.rhs_vector[nnls_merging.n_moments+1] += get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g * particles[i].w
-            nnls_merging.rhs_vector[nnls_merging.n_moments+2] += get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g * particles[i].w
+            nnls_merging.rhs_vector[nnls_merging.n_moments+1] = nnls_merging.rhs_vector[nnls_merging.n_moments+1] + get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g * particles[i].w
+            nnls_merging.rhs_vector[nnls_merging.n_moments+2] = nnls_merging.rhs_vector[nnls_merging.n_moments+2] + get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g * particles[i].w
 
             col_index += 1
         end
@@ -922,7 +922,7 @@ function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species;
 
     # create LHS matrix
     n_add = centered_at_mean ? 1 : 0
-    n_add += 8 * length(v_multipliers)
+    n_add = n_add + 8 * length(v_multipliers)
     @inbounds lhs_ncols = pia.indexer[cell, species].n_local + n_add + n_rand_pairs
     lhs_matrix = zeros(nnls_merging.n_moments, lhs_ncols)
     nnls_merging.vref = vref
@@ -1030,7 +1030,7 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging,
 
     # create LHS matrix
     n_add = centered_at_mean ? 1 : 0
-    n_add += 8 * length(v_multipliers)
+    n_add = n_add + 8 * length(v_multipliers)
     @inbounds lhs_ncols = pia.indexer[cell, species].n_local + n_add + n_rand_pairs
     lhs_matrix = zeros(nnls_merging.n_moments+2, lhs_ncols)
     nnls_merging.vref = vref

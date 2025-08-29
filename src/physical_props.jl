@@ -127,14 +127,14 @@ function compute_props!(particles, pia, species_data, phys_props)
             if (n > 0.0)
                 v /= n
                 for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
-                    E += particles[species][i].w * ((particles[species][i].v[1] - v[1])^2
+                    E = E + particles[species][i].w * ((particles[species][i].v[1] - v[1])^2
                                                   + (particles[species][i].v[2] - v[2])^2
                                                   + (particles[species][i].v[3] - v[3])^2)
                 end
             
                 if pia.indexer[cell,species].n_group2 > 0
                     for i in pia.indexer[cell,species].start2:pia.indexer[cell,species].end2
-                        E += particles[species][i].w * ((particles[species][i].v[1] - v[1])^2
+                        E = E + particles[species][i].w * ((particles[species][i].v[1] - v[1])^2
                                                       + (particles[species][i].v[2] - v[2])^2
                                                       + (particles[species][i].v[3] - v[3])^2)
                     end
@@ -204,7 +204,7 @@ function compute_props_with_total_moments!(particles, pia, species_data, phys_pr
                 for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
                     normv = norm(particles[species][i].v - v)
                     # TODO: make normv optional, only if we include moments!
-                    E += particles[species][i].w * normv^2
+                    E = E + particles[species][i].w * normv^2
 
                     for (n_mom, m) in enumerate(phys_props.moment_powers)
                         phys_props.moments[n_mom,cell,species] += particles[species][i].w * normv^m
@@ -215,7 +215,7 @@ function compute_props_with_total_moments!(particles, pia, species_data, phys_pr
                     for i in pia.indexer[cell,species].start2:pia.indexer[cell,species].end2
                         # TODO: make normv optional, only if we include moments!
                         normv = norm(particles[species][i].v - v)
-                        E += particles[species][i].w * normv^2
+                        E = E + particles[species][i].w * normv^2
 
                         for (n_mom, m) in enumerate(phys_props.moment_powers)
                             phys_props.moments[n_mom,cell,species] += particles[species][i].w * normv^m
