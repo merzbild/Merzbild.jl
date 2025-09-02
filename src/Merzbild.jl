@@ -41,6 +41,7 @@ export OctreeN2Merge, OctreeBinMidSplit, OctreeBinMeanSplit, OctreeBinMedianSpli
 export OctreeInitBinMinMaxVel, OctreeInitBinMinMaxVelSym, OctreeInitBinC
 export OctreeBinBoundsInherit, OctreeBinBoundsRecompute
 export merge_octree_N2_based!
+export merge_roulette!
 export NNLSMerge, compute_multi_index_moments, merge_nnls_based!
 export merge_nnls_based_rate_preserving!
 export ElectronNeutralInteractions, ComputedCrossSections

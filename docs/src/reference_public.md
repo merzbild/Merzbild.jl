@@ -139,6 +139,9 @@ OctreeN2Merge(split::Merzbild.OctreeBinSplit;
 merge_octree_N2_based!
 ```
 
+### Roulette merging
+merge_roulette!
+
 ## Grids and particle sorting
 ```@docs
 AbstractGrid
