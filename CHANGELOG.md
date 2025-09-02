@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.7.1
+* More use of Muladd in a few places
+* Roulette merge added (`merge_roulette!`)
+* Documentation improvements
+* CI improvements
+
 ## v0.7.0
 * Added use of MuladdMacro (via `@muladd`), updated tolerances in tests and reference solutions
 * Removed unused functions `sample_maxwellian_single!`, `sample_maxwellian!(rng, particles, nparticles, m, T, v0)`
