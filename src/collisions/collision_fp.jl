@@ -18,7 +18,7 @@ Model single-species elastic collisions using a linear Fokker-Planck approximati
 * `V`: cell volume
 
 # References
-* M.H. Gorji, M. Torrilhon, P. Jenny, Fokker–Planck model for computational studies of monatomic rarefied gas flows.
+* M.H. Gorji, M. Torrilhon, P. Jenny, Fokker-Planck model for computational studies of monatomic rarefied gas flows.
     [J. Fluid Mech., 2011](https://doi.org/10.1017/jfm.2011.188).
 """
 function fp_linear!(rng, collision_data_fp, interaction, species_data, particles, pia, cell, species, Δt, V)
