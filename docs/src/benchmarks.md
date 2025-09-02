@@ -182,6 +182,30 @@ Output  | 0.0032787  | 0.0032787  | 0.0032787  |   0.0 |  0.00
 Other   |            | 0.006827   |            |       |  0.00
 ```
 
+### AMD EPYC 9374F, 378 GB RAM
+Ubuntu 24.04.3, Julia version 1.11.6.
+
+#### Merzbild.jl
+```
+──────────────────────────────────────────────────────────────────────────────────────
+                                             Time                    Allocations      
+                                    ───────────────────────   ────────────────────────
+         Tot / % measured:               1467s /  99.5%            192MiB /  17.0%    
+
+Section                     ncalls     time    %tot     avg     alloc    %tot      avg
+──────────────────────────────────────────────────────────────────────────────────────
+convect + surface compute    36.0k     584s   40.0%  16.2ms   2.20MiB    6.7%    64.0B
+sort                         50.0k     369s   25.3%  7.39ms     0.00B    0.0%    0.00B
+collide                       100M     173s   11.8%  1.73μs     0.00B    0.0%    0.00B
+convect                      14.0k     170s   11.6%  12.1ms     0.00B    0.0%    0.00B
+props compute                36.0k     164s   11.2%  4.54ms     0.00B    0.0%    0.00B
+avg physprops                36.0k    306ms    0.0%  8.51μs     0.00B    0.0%    0.00B
+sampling                         1   31.4ms    0.0%  31.4ms   30.5MiB   93.3%  30.5MiB
+avg surfprops                36.0k   21.8ms    0.0%   605ns     0.00B    0.0%    0.00B
+I/O                             15   7.44ms    0.0%   496μs   3.58KiB    0.0%     244B
+──────────────────────────────────────────────────────────────────────────────────────
+```
+
 ## Couette flow, multi-threaded, large grid
 The numerical and physical parameters are the same as for the serial large grid case (2000 cells, 250 particles per cell at `t=0`).
 The simulation file is `simulations/1D/couette_multithreaded.jl`.
@@ -204,3 +228,13 @@ Shown is the speed-up compared to a serial execution on the same computer (see a
 |                               | **2 cores** |  **4 cores** |  **8 cores** |
 |:-----------------------------:|:-----------:|:------------:|:------------:|
 | `n_chunks=n_threads`, no DLB  |    2.27     |    3.75      |     5.76     |      
+
+
+
+### AMD EPYC 9374F, 378 GB RAM
+Ubuntu 24.04.3, Julia version 1.11.6.
+Shown is the speed-up compared to a serial execution on the same computer (see above). `DLB` denotes dynamic load balancing (currently not used).
+
+|                               | **2 cores** |  **4 cores** |  **8 cores** |  **16 cores** |  *32 cores ** |
+|:-----------------------------:|:-----------:|:------------:|:------------:|:-------------:|:-------------:|
+| `n_chunks=n_threads`, no DLB  |   1.88      |    3.68      |     5.24     |      5.70     |     6.57      |

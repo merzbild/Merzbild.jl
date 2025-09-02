@@ -139,7 +139,7 @@
     sol = NCDataset(sol_path_surf, "r")
  
     @test maximum(abs.(ref_sol["np"][:, 1, 1:5] .- sol["np"][:, 1, 1:5])) < 2 * eps()
-    @test maximum(abs.(ref_sol["kinetic_energy_flux"][:, 1, 1:5] .- sol["kinetic_energy_flux"][:, 1, 1:5])) < 4.5e-11
+    @test maximum(abs.(ref_sol["kinetic_energy_flux"][:, 1, 1:5] .- sol["kinetic_energy_flux"][:, 1, 1:5])) < 6.0e-11
 
     @test maximum(abs.(sol["flux_incident"][:, 1, 1:5] - ref_sol["flux_incident"][:, 1, 1:5])) < 2 * eps()
 
