@@ -29,8 +29,13 @@ function merge_roulette!(rng, particles, pia, cell, species, target_np)
         i_delete = map_cont_index(pia.indexer[cell, species], i_delete)
 
         w_deleted += particles[i_delete].w
-        delete_particle!(pv, pia, cell, species, i_delete)
+        delete_particle!(particles, pia, cell, species, i_delete)
     end
+
+    # we most likely break continuity
+    # and checking that we only deleted from group2 in the last domain cell
+    # is kind of too much work for this merge
+    pia.contiguous[species] = false
 
     w_total = 0.0
     s1 = pia.indexer[cell,species].start1
