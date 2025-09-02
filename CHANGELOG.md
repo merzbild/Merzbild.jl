@@ -5,6 +5,7 @@
 * Roulette merge added (`merge_roulette!`)
 * Documentation improvements
 * CI improvements
+* `update_particle_indexer_new_lower_count!`, `delete_particle_end_group2!` now set `end2` to -1 if last particle from group2 is deleted
 
 ## v0.7.0
 * Added use of MuladdMacro (via `@muladd`), updated tolerances in tests and reference solutions

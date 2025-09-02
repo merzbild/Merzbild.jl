@@ -80,7 +80,7 @@
     @test pia.indexer[1,1].end1 == 28
     @test pia.indexer[1,1].n_group1 == 5
     @test pia.indexer[1,1].start2 == 0
-    @test pia.indexer[1,1].end2 == 0
+    @test pia.indexer[1,1].end2 == -1
     @test pia.indexer[1,1].n_group2 == 0
 
 
@@ -100,7 +100,7 @@
     @test pia.indexer[1,1].end1 == 25
     @test pia.indexer[1,1].n_group1 == 2
     @test pia.indexer[1,1].start2 == 0
-    @test pia.indexer[1,1].end2 == 0
+    @test pia.indexer[1,1].end2 == -1
     @test pia.indexer[1,1].n_group2 == 0
 
     pia = ParticleIndexerArray(10, 2)
