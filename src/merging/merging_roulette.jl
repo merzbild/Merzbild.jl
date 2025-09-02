@@ -24,7 +24,7 @@ function merge_roulette!(rng, particles, pia, cell, species, target_np)
 
     w_deleted = 0.0
 
-    for _ in 1:n_to_delete
+    @inbounds for _ in 1:n_to_delete
         i_delete = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species].n_local)
         i_delete = map_cont_index(pia.indexer[cell, species], i_delete)
 
@@ -35,35 +35,35 @@ function merge_roulette!(rng, particles, pia, cell, species, target_np)
     # we most likely break continuity
     # and checking that we only deleted from group2 in the last domain cell
     # is kind of too much work for this merge
-    pia.contiguous[species] = false
+    @inbounds pia.contiguous[species] = false
 
     w_total = 0.0
-    s1 = pia.indexer[cell,species].start1
-    e1 = pia.indexer[cell,species].end1
-    for i in s1:e1
+    @inbounds s1 = pia.indexer[cell,species].start1
+    @inbounds e1 = pia.indexer[cell,species].end1
+    @inbounds for i in s1:e1
         w_total += particles[i].w
     end
 
-    if pia.indexer[cell, species].n_group2 > 0
-        s2 = pia.indexer[cell,species].start2
-        e2 = pia.indexer[cell,species].end2
-        for i in s2:e2
+    @inbounds if pia.indexer[cell, species].n_group2 > 0
+        @inbounds s2 = pia.indexer[cell,species].start2
+        @inbounds e2 = pia.indexer[cell,species].end2
+        @inbounds for i in s2:e2
             w_total += particles[i].w
         end
     end
 
     scale_factor = (w_total + w_deleted) / w_total
 
-    s1 = pia.indexer[cell,species].start1
-    e1 = pia.indexer[cell,species].end1
-    for i in s1:e1
+    @inbounds s1 = pia.indexer[cell,species].start1
+    @inbounds e1 = pia.indexer[cell,species].end1
+    @inbounds for i in s1:e1
         particles[i].w *= scale_factor
     end
 
-    if pia.indexer[cell, species].n_group2 > 0
-        s2 = pia.indexer[cell,species].start2
-        e2 = pia.indexer[cell,species].end2
-        for i in s2:e2
+    @inbounds if pia.indexer[cell, species].n_group2 > 0
+        @inbounds s2 = pia.indexer[cell,species].start2
+        @inbounds e2 = pia.indexer[cell,species].end2
+        @inbounds for i in s2:e2
             particles[i].w *= scale_factor
         end
     end
