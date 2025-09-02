@@ -1,4 +1,4 @@
-@testset "pia_contiguous" begin
+@testset "roulette merge test" begin
     seed = 1234
     rng = StableRNG(seed)
 
