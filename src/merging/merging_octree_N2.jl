@@ -1010,7 +1010,7 @@ end
 """
     merge_octree_N2_based!(rng, octree, particles, pia, cell, species, target_np)
 
-Perform N:2 merging without checking whether particle positions end up outside of the simulation domain.
+Perform octree N:2 merging without checking whether particle positions end up outside of the simulation domain.
 
 # Positional arguments
 * `rng`: the random number generator instance
@@ -1021,6 +1021,10 @@ Perform N:2 merging without checking whether particle positions end up outside o
 * `species`: the index of the species being merged
 * `target_np`: the target post-merge number of particles; the post-merge number of particles will not exceed this value
     but may be not exactly equal to it
+
+# References
+* R.S. Martin, J.-L. Cambier, Octree particle management for DSMC and PIC simulations.
+    [J. Comput. Phys., 2016](https://doi.org/10.1016/j.jcp.2016.01.020).
 """
 function merge_octree_N2_based!(rng, octree, particles, pia, cell, species, target_np)
     clear_octree!(octree)
@@ -1030,11 +1034,10 @@ function merge_octree_N2_based!(rng, octree, particles, pia, cell, species, targ
     compute_new_particles!(rng, octree, particles, pia, cell, species)
 end
 
-
 """
     merge_octree_N2_based!(rng, octree, particles, pia, cell, species, target_np, grid)
 
-Perform N:2 merging, checking whether particle positions end up outside of the simulation domain, and pushing them back into the domain
+Perform octree N:2 merging, checking whether particle positions end up outside of the simulation domain, and pushing them back into the domain
 if needed.
 
 # Positional arguments
@@ -1047,6 +1050,9 @@ if needed.
 * `target_np`: the target post-merge number of particles; the post-merge number of particles will not exceed this value
     but may be not exactly equal to it
 * `grid`: the `Grid1DUniform` grid
+
+* R.S. Martin, J.-L. Cambier, Octree particle management for DSMC and PIC simulations.
+    [J. Comput. Phys., 2016](https://doi.org/10.1016/j.jcp.2016.01.020).
 """
 function merge_octree_N2_based!(rng, octree, particles, pia, cell, species, target_np, grid::Grid1DUniform)
     clear_octree!(octree)

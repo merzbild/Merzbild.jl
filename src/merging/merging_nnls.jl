@@ -915,6 +915,10 @@ is used instead and also multiplied by the variance multiplier.
 If the residual exceeds `max_err` or
 the number of non-zero elements in the solution vector is equal to the original number of particles,
 `-1` is returned to signify a failure of the merging algorithm.
+
+# References
+* G. Oblapenko, A Non-Negative Least Squares-based Approach for Moment-Preserving Particle Merging.
+    [arXiv preprint, 2025](https://doi.org/10.48550/arXiv.2412.12354).
 """
 function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species;
                            vref=1.0, scaling=:variance,
@@ -1020,6 +1024,10 @@ the NNLS matrix and RHS corresponding to conservation of electron-neutral collis
 If the residual exceeds `max_err` or
 the number of non-zero elements in the solution vector is equal to the original number of particles,
 `-1` is returned to signify a failure of the merging algorithm.
+
+# References
+* G. Oblapenko, A Non-Negative Least Squares-based Approach for Moment-Preserving Particle Merging.
+    [arXiv preprint, 2025](https://doi.org/10.48550/arXiv.2412.12354).
 """
 function merge_nnls_based_rate_preserving!(rng, nnls_merging,
                                            interaction, electron_neutral_interactions, computed_cs,

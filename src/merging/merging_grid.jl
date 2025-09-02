@@ -460,6 +460,11 @@ in the physical grid cell being considered, as stored in the `phys_props` parame
 * `species`: the species index
 * `species_data`: the array of `Species` data
 * `phys_props`: the `PhysProps` instance containing the computed temperature
+
+# References
+* M. Vranic, T. Grismayer, J.L. Martins, R.A. Fonseca, L.O. Silva, Particle merging algorithm for PIC codes.
+    [Comput. Phys. Comm., 2015](https://doi.org/10.1016/j.cpc.2015.01.020).
+* G. Oblapenko, D. Goldstein, P. Varghese, C. Moore, A velocity space hybridization-based Boltzmann equation solver. [J. Comput. Phys, 2020](https://doi.org/10.1016/j.jcp.2020.109302).
 """
 function merge_grid_based!(rng, merging_grid, particles, pia, cell, species, species_data, phys_props)
     # 0-D, no grid, particles in single cell

@@ -215,6 +215,10 @@ and the VHS cross-section model.
 * `species`: the index of the species for which collisions are performed
 * `Δt`: timestep
 * `V`: cell volume
+
+# References
+* D.P. Schmidt, C.J. Rutland, A New Droplet Collision Algorithm.
+    [J. Comput. Phys, 2000](https://doi.org/10.1006/jcph.2000.6568).
 """
 function ntc!(rng, collision_factors, collision_data, interaction, particles, pia,
               cell, species, Δt, V)
@@ -319,6 +323,10 @@ and the VHS cross-section model.
 * `species1`: the index of the second species for which collisions are performed
 * `Δt`: timestep
 * `V`: cell volume
+
+# References
+* D.P. Schmidt, C.J. Rutland, A New Droplet Collision Algorithm.
+    [J. Comput. Phys, 2000](https://doi.org/10.1006/jcph.2000.6568).
 """
 function ntc!(rng, collision_factors, collision_data, interaction,
               particles_1, particles_2, pia,
@@ -499,6 +507,10 @@ Perform electron-neutral elastic scattering and electron-impact ionization colli
 * `species_ion`: the index of the ion species
 * `Δt`: timestep
 * `V`: cell volume
+
+# References
+* D.P. Schmidt, C.J. Rutland, A New Droplet Collision Algorithm.
+    [J. Comput. Phys, 2000](https://doi.org/10.1006/jcph.2000.6568).
 """
 function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                   n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion,
@@ -614,7 +626,7 @@ end
              pia, cell, species_n, species_e, species_ion, Δt, V)
 
 Perform electron-neutral elastic scattering and electron-impact ionization collisions
-using the event splitting approach of [Oblapenko et al. (2022)](https://doi.org/10.1016/j.jcp.2022.111390)
+using the event splitting method.
 
 # Positional arguments
 * `rng`: the random number generator
@@ -633,6 +645,12 @@ using the event splitting approach of [Oblapenko et al. (2022)](https://doi.org/
 * `species_ion`: the index of the ion species
 * `Δt`: timestep
 * `V`: cell volume
+
+# References
+* G. Oblapenko, D. Goldstein, P. Varghese, C. Moore, Hedging direct simulation Monte Carlo bets via event splitting.
+    [J. Comput. Phys, 2022](https://doi.org/10.1016/j.jcp.2022.111390).
+* D.P. Schmidt, C.J. Rutland, A New Droplet Collision Algorithm.
+    [J. Comput. Phys, 2000](https://doi.org/10.1006/jcph.2000.6568).
 """
 function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
     n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion, 
