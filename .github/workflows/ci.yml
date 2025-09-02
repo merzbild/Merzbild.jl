@@ -5,6 +5,8 @@ on:
     branches:
       - main
   pull_request:
+    branches:
+      - main
 
 # needed to allow julia-actions/cache to delete old caches that it has created
 permissions:
