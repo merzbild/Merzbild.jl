@@ -723,7 +723,7 @@ function write_netcdf(nc_filename, particles::Vector{ParticleVector}, pia, speci
 
     filehandle = NetCDF.create(nc_filename, varlist, gatts=gatts, mode=NC_NETCDF4)
 
-    NetCDF.putvar(v_spn, [species_data[species].name for species in 1:n_species])
+    NetCDF.putvar(varlist[1], [species_data[species].name for species in 1:n_species])
 
     counter = 0
     c_1 = [1]
