@@ -102,7 +102,7 @@
     close(props_read)
     rm(sol_path)
 
-
+    sol_path = joinpath(@__DIR__, "data", "tmp_all_species.nc")
     write_netcdf(sol_path, particles, pia, species_data)
     props_read =  NCDataset(sol_path, "r")
 
