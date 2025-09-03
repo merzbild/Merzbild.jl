@@ -42,6 +42,7 @@ include("test_grid_sorting.jl")  # test particle sorting routines
 include("test_convection_1D.jl")  # test particle convection and surface interaction on a 1D grid
 include("test_collisions_1D.jl")  # test particle collisions on a grid
 include("test_io_multidim.jl")  # test netCDF I/O of physical properties on a grid
+include("test_io_particle.jl")  # test dump of particles
 include("test_octree_merging_1D.jl")  # test octree merging in 1-D
 include("test_surface_props_1D_uniform.jl")  # test surface properties for 1-D uniform grid
 include("test_io_surf.jl")  # test I/O of surface properties

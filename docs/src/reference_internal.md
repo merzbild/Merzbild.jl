@@ -174,6 +174,7 @@ Merzbild.compute_thermal_velocity
 Merzbild.binary_search
 Merzbild.linear_interpolation
 Merzbild.compute_mixed_moment
+Base.iscontiguous
 ```
 
 ## NNLS
