@@ -646,6 +646,9 @@ function write_netcdf(nc_filename, pv::ParticleVector, pia, species, species_dat
     c_1 = [1]
     c_1_3 = [1,3]
 
+    vv = zeros(3)
+    xx = zeros(3)
+
     for cell in 1:n_cells
         @inbounds s1 = pia.indexer[cell, species].start1
         @inbounds e1 = pia.indexer[cell, species].end1
@@ -653,8 +656,10 @@ function write_netcdf(nc_filename, pv::ParticleVector, pia, species, species_dat
         @inbounds for i in s1:e1
             counter += 1
             NetCDF.putvar(v_w, [pv[i].w], start=[counter], count=c_1)
-            NetCDF.putvar(v_v, pv[i].v, start=[counter, 1], count=c_1_3)
-            NetCDF.putvar(v_x, pv[i].x, start=[counter, 1], count=c_1_3)
+            vv[:] = pv[i].v
+            xx[:] = pv[i].x
+            NetCDF.putvar(v_v, vv, start=[counter, 1], count=c_1_3)
+            NetCDF.putvar(v_x, xx, start=[counter, 1], count=c_1_3)
             NetCDF.putvar(v_cell, [cell], start=[counter], count=c_1)
         end
 
@@ -664,8 +669,10 @@ function write_netcdf(nc_filename, pv::ParticleVector, pia, species, species_dat
             @inbounds for i in s2:e2
                 counter += 1
                 NetCDF.putvar(v_w, [pv[i].w], start=[counter], count=c_1)
-                NetCDF.putvar(v_v, pv[i].v, start=[counter, 1], count=c_1_3)
-                NetCDF.putvar(v_x, pv[i].x, start=[counter, 1], count=c_1_3)
+                vv[:] = pv[i].v
+                xx[:] = pv[i].x
+                NetCDF.putvar(v_v, vv, start=[counter, 1], count=c_1_3)
+                NetCDF.putvar(v_x, xx, start=[counter, 1], count=c_1_3)
                 NetCDF.putvar(v_cell, [cell], start=[counter], count=c_1)
             end
         end
@@ -722,6 +729,9 @@ function write_netcdf(nc_filename, particles::Vector{ParticleVector}, pia, speci
     c_1 = [1]
     c_1_3 = [1,3]
 
+    vv = zeros(3)
+    xx = zeros(3)
+
     for species in 1:n_species
         counter = 0 
         for cell in 1:n_cells
@@ -731,8 +741,10 @@ function write_netcdf(nc_filename, particles::Vector{ParticleVector}, pia, speci
             @inbounds for i in s1:e1
                 counter += 1
                 NetCDF.putvar(varlist[2 + (species-1)*4], [particles[species][i].w], start=[counter], count=c_1)
-                NetCDF.putvar(varlist[3 + (species-1)*4], particles[species][i].v, start=[counter, 1], count=c_1_3)
-                NetCDF.putvar(varlist[4 + (species-1)*4], particles[species][i].x, start=[counter, 1], count=c_1_3)
+                vv[:] = particles[species][i].v
+                xx[:] = particles[species][i].x
+                NetCDF.putvar(varlist[3 + (species-1)*4], vv, start=[counter, 1], count=c_1_3)
+                NetCDF.putvar(varlist[4 + (species-1)*4], xx, start=[counter, 1], count=c_1_3)
                 NetCDF.putvar(varlist[5 + (species-1)*4], [cell], start=[counter], count=c_1)
             end
 
@@ -742,8 +754,10 @@ function write_netcdf(nc_filename, particles::Vector{ParticleVector}, pia, speci
                 @inbounds for i in s2:e2
                     counter += 1
                     NetCDF.putvar(varlist[2 + (species-1)*4], [particles[species][i].w], start=[counter], count=c_1)
-                    NetCDF.putvar(varlist[3 + (species-1)*4], particles[species][i].v, start=[counter, 1], count=c_1_3)
-                    NetCDF.putvar(varlist[4 + (species-1)*4], particles[species][i].x, start=[counter, 1], count=c_1_3)
+                    vv[:] = particles[species][i].v
+                    xx[:] = particles[species][i].x
+                    NetCDF.putvar(varlist[3 + (species-1)*4], vv, start=[counter, 1], count=c_1_3)
+                    NetCDF.putvar(varlist[4 + (species-1)*4], xx, start=[counter, 1], count=c_1_3)
                     NetCDF.putvar(varlist[5 + (species-1)*4], [cell], start=[counter], count=c_1)
                 end
             end
@@ -751,13 +765,4 @@ function write_netcdf(nc_filename, particles::Vector{ParticleVector}, pia, speci
     end
 
     finalize(filehandle)
-end
-
-"""
-    Base.iscontiguous(x::SVector{N, T})
-
-Utility function that returns `true` - required for NetCDF output of particle data
-"""
-function Base.iscontiguous(x::SVector{N, T}) where {N, T}
-    return true
 end
