@@ -42,6 +42,7 @@ include("test_grid_sorting.jl")  # test particle sorting routines
 include("test_convection_1D.jl")  # test particle convection and surface interaction on a 1D grid
 include("test_collisions_1D.jl")  # test particle collisions on a grid
 include("test_io_multidim.jl")  # test netCDF I/O of physical properties on a grid
+include("test_io_particle.jl")  # test dump of particles
 include("test_octree_merging_1D.jl")  # test octree merging in 1-D
 include("test_surface_props_1D_uniform.jl")  # test surface properties for 1-D uniform grid
 include("test_io_surf.jl")  # test I/O of surface properties
@@ -53,4 +54,5 @@ include("test_1D_couette_fp.jl")  # test  1-D Couette flow, particle Fokker-Plan
 include("test_chunking.jl")  # test chunking, chunk-based computes, surface reduce, sampling on 1-D grid chunks
 include("test_particle_exchange.jl")  # test swapping and pushing of particles in chunked simulations
 include("test_particle_resort_after_exchange.jl")  # test re-sorting of particles after swap/push in chunked simulations
+include("test_roulette_merging.jl")
 include("test_aqua.jl")

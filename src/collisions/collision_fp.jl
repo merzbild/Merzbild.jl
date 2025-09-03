@@ -5,7 +5,7 @@
 
 Model single-species elastic collisions using a linear Fokker-Planck approximation.
 
-Positional arguments
+# Positional arguments
 * `rng`: the random number generator
 * `collision_data_fp`: `CollisionDataFP` instance used for storing collisional quantities
 * `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
@@ -16,6 +16,10 @@ Positional arguments
 * `species`: the index of the species for which collisions are performed
 * `Δt`: timestep
 * `V`: cell volume
+
+# References
+* M.H. Gorji, M. Torrilhon, P. Jenny, Fokker-Planck model for computational studies of monatomic rarefied gas flows.
+    [J. Fluid Mech., 2011](https://doi.org/10.1017/jfm.2011.188).
 """
 function fp_linear!(rng, collision_data_fp, interaction, species_data, particles, pia, cell, species, Δt, V)
     @inbounds indexer = pia.indexer[cell, species]

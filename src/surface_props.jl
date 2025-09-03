@@ -196,17 +196,17 @@ function avg_props!(surf_props_avg, surf_props, n_avg_timesteps)
 
     for species in 1:surf_props.n_species
         @inbounds @simd for element in 1:surf_props.n_elements
-            surf_props_avg.np[element,species] += surf_props.np[element,species] * inv_nt_avg
-            surf_props_avg.flux_incident[element,species] += surf_props.flux_incident[element,species] * inv_nt_avg
-            surf_props_avg.flux_reflected[element,species] += surf_props.flux_reflected[element,species] * inv_nt_avg
-            surf_props_avg.force[1,element,species] += surf_props.force[1,element,species] * inv_nt_avg
-            surf_props_avg.force[2,element,species] += surf_props.force[2,element,species] * inv_nt_avg
-            surf_props_avg.force[3,element,species] += surf_props.force[3,element,species] * inv_nt_avg
-            surf_props_avg.normal_pressure[element,species] += surf_props.normal_pressure[element,species] * inv_nt_avg
-            surf_props_avg.shear_pressure[1,element,species] += surf_props.shear_pressure[1,element,species] * inv_nt_avg
-            surf_props_avg.shear_pressure[2,element,species] += surf_props.shear_pressure[2,element,species] * inv_nt_avg
-            surf_props_avg.shear_pressure[3,element,species] += surf_props.shear_pressure[3,element,species] * inv_nt_avg
-            surf_props_avg.kinetic_energy_flux[element,species] += surf_props.kinetic_energy_flux[element,species] * inv_nt_avg
+            surf_props_avg.np[element,species] = surf_props_avg.np[element,species] + surf_props.np[element,species] * inv_nt_avg
+            surf_props_avg.flux_incident[element,species] = surf_props_avg.flux_incident[element,species] + surf_props.flux_incident[element,species] * inv_nt_avg
+            surf_props_avg.flux_reflected[element,species] = surf_props_avg.flux_reflected[element,species] + surf_props.flux_reflected[element,species] * inv_nt_avg
+            surf_props_avg.force[1,element,species] = surf_props_avg.force[1,element,species] + surf_props.force[1,element,species] * inv_nt_avg
+            surf_props_avg.force[2,element,species] = surf_props_avg.force[2,element,species] + surf_props.force[2,element,species] * inv_nt_avg
+            surf_props_avg.force[3,element,species] = surf_props_avg.force[3,element,species] + surf_props.force[3,element,species] * inv_nt_avg
+            surf_props_avg.normal_pressure[element,species] = surf_props_avg.normal_pressure[element,species] + surf_props.normal_pressure[element,species] * inv_nt_avg
+            surf_props_avg.shear_pressure[1,element,species] = surf_props_avg.shear_pressure[1,element,species] + surf_props.shear_pressure[1,element,species] * inv_nt_avg
+            surf_props_avg.shear_pressure[2,element,species] = surf_props_avg.shear_pressure[2,element,species] + surf_props.shear_pressure[2,element,species] * inv_nt_avg
+            surf_props_avg.shear_pressure[3,element,species] = surf_props_avg.shear_pressure[3,element,species] + surf_props.shear_pressure[3,element,species] * inv_nt_avg
+            surf_props_avg.kinetic_energy_flux[element,species] = surf_props_avg.kinetic_energy_flux[element,species] + surf_props.kinetic_energy_flux[element,species] * inv_nt_avg
         end
     end
 end

@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.7.1
+* More use of Muladd in a few places
+* Roulette merge added (`merge_roulette!`)
+* Documentation improvements
+* CI improvements
+* `update_particle_indexer_new_lower_count!`, `delete_particle_end_group2!` now set `end2` to -1 if last particle from group2 is deleted
+* Now possible to write particle data via `write_netcdf`
+
 ## v0.7.0
 * Added use of MuladdMacro (via `@muladd`), updated tolerances in tests and reference solutions
 * Removed unused functions `sample_maxwellian_single!`, `sample_maxwellian!(rng, particles, nparticles, m, T, v0)`

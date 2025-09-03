@@ -235,6 +235,6 @@ Shown is the speed-up compared to a serial execution on the same computer (see a
 Ubuntu 24.04.3, Julia version 1.11.6.
 Shown is the speed-up compared to a serial execution on the same computer (see above). `DLB` denotes dynamic load balancing (currently not used).
 
-|                               | **2 cores** |  **4 cores** |  **8 cores** |  **16 cores** |  *32 cores ** |
+|                               | **2 cores** |  **4 cores** |  **8 cores** |  **16 cores** | **32 cores ** |
 |:-----------------------------:|:-----------:|:------------:|:------------:|:-------------:|:-------------:|
 | `n_chunks=n_threads`, no DLB  |   1.88      |    3.68      |     5.24     |      5.70     |     6.57      |

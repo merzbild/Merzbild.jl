@@ -393,7 +393,7 @@ function update_particle_indexer_new_lower_count!(pia, cell, species, new_lower_
     else
         @inbounds diff -= pia.indexer[cell, species].n_group2
         @inbounds pia.indexer[cell, species].start2 = 0
-        @inbounds pia.indexer[cell, species].end2 = 0
+        @inbounds pia.indexer[cell, species].end2 = -1
         @inbounds pia.indexer[cell, species].n_group2 = 0
 
         @inbounds pia.indexer[cell, species].end1 -= diff
@@ -546,7 +546,7 @@ If no particles are present in the 2nd group of particles, the function does not
     # deleted last particle from group2
     @inbounds if pia.indexer[cell, species].end2 < pia.indexer[cell, species].start2
         @inbounds pia.indexer[cell, species].start2 = 0
-        @inbounds pia.indexer[cell, species].end2 = 0
+        @inbounds pia.indexer[cell, species].end2 = -1
     end
 
     # add the deleted particle to the buffer

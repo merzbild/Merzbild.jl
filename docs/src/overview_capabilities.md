@@ -33,6 +33,7 @@ simulations:
   1. A grid-based merging algorithm as described in [Oblapenko et al. (2020)](https://doi.org/10.1016/j.jcp.2020.109302) (see also [Vranic et al. (2015)](https://doi.org/10.1016/j.cpc.2015.01.020))
   2. The octree merging algorithm of [Martin and Cambier (2016)](https://doi.org/10.1016/j.jcp.2016.01.020)
   3. A Non-Negative Least Squares (NNLS)-based merging approach described in [Oblapenko (2024)](https://doi.org/10.48550/arXiv.2412.12354)
+  4. The roulette merge of [Watrous, Seidel et al (2023)](https://www.osti.gov/servlets/purl/2431184)
 
 ## Cross-sections
 The Variable-Hard Sphere (VHS) model is implemented for collisions of neutral particles.

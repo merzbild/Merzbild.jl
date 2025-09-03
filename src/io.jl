@@ -553,7 +553,7 @@ end
 """
     write_netcdf(ds, surf_props::SurfProps, timestep; sync_freq=0)
     
-Write SurfProps to NetCDF file and synchronize file to disk if necessary.
+Write SurfProps to a NetCDF file and synchronize file to disk if necessary.
 
 # Positional arguments
 * `ds`: the `NCDataHolderSurf` for the file to which the output will be written
@@ -604,4 +604,165 @@ function write_netcdf(ds, surf_props::SurfProps, timestep; sync_freq=0)
     if (sync_freq > 0) && (currtimesteps % sync_freq == 0)
         NetCDF.sync(ds.filehandle)
     end
+end
+
+"""
+    write_netcdf(nc_filename, pv::ParticleVector, pia, species, species_data; global_attributes=Dict{Any,Any}())
+    
+Write particles of a single species to a NetCDF file.
+
+# Positional arguments
+* `nc_filename`: filename to write output to
+* `pv`: the `ParticleVector` instances of particles to be written
+* `pia`: the `ParticleIndexerArray` instance
+* `species`: the index of the species being written
+* `species_data`: the vector of `Species` data for the species in the simulation
+
+# Keyword arguments
+* `global_attributes`: dictionary of any additional attributes to write to the netCDF file as a global attribute
+"""
+function write_netcdf(nc_filename, pv::ParticleVector, pia, species, species_data; global_attributes=Dict{Any,Any}())
+    gatts = deepcopy(global_attributes)
+
+    np_dim = NcDim("nparticles_$([species_data[species].name])", pia.n_total[species], unlimited=false)
+    three_dim = NcDim("3d", 3, unlimited=false)
+    one_dim = NcDim("1d", 1, unlimited=false)
+    
+    v_w = NcVar("w", [np_dim], t=Float64)
+    v_v = NcVar("v", [np_dim, three_dim], t=Float64)
+    v_x = NcVar("x", [np_dim, three_dim], t=Float64)
+    v_cell = NcVar("cell", [np_dim], t=Int64)
+    v_spn = NcVar("species_names", [one_dim], t=String)
+
+    varlist::Vector{NetCDF.NcVar} = [v_spn, v_w, v_v, v_x, v_cell]
+
+    filehandle = NetCDF.create(nc_filename, varlist, gatts=gatts, mode=NC_NETCDF4)
+
+    NetCDF.putvar(v_spn, [species_data[species].name])
+
+    @inbounds n_cells = size(pia.indexer)[1]
+
+    counter = 0
+    c_1 = [1]
+    c_1_3 = [1,3]
+
+    vv = zeros(3)
+    xx = zeros(3)
+
+    for cell in 1:n_cells
+        @inbounds s1 = pia.indexer[cell, species].start1
+        @inbounds e1 = pia.indexer[cell, species].end1
+
+        @inbounds for i in s1:e1
+            counter += 1
+            NetCDF.putvar(v_w, [pv[i].w], start=[counter], count=c_1)
+            vv[:] = pv[i].v
+            xx[:] = pv[i].x
+            NetCDF.putvar(v_v, vv, start=[counter, 1], count=c_1_3)
+            NetCDF.putvar(v_x, xx, start=[counter, 1], count=c_1_3)
+            NetCDF.putvar(v_cell, [cell], start=[counter], count=c_1)
+        end
+
+        if pia.indexer[cell, species].n_group2 > 0
+            @inbounds s2 = pia.indexer[cell, species].start2
+            @inbounds e2 = pia.indexer[cell, species].end2
+            @inbounds for i in s2:e2
+                counter += 1
+                NetCDF.putvar(v_w, [pv[i].w], start=[counter], count=c_1)
+                vv[:] = pv[i].v
+                xx[:] = pv[i].x
+                NetCDF.putvar(v_v, vv, start=[counter, 1], count=c_1_3)
+                NetCDF.putvar(v_x, xx, start=[counter, 1], count=c_1_3)
+                NetCDF.putvar(v_cell, [cell], start=[counter], count=c_1)
+            end
+        end
+    end
+
+    finalize(filehandle)
+end
+
+
+
+"""
+    write_netcdf(nc_filename, particles::Vector{ParticleVector}, pia, species_data; global_attributes=Dict{Any,Any}())
+    
+Write particles of all species to a NetCDF file.
+
+# Positional arguments
+* `nc_filename`: filename to write output to
+* `pv`: the `ParticleVector` instances of particles to be written
+* `pia`: the `ParticleIndexerArray` instance
+* `species`: the index of the species being written
+* `species_data`: the vector of `Species` data for the species in the simulation
+
+# Keyword arguments
+* `global_attributes`: dictionary of any additional attributes to write to the netCDF file as a global attribute
+"""
+function write_netcdf(nc_filename, particles::Vector{ParticleVector}, pia, species_data; global_attributes=Dict{Any,Any}())
+    gatts = deepcopy(global_attributes)
+
+    @inbounds n_cells = size(pia.indexer)[1]
+    @inbounds n_species = size(pia.indexer)[2]
+
+    three_dim = NcDim("3d", 3, unlimited=false)
+    n_species_dim = NcDim("n_species", n_species, unlimited=false)
+    
+    v_spn = NcVar("species_names", [n_species_dim], t=String)
+
+    varlist::Vector{NetCDF.NcVar} = [v_spn]
+    dimlist::Vector{NetCDF.NcDim} = [NcDim("nparticles_$(species_data[species].name)", pia.n_total[species], unlimited=false)
+                                     for species in 1:n_species]
+
+
+    for species in 1:n_species
+        push!(varlist, NcVar("w_$(species_data[species].name)", [dimlist[species]], t=Float64))  # 2, 6
+        push!(varlist, NcVar("v_$(species_data[species].name)", [dimlist[species], three_dim], t=Float64))  # 3, 7
+        push!(varlist, NcVar("x_$(species_data[species].name)", [dimlist[species], three_dim], t=Float64))  # 4, 8
+        push!(varlist, NcVar("cell_$(species_data[species].name)", [dimlist[species]], t=Int64))  # 5, 9
+    end
+
+    filehandle = NetCDF.create(nc_filename, varlist, gatts=gatts, mode=NC_NETCDF4)
+
+    NetCDF.putvar(varlist[1], [species_data[species].name for species in 1:n_species])
+
+    counter = 0
+    c_1 = [1]
+    c_1_3 = [1,3]
+
+    vv = zeros(3)
+    xx = zeros(3)
+
+    for species in 1:n_species
+        counter = 0 
+        for cell in 1:n_cells
+            @inbounds s1 = pia.indexer[cell, species].start1
+            @inbounds e1 = pia.indexer[cell, species].end1
+
+            @inbounds for i in s1:e1
+                counter += 1
+                NetCDF.putvar(varlist[2 + (species-1)*4], [particles[species][i].w], start=[counter], count=c_1)
+                vv[:] = particles[species][i].v
+                xx[:] = particles[species][i].x
+                NetCDF.putvar(varlist[3 + (species-1)*4], vv, start=[counter, 1], count=c_1_3)
+                NetCDF.putvar(varlist[4 + (species-1)*4], xx, start=[counter, 1], count=c_1_3)
+                NetCDF.putvar(varlist[5 + (species-1)*4], [cell], start=[counter], count=c_1)
+            end
+
+            if pia.indexer[cell, species].n_group2 > 0
+                @inbounds s2 = pia.indexer[cell, species].start2
+                @inbounds e2 = pia.indexer[cell, species].end2
+                @inbounds for i in s2:e2
+                    counter += 1
+                    NetCDF.putvar(varlist[2 + (species-1)*4], [particles[species][i].w], start=[counter], count=c_1)
+                    vv[:] = particles[species][i].v
+                    xx[:] = particles[species][i].x
+                    NetCDF.putvar(varlist[3 + (species-1)*4], vv, start=[counter, 1], count=c_1_3)
+                    NetCDF.putvar(varlist[4 + (species-1)*4], xx, start=[counter, 1], count=c_1_3)
+                    NetCDF.putvar(varlist[5 + (species-1)*4], [cell], start=[counter], count=c_1)
+                end
+            end
+        end
+    end
+
+    finalize(filehandle)
 end

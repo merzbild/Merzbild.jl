@@ -139,6 +139,11 @@ OctreeN2Merge(split::Merzbild.OctreeBinSplit;
 merge_octree_N2_based!
 ```
 
+### Roulette merging
+```@docs
+merge_roulette!
+```
+
 ## Grids and particle sorting
 ```@docs
 AbstractGrid
@@ -180,6 +185,8 @@ NCDataHolderSurf(nc_filename, names_skip_list, species_data, surf_props; global_
 NCDataHolderSurf(nc_filename, species_data, surf_props; global_attributes=Dict{Any,Any}())
 write_netcdf(ds, phys_props::PhysProps, timestep; sync_freq=0)
 write_netcdf(ds, surf_props::SurfProps, timestep; sync_freq=0)
+write_netcdf(nc_filename, pv::ParticleVector, pia, species, species_data; global_attributes=Dict{Any,Any}())
+write_netcdf(nc_filename, particles::Vector{ParticleVector}, pia, species_data; global_attributes=Dict{Any,Any}())
 close_netcdf
 ```
 
