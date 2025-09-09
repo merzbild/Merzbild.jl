@@ -1,9 +1,10 @@
 # Changelog
 
 ## v0.7.2
-* Added `threshold` keyword argument to NNLS merging to discard particles with very small weights
+* Added `w_threshold` keyword argument to NNLS merging to discard particles with very small weights
 * NNLS merging now also accepts a list of spatial moments to preserve (requires explicitly conserving 1-st order spatial moments, otherwise
     the corresponding coordinates are set to 0)
+* 1D example added for NNLS merging (`simulations/1D/couette_varweight_nnls.jl`)
 
 ## v0.7.1
 * More use of Muladd in a few places

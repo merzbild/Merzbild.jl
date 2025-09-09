@@ -1,6 +1,7 @@
 module Merzbild
 
 using MuladdMacro
+using TimerOutputs
 
 include("abstract_types.jl")
 include("constants.jl")

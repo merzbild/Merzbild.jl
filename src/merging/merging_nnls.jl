@@ -1055,15 +1055,15 @@ function compute_post_merge_particles_nnls!(nnls_merging, particles, pia, cell, 
             i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
             curr_particle_index += 1
             particles[i].w = nnls_merging.work[work_index].x[j] * scale_factor
-            particles[i].v = nnls_merging.v0 + SVector{3, Float64}(lhs_matrix[2, j] * nnls_merging.scalevx,
-                                                                   lhs_matrix[3, j] * nnls_merging.scalevy,
-                                                                   lhs_matrix[4, j] * nnls_merging.scalevz)
+            particles[i].v = SVector{3, Float64}(nnls_merging.v0[1] + lhs_matrix[2, j] * nnls_merging.scalevx,
+                                                 nnls_merging.v0[2] + lhs_matrix[3, j] * nnls_merging.scalevy,
+                                                 nnls_merging.v0[3] + lhs_matrix[4, j] * nnls_merging.scalevz)
 
             x = nnls_merging.pos_i_x > 0 ? lhs_matrix[nnls_merging.n_moments_vel + nnls_merging.pos_i_x, j] * nnls_merging.scalex : 0.0
             y = nnls_merging.pos_i_y > 0 ? lhs_matrix[nnls_merging.n_moments_vel + nnls_merging.pos_i_y, j] * nnls_merging.scaley : 0.0
             z = nnls_merging.pos_i_z > 0 ? lhs_matrix[nnls_merging.n_moments_vel + nnls_merging.pos_i_z, j] * nnls_merging.scalez : 0.0
 
-            particles[i].x = nnls_merging.x0 + SVector{3,Float64}(x, y, z)
+            particles[i].x = SVector{3,Float64}(nnls_merging.x0[1] + x, nnls_merging.x0[2] + y, nnls_merging.x0[3] + z)
         end
     end
 
