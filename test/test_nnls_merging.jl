@@ -311,10 +311,10 @@
     end
 
 
+    # test conservation of 1st spatial moment
     particles = [create_particles2(mult=2.0,mult2=2.0)]
    
     pos_moments = [[0,0,1],[1,0,0],[0,1,0]]
-
 
     mnnls_pos = NNLSMerge([], 30; multi_index_moments_pos=pos_moments)
     @test mnnls_pos.pos_i_x == 2
@@ -348,10 +348,11 @@
     
     @test length(mnnls_pos.rhs_vector) == 10
     
-    # println(result)
     @test result == 1
     @test pia.indexer[1,1].n_local[1] < 16
     @test maximum(abs.(mnnls_pos.x0 - x_mean)) < 4*eps()
+
+    n_new = pia.indexer[1,1].n_local[1]
 
     @test maximum(abs.([mnnls_pos.Epx, mnnls_pos.Epy, mnnls_pos.Epz] - x_std)) < 4*eps()
     @test maximum(abs.([mnnls_pos.scalex, mnnls_pos.scaley, mnnls_pos.scalez] - x_std)) < 4*eps()
@@ -387,5 +388,113 @@
     @test maximum(abs.(new_v - v_mean)) < 1e-15
     @test maximum(abs.(new_x - x_mean)) < 1e-15
 
+    # now we try a higher threshold so that we get fewer particles
+    particles = [create_particles2(mult=2.0,mult2=2.0)]
+    pia = ParticleIndexerArray(length(particles[1]))
+    result = merge_nnls_based!(rng, mnnls_pos, particles[1], pia, 1, 1; w_threshold=1e-12)
     
+    @test result == 1
+    @test pia.indexer[1,1].n_local[1] < n_new
+
+    new_w = 0.0
+    new_v = [0.0, 0.0, 0.0]
+    new_x = [0.0, 0.0, 0.0]
+    s1 = pia.indexer[1,1].start1
+    e1 = pia.indexer[1,1].end1
+    for i in 1:s1:e1
+        new_w += particles[1][i].w
+        new_v += particles[1][i].v * particles[1][i].w
+        new_x += particles[1][i].x * particles[1][i].w
+    end
+
+    if pia.indexer[1,1].n_group2 > 0
+        s2 = pia.indexer[1,1].start2
+        e2 = pia.indexer[1,1].end2
+        for i in 1:s2:e2
+            new_w += particles[1][i].w
+            new_v += particles[1][i].v * particles[1][i].w
+            new_x += particles[1][i].x * particles[1][i].w
+        end
+    end
+
+    new_v /= new_w
+    new_x /= new_w
+
+    @test abs(new_w - tw) < 4.5e-15
+    @test maximum(abs.(new_v - v_mean)) < 4e-15
+    @test maximum(abs.(new_x - x_mean)) < 4e-15
+
+    # test that computation of spatial moments does not affect the LHS and RHS entries corresponding to the velocity moments
+    particles = [create_particles2(mult=2.0,mult2=2.0)]
+    pia = ParticleIndexerArray(length(particles[1]))
+    lhs_ncols = 16 + 1 + 16  # 16 particles + 1 centered at 0 + 16 in octants
+   
+    add_vel_moments = [[3,1,0],[0,2,1]]
+    pos_moments = [[1,0,0],[0,1,0],[2,0,2]]
+
+    mnnls_pos = NNLSMerge(add_vel_moments, 30; multi_index_moments_pos=pos_moments)
+    mnnls_no_pos = NNLSMerge(add_vel_moments, 30)
+
+    @test mnnls_pos.n_moments_vel == mnnls_no_pos.n_moments_vel
+    @test mnnls_no_pos.n_moments_pos == 0
+    @test mnnls_pos.n_moments_pos == 3
+    @test mnnls_pos.pos_i_x == 1
+    @test mnnls_pos.pos_i_y == 2
+    @test mnnls_pos.pos_i_z == -1
+    @test length(mnnls_pos.rhs_vector) == length(mnnls_no_pos.rhs_vector) + 3 == 12
+
+    lhs_matrix_pos = zeros(mnnls_pos.n_moments_vel + mnnls_pos.n_moments_pos, lhs_ncols)
+    lhs_matrix_no_pos = zeros(mnnls_no_pos.n_moments_vel, lhs_ncols)
+    Merzbild.compute_lhs_and_rhs!(mnnls_pos, lhs_matrix_pos,
+                                  particles[1], pia, 1, 1)
+    Merzbild.compute_lhs_and_rhs!(mnnls_no_pos, lhs_matrix_no_pos,
+                                  particles[1], pia, 1, 1)
+
+    @test maximum(abs.(mnnls_pos.rhs_vector[1:mnnls_pos.n_moments_vel] - mnnls_no_pos.rhs_vector)) < 2*eps()
+    @test maximum(abs.(lhs_matrix_pos[1:mnnls_pos.n_moments_vel,:] - lhs_matrix_no_pos)) < 2*eps()
+
+    # check computation of central spatial moments
+    for i in 1:16
+        @test abs(lhs_matrix_pos[mnnls_pos.n_moments_vel+1,i] - (particles[1][i].x[1] - mnnls_pos.x0[1])) < 2*eps()
+        @test abs(lhs_matrix_pos[mnnls_pos.n_moments_vel+2,i] - (particles[1][i].x[2] - mnnls_pos.x0[2])) < 2*eps()
+        @test abs(lhs_matrix_pos[mnnls_pos.n_moments_vel+3,i] - (particles[1][i].x[1] - mnnls_pos.x0[1])^2 * (particles[1][i].x[3] - mnnls_pos.x0[3])^2) < 2*eps()
+    end
+
+    old_val = lhs_matrix_pos[mnnls_pos.n_moments_vel+2,3]
+    old_val2 = lhs_matrix_pos[mnnls_pos.n_moments_vel+3,3]
+
+    # additional fictitious particles
+    for i in 17:16+17
+        @test abs(lhs_matrix_pos[mnnls_pos.n_moments_vel+1,i] - (0.0)) < 2*eps()
+        @test abs(lhs_matrix_pos[mnnls_pos.n_moments_vel+2,i] - (0.0)) < 2*eps()
+        @test abs(lhs_matrix_pos[mnnls_pos.n_moments_vel+3,i] - (0.0)^2 * (0.0)^2) < 2*eps()
+    end
+
+    # scaling of spatial moments also doesn't interfere with scaling of velocity moments
+    Merzbild.scale_lhs_rhs!(mnnls_pos, lhs_matrix_pos, :vref)
+    Merzbild.scale_lhs_rhs!(mnnls_no_pos, lhs_matrix_no_pos, :vref)
+
+    @test maximum(abs.(mnnls_pos.rhs_vector[1:mnnls_pos.n_moments_vel] - mnnls_no_pos.rhs_vector)) < 2*eps()
+    @test maximum(abs.(lhs_matrix_pos[1:mnnls_pos.n_moments_vel,:] - lhs_matrix_no_pos)) < 2*eps()
+
+    # test correct scaling of spatial moments
+    @test abs(lhs_matrix_pos[mnnls_pos.n_moments_vel+2,3] * x_std[2] - old_val) < 2*eps()
+    @test abs(lhs_matrix_pos[mnnls_pos.n_moments_vel+3,3] * x_std[1]^2 * x_std[3]^2 - old_val2) < 2*eps()
+
+    # finally check that we write 0.0 + mean_position to the position data in case 1st moment not specified
+    result = merge_nnls_based!(rng, mnnls_pos, particles[1], pia, 1, 1; w_threshold=1e-12)
+    @test result == 1
+    s1 = pia.indexer[1,1].start1
+    e1 = pia.indexer[1,1].end1
+    for i in 1:s1:e1
+        @test abs(particles[1][i].x[3] - mnnls_pos.x0[3]) <= eps()
+    end
+
+    if pia.indexer[1,1].n_group2 > 0
+        s2 = pia.indexer[1,1].start2
+        e2 = pia.indexer[1,1].end2
+        for i in 1:s2:e2
+            @test abs(particles[1][i].x[3] - mnnls_pos.x0[3]) <= eps()
+        end
+    end
 end

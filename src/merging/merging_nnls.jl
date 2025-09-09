@@ -979,9 +979,9 @@ the particles with the post-merge ones and delete any extraneous particles.
 * `lhs_ncols`: the number of columns in the LHS matrix
 * `lhs_matrix`: the LHS matrix of the NNLS system
 * `max_err`: maximum allowed value of the residual of the NNLS system
-* `threshold`: the value of the computational weight below which particles are discarded
+* `w_threshold`: the value of the computational weight below which particles are discarded
 """
-function compute_post_merge_particles_nnls!(nnls_merging, particles, pia, cell, species, lhs_ncols, lhs_matrix, max_err, threshold)
+function compute_post_merge_particles_nnls!(nnls_merging, particles, pia, cell, species, lhs_ncols, lhs_matrix, max_err, w_threshold)
 
     if nnls_merging.work.rnorm > max_err
         return -1
@@ -990,7 +990,7 @@ function compute_post_merge_particles_nnls!(nnls_merging, particles, pia, cell, 
     nonzero = 0
     non_discarded_weight = 0.0
     @inbounds for i in 1:lhs_ncols
-        if nnls_merging.work.x[i] > threshold
+        if nnls_merging.work.x[i] > w_threshold
             nonzero += 1
             non_discarded_weight += nnls_merging.work.x[i]
         end
@@ -1012,7 +1012,7 @@ function compute_post_merge_particles_nnls!(nnls_merging, particles, pia, cell, 
     # row 3 are the vy components (Vy conservation)
     # row 4 are the vz components (Vz conservation)
     @inbounds for j in 1:lhs_ncols
-        if nnls_merging.work.x[j] > threshold
+        if nnls_merging.work.x[j] > w_threshold
             i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
             curr_particle_index += 1
             particles[i].w = nnls_merging.work.x[j] * scale_factor
@@ -1085,11 +1085,11 @@ is used instead and also multiplied by the variance multiplier.
 * `v_multipliers`: the multipliers for the velocity variances of the particles to add aditional particles to the system
 * `iteration_mult`: the number by which the number of columns of the NNLS system matrix is multiplied, this gives the maximum
     number of iterations of the NNLS algorithm
-* `threshold`: any particles with weight smaller than this value will be discarded (and the weight of the remaining particles re-scaled)
+* `w_threshold`: any particles with weight smaller than this value will be discarded (and the weight of the remaining particles re-scaled)
 
 # Returns
 If the residual exceeds `max_err` or
-the number of non-zero (or smaller than `threshold`) elements in the solution vector is equal to the original number of particles,
+the number of non-zero (or smaller than `w_threshold`) elements in the solution vector is equal to the original number of particles,
 `-1` is returned to signify a failure of the merging algorithm.
 
 # References
@@ -1098,7 +1098,7 @@ the number of non-zero (or smaller than `threshold`) elements in the solution ve
 """
 function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species;
                            vref=1.0, scaling=:variance,
-                           n_rand_pairs=0, max_err=1e-11, centered_at_mean=true, v_multipliers=[0.5, 1.0], iteration_mult=2, threshold=0.0)
+                           n_rand_pairs=0, max_err=1e-11, centered_at_mean=true, v_multipliers=[0.5, 1.0], iteration_mult=2, w_threshold=0.0)
 
     # create LHS matrix
     n_add = centered_at_mean ? 1 : 0
@@ -1119,7 +1119,7 @@ function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species;
     load!(nnls_merging.work, lhs_matrix, nnls_merging.rhs_vector)
     solve!(nnls_merging.work, iteration_mult * size(lhs_matrix, 2))
 
-    return compute_post_merge_particles_nnls!(nnls_merging, particles, pia, cell, species, lhs_ncols, lhs_matrix, max_err, threshold)
+    return compute_post_merge_particles_nnls!(nnls_merging, particles, pia, cell, species, lhs_ncols, lhs_matrix, max_err, w_threshold)
 end
 
 """
@@ -1176,11 +1176,11 @@ the NNLS matrix and RHS corresponding to conservation of electron-neutral collis
 * `v_multipliers`: the multipliers for the velocity variances of the particles to add aditional particles to the system
 * `iteration_mult`: the number by which the number of columns of the NNLS system matrix is multiplied, this gives the maximum
     number of iterations of the NNLS algorithm
-* `threshold`: any particles with weight smaller than this value will be discarded (and the weight of the remaining particles re-scaled)
+* `w_threshold`: any particles with weight smaller than this value will be discarded (and the weight of the remaining particles re-scaled)
 
 # Returns
 If the residual exceeds `max_err` or
-the number of non-zero (or smaller than `threshold`) elements in the solution vector is equal to the original number of particles,
+the number of non-zero (or smaller than `w_threshold`) elements in the solution vector is equal to the original number of particles,
 `-1` is returned to signify a failure of the merging algorithm.
 
 # References
@@ -1192,7 +1192,7 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging,
                                            particles, pia, cell, species, neutral_species_index,
                                            ref_cs_elatic, ref_cs_ion; vref=1.0, scaling=:variance,
                                            n_rand_pairs=0, max_err=1e-11,
-                                           centered_at_mean=true, v_multipliers=[0.5, 1.0], iteration_mult=2, threshold=0.0)
+                                           centered_at_mean=true, v_multipliers=[0.5, 1.0], iteration_mult=2, w_threshold=0.0)
 
     # create LHS matrix
     n_add = centered_at_mean ? 1 : 0
@@ -1217,7 +1217,7 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging,
     load!(nnls_merging.work, lhs_matrix, nnls_merging.rhs_vector)
     solve!(nnls_merging.work, iteration_mult * size(lhs_matrix, 2))
 
-    return compute_post_merge_particles_nnls!(nnls_merging, particles, pia, cell, species, lhs_ncols, lhs_matrix, max_err, threshold)
+    return compute_post_merge_particles_nnls!(nnls_merging, particles, pia, cell, species, lhs_ncols, lhs_matrix, max_err, w_threshold)
 end
 
 end
