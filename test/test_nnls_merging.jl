@@ -386,14 +386,6 @@
     @test abs(new_w - tw) < 4.5e-15
     @test maximum(abs.(new_v - v_mean)) < 1e-15
     @test maximum(abs.(new_x - x_mean)) < 1e-15
-    println(new_x, ", ", x_mean)
-    # mnnls_no_pos = NNLSMerge([], 30)
 
-    # lhs_matrix = zeros(mnnls3.n_moments_vel, lhs_ncols)
-
-    # particles = [create_particles4()]
-    # pia = ParticleIndexerArray(length(particles[1]))
-
-    # Merzbild.compute_lhs_and_rhs!(mnnls3, lhs_matrix,
-    #                               particles[1], pia, 1, 1)
+    
 end

@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.7.2
+* Added `threshold` keyword argument to NNLS merging to discard particles with very small weights
+* NNLS merging now also accepts a list of spatial moments to preserve (requires explicitly conserving 1-st order spatial moments, otherwise
+    the corresponding coordinates are set to 0)
+
 ## v0.7.1
 * More use of Muladd in a few places
 * Roulette merge added (`merge_roulette!`)
