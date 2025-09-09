@@ -61,9 +61,6 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     # create and estimate collision factors
     collision_factors = create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum)
 
-
-    compute_props!(particles, pia, species_data, phys_props)
-
     oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
     for cell in 1:grid.n_cells
