@@ -538,7 +538,9 @@ function compute_lhs_and_rhs!(nnls_merging, lhs_matrix,
         end
     end
 
-    nnls_merging.rhs_vector /= nnls_merging.w_total
+    for i in 1:nnls_merging.n_moments_vel+nnls_merging.n_moments_pos
+        nnls_merging.rhs_vector[i] /= nnls_merging.w_total
+    end
 
     nnls_merging.Ex /= nnls_merging.w_total
     nnls_merging.Ey /= nnls_merging.w_total
@@ -645,7 +647,9 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging, lhs_matrix,
         end
     end
 
-    nnls_merging.rhs_vector /= nnls_merging.w_total
+    for i in 1:nnls_merging.n_moments_vel+2+nnls_merging.n_moments_pos
+        nnls_merging.rhs_vector[i] /= nnls_merging.w_total
+    end
 
     nnls_merging.Ex /= nnls_merging.w_total
     nnls_merging.Ey /= nnls_merging.w_total
