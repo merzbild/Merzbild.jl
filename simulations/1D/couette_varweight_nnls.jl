@@ -84,8 +84,10 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     # conserve center of mass and variance in x direction
     pos_moments = [[1,0,0],[2,0,0]]
 
-    @timeit "NNLSinit" mnnls = NNLSMerge(mim, merge_threshold; multi_index_moments_pos=pos_moments)
-    @timeit "NNLSinit" mnnls_backup = NNLSMerge(mim_backup, merge_threshold; multi_index_moments_pos=pos_moments)
+    init_np = merge_threshold + 17
+    matrix_ncol_nprealloc = 25
+    @timeit "NNLSinit" mnnls = NNLSMerge(mim, init_np; multi_index_moments_pos=pos_moments, matrix_ncol_nprealloc=matrix_ncol_nprealloc)
+    @timeit "NNLSinit" mnnls_backup = NNLSMerge(mim_backup, init_np; multi_index_moments_pos=pos_moments, matrix_ncol_nprealloc=matrix_ncol_nprealloc)
 
     println("# of preserved moments: ", length(mnnls.rhs_vector), " ", length(mnnls_backup.rhs_vector))
 
@@ -122,10 +124,10 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
                                    collision_data, interaction_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
 
             if pia.indexer[cell,1].n_local > merge_threshold
-                @timeit "merge NNLS" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1; v_multipliers=[0.25, 0.5, 1.0], w_threshold=1e-12)
+                nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1; v_multipliers=[0.25, 0.5, 1.0], w_threshold=1e-12)
     
                 if nnls_success_flag == -1
-                    @timeit "merge NNLS backup" merge_nnls_based!(rng, mnnls_backup, particles[1], pia, cell, 1; v_multipliers=[0.25, 0.5, 1.0], w_threshold=1e-12)
+                    @timeit "merge NNLS backup" nnls_success_flag = merge_nnls_based!(rng, mnnls_backup, particles[1], pia, cell, 1; v_multipliers=[0.25, 0.5, 1.0], w_threshold=1e-12)
                 end
     
                 if nnls_success_flag == -1
@@ -174,5 +176,5 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
 end
 
 # run(1234, 300.0, 500.0, 5e-4, 5e22, 1000, 250, 150, 100, 2.59e-9, 1000, 5000, 14000)
-run(1234, 300.0, 500.0, 5e-4, 5e22, 50, 250, 120, 85, 6, 4, 2.59e-9, 1000, 20000, 14000)
+run(1234, 300.0, 500.0, 5e-4, 5e22, 50, 250, 120, 85, 6, 4, 2.59e-9, 1000, 10000, 14000)
 # run(1234, 300.0, 500.0, 5e-4, 5e22, 8, 200, 20, 16, 1e-1, 1000, 1, 14000)
