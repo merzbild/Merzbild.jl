@@ -1235,7 +1235,7 @@ function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species;
 
     nnls_merging.work[indexer].Qb .= nnls_merging.rhs_vector
     # load!(nnls_merging.work, nnls_merging.work[indexer].QA, nnls_merging.rhs_vector)
-    @timeit "solve" solve!(nnls_merging.work[indexer], iteration_mult * size(nnls_merging.work[indexer].QA, 2))
+    @timeit "solve" solve!(nnls_merging.work[indexer], iteration_mult * size(nnls_merging.work[indexer].QA, 2), 1e-14)
     # exit()
     @timeit "postmerge" return compute_post_merge_particles_nnls!(nnls_merging, particles, pia, cell, species, lhs_ncols, lhs_matrix,
                                                                   max_err, w_threshold, indexer, column_norms)
