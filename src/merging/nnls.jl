@@ -500,8 +500,8 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
                 # AND MOVED FROM SET P TO SET Z.
                 allfeasible = true
                 @inbounds for jji in Base.OneTo(nsetp)
-                    jj = jji
-                    i = idx[jj]
+                    # jj = jji
+                    i = idx[jji]
                     if x[i] <= 0
                         allfeasible = false
                         break
@@ -533,7 +533,7 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
     # ******  END OF MAIN LOOP  ******
     # COME TO HERE FOR TERMINATION.
     # COMPUTE THE NORM OF THE FINAL RESIDUAL VECTOR.
-    println("ITERATION COUNT $iter")
+    # println("ITERATION COUNT $iter")
     sm = zero(T)
     if nsetp < m
         for i in (nsetp + 1):m

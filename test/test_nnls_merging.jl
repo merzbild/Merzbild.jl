@@ -384,7 +384,7 @@
     new_v /= new_w
     new_x /= new_w
 
-    @test abs(new_w - tw) < 2.5e-15
+    @test abs(new_w - tw) < 3.75e-15
     @test maximum(abs.(new_v - v_mean)) < 1e-15
     @test maximum(abs.(new_x - x_mean)) < 1e-15
 

@@ -28,6 +28,7 @@ Struct for keeping track of merging-related quantities for NNLS-based merging.
 * `scalex`: value used to scale the x position of particles
 * `scaley`: value used to scale the y position of particles
 * `scalez`: value used to scale the z position of particles
+* `n_total_conserved`: total number of moments conserved
 * `n_moments_vel`: number of velocity moments to preserve
 * `rhs_vector`: vector of computed moments
 * `residual`: residual of solution
@@ -71,6 +72,7 @@ mutable struct NNLSMerge
     scaley::Float64
     scalez::Float64
 
+    n_total_conserved::Int32
     n_moments_vel::Int32
     rhs_vector::Vector{Float64}
     mim::Vector{Vector{Int32}}  # mult-index moments
@@ -173,6 +175,7 @@ mutable struct NNLSMerge
                    0.0, 0.0,  # min max vz
                    0.0, 0.0, 0.0,  # scale v
                    0.0, 0.0, 0.0,  # scale x
+                   n_total_conserved,
                    length(base_moments),
                    zeros(n_total_conserved),
                    base_moments, tot_order,
@@ -993,8 +996,12 @@ end
 """
 function scale_columns!(lhs_matrix, lhs_ncols, column_norms)
     m = size(lhs_matrix, 1)
-    for i in 1:lhs_ncols
-        nn = norm(lhs_matrix[:,i], 2)
+    @inbounds for i in 1:lhs_ncols
+        nn = 0.0
+        for j in 1:m
+            nn = nn + lhs_matrix[j,i] * lhs_matrix[j,i]
+        end
+        nn = sqrt(nn)
         nn = nn > 1e-15 ? nn : 1.0
         column_norms[i] = 1.0 / nn
         for j in 1:m
@@ -1054,22 +1061,24 @@ the particles with the post-merge ones and delete any extraneous particles.
 * `w_threshold`: the relative (w.r.t the total computational weight of the particles being merge) value of the computational weight below which particles are discarded
 * `work_index`: the index of the `NNLSWorkspace` used to solve the NNLS system
 """
-function compute_post_merge_particles_nnls!(nnls_merging, particles, pia, cell, species, lhs_ncols, lhs_matrix, max_err, w_threshold, work_index, column_norms)
-
-    if nnls_merging.work[work_index].rnorm > max_err
+function compute_post_merge_particles_nnls!(nnls_merging, x::Vector{Float64}, particles, pia, cell, species, lhs_ncols, lhs_matrix, max_err, w_threshold, work_index, column_norms)
+    @inbounds if nnls_merging.work[work_index].rnorm > max_err
         return -1
     end
+
+    # @inbounds x = nnls_merging.work[work_index].x
 
     nonzero = 0
     non_discarded_weight = 0.0
     @inbounds for i in 1:lhs_ncols
-        nnls_merging.work[work_index].x[i] = nnls_merging.work[work_index].x[i] * column_norms[i]
+        x[i] = x[i] * column_norms[i]
         # w =  # * column_norms[i]
-        if nnls_merging.work[work_index].x[i] > w_threshold
+        if x[i] > w_threshold
             nonzero += 1
-            non_discarded_weight += nnls_merging.work[work_index].x[i]
+            non_discarded_weight += x[i]
         end
     end
+    # println("ndw $al $(typeof(x)) $(typeof(non_discarded_weight)) $(typeof(column_norms)) $(w_threshold)")
 
     @inbounds if nonzero >= pia.indexer[cell, species].n_local
         return -1
@@ -1078,8 +1087,9 @@ function compute_post_merge_particles_nnls!(nnls_merging, particles, pia, cell, 
     # sum(non-discared elements in x) should be 1.0
     # nnls_merging.work.x = nnls_merging.work.x / sum(nnls_merging.work.x)
     # and we also scale back to the original weight
-    scale_factor = nnls_merging.w_total / non_discarded_weight
-
+    # al = @allocated scale_factor = nnls_merging.w_total / non_discarded_weight
+    nnls_merging.w_total = nnls_merging.w_total / non_discarded_weight
+    
     curr_particle_index = 0
 
     # lhs matrix has row 1 of ones (mass conservation)
@@ -1087,19 +1097,19 @@ function compute_post_merge_particles_nnls!(nnls_merging, particles, pia, cell, 
     # row 3 are the vy components (Vy conservation)
     # row 4 are the vz components (Vz conservation)
     @inbounds for j in 1:lhs_ncols
-        if nnls_merging.work[work_index].x[j] > w_threshold
+        if x[j] > w_threshold
             i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
             curr_particle_index += 1
-            particles[i].w = nnls_merging.work[work_index].x[j] * scale_factor# * column_norms[j]
+            particles[i].w = x[j] * nnls_merging.w_total# * column_norms[j]
             particles[i].v = SVector{3, Float64}(nnls_merging.v0[1] + lhs_matrix[2, j] * nnls_merging.scalevx,
                                                  nnls_merging.v0[2] + lhs_matrix[3, j] * nnls_merging.scalevy,
                                                  nnls_merging.v0[3] + lhs_matrix[4, j] * nnls_merging.scalevz)
+            
+            px = nnls_merging.pos_i_x > 0.0 ? lhs_matrix[nnls_merging.n_moments_vel + nnls_merging.pos_i_x, j] * nnls_merging.scalex : 0.0
+            py = nnls_merging.pos_i_y > 0.0 ? lhs_matrix[nnls_merging.n_moments_vel + nnls_merging.pos_i_y, j] * nnls_merging.scaley : 0.0
+            pz = nnls_merging.pos_i_z > 0.0 ? lhs_matrix[nnls_merging.n_moments_vel + nnls_merging.pos_i_z, j] * nnls_merging.scalez : 0.0
 
-            x = nnls_merging.pos_i_x > 0 ? lhs_matrix[nnls_merging.n_moments_vel + nnls_merging.pos_i_x, j] * nnls_merging.scalex : 0.0
-            y = nnls_merging.pos_i_y > 0 ? lhs_matrix[nnls_merging.n_moments_vel + nnls_merging.pos_i_y, j] * nnls_merging.scaley : 0.0
-            z = nnls_merging.pos_i_z > 0 ? lhs_matrix[nnls_merging.n_moments_vel + nnls_merging.pos_i_z, j] * nnls_merging.scalez : 0.0
-
-            particles[i].x = SVector{3,Float64}(nnls_merging.x0[1] + x, nnls_merging.x0[2] + y, nnls_merging.x0[3] + z)
+            particles[i].x = SVector{3,Float64}(nnls_merging.x0[1] + px, nnls_merging.x0[2] + py, nnls_merging.x0[3] + pz)
         end
     end
 
@@ -1204,9 +1214,9 @@ function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species;
     nnls_merging.inv_vref = 1.0 / vref
 
     # create LHS matrix and fill RHS vector using existing particles
-    @timeit "LHS/RHS" col_index = compute_lhs_and_rhs!(nnls_merging, nnls_merging.work[indexer].QA, particles, pia, cell, species)
+    @timeit "LHS-RHS" col_index = compute_lhs_and_rhs!(nnls_merging, nnls_merging.work[indexer].QA, particles, pia, cell, species)
     # and add more columns
-    @timeit "LHS+" compute_lhs_particles_additional!(rng, col_index, nnls_merging, nnls_merging.work[indexer].QA,
+    @timeit "LHS-RHS+" compute_lhs_particles_additional!(rng, col_index, nnls_merging, nnls_merging.work[indexer].QA,
                                       particles, pia, cell, species, n_rand_pairs,
                                       centered_at_mean, v_multipliers)
 
@@ -1216,9 +1226,14 @@ function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species;
 
     @timeit "scale" scale_lhs_rhs!(nnls_merging, nnls_merging.work[indexer].QA, scaling, lhs_ncols)
 
-    lhs_matrix .= nnls_merging.work[indexer].QA
+    @timeit "copy A to LHS" lhs_matrix .= nnls_merging.work[indexer].QA
+    # @inbounds for i in 1:nnls_merging.n_total_conserved
+    #     for j in 1:lhs_ncols
+    #         lhs_matrix[i,j] = nnls_merging.work[indexer].QA[i,j]
+    #     end
+    # end
 
-    scale_columns!(nnls_merging.work[indexer].QA, lhs_ncols, column_norms)
+    @timeit "scale columns" scale_columns!(nnls_merging.work[indexer].QA, lhs_ncols, column_norms)
     # println(column_norms)
     # maxnorm = 0.0
     # for i in 1:lhs_ncols
@@ -1237,8 +1252,8 @@ function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species;
     # load!(nnls_merging.work, nnls_merging.work[indexer].QA, nnls_merging.rhs_vector)
     @timeit "solve" solve!(nnls_merging.work[indexer], iteration_mult * size(nnls_merging.work[indexer].QA, 2), 1e-14)
     # exit()
-    @timeit "postmerge" return compute_post_merge_particles_nnls!(nnls_merging, particles, pia, cell, species, lhs_ncols, lhs_matrix,
-                                                                  max_err, w_threshold, indexer, column_norms)
+    return compute_post_merge_particles_nnls!(nnls_merging, nnls_merging.work[indexer].x, particles, pia, cell, species, lhs_ncols, lhs_matrix,
+                                                             max_err, w_threshold, indexer, column_norms)
 end
 
 """
