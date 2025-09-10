@@ -497,4 +497,35 @@
             @test abs(particles[1][i].x[3] - mnnls_pos.x0[3]) <= eps()
         end
     end
+
+    mnnls_pos = NNLSMerge(add_vel_moments, 25; multi_index_moments_pos=pos_moments, matrix_ncol_nprealloc=10)
+    @test length(mnnls_pos.lhs_matrices) == 11
+    @test length(mnnls_pos.work) == 12
+    @test mnnls_pos.lhs_matrix_ncols_start == 25
+    @test mnnls_pos.lhs_matrix_ncols_end == 35
+
+    for i in 25:35
+        @test size(mnnls_pos.lhs_matrices[i-25+1],2) == i
+        @test size(mnnls_pos.work[i-25+1].QA,2) == i
+
+        @test size(mnnls_pos.work[i-25+1].x) == (i,)
+        @test size(mnnls_pos.work[i-25+1].w) == (i,)
+        @test size(mnnls_pos.work[i-25+1].idx) == (i,)
+    end
+
+    result = merge_nnls_based!(rng, mnnls_pos, particles[1], pia, 1, 1; w_threshold=1e-12)
+    @test result == 1
+    s1 = pia.indexer[1,1].start1
+    e1 = pia.indexer[1,1].end1
+    for i in 1:s1:e1
+        @test abs(particles[1][i].x[3] - mnnls_pos.x0[3]) <= eps()
+    end
+
+    if pia.indexer[1,1].n_group2 > 0
+        s2 = pia.indexer[1,1].start2
+        e2 = pia.indexer[1,1].end2
+        for i in 1:s2:e2
+            @test abs(particles[1][i].x[3] - mnnls_pos.x0[3]) <= eps()
+        end
+    end
 end
