@@ -39,7 +39,10 @@ Struct for keeping track of merging-related quantities for NNLS-based merging.
 * `pos_i_x`: index of the spatial moment corresponding to preservation of the center of mass in the x direction
 * `pos_i_y`: index of the spatial moment corresponding to preservation of the center of mass in the y direction
 * `pos_i_z`: index of the spatial moment corresponding to preservation of the center of mass in the z direction
-* `work`: `NNLSWorkspace` instance
+* `lhs_matrices`: Vector of matrices for the LHS of the NNLS system
+* `lhs_matrix_ncols_start`: the number of columns in the first matrix in `lhs_matrices`
+* `lhs_matrix_ncols_end`: the number of columns in the last matrix in `lhs_matrices`
+* `work`: Vector of `NNLSWorkspace` instances
 """
 mutable struct NNLSMerge
     v0::SVector{3,Float64}
@@ -87,7 +90,7 @@ mutable struct NNLSMerge
     work::Vector{NNLSWorkspace}
 
     @doc """
-        NNLSMerge(multi_index_moments, init_np; rate_preserving=false, multi_index_moments_pos=[])
+        NNLSMerge(multi_index_moments, init_np; rate_preserving=false, multi_index_moments_pos=[], matrix_ncol_nprealloc=0)
 
     Create NNLS-based merging. Mass, momentum, directional energy are always conserved:
     if not in the list `multi_index_moments` of moments to preserve, the corresponding
@@ -97,6 +100,13 @@ mutable struct NNLSMerge
     If `multi_index_moments_pos` is non-empty, it is currently left to the user to include any relevant 1st order moments
     (corresponding center of mass conservation) i.e. `(1, 0, 0)`, `(0, 1, 0)`, `(0, 0, 1)`; otherwise
     the corresponding spatial moments including higher-order ones will not be conserved.
+    By default, a single `NNLSWorkspace` is pre-allocated for the system, and no LHS matrices are pre-allocated.
+    The number of columns in the LHS matrix is the number of particles to be merged (+ any fictitious particles);
+    so it cannot be fixed in advance. By setting `matrix_ncol_nprealloc` to a value larger than 0,
+    one can pre-allocate a range of matrices and
+    corresponding workspaces with a fixed number of columns spanning `[init_np, init_np+matrix_ncol_nprealloc]`.
+    In this case, `matrix_ncol_nprealloc+1` `NNLSWorkspace` instances are pre-allocated, with the last one being used
+    in case the number of columns is not in the range (and the LHS matrix is constructed on the fly).
 
     # Positional arguments
     * `multi_index_moments`: vector of mixed moments to preserve of the form `[(i1, j1, k1), (i2, j2, k2), ...]``
@@ -105,6 +115,7 @@ mutable struct NNLSMerge
     Keyword arguments:
     * `rate_preserving`: used for rate-preserving merging of electrons, preserves approximate elastic collision and ionization rates
     * `multi_index_moments_pos`: list of spatial moments to preserve
+    * `matrix_ncol_nprealloc`: number of LHS matrices and NNLS workspaces with a fixed number of columns to pre-allocate
     """
     function NNLSMerge(multi_index_moments, init_np; rate_preserving=false, multi_index_moments_pos=[], matrix_ncol_nprealloc=0)
         add_length = 0
@@ -1150,7 +1161,12 @@ function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species;
     if (lhs_ncols > nnls_merging.lhs_matrix_ncols_end) || (lhs_ncols < nnls_merging.lhs_matrix_ncols_start)
         indexer = nnls_merging.lhs_matrix_ncols_end - nnls_merging.lhs_matrix_ncols_start + 2
 
-        # TODO: Fix
+        # we either have pre-allocation [1,2,...[Workspace]]
+        # [1,2,Workspace]
+        # [Workspace] - we don't pre-allocate if range is exactly 1 particle
+        if indexer == 2
+            indexer = 1
+        end
          
         nnls_merging.work[indexer].QA = zeros(nnls_merging.n_moments_vel + nnls_merging.n_moments_pos, lhs_ncols)
         lhs_matrix = zeros(nnls_merging.n_moments_vel + nnls_merging.n_moments_pos, lhs_ncols)
@@ -1267,6 +1283,14 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging,
 
     if (lhs_ncols > nnls_merging.lhs_matrix_ncols_end) || (lhs_ncols < nnls_merging.lhs_matrix_ncols_start)
         indexer = nnls_merging.lhs_matrix_ncols_end - nnls_merging.lhs_matrix_ncols_start + 2
+
+        # we either have pre-allocation [1,2,...[Workspace]]
+        # [1,2,Workspace]
+        # [Workspace] - we don't pre-allocate if range is exactly 1 particle
+        if indexer == 2
+            indexer = 1
+        end
+
         nnls_merging.work[indexer].QA = zeros(nnls_merging.n_moments_vel + nnls_merging.n_moments_pos, lhs_ncols)
         lhs_matrix = zeros(nnls_merging.n_moments_vel + nnls_merging.n_moments_pos, lhs_ncols)
         resize!(nnls_merging.work[indexer].x, lhs_ncols)

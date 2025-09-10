@@ -255,7 +255,7 @@
     rhs_vec_2 = copy(mnnls3.rhs_vector)
     mnnls3.vref = 2.0
     mnnls3.inv_vref = 1.0 / mnnls3.vref
-    Merzbild.scale_lhs_rhs!(mnnls3, lhs_matrix, :vref)
+    Merzbild.scale_lhs_rhs!(mnnls3, lhs_matrix, :vref, size(lhs_matrix, 2))
 
     @test abs(mnnls3.scalevx - 2.0) < 2*eps()
     @test abs(mnnls3.scalevy - 2.0) < 2*eps()
@@ -286,7 +286,7 @@
     mnnls3.Ey = 3.0
     mnnls3.Ez = 4.0
 
-    Merzbild.scale_lhs_rhs!(mnnls3, lhs_matrix, :variance)
+    Merzbild.scale_lhs_rhs!(mnnls3, lhs_matrix, :variance, size(lhs_matrix, 2))
 
     @test abs(rhs_vec_2[1] - mnnls3.rhs_vector[1]) < 2*eps()
     @test abs(rhs_vec_2[2] / 2.0 - mnnls3.rhs_vector[2]) < 2*eps()
@@ -471,8 +471,8 @@
     end
 
     # scaling of spatial moments also doesn't interfere with scaling of velocity moments
-    Merzbild.scale_lhs_rhs!(mnnls_pos, lhs_matrix_pos, :vref)
-    Merzbild.scale_lhs_rhs!(mnnls_no_pos, lhs_matrix_no_pos, :vref)
+    Merzbild.scale_lhs_rhs!(mnnls_pos, lhs_matrix_pos, :vref, size(lhs_matrix_pos, 2))
+    Merzbild.scale_lhs_rhs!(mnnls_no_pos, lhs_matrix_no_pos, :vref, size(lhs_matrix_no_pos, 2))
 
     @test maximum(abs.(mnnls_pos.rhs_vector[1:mnnls_pos.n_moments_vel] - mnnls_no_pos.rhs_vector)) < 2*eps()
     @test maximum(abs.(lhs_matrix_pos[1:mnnls_pos.n_moments_vel,:] - lhs_matrix_no_pos)) < 2*eps()
