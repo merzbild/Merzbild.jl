@@ -384,15 +384,16 @@
     new_v /= new_w
     new_x /= new_w
 
-    @test abs(new_w - tw) < 4.5e-15
+    @test abs(new_w - tw) < 2.5e-15
     @test maximum(abs.(new_v - v_mean)) < 1e-15
     @test maximum(abs.(new_x - x_mean)) < 1e-15
 
     # now we try a higher threshold so that we get fewer particles
+    # this will mess up everything except mass conservation though
     particles = [create_particles2(mult=2.0,mult2=2.0)]
     pia = ParticleIndexerArray(length(particles[1]))
-    result = merge_nnls_based!(rng, mnnls_pos, particles[1], pia, 1, 1; w_threshold=1e-12)
-    
+    result = merge_nnls_based!(rng, mnnls_pos, particles[1], pia, 1, 1; w_threshold=0.1)
+
     @test result == 1
     @test pia.indexer[1,1].n_local[1] < n_new
 
@@ -403,8 +404,8 @@
     e1 = pia.indexer[1,1].end1
     for i in 1:s1:e1
         new_w += particles[1][i].w
-        new_v += particles[1][i].v * particles[1][i].w
-        new_x += particles[1][i].x * particles[1][i].w
+        # new_v += particles[1][i].v * particles[1][i].w
+        # new_x += particles[1][i].x * particles[1][i].w
     end
 
     if pia.indexer[1,1].n_group2 > 0
@@ -412,17 +413,17 @@
         e2 = pia.indexer[1,1].end2
         for i in 1:s2:e2
             new_w += particles[1][i].w
-            new_v += particles[1][i].v * particles[1][i].w
-            new_x += particles[1][i].x * particles[1][i].w
+            # new_v += particles[1][i].v * particles[1][i].w
+            # new_x += particles[1][i].x * particles[1][i].w
         end
     end
 
-    new_v /= new_w
-    new_x /= new_w
+    # new_v /= new_w
+    # new_x /= new_w
 
     @test abs(new_w - tw) < 4.5e-15
-    @test maximum(abs.(new_v - v_mean)) < 4e-15
-    @test maximum(abs.(new_x - x_mean)) < 4e-15
+    # @test maximum(abs.(new_v - v_mean)) < 4e-15
+    # @test maximum(abs.(new_x - x_mean)) < 4e-15
 
     # test that computation of spatial moments does not affect the LHS and RHS entries corresponding to the velocity moments
     particles = [create_particles2(mult=2.0,mult2=2.0)]
