@@ -10,7 +10,7 @@
 
 # Code taken from https://github.com/rdeits/NNLS.jl
 # This is a cut-down version of the NNLS.jl code as provided above, removing anything related to modules and QP
-
+@muladd begin
 using LinearAlgebra
 
 """
@@ -69,13 +69,13 @@ function apply_householder!(u::AbstractVector{T}, up::T, c::AbstractVector{T}) w
 
         @inbounds sm = c[1] * up
         @inbounds for i in 2:m
-            sm += c[i] * u[i]
+            sm = sm + c[i] * u[i]
         end
         if sm != 0
             sm *= b
-            @inbounds c[1] += sm * up
+            @inbounds c[1] = c[1] + sm * up
             @inbounds for i in 2:m
-                c[i] += sm * u[i]
+                c[i] = c[i] + sm * u[i]
             end
         end
     end
@@ -124,11 +124,11 @@ Charles L. Lawson and Richard J. Hanson at Jet Propulsion Laboratory
 Revised FEB 1995 to accompany reprinting of the book by SIAM.
 """
 function solve_triangular_system!(zz, A, idx, nsetp, jj)
-    @inbounds for l in 1:nsetp
+    @inbounds for l in Base.OneTo(nsetp)
         ip = nsetp + 1 - l
         if (l != 1)
             for ii in 1:ip
-                zz[ii] -= A[ii, jj] * zz[ip + 1]
+                zz[ii] = zz[ii] - A[ii, jj] * zz[ip + 1]
             end
         end
         jj = idx[ip]
@@ -220,7 +220,7 @@ allocating lots of memory elsewhere, so creating a new View is fine.
 This function looks type-unstable, but the isbitstype(T) test can be evaluated
 by the compiler, so the result is actually type-stable.
 """
-function fastview(parent::Array{T}, start_ind::Integer, len::Integer) where T
+@inline function fastview(parent::Array{T}, start_ind::Integer, len::Integer) where T
     if isbitstype(T)
         UnsafeVectorView(parent, start_ind, len)
     else
@@ -232,7 +232,7 @@ end
 Fallback for non-contiguous arrays, for which UnsafeVectorView does not make
 sense.
 """
-fastview(parent::AbstractArray, start_ind::Integer, len::Integer) = @view(parent[start_ind:(start_ind + len - 1)])
+@inline fastview(parent::AbstractArray, start_ind::Integer, len::Integer) = @view(parent[start_ind:(start_ind + len - 1)])
 
 @noinline function checkargs(work::NNLSWorkspace)
     m, n = size(work.QA)
@@ -243,10 +243,10 @@ fastview(parent::AbstractArray, start_ind::Integer, len::Integer) = @view(parent
     @assert size(work.idx) == (n,)
 end
 
-function largest_positive_dual(w::AbstractVector{T}, idx::AbstractVector{TI}, range) where {T, TI}
+function largest_positive_dual(w::AbstractVector{T}, idx::AbstractVector{TI}, s, e) where {T, TI}
     wmax = zero(T)
     izmax = zero(TI)
-    @inbounds for i in range
+    @inbounds for i in s:e
         j = idx[i]
         if w[j] > wmax
             wmax = w[j]
@@ -271,7 +271,7 @@ N-VECTOR, X, THAT SOLVES THE LEAST SQUARES PROBLEM
                  A * X = B  SUBJECT TO X .GE. 0
 """
 function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA, 2)), kkt_tol=1e-16) where {T, TI}
-    checkargs(work)
+    # checkargs(work)
 
     A = work.QA
     b = work.Qb
@@ -286,8 +286,14 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
     n = convert(TI, size(A, 2))
 
     iter = 0
-    x .= 0
-    idx .= 1:n
+    
+    for i in Base.OneTo(n)
+        x[i] = 0.0
+        idx[i] = i
+        w[i] = 0.0
+    end
+
+    # idx .= 1:n
 
     iz2 = n
     iz1 = one(TI)
@@ -314,14 +320,14 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
             idxi = idx[i]
             sm = zero(T)
             for l in (nsetp + 1):m
-                sm += A[l, idxi] * b[l]
+                sm = sm + A[l, idxi] * b[l]
             end
             w[idxi] = sm
         end
 
         @inbounds while true
             # FIND LARGEST POSITIVE W(J).
-            wmax, izmax = largest_positive_dual(w, idx, iz1:iz2)
+            wmax, izmax = largest_positive_dual(w, idx, iz1, iz2)
 
             # IF WMAX .LE. 0. GO TO TERMINATION.
             # THIS INDICATES SATISFACTION OF THE KUHN-TUCKER CONDITIONS.
@@ -338,7 +344,8 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
             # NEAR LINEAR DEPENDENCE.
             Asave = A[nsetp + 1, j]
             up = construct_householder!(
-                fastview(A, LinearIndices(A)[nsetp + 1, j], m - nsetp),
+                # fastview(A, LinearIndices(A)[nsetp + 1, j], m - nsetp),
+                fastview(A, nsetp + 1 + (j-1)*m, m - nsetp),
                 up)
             unorm::T = zero(T)
             @inbounds for l in 1:nsetp
@@ -350,9 +357,13 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
                 # COL J IS SUFFICIENTLY INDEPENDENT.  COPY B INTO ZZ, UPDATE ZZ
                 # AND SOLVE FOR ZTEST ( = PROPOSED NEW VALUE FOR X(J) ).
                 # println("copying b into zz")
-                zz .= b
+                @inbounds for iii in Base.OneTo(m)
+                    zz[iii] = b[iii]
+                end
+                # zz .= b
+                
                 apply_householder!(
-                    fastview(A, LinearIndices(A)[nsetp + 1, j], m - nsetp),
+                    fastview(A, nsetp + 1 + (j-1)*m, m - nsetp),
                     up,
                     fastview(zz, nsetp + 1, m - nsetp))
                 @inbounds ztest = zz[nsetp + 1] / A[nsetp + 1, j]
@@ -377,7 +388,9 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
         # SET Z TO SET P.    UPDATE B,  UPDATE INDICES,  APPLY HOUSEHOLDER
         # TRANSFORMATIONS TO COLS IN NEW SET Z,  ZERO SUBDIAGONAL ELTS IN
         # COL J,  SET W(J)=0.
-        b .= zz
+        @inbounds for iii in Base.OneTo(m)
+            b[iii] = zz[iii]
+        end
 
         @inbounds idx[iz] = idx[iz1]
         @inbounds idx[iz1] = j
@@ -388,9 +401,9 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
             @inbounds for jz in iz1:iz2
                 jj = idx[jz]
                 apply_householder!(
-                    fastview(A, LinearIndices(A)[nsetp, j], m - nsetp + 1),
+                    fastview(A, nsetp + (j-1)*m, m - nsetp + 1),
                     up,
-                    fastview(A, LinearIndices(A)[nsetp, jj], m - nsetp + 1))
+                    fastview(A, nsetp + (jj-1)*m, m - nsetp + 1))
             end
         end
 
@@ -500,7 +513,10 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
             end
 
             # COPY B( ) INTO ZZ( ).  THEN SOLVE AGAIN AND LOOP BACK.
-            zz .= b
+            # zz .= b
+            @inbounds for iii in Base.OneTo(m)
+                zz[iii] = b[iii]
+            end
             jj = solve_triangular_system!(zz, A, idx, nsetp, jj)
         end
         if terminated
@@ -541,4 +557,5 @@ function nnls(A::DenseMatrix{T}, b::DenseVector{T}, max_iter=(3 * size(A, 2))) w
     work = NNLSWorkspace(A, b)
     solve!(work, max_iter)
     work.x
+end
 end
