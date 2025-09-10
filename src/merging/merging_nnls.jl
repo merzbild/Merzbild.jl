@@ -1033,7 +1033,7 @@ the particles with the post-merge ones and delete any extraneous particles.
 * `lhs_matrix`: the LHS matrix of the NNLS system
 * `max_err`: maximum allowed value of the residual of the NNLS system
 * `w_threshold`: the relative (w.r.t the total computational weight of the particles being merge) value of the computational weight below which particles are discarded
-* `work_index`: TODO
+* `work_index`: the index of the `NNLSWorkspace` used to solve the NNLS system
 """
 function compute_post_merge_particles_nnls!(nnls_merging, particles, pia, cell, species, lhs_ncols, lhs_matrix, max_err, w_threshold, work_index)
 
