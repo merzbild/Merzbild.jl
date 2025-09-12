@@ -15,6 +15,10 @@
     val = 2.9
     @test Merzbild.binary_search(x, val) == 2
 
+    x = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    val = 5.5
+    @test Merzbild.binary_search(x, val) == 5
+
 
     x = [1.0, 3.0, 4.0, 5.0]
     weights = ones(length(x))
