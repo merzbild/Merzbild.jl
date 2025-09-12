@@ -529,4 +529,25 @@
             @test abs(particles[1][i].x[3] - mnnls_pos.x0[3]) <= eps()
         end
     end
+
+    particles = [create_particles2(mult=2.0,mult2=2.0)]
+    pia = ParticleIndexerArray(length(particles[1]))
+    result = merge_nnls_based!(rng, mnnls_pos, particles[1], pia, 1, 1; centered_at_mean=false, n_rand_pairs=3, w_threshold=1e-12)
+    @test result == 1
+    wtot = 0.0
+    s1 = pia.indexer[1,1].start1
+    e1 = pia.indexer[1,1].end1
+    for i in 1:s1:e1
+        wtot += particles[1][i].w
+    end
+
+    if pia.indexer[1,1].n_group2 > 0
+        s2 = pia.indexer[1,1].start2
+        e2 = pia.indexer[1,1].end2
+        for i in 1:s2:e2
+            wtot += particles[1][i].w
+        end
+    end
+
+    @test abs(new_w - tw) < 4.5e-15
 end
