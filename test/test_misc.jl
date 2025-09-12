@@ -12,7 +12,11 @@
     val = 0.9
     @test Merzbild.binary_search(x, val) == -1
 
-    x = [1, 3, 4, 5]
+    val = 2.9
+    @test Merzbild.binary_search(x, val) == 2
+
+
+    x = [1.0, 3.0, 4.0, 5.0]
     weights = ones(length(x))
     mymedian = Merzbild.weighted_percentile_interpolated(x, weights, 0.5)
     @test abs(mymedian - 3.0) < eps()
@@ -21,4 +25,13 @@
     weights = ones(length(x))
     mymedian = Merzbild.weighted_percentile_interpolated(x, weights, 0.5)
     @test abs(mymedian - 1.5) < eps()
+
+    @test Merzbild.weighted_median_with_interpolation([1.0, 1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0, 1.0]) == 1.0
+    @test Merzbild.weighted_median_with_interpolation([1.0, 2.0, 3.0, 4.0, 11.0], [10.0, 1.0, 1.0, 1.0, 1.0]) == 1.0
+    @test Merzbild.weighted_median_with_interpolation([2.0, 3.0, 4.0, 5.0], [1.0, 1.0, 1.0, 1.0]) == 3.5
+    
+    # does not recover correct median in this case
+    @test Merzbild.weighted_median_with_interpolation([2.0, 3.0, 4.0, 5.0, 6.0], [1.0, 1.0, 1.0, 1.0, 1.0]) == 3.5
+
+    @test abs(Merzbild.weighted_median_with_interpolation([6.0, 5.0, 4.0, 3.0, 1.0], [0.2, 0.1, 0.3, 0.2, 0.2]) - 3.6) < 2*eps()
 end

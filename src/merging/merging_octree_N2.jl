@@ -459,9 +459,9 @@ function compute_v_median!(octree, bs, be, particles)
     @inbounds vy_vec = [particles[octree.particle_indexes_sorted[i]].v[2] for i in bs:be]
     @inbounds vz_vec = [particles[octree.particle_indexes_sorted[i]].v[3] for i in bs:be]
 
-    octree.vel_middle = SVector{3, Float64}(weighted_percentile_interpolated(vx_vec, w_vec),
-                                            weighted_percentile_interpolated(vy_vec, w_vec),
-                                            weighted_percentile_interpolated(vz_vec, w_vec))                                  
+    octree.vel_middle = SVector{3, Float64}(weighted_median_with_interpolation(vx_vec, w_vec),
+                                            weighted_median_with_interpolation(vy_vec, w_vec),
+                                            weighted_median_with_interpolation(vz_vec, w_vec))                                  
 end
 
 function bin_bounds_recompute_and_v_mean!(octree, bin_id, bs, be, particles)
