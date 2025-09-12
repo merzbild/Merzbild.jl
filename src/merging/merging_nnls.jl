@@ -712,9 +712,10 @@ additional particles.
 function compute_lhs_particles_additional!(rng, col_index, nnls_merging, lhs_matrix,
                                            particles, pia, cell, species,
                                            n_rand_pairs, centered_at_mean, v_multipliers)
+    n_moms = nnls_merging.n_moments_vel
 
     if centered_at_mean
-        n_moms = nnls_merging.n_moments_vel
+        
         # a particle centered at local zero
         @inbounds for n_mom in 1:n_moms
             lhs_matrix[n_mom, col_index] = 0.0
@@ -815,9 +816,9 @@ function compute_lhs_particles_additional_rate_preserving!(rng, col_index, nnls_
                                            interaction, electron_neutral_interactions, computed_cs, 
                                            particles, pia, cell, species, neutral_species_index,
                                            n_rand_pairs, centered_at_mean, v_multipliers)
+    n_moms = nnls_merging.n_moments_vel
 
     if centered_at_mean      
-        n_moms = nnls_merging.n_moments_vel
         v0 = norm(nnls_merging.v0)
         # a particle centered at local zero
         @inbounds for n_mom in 1:n_moms
