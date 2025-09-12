@@ -65,4 +65,16 @@
     @test [1,2,0] in mim
     @test [1,1,1] in mim
     @test length(mim) == 10
+
+    matrix = [3.0 5.0 7.0; 4.0 12.0 24.0]
+    column_norms = [0.0, 0.0, 0.0]
+
+    Merzbild.scale_columns!(matrix, column_norms)
+
+    for i in 1:3
+        @test abs(norm(matrix[:,i], 2) - 1.0) < 2*eps()
+    end
+    @test abs(column_norms[1] - 1.0/5.0) < 2*eps()
+    @test abs(column_norms[2] - 1.0/13.0) < 2*eps()
+    @test abs(column_norms[3] - 1.0/25.0) < 2*eps()
 end
