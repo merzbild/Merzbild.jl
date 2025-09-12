@@ -435,10 +435,11 @@ during the next loop iteration.
 * `min_coll`: the minimum number of pairs to test
 * `n_loops`: the number of loops to perform (in each loop the number of collisions is computed using the
     estimated value of  ``(\\sigma g w)_{max}``)
+* `extend`: enum of `CSExtend` type that sets how out-of-range energy values are treated when computing cross-sections
 """
 function estimate_sigma_g_w_max_ntc_n_e!(rng, collision_factors, collision_data, interaction,
                                          n_e_interactions, n_e_cs, particles_n, particles_e,
-                                         pia, cell, species_n, species_e, Δt, V; min_coll=5, n_loops=3)
+                                         pia, cell, species_n, species_e, Δt, V; min_coll=5, n_loops=3, extend::CSExtend=CSExtendConstant)
     # compute ncoll
     # loop over particles
     # update sigma_g_w_max
@@ -471,7 +472,8 @@ function estimate_sigma_g_w_max_ntc_n_e!(rng, collision_factors, collision_data,
             @inbounds compute_g!(collision_data, particles_n[i], particles_e[k])
 
             if (collision_data.g > eps())
-                @inbounds collision_data.E_coll_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n)
+                @inbounds collision_data.E_coll_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n;
+                                                                             extend=extend)
                 @inbounds sigma_g_w_max = n_e_cs[species_n].cs_total * collision_data.g * max(particles_n[i].w, particles_e[k].w)
 
                 # update (σ g w)_max if needed
@@ -486,7 +488,7 @@ end
 """
     ntc_n_e!(rng, collision_factors, collision_data, interaction,
              n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion,
-             pia, cell, species_n, species_e, species_ion, Δt, V)
+             pia, cell, species_n, species_e, species_ion, Δt, V; extend=CSExtendConstant)
 
 Perform electron-neutral elastic scattering and electron-impact ionization collisions.
 
@@ -508,13 +510,16 @@ Perform electron-neutral elastic scattering and electron-impact ionization colli
 * `Δt`: timestep
 * `V`: cell volume
 
+# Keyword arguments
+* `extend`: enum of `CSExtend` type that sets how out-of-range energy values are treated when computing cross-sections
+
 # References
 * D.P. Schmidt, C.J. Rutland, A New Droplet Collision Algorithm.
     [J. Comput. Phys, 2000](https://doi.org/10.1006/jcph.2000.6568).
 """
 function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                   n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion,
-                  pia, cell, species_n, species_e, species_ion, Δt, V)
+                  pia, cell, species_n, species_e, species_ion, Δt, V; extend=CSExtendConstant)
     # no event splitting
     # compute ncoll
     # loop over particles
@@ -546,7 +551,8 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
 
         if (collision_data.g > eps())
 
-            @inbounds collision_data.E_coll_electron_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n)
+            @inbounds collision_data.E_coll_electron_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n;
+                                                                                  extend=extend)
             @inbounds sigma_g_w_max = get_cs_total(n_e_interactions, n_e_cs, species_n) * collision_data.g * max(particles_n[i].w, particles_e[k].w)
 
             # update (σ g w)_max if needed
@@ -586,7 +592,6 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                 # now we collide the 2 equal-weight particles
                 R = rand(rng, Float64)  # decide which process we do
 
-                # println(n_e_cs[species_n].prob_vec, ", ", n_e_cs[species_n].cs_total, ", ", n_e_cs[species_n].cs_elastic)
                 @inbounds if (R < n_e_cs[species_n].prob_vec[1])  # TODO: fix indexing! 
                     # elastic collision
                     @inbounds scatter_vhs!(rng, collision_data, interaction[species_n, species_e], particles_n[i], particles_e[k])
@@ -623,7 +628,7 @@ end
 """
     ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
              n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion,
-             pia, cell, species_n, species_e, species_ion, Δt, V)
+             pia, cell, species_n, species_e, species_ion, Δt, V; extend=CSExtendConstant)
 
 Perform electron-neutral elastic scattering and electron-impact ionization collisions
 using the event splitting method.
@@ -645,6 +650,9 @@ using the event splitting method.
 * `species_ion`: the index of the ion species
 * `Δt`: timestep
 * `V`: cell volume
+
+# Keyword arguments
+* `extend`: enum of `CSExtend` type that sets how out-of-range energy values are treated when computing cross-sections
 
 # References
 * G. Oblapenko, D. Goldstein, P. Varghese, C. Moore, Hedging direct simulation Monte Carlo bets via event splitting.
@@ -686,7 +694,8 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
 
         if (collision_data.g > eps())
 
-            @inbounds collision_data.E_coll_electron_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n)
+            @inbounds collision_data.E_coll_electron_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n;
+                                                                                  extend=extend)
             @inbounds sigma_g_w_max = get_cs_total(n_e_interactions, n_e_cs, species_n) * collision_data.g * max(particles_n[i].w, particles_e[k].w)
 
             # update (σ g w)_max if needed

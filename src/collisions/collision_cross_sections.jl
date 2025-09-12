@@ -51,6 +51,16 @@ Enum for various splittings of electron energy in electron-impact ionization rea
 @enum ElectronEnergySplit ElectronEnergySplitEqual=1 ElectronEnergySplitZeroE=2 # Tanh law
 
 """
+    CSExtend CSExtendConstant=1 CSExtendZero=2
+    
+Enum defining how to extend cross-sections in case energy is outside of tabulated range.
+# Possible values:
+* `CSContinueConstant`: continue with closest value in array
+* `CSContinueZero`: continue with zero
+"""
+@enum CSExtend CSExtendConstant=1 CSExtendZero=2
+
+"""
     Ionization
 
 Structure to hold data on an electron-impact ionization cross-section.
@@ -187,13 +197,13 @@ function binary_search(x, val)
     high = length(x)
     mid = 0
 
-    if val > x[high]
+    @inbounds if val > x[high]
         return 0
     elseif val < x[low]
         return -1
     end
  
-    while low <= high
+    @inbounds while low <= high
  
         mid = (high + low) ÷ 2
 
@@ -256,8 +266,8 @@ That is, given that `x[pos] < val < x[pos+1]`, we want to interpolate `y(val)` g
         return upper_limit
     end
 
-    alpha = (val - x[pos]) / (x[pos+1] - x[pos])
-    return alpha * y[pos+1] + (1.0 - alpha) * y[pos]
+    @inbounds alpha = (val - x[pos]) / (x[pos+1] - x[pos])
+    @inbounds return alpha * y[pos+1] + (1.0 - alpha) * y[pos]
 end
 
 
@@ -459,7 +469,7 @@ function load_electron_neutral_interactions(species_data, filename, databases, s
                         push!(elastic_cs_vector, ElasticScattering(load_elastic_data(xml_data[end][i][ii][jj]),
                                                                    scattering_laws[species.name]))
                     catch e
-                        throw(DataMissingException("No ionization data found for $(species.name) in DB $(databases[species.name])"))
+                        throw(DataMissingException("No scattering data found for $(species.name) in DB $(databases[species.name])"))
                     end
                     # TODO: Excitation Sink data loading!
 
@@ -569,7 +579,7 @@ and was used to construct the `ElectronNeutralInteractions` instance.
 # Returns
 The electron-neutral collision energy in eV.
 """
-function compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index)
+function compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index, extend::CSExtend)
     # the neutral_species_index is the absolute one (i.e. index in the list of all species)
     # this is used in the NNLS merging approach
     E_coll_electron_eV = 0.5 * g^2 * e_mass_div_electron_volt  # convert to eV
@@ -579,11 +589,20 @@ function compute_cross_sections_only!(computed_cs, interaction, g, electron_neut
 
     computed_cs[i_neutral].n_excitations = electron_neutral_interactions.excitation_sink[i_neutral].n_reactions
 
-    computed_cs[i_neutral].cs_elastic = compute_tabulated_cs_constant_continuation(electron_neutral_interactions.elastic[i_neutral].data, E_coll)
-    computed_cs[i_neutral].cs_ionization = compute_tabulated_cs_constant_continuation(electron_neutral_interactions.ionization[i_neutral].data, E_coll_electron_eV)
+    if extend == CSExtendConstant
+        computed_cs[i_neutral].cs_elastic = compute_tabulated_cs_constant_continuation(electron_neutral_interactions.elastic[i_neutral].data, E_coll)
+        computed_cs[i_neutral].cs_ionization = compute_tabulated_cs_constant_continuation(electron_neutral_interactions.ionization[i_neutral].data, E_coll_electron_eV)
 
-    for i in 1:computed_cs[i_neutral].n_excitations
-        computed_cs[i_neutral].cs_excitation[i] = compute_tabulated_cs_constant_continuation(electron_neutral_interactions.excitation_sink[i_neutral].data, E_coll_electron_eV)
+        for i in 1:computed_cs[i_neutral].n_excitations
+            computed_cs[i_neutral].cs_excitation[i] = compute_tabulated_cs_constant_continuation(electron_neutral_interactions.excitation_sink[i_neutral].data, E_coll_electron_eV)
+        end
+    else
+        computed_cs[i_neutral].cs_elastic = compute_tabulated_cs_zero_continuation(electron_neutral_interactions.elastic[i_neutral].data, E_coll)
+        computed_cs[i_neutral].cs_ionization = compute_tabulated_cs_zero_continuation(electron_neutral_interactions.ionization[i_neutral].data, E_coll_electron_eV)
+
+        for i in 1:computed_cs[i_neutral].n_excitations
+            computed_cs[i_neutral].cs_excitation[i] = compute_tabulated_cs_zero_continuation(electron_neutral_interactions.excitation_sink[i_neutral].data, E_coll_electron_eV)
+        end
     end
 
     return E_coll_electron_eV
@@ -591,13 +610,14 @@ end
 
 
 """
-    compute_cross_sections!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index)
+    compute_cross_sections!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index; extend::CSExtend=CSExtendConstant)
 
 Compute electron-impact ionization and excitation cross-sections, electron-neutral elastic scattering
 cross-sections, total collision cross-section, probabilities of the different processes, and return collision energy in eV.
 Here `neutral_species_index` is the index of the neutral
 species being considered in the overall array of the `Species` instances that includes all species in the simulation
 and was used to construct the `ElectronNeutralInteractions` instance.
+Out-of-tabulation-range values are treated according to what `extend` method is used.
 
 # Positional arguments
 * `computed_cs`: the vector of `ComputedCrossSection` instances in which the computed values will be stored
@@ -607,13 +627,16 @@ and was used to construct the `ElectronNeutralInteractions` instance.
     data
 * `neutral_species_index`: the index of the neutral species being considered
 
+# Keyword arguments
+* `extend`: enum of `CSExtend` type that sets how out-of-range energy values are treated when computing cross-sections
+
 # Returns
 The electron-neutral collision energy in eV.
 """
-function compute_cross_sections!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index)
+function compute_cross_sections!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index; extend::CSExtend=CSExtendConstant)
     # the neutral_species_index is the absolute one (i.e. index in the list of all species)
     E_coll_electron_eV = compute_cross_sections_only!(computed_cs, interaction, g,
-                                                      electron_neutral_interactions, neutral_species_index)
+                                                      electron_neutral_interactions, neutral_species_index, extend)
 
     i_neutral = electron_neutral_interactions.neutral_indexer[neutral_species_index]
 

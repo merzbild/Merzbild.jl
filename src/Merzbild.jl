@@ -48,6 +48,7 @@ export ElectronNeutralInteractions, ComputedCrossSections
 export load_electron_neutral_interactions, create_computed_crosssections, DataMissingException
 export ScatteringIsotropic, ScatteringOkhrimovskyy
 export ElectronEnergySplitEqual, ElectronEnergySplitZeroE
+export CSExtendZero, CSExtendConstant
 export accelerate_constant_field_x!
 export estimate_sigma_g_w_max_ntc_n_e!, ntc_n_e!, ntc_n_e_es!
 export ParticleVector
