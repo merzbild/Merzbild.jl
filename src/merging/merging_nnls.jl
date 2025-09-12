@@ -43,6 +43,7 @@ Struct for keeping track of merging-related quantities for NNLS-based merging.
 * `lhs_matrices`: Vector of matrices for the LHS of the NNLS system
 * `lhs_matrix_ncols_start`: the number of columns in the first matrix in `lhs_matrices`
 * `lhs_matrix_ncols_end`: the number of columns in the last matrix in `lhs_matrices`
+* `column_norms`: vector of vectors of the column-wise inverse norms of the LHS matrices
 * `work`: Vector of `NNLSWorkspace` instances
 """
 mutable struct NNLSMerge
@@ -110,6 +111,8 @@ mutable struct NNLSMerge
     corresponding workspaces with a fixed number of columns spanning `[init_np, init_np+matrix_ncol_nprealloc]`.
     In this case, `matrix_ncol_nprealloc+1` `NNLSWorkspace` instances are pre-allocated, with the last one being used
     in case the number of columns is not in the range (and the LHS matrix is constructed on the fly).
+    A vector `column_norms` is also then pre-allocated, which is a vector of vectors, each containing the inverses of the
+    column-wise norms of the LHS matrices, used for their scaling.
 
     # Positional arguments
     * `multi_index_moments`: vector of mixed moments to preserve of the form `[(i1, j1, k1), (i2, j2, k2), ...]``
@@ -744,7 +747,7 @@ function compute_lhs_particles_additional!(rng, col_index, nnls_merging, lhs_mat
         end
     end
 
-    for _ in 1:n_rand_pairs
+    @inbounds for _ in 1:n_rand_pairs
         @inbounds i = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species].n_local)
         @inbounds k = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species].n_local)
 
@@ -992,25 +995,6 @@ function scale_lhs_rhs!(nnls_merging, lhs_matrix, scaling, lhs_ncols)
 end
 
 """
-    TODO
-"""
-function scale_columns!(lhs_matrix, lhs_ncols, column_norms)
-    m = size(lhs_matrix, 1)
-    @inbounds for i in 1:lhs_ncols
-        nn = 0.0
-        for j in 1:m
-            nn = nn + lhs_matrix[j,i] * lhs_matrix[j,i]
-        end
-        nn = sqrt(nn)
-        nn = nn > 1e-15 ? nn : 1.0
-        column_norms[i] = 1.0 / nn
-        for j in 1:m
-            lhs_matrix[j,i] *= column_norms[i]
-        end
-    end
-end
-
-"""
     scale_lhs_rhs_rate_preserving!(nnls_merging, lhs_matrix, ref_cs_elastic, ref_cs_ion)
 
 Scale the LHS and RHS of the NNLS system for the rate-preserving electron merging
@@ -1051,6 +1035,7 @@ the particles with the post-merge ones and delete any extraneous particles.
 
 # Positional arguments
 * `nnls_merging`: the `NNLSMerge` instance
+* `x`: the solution vector of the NNLS system
 * `particles`: the `ParticleVector` instance containing the particles that are being merged
 * `pia`: the `ParticleIndexerArray` instance
 * `cell`: the index of the grid cell in which particles are being merged
@@ -1060,8 +1045,9 @@ the particles with the post-merge ones and delete any extraneous particles.
 * `max_err`: maximum allowed value of the residual of the NNLS system
 * `w_threshold`: the relative (w.r.t the total computational weight of the particles being merge) value of the computational weight below which particles are discarded
 * `work_index`: the index of the `NNLSWorkspace` used to solve the NNLS system
+* `column_norms`: the vector of the column-wise norms of the LHS matrix
 """
-function compute_post_merge_particles_nnls!(nnls_merging, x::Vector{Float64}, particles, pia, cell, species, lhs_ncols, lhs_matrix, max_err, w_threshold, work_index, column_norms)
+function compute_post_merge_particles_nnls!(nnls_merging::NNLSMerge, x::Vector{Float64}, particles, pia, cell, species, lhs_ncols, lhs_matrix, max_err, w_threshold, work_index, column_norms)
     @inbounds if nnls_merging.work[work_index].rnorm > max_err
         return -1
     end
@@ -1214,44 +1200,21 @@ function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species;
     nnls_merging.inv_vref = 1.0 / vref
 
     # create LHS matrix and fill RHS vector using existing particles
-    @timeit "LHS-RHS" col_index = compute_lhs_and_rhs!(nnls_merging, nnls_merging.work[indexer].QA, particles, pia, cell, species)
+    col_index = compute_lhs_and_rhs!(nnls_merging, nnls_merging.work[indexer].QA, particles, pia, cell, species)
     # and add more columns
-    @timeit "LHS-RHS+" compute_lhs_particles_additional!(rng, col_index, nnls_merging, nnls_merging.work[indexer].QA,
+    compute_lhs_particles_additional!(rng, col_index, nnls_merging, nnls_merging.work[indexer].QA,
                                       particles, pia, cell, species, n_rand_pairs,
                                       centered_at_mean, v_multipliers)
 
-    # for i in 1:length(nnls_merging.work)
-    #     println("$i $(size(nnls_merging.work[i].QA))")
-    # end
 
-    @timeit "scale" scale_lhs_rhs!(nnls_merging, nnls_merging.work[indexer].QA, scaling, lhs_ncols)
+    scale_lhs_rhs!(nnls_merging, nnls_merging.work[indexer].QA, scaling, lhs_ncols)
 
-    @timeit "copy A to LHS" lhs_matrix .= nnls_merging.work[indexer].QA
-    # @inbounds for i in 1:nnls_merging.n_total_conserved
-    #     for j in 1:lhs_ncols
-    #         lhs_matrix[i,j] = nnls_merging.work[indexer].QA[i,j]
-    #     end
-    # end
-
-    @timeit "scale columns" scale_columns!(nnls_merging.work[indexer].QA, lhs_ncols, column_norms)
-    # println(column_norms)
-    # maxnorm = 0.0
-    # for i in 1:lhs_ncols
-    #     nn = norm(nnls_merging.work[indexer].QA[:,i], 2)
-    #     maxnorm =  max(nn, maxnorm)
-    #     nn = nn > 1e-15 ? nn : 1.0
-    #     nnls_merging.work[indexer].QA[:,i] ./= nn
-    # end
-
-    # println("MAXNORM $maxnorm")
-    # println(nnls_merging.lhs_matrix_ncols_start, " ", nnls_merging.lhs_matrix_ncols_end, " ", indexer, " ", lhs_ncols)
-    # println(size(lhs_matrix), " ", size(nnls_merging.work[indexer].QA))
+    lhs_matrix .= nnls_merging.work[indexer].QA
     
-
+    scale_columns!(nnls_merging.work[indexer].QA, column_norms)
+    
     nnls_merging.work[indexer].Qb .= nnls_merging.rhs_vector
-    # load!(nnls_merging.work, nnls_merging.work[indexer].QA, nnls_merging.rhs_vector)
-    @timeit "solve" solve!(nnls_merging.work[indexer], iteration_mult * size(nnls_merging.work[indexer].QA, 2), 1e-14)
-    # exit()
+    solve!(nnls_merging.work[indexer], iteration_mult * size(nnls_merging.work[indexer].QA, 2), 1e-14)
     return compute_post_merge_particles_nnls!(nnls_merging, nnls_merging.work[indexer].x, particles, pia, cell, species, lhs_ncols, lhs_matrix,
                                                              max_err, w_threshold, indexer, column_norms)
 end
@@ -1368,18 +1331,13 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging,
                                       particles, pia, cell, species, neutral_species_index, n_rand_pairs,
                                       centered_at_mean, v_multipliers)
     scale_lhs_rhs_rate_preserving!(nnls_merging, lhs_matrix, ref_cs_elatic, ref_cs_ion, scaling, lhs_ncols)
-    # scale_columns!(lhs_matrix, lhs_ncols, column_norms)
-
-    # load!(nnls_merging.work, lhs_matrix, nnls_merging.rhs_vector)
+    scale_columns!(lhs_matrix, column_norms)
 
     lhs_matrix .= nnls_merging.work[indexer].QA
 
     nnls_merging.work[indexer].Qb .= nnls_merging.rhs_vector
-
-    solve!(nnls_merging.work, iteration_mult * size(lhs_matrix, 2))
-
-    return compute_post_merge_particles_nnls!(nnls_merging, particles, pia, cell, species, lhs_ncols, lhs_matrix,
+    solve!(nnls_merging.work[indexer], iteration_mult * size(nnls_merging.work[indexer].QA, 2), 1e-14)
+    return compute_post_merge_particles_nnls!(nnls_merging, nnls_merging.work[indexer].x, particles, pia, cell, species, lhs_ncols, lhs_matrix,
                                               max_err, w_threshold, indexer, column_norms)
 end
-
 end
