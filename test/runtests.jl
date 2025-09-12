@@ -6,6 +6,7 @@ using NCDatasets
 using SpecialFunctions
 using StaticArrays
 using StableRNGs
+using LinearAlgebra
 
 include("test_indexing.jl")  # first we test indexing routines
 include("test_constants.jl")  # test constants
@@ -48,6 +49,7 @@ include("test_surface_props_1D_uniform.jl")  # test surface properties for 1-D u
 include("test_io_surf.jl")  # test I/O of surface properties
 include("test_1D_couette.jl")  # test Couette flow
 include("test_1D_couette_varweight.jl")  # test 1-D Couette flow, variable-weight DSMC, surface computes
+include("test_1D_couette_nnls.jl")  # test 1-D Couette flow, variable-weight DSMC, NNLS merging surface computes
 include("test_misc.jl")  # various misc utility functions
 include("test_collision_fp.jl")  # test Fokker-Planck collisions
 include("test_1D_couette_fp.jl")  # test  1-D Couette flow, particle Fokker-Planck collisions

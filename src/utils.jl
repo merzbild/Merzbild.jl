@@ -19,6 +19,24 @@ function weighted_percentile_interpolated(values, weights, quantiles=0.5)
     #TODO: figure out why this is producing weird results
 end
 
+function weighted_median(values, weights)
+    n = length(values)
+
+    total = sum(weights)
+    # sort indices by values
+    idx = sortperm(values)
+    c = 0.0
+    half = total / 2
+    for i in idx
+        c += weights[i]
+        if c >= half
+            return values[i]
+        end
+    end
+    # should not get here
+    return values[idx[end]]
+end
+
 """
     scale_columns!(matrix, column_norms)
 
