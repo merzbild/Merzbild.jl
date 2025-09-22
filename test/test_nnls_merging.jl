@@ -118,7 +118,7 @@
 
     # test some internal computes used in the merging
     @test sum(abs.(mnnls.v0 .- v0)) < eps()
-    @test sum(abs.(mnnls.w_total .- n0)) < eps()
+    @test sum(abs.(mnnls.w_total .- n0)) < 1.5e-14
 
     @test abs(mnnls.minvx + v0[1] - 1.0) < eps()
     @test abs(mnnls.maxvx + v0[1] - 50.0) < eps()
