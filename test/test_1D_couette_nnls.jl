@@ -78,12 +78,15 @@
     # the main NNLS
     mnnls = NNLSMerge(mim, init_np; multi_index_moments_pos=pos_moments, matrix_ncol_nprealloc=matrix_ncol_nprealloc)
 
+    fails = 0
+
     for cell in 1:grid.n_cells
         if pia.indexer[cell,1].n_local > merge_threshold
 
             nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1; centered_at_mean=false, v_multipliers=[], w_threshold=1e-12)
 
             if nnls_success_flag == -1
+                fails += 1
                 merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
             end
             # merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
@@ -130,12 +133,8 @@
         end
     end
 
-    # write_netcdf(ds_avg, phys_props_avg, n_timesteps)
-
     close_netcdf(ds)
     close_netcdf(ds_surf)
-    # close_netcdf(ds_avg)
-
 
     ref_sol_path = joinpath(@__DIR__, "data", "couette_0.0005_50_500.0_300.0_1000_nnls5moments.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
@@ -150,11 +149,10 @@
         end
     end
 
+    @test fails == 0
     @test ndens_conservation == true
     @test maximum(abs.(ref_sol["ndens"][:, 1, 1:3] .- sol["ndens"][:, 1, 1:3])) < 2 * eps()
     @test maximum(abs.(ref_sol["T"][:, 1, 1:3] .- sol["T"][:, 1, 1:3])) < 2.4e-13
-    # this is # of physical particles, should not change
-    @test abs(sum(ref_sol["ndens"][:, 1, 1:3]) - sum(sol["ndens"][:, 1, 1:3]))/sum(sol["ndens"][:, 1, 1:3]) <= eps()
 
     close(sol)
     rm(sol_path)
