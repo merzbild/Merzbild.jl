@@ -24,7 +24,7 @@ The ``xy``, ``xz``, ``yz`` components thereof are stored in `off_diagonal_moment
 mutable struct FluxProps
     n_cells::Int64
     n_species::Int64
-    kinetic_energy_flux::Vector{Float64,3}  # kinetic energy flux: component x cells x species
+    kinetic_energy_flux::Array{Float64,3}  # kinetic energy flux: component x cells x species
     diagonal_momentum_flux::Array{Float64,3}  # diagonal components of the momentum flux density tensor: component x cells x species
     off_diagonal_momentum_flux::Array{Float64,3}  # off-diagonal components of the momentum flux density tensor: component x cells x species
 end
