@@ -8,6 +8,7 @@ include("utils.jl")
 include("particles.jl")
 include("distributions_and_sampling.jl")
 include("physical_props.jl")
+include("flux_props.jl")
 include("collisions/collisions.jl")
 include("grids/grids.jl")
 include("merging/merging.jl")
@@ -58,5 +59,6 @@ export MaxwellWallBC, MaxwellWalls1D, convect_particles!
 export pretty_print_pia
 export ChunkExchanger, exchange_particles!, reset!, sort_particles_after_exchange!
 export count_disordered_particles, check_pia_is_correct, check_unique_index
+export FluxProps, compute_flux_props!, compute_flux_props_sorted!
 
 end # module merzbild
