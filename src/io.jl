@@ -609,7 +609,8 @@ end
 """
     write_netcdf(nc_filename, pv::ParticleVector, pia, species, species_data; global_attributes=Dict{Any,Any}())
     
-Write particles of a single species to a NetCDF file.
+Write particles of a single species to a NetCDF file. The particles are written cell-wise, so the ordering
+is not preserved in case particles are present in the set of indices pointed to by `group2` indices.
 
 # Positional arguments
 * `nc_filename`: filename to write output to
@@ -686,7 +687,8 @@ end
 """
     write_netcdf(nc_filename, particles::Vector{ParticleVector}, pia, species_data; global_attributes=Dict{Any,Any}())
     
-Write particles of all species to a NetCDF file.
+Write particles of all species to a NetCDF file. The particles are written cell-wise, so the ordering
+is not preserved in case particles are present in the set of indices pointed to by `group2` indices.
 
 # Positional arguments
 * `nc_filename`: filename to write output to
