@@ -321,7 +321,7 @@ end
 
 Struct that holds track of which variables are not to be written to NetCDF file
 for computed surface properties.
-If the field value is `true`, the corresponding physical grid property will not be output to the file.
+If the field value is `true`, the corresponding surface property will not be output to the file.
 
 # Fields
 * `skip_number_of_particles`: whether the output of the number of particles should be skipped
@@ -344,7 +344,7 @@ struct IOSkipListSurf
     
     Construct an `IOSkipListSurf` from a list of variable names.
     The possible names are:
-    `np` or `nparticles`, `fluxes`, `force`, `normal_pressure`, `shear_pressure`, "kinetic_energy_flux".
+    `np` or `nparticles`, `fluxes`, `force`, `normal_pressure`, `shear_pressure`, `kinetic_energy_flux`.
 
     # Positional arguments
     * `list_of_variables_to_skip`: list of variable names to skip
@@ -597,6 +597,221 @@ function write_netcdf(ds, surf_props::SurfProps, timestep; sync_freq=0)
 
     if !ds.skip_list.skip_kinetic_energy_flux
         NetCDF.putvar(ds.v_kinetic_energy_flux, surf_props.kinetic_energy_flux, start=ds.currtimesteps_1_1, count=ds.n_elements_n_species_1)
+    end
+
+    if (sync_freq > 0) && (currtimesteps % sync_freq == 0)
+        NetCDF.sync(ds.filehandle)
+    end
+end
+
+
+"""
+    IOSkipListFlux
+
+Struct that holds track of which variables are not to be written to NetCDF file
+for computed fluxes.
+If the field value is `true`, the corresponding flux will not be output to the file.
+
+# Fields
+* `skip_kinetic_energy_flux`: whether the output of the kinetic energy flux should be skipped
+* `skip_diagonal_momentum_flux`: whether the output of the diagonal components of the momentum flux tensor should be skipped
+* `skip_off_diagonal_momentum_flux`: whether the output of the off-diagonal components of the momentum flux tensor should be skipped
+"""
+struct IOSkipListFlux
+    skip_kinetic_energy_flux::Bool
+    skip_diagonal_momentum_flux::Bool
+    skip_off_diagonal_momentum_flux::Bool
+
+    @doc """
+        IOSkipListFlux(list_of_variables_to_skip)
+    
+    Construct an `IOSkipListFlux` from a list of variable names.
+    The possible names are:
+    `kinetic_energy_flux`, `diagonal_momentum_flux`, `off_diagonal_momentum_flux`.
+
+    # Positional arguments
+    * `list_of_variables_to_skip`: list of variable names to skip
+    """
+    function IOSkipListFlux(list_of_variables_to_skip)
+
+        skip_kinetic_energy_flux = false
+        skip_diagonal_momentum_flux = false
+        skip_off_diagonal_momentum_flux = false
+    
+        if "kinetic_energy_flux" in list_of_variables_to_skip
+            skip_kinetic_energy_flux = true
+        end
+    
+        if "diagonal_momentum_flux" in list_of_variables_to_skip
+            skip_diagonal_momentum_flux = true
+        end
+    
+        if "off_diagonal_momentum_flux" in list_of_variables_to_skip
+            skip_off_diagonal_momentum_flux = true
+        end
+    
+        return new(skip_kinetic_energy_flux, skip_diagonal_momentum_flux, skip_off_diagonal_momentum_flux)
+    end
+
+    @doc """
+        IOSkipListFlux()
+    
+    Construct an empty `IOSkipListFlux`
+    """
+    function IOSkipListFlux()
+        return IOSkipListFlux([])
+    end
+end
+
+"""
+    NCDataHolderFlux
+
+Struct that holds NetCDF-output related data for fluxes I/O.
+
+# Fields
+* `filehandle`: handle to the open NetCDF file
+* `timestep_dim`: timestep dimension that used to keep track of the number of output steps
+* `v_spn`: variable to hold species' names (dimension `n_species`)
+* `v_timestep`: variable to hold the simulation timestep number (dimension `time`)
+* `v_kinetic_energy_flux`: variable to hold kinetic energy flux (dimension `3 x n_elements x n_species x time`)
+* `v_diagonal_momentum_flux`: variable to the diagonal components of the momentum flux tensor (dimension `3 x n_elements x n_species x time`)
+* `v_off_diagonal_momentum_flux`: variable to the off-diagonal components of the momentum flux tensor (dimension `3 x n_elements x n_species x time`)
+* `n_v_n_elements_n_species_1`: constant vector `[3, n_elements, n_species, 1]` (used for offsets during I/O)
+* `currtimesteps_1_1_1`: vector `[1, 1, 1, n_t_output]`, where `n_t_output` is the current output timestep (i.e. how many times the
+    properties have already been output, not the simulation timestep) (used for offsets during I/O)
+* `timestep`: vector storing the current simulation timestep
+* `skip_list`: `IOSkipListFlux` instance of variables to skip during output
+"""
+mutable struct NCDataHolderFlux <: AbstractNCDataHolder
+    filehandle::NcFile
+    timestep_dim::NcDim  # timestep dimension, used to keep track of where we are in the file
+    v_spn::NcVar  # species names: "n_species"
+    v_timestep::NcVar  # timestep
+
+    v_kinetic_energy_flux::NcVar  # kinetic energy flux: "3 x n_elements" x "n_species" x "time"
+    v_diagonal_momentum_flux::NcVar  # kinetic energy flux: "3 x n_elements" x "n_species" x "time"
+    v_off_diagonal_momentum_flux::NcVar  # kinetic energy flux: "3 x n_elements" x "n_species" x "time"
+
+    # some constant offsets of ones (to count number of written elements)
+    n_v_n_elements_n_species_1::Vector{Int64}
+    currtimesteps_1_1_1::Vector{Int64}
+    timestep::Vector{Float64}
+
+    skip_list::IOSkipListFlux
+
+    @doc """
+        NCDataHolderFlux(nc_filename, names_skip_list, species_data, flux_props; global_attributes=Dict{Any,Any}())
+
+    Construct a `NCDataHolderFlux` instance with a list of variables to skip.
+
+    # Positional arguments
+    * `nc_filename`: filename to write output to
+    * `names_skip_list`: list of variable names to skip, see [`IOSkipListSurf`](@ref) for more details
+    * `species_data`: the vector of `Species` data for the species in the simulation
+    * `flux_props`: the `FluxProps` instance which will be used for the computation and output of fluxes
+    
+    # Keyword arguments
+    * `global_attributes`: dictionary of any additional attributes to write to the netCDF file as a global attribute
+    """
+    function NCDataHolderFlux(nc_filename, names_skip_list, species_data, flux_props; global_attributes=Dict{Any,Any}())
+        skip_list = IOSkipListFlux(names_skip_list)
+
+        gatts = deepcopy(global_attributes)
+
+        v_dim = NcDim("vector_components", 3, unlimited=false)
+        cells_dim = NcDim("n_cells", flux_props.n_cells, unlimited=false)
+        species_dim = NcDim("n_species", flux_props.n_species, unlimited=false)
+        timestep_dim = NcDim("timestep", 0, unlimited=true)
+
+        v_spn = NcVar("species_names", [species_dim], t=String, compress=-1)
+        v_timestep = NcVar("timestep", [timestep_dim], t=Float64, compress=-1)
+
+        v_kinetic_energy_flux = NcVar("kinetic_energy_flux", [v_dim, cells_dim, species_dim, timestep_dim], t=Float64, compress=-1)
+        v_diagonal_momentum_flux = NcVar("diagonal_momentum_flux", [v_dim, cells_dim, species_dim, timestep_dim], t=Float64, compress=-1)
+        v_off_diagonal_momentum_flux = NcVar("off_diagonal_momentum_flux", [v_dim, cells_dim, species_dim, timestep_dim], t=Float64, compress=-1)
+
+        varlist::Vector{NetCDF.NcVar} = [v_spn, v_timestep]
+
+        if !skip_list.skip_kinetic_energy_flux
+            push!(varlist, v_kinetic_energy_flux)
+        end
+
+        if !skip_list.skip_diagonal_momentum_flux
+            push!(varlist, v_diagonal_momentum_flux)
+        end
+
+        if !skip_list.skip_off_diagonal_momentum_flux
+            push!(varlist, v_off_diagonal_momentum_flux)
+        end
+
+        filehandle = NetCDF.create(nc_filename, varlist, gatts=gatts, mode=NC_NETCDF4)
+
+        NetCDF.putvar(v_spn, [species.name for species in species_data])
+
+        return new(filehandle, 
+                   timestep_dim, v_spn, v_timestep,
+                   v_kinetic_energy_flux, v_diagonal_momentum_flux, v_off_diagonal_momentum_flux,
+                   [3, surf_props.n_cells, surf_props.n_species, 1],
+                   [1, 1, 1, 1], [0.0],
+                   skip_list)
+    end
+
+    @doc """
+        NCDataHolderFlux(nc_filename, species_data, flux_props; global_attributes=Dict{Any,Any}())
+
+    Construct a `NCDataHolderFlux` instance with an empty list of variable to skip.
+
+    # Positional arguments
+
+    # Positional arguments
+    * `nc_filename`: filename to write output to
+    * `species_data`: the vector of `Species` data for the species in the simulation
+    * `flux_props`: the `FluxProps` instance which will be used for the computation and output of fluxes
+    
+    # Keyword arguments
+    * `global_attributes`: dictionary of any additional attributes to write to the netCDF file as a global attribute
+    """
+    function NCDataHolderFlux(nc_filename, species_data, flux_props; global_attributes=Dict{Any,Any}())
+        return NCDataHolderFlux(nc_filename, [], species_data, flux_props; global_attributes=global_attributes)
+    end
+end
+
+"""
+    write_netcdf(ds, flux_props::FluxProps, timestep; sync_freq=0)
+    
+Write FluxProps to a NetCDF file and synchronize file to disk if necessary.
+
+# Positional arguments
+* `ds`: the `NCDataHolderFlux` for the file to which the output will be written
+* `flux_props`: the `FluxProps` instance containing the computed properties
+* `timestep`: the simulation timestep
+
+# Keyword arguments
+* `sync_freq`: if larger than 0 and if the number of timesteps output is proportional to `sync_freq`,
+    the data will be synchronized to disk. If set to 1, will sync data to disk at every timestep at which
+    data is written to the file.
+"""
+function write_netcdf(ds, flux_props::FluxProps, timestep; sync_freq=0)
+    currtimesteps = ds.timestep_dim.dimlen + 1
+
+    @inbounds ds.currtimesteps_1_1_1[4] = currtimesteps
+    @inbounds ds.timestep[1] = timestep
+
+    NetCDF.putvar(ds.v_timestep, ds.timestep, start=ds.currtimesteps)
+
+    if !ds.skip_list.skip_kinetic_energy_flux
+        NetCDF.putvar(ds.v_kinetic_energy_flux, flux_props.kinetic_energy_flux,
+                      start=ds.currtimesteps_1_1_1, count=ds.n_v_n_elements_n_species_1)
+    end
+
+    if !ds.skip_list.skip_diagonal_momentum_flux
+        NetCDF.putvar(ds.v_diagonal_momentum_flux, flux_props.diagonal_momentum_flux,
+                      start=ds.currtimesteps_1_1_1, count=ds.n_v_n_elements_n_species_1)
+    end
+
+    if !ds.skip_list.skip_off_diagonal_momentum_flux
+        NetCDF.putvar(ds.off_diagonal_momentum_flux, flux_props.off_diagonal_momentum_flux,
+                      start=ds.currtimesteps_1_1_1, count=ds.n_v_n_elements_n_species_1)
     end
 
     if (sync_freq > 0) && (currtimesteps % sync_freq == 0)

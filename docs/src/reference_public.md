@@ -58,9 +58,14 @@ PhysProps(pia)
 SurfProps
 SurfProps(n_elements, n_species, areas, normals)
 SurfProps(pia, grid::Grid1DUniform)
+FluxProps
+FluxProps(n_cells, n_species)
+FluxProps(pia)
 compute_props!
 compute_props_with_total_moments!
 compute_props_sorted!
+compute_flux_props!
+compute_flux_props_sorted!
 avg_props!
 clear_props!
 ```
@@ -178,14 +183,21 @@ IOSkipList()
 IOSkipListSurf
 IOSkipListSurf(list_of_variables_to_skip)
 IOSkipListSurf()
+IOSkipListFlux
+IOSkipListFlux(list_of_variables_to_skip)
+IOSkipListFlux()
 NCDataHolder
 NCDataHolder(nc_filename, names_skip_list, species_data, phys_props; global_attributes=Dict{Any,Any}())
 NCDataHolder(nc_filename, species_data, phys_props; global_attributes=Dict{Any,Any}())
 NCDataHolderSurf
 NCDataHolderSurf(nc_filename, names_skip_list, species_data, surf_props; global_attributes=Dict{Any,Any}())
 NCDataHolderSurf(nc_filename, species_data, surf_props; global_attributes=Dict{Any,Any}())
+NCDataHolderFlux
+NCDataHolderFlux(nc_filename, names_skip_list, species_data, flux_props; global_attributes=Dict{Any,Any}())
+NCDataHolderFlux(nc_filename, species_data, flux_props; global_attributes=Dict{Any,Any}())
 write_netcdf(ds, phys_props::PhysProps, timestep; sync_freq=0)
 write_netcdf(ds, surf_props::SurfProps, timestep; sync_freq=0)
+write_netcdf(ds, flux_props::FluxProps, timestep; sync_freq=0)
 write_netcdf(nc_filename, pv::ParticleVector, pia, species, species_data; global_attributes=Dict{Any,Any}())
 write_netcdf(nc_filename, particles::Vector{ParticleVector}, pia, species_data; global_attributes=Dict{Any,Any}())
 close_netcdf

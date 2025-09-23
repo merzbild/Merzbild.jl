@@ -6,8 +6,11 @@ using LinearAlgebra
     FluxProps
 
 Structure to store computed flux densities in a physical cell.
-The kinetic energy flux density is computed as
-The ij component of the the momentum flux density tensor is computed as
+The kinetic energy flux density of a species is computed as
+``\\frac{m}{2V} \\sum_i w_i \\mathbf{C}_i C_i^2``, where ``\\mathbf{C}_i`` is the peculiar velocity
+of a particle, ``m`` is the molecular mass of the species, ``V`` is the cell volume.
+The ``k,l`` component of the the momentum flux density tensor is computed as
+``\\frac{m}{2V} \\sum_i w_i \\C_{i,k} \\C_{i,l}``.
 The ``xx``, ``yy``, ``zz`` components thereof are stored in `diagonal_momentum_flux`.
 The ``xy``, ``xz``, ``yz`` components thereof are stored in `off_diagonal_momentum_flux`.
 

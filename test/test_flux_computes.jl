@@ -1,4 +1,4 @@
-@testset "phys_props compute" begin
+@testset "flux_props compute" begin
 
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
     species_data::Vector{Species} = load_species_data(particles_data_path, "Ar")

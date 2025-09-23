@@ -29,7 +29,7 @@ export clear_props!, avg_props!
 export ParticleIndexer, ParticleIndexerArray, PhysProps, CollisionFactors, CollisionData, CollisionDataFP
 export SurfProps, reduce_surf_props!
 export squash_pia!
-export NCDataHolder, NCDataHolderSurf, IOSkipList, IOSkipListSurf
+export NCDataHolder, NCDataHolderSurf, IOSkipList, IOSkipListSurf, NCDataHolderFlux, IOSkipListFlux
 export write_netcdf
 export close_netcdf
 export load_interaction_data, load_interaction_data_with_dummy, load_species_and_interaction_data
