@@ -54,11 +54,14 @@ Construct a `FluxProps` instance given a `ParticleIndexerArray` instance.
 FluxProps(pia) = FluxProps(size(pia.indexer)[1], size(pia.indexer)[2])
 
 """
-    compute_flux_props!(particles, pia, species_data, phys_props::PhysProps, flux_props::FluxProps)
+    compute_flux_props!(particles, pia, species_data, phys_props::PhysProps, flux_props::FluxProps, grid::G) where {G<:AbstractGrid}
 
 Compute the fluxes of all species in all cells and store the result in a `FluxProps` instance.
 This uses the pre-computed species-wise mean velocities from a `PhysProps` instance, which needs to be computed
 at the same timestep before calling this function.
+Particles of a cell can be distributed across `group1` and `group2` of indices pointed to by the `ParticleIndexerArray`
+instance, i.e. this function can be used to compute fluxes immediately after collisions (but before convection).
+In case particles are sorted, `compute_flux_props_sorted!` will be more efficient.
 
 # Positional arguments
 * `particles`: the `Vector` of `ParticleVector`s containing all the particles in a simulation
@@ -66,41 +69,52 @@ at the same timestep before calling this function.
 * `species_data`: the `Vector` of `SpeciesData`
 * `phys_props`: the `PhysProps` instance computed at the same timestep
 * `flux_props`: the `FluxProps` instance in which the computed fluxes are stored
+* `grid`: the physical grid
 """
-function compute_flux_props!(particles, pia, species_data, phys_props::PhysProps, flux_props::FluxProps)
+function compute_flux_props!(particles, pia, species_data, phys_props::PhysProps, flux_props::FluxProps, grid::G) where {G<:AbstractGrid}
     for species in 1:flux_props.n_species
-        for cell in 1:flux_props.n_cells
+        @inbounds for cell in 1:flux_props.n_cells
 
-            kefd = SVector{3,Float64}(0.0, 0.0, 0.0)
-            dmfd = SVector{3,Float64}(0.0, 0.0, 0.0)
-            odmfd = SVector{3,Float64}(0.0, 0.0, 0.0)
-            peculiar_v = SVector{3,Float64}(0.0, 0.0, 0.0)
-            n = 0.0
+            kefd = SVector{3,Float64}(0.0, 0.0, 0.0)  # kinetic_energy_flux
+            dmfd = SVector{3,Float64}(0.0, 0.0, 0.0)  # diagonal_momentum_flux
+            odmfd = SVector{3,Float64}(0.0, 0.0, 0.0)  # off_diagonal_momentum_flux
+            c = SVector{3,Float64}(0.0, 0.0, 0.0)
 
-            if (phys_props.n[cell,species]) > 0.0
-            # this is either number density or # of physical particles but the check is valid for both cases
-                for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
-                    # TODO
-                    
-                end
-            
-                if pia.indexer[cell,species].n_group2 > 0
-                    for i in pia.indexer[cell,species].start2:pia.indexer[cell,species].end2
-                        # TODO
-                        
-                    end
+            for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
+                c = particles[species][i].v - phys_props.v[:, cell, species]
+                cxsq = c[1]^2
+                cysq = c[2]^2
+                czsq = c[3]^2
+                
+                csq = cxsq + cysq + czsq
+                kefd = kefd + particles[species][i].w * c * csq
+                dmfd = dmfd + particles[species][i].w * SVector{3,Float64}(cxsq, cysq, czsq)
+                odmfd = odmfd + particles[species][i].w * SVector{3,Float64}(c[1]*c[2], c[1]*c[3], c[2]*c[3])
+            end
+        
+            if pia.indexer[cell,species].n_group2 > 0
+                for i in pia.indexer[cell,species].start2:pia.indexer[cell,species].end2
+                    c = particles[species][i].v - phys_props.v[:, cell, species]
+                    cxsq = c[1]^2
+                    cysq = c[2]^2
+                    czsq = c[3]^2
+                    csq = cxsq + cysq + czsq
+
+                    kefd = kefd + particles[species][i].w * c * csq
+                    dmfd = dmfd + particles[species][i].w * SVector{3,Float64}(cxsq, cysq, czsq)
+                    odmfd = odmfd + particles[species][i].w * SVector{3,Float64}(c[1]*c[2], c[1]*c[3], c[2]*c[3])
                 end
             end
 
-            flux_props.kinetic_energy_flux[:,cell,species] = kefd
-            flux_props.diagonal_momentum_flux[:,cell,species] = dmfd
-            flux_props.off_diagonal_momentum_flux[:,cell,species] = odmfd
+            flux_props.kinetic_energy_flux[:,cell,species] = 0.5 * kefd * species_data[species].mass * grid.cells[cell].inv_V
+            flux_props.diagonal_momentum_flux[:,cell,species] = dmfd * species_data[species].mass * grid.cells[cell].inv_V
+            flux_props.off_diagonal_momentum_flux[:,cell,species] = odmfd * species_data[species].mass * grid.cells[cell].inv_V
         end
     end
 end
 
 """
-    clear_flux_props!(flux_props::FluxProps)
+    clear_props!(flux_props::FluxProps)
 
 Clear all data from `FluxProps`, for use when flux densities are averaged over timesteps
 and averaging over a new set of timesteps needs to be started.
@@ -133,25 +147,25 @@ function avg_props!(flux_props_avg::FluxProps, flux_props::FluxProps, n_avg_time
     for species in 1:flux_props.n_species
         @inbounds @simd for cell in 1:flux_props.n_cells
             flux_props_avg.kinetic_energy_flux[1,cell,species] = flux_props_avg.kinetic_energy_flux[1,cell,species] + 
-                                                                 flux_props_avg.kinetic_energy_flux[1,cell,species] * inv_nt_avg
+                                                                 flux_props.kinetic_energy_flux[1,cell,species] * inv_nt_avg
             flux_props_avg.kinetic_energy_flux[2,cell,species] = flux_props_avg.kinetic_energy_flux[2,cell,species] + 
-                                                                 flux_props_avg.kinetic_energy_flux[2,cell,species] * inv_nt_avg
+                                                                 flux_props.kinetic_energy_flux[2,cell,species] * inv_nt_avg
             flux_props_avg.kinetic_energy_flux[3,cell,species] = flux_props_avg.kinetic_energy_flux[3,cell,species] + 
-                                                                 flux_props_avg.kinetic_energy_flux[3,cell,species] * inv_nt_avg
+                                                                 flux_props.kinetic_energy_flux[3,cell,species] * inv_nt_avg
 
             flux_props_avg.diagonal_momentum_flux[1,cell,species] = flux_props_avg.diagonal_momentum_flux[1,cell,species] + 
-                                                                    flux_props_avg.diagonal_momentum_flux[1,cell,species] * inv_nt_avg
+                                                                    flux_props.diagonal_momentum_flux[1,cell,species] * inv_nt_avg
             flux_props_avg.diagonal_momentum_flux[2,cell,species] = flux_props_avg.diagonal_momentum_flux[2,cell,species] + 
-                                                                    flux_props_avg.diagonal_momentum_flux[2,cell,species] * inv_nt_avg
+                                                                    flux_props.diagonal_momentum_flux[2,cell,species] * inv_nt_avg
             flux_props_avg.diagonal_momentum_flux[3,cell,species] = flux_props_avg.diagonal_momentum_flux[3,cell,species] + 
-                                                                    flux_props_avg.diagonal_momentum_flux[3,cell,species] * inv_nt_avg
+                                                                    flux_props.diagonal_momentum_flux[3,cell,species] * inv_nt_avg
 
             flux_props_avg.off_diagonal_momentum_flux[1,cell,species] = flux_props_avg.off_diagonal_momentum_flux[1,cell,species] + 
-                                                                        flux_props_avg.off_diagonal_momentum_flux[1,cell,species] * inv_nt_avg
+                                                                        flux_props.off_diagonal_momentum_flux[1,cell,species] * inv_nt_avg
             flux_props_avg.off_diagonal_momentum_flux[2,cell,species] = flux_props_avg.off_diagonal_momentum_flux[2,cell,species] + 
-                                                                        flux_props_avg.off_diagonal_momentum_flux[2,cell,species] * inv_nt_avg
+                                                                        flux_props.off_diagonal_momentum_flux[2,cell,species] * inv_nt_avg
             flux_props_avg.off_diagonal_momentum_flux[3,cell,species] = flux_props_avg.off_diagonal_momentum_flux[3,cell,species] + 
-                                                                        flux_props_avg.off_diagonal_momentum_flux[3,cell,species] * inv_nt_avg
+                                                                        flux_props.off_diagonal_momentum_flux[3,cell,species] * inv_nt_avg
         end
     end
 end
@@ -176,7 +190,27 @@ at the same timestep before calling this function for the same subset of cells.
 function compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props, cell_chunk)
     for species in 1:phys_props.n_species
         for cell in cell_chunk
-            # TODO
+
+            kefd = SVector{3,Float64}(0.0, 0.0, 0.0)  # kinetic_energy_flux
+            dmfd = SVector{3,Float64}(0.0, 0.0, 0.0)  # diagonal_momentum_flux
+            odmfd = SVector{3,Float64}(0.0, 0.0, 0.0)  # off_diagonal_momentum_flux
+            c = SVector{3,Float64}(0.0, 0.0, 0.0)
+
+            for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
+                c = particles[species][i].v - phys_props.v[:, cell, species]
+                cxsq = c[1]^2
+                cysq = c[2]^2
+                czsq = c[3]^2
+                
+                csq = cxsq + cysq + czsq
+                kefd = kefd + particles[species][i].w * c * csq
+                dmfd = dmfd + particles[species][i].w * SVector{3,Float64}(cxsq, cysq, czsq)
+                odmfd = odmfd + particles[species][i].w * SVector{3,Float64}(c[1]*c[2], c[1]*c[3], c[2]*c[3])
+            end
+
+            flux_props.kinetic_energy_flux[:,cell,species] = 0.5 * kefd * species_data[species].mass * grid.cells[cell].inv_V
+            flux_props.diagonal_momentum_flux[:,cell,species] = dmfd * species_data[species].mass * grid.cells[cell].inv_V
+            flux_props.off_diagonal_momentum_flux[:,cell,species] = odmfd * species_data[species].mass * grid.cells[cell].inv_V
         end
     end
 end

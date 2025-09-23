@@ -5,8 +5,9 @@
 * NNLS merging now also accepts a list of spatial moments to preserve (requires explicitly conserving 1-st order spatial moments, otherwise
     the corresponding coordinates are set to 0)
 * 1D example added for NNLS merging (`simulations/1D/couette_varweight_nnls.jl`)
-* NNLS merging speed-ups
+* NNLS merging speed-ups and stability improvements
 * New weighted median with interpolation function for octree merging
+* `FluxProps` structure added, along with `compute_flux_props!`, `compute_flux_props_sorted!` functions to compute fluxes in grid cells
 
 ## v0.7.1
 * More use of Muladd in a few places
