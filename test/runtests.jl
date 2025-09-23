@@ -40,6 +40,8 @@ include("test_pia_contiguous.jl")  # test squash_pia
 include("test_debugging_functions.jl")  # test indexing debugging functions
 include("test_grid_1D_uniform.jl")  # test sampling and computes on 1D uniform grid
 include("test_grid_sorting.jl")  # test particle sorting routines
+include("test_flux_computes.jl")  # test computation of fluxes in grid cells
+include("test_io_fluxes.jl")  # test I/O of fluxes
 include("test_convection_1D.jl")  # test particle convection and surface interaction on a 1D grid
 include("test_collisions_1D.jl")  # test particle collisions on a grid
 include("test_io_multidim.jl")  # test netCDF I/O of physical properties on a grid
