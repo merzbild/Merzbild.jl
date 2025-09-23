@@ -8,6 +8,7 @@
 * NNLS merging speed-ups and stability improvements
 * New weighted median with interpolation function for octree merging
 * `FluxProps` structure added, along with `compute_flux_props!`, `compute_flux_props_sorted!` functions to compute fluxes in grid cells
+* I/O for `FluxProps` added
 
 ## v0.7.1
 * More use of Muladd in a few places
