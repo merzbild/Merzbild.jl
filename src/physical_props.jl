@@ -429,7 +429,7 @@ function compute_props_sorted!(particles, pia, species_data, phys_props, grid::G
 end
 
 """
-    compute_props_sorted!(particles, pia, species_data, phys_props, grid::AbstractGrid)
+    compute_props_sorted!(particles, pia, species_data, phys_props, grid::AbstractGrid) where {G<:AbstractGrid}
 
 Compute the physical properties of all species in all cells and store the result in a `PhysProps` instance,
 assuming the particles are sorted.
