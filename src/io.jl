@@ -677,6 +677,8 @@ Struct that holds NetCDF-output related data for fluxes I/O.
 * `v_diagonal_momentum_flux`: variable to the diagonal components of the momentum flux tensor (dimension `3 x n_elements x n_species x time`)
 * `v_off_diagonal_momentum_flux`: variable to the off-diagonal components of the momentum flux tensor (dimension `3 x n_elements x n_species x time`)
 * `n_v_n_elements_n_species_1`: constant vector `[3, n_elements, n_species, 1]` (used for offsets during I/O)
+* `currtimesteps`: vector `[n_t_output]`, where `n_t_output` is the current output timestep (i.e. how many times the
+    properties have already been output, not the simulation timestep) (used for offsets during I/O)
 * `currtimesteps_1_1_1`: vector `[1, 1, 1, n_t_output]`, where `n_t_output` is the current output timestep (i.e. how many times the
     properties have already been output, not the simulation timestep) (used for offsets during I/O)
 * `timestep`: vector storing the current simulation timestep
@@ -694,6 +696,7 @@ mutable struct NCDataHolderFlux <: AbstractNCDataHolder
 
     # some constant offsets of ones (to count number of written elements)
     n_v_n_elements_n_species_1::Vector{Int64}
+    currtimesteps::Vector{Int64}
     currtimesteps_1_1_1::Vector{Int64}
     timestep::Vector{Float64}
 
@@ -751,8 +754,8 @@ mutable struct NCDataHolderFlux <: AbstractNCDataHolder
         return new(filehandle, 
                    timestep_dim, v_spn, v_timestep,
                    v_kinetic_energy_flux, v_diagonal_momentum_flux, v_off_diagonal_momentum_flux,
-                   [3, surf_props.n_cells, surf_props.n_species, 1],
-                   [1, 1, 1, 1], [0.0],
+                   [3, flux_props.n_cells, flux_props.n_species, 1],
+                   [1], [1, 1, 1, 1], [0.0],
                    skip_list)
     end
 
@@ -794,6 +797,7 @@ Write FluxProps to a NetCDF file and synchronize file to disk if necessary.
 function write_netcdf(ds, flux_props::FluxProps, timestep; sync_freq=0)
     currtimesteps = ds.timestep_dim.dimlen + 1
 
+    @inbounds ds.currtimesteps[1] = currtimesteps
     @inbounds ds.currtimesteps_1_1_1[4] = currtimesteps
     @inbounds ds.timestep[1] = timestep
 
@@ -810,7 +814,7 @@ function write_netcdf(ds, flux_props::FluxProps, timestep; sync_freq=0)
     end
 
     if !ds.skip_list.skip_off_diagonal_momentum_flux
-        NetCDF.putvar(ds.off_diagonal_momentum_flux, flux_props.off_diagonal_momentum_flux,
+        NetCDF.putvar(ds.v_off_diagonal_momentum_flux, flux_props.off_diagonal_momentum_flux,
                       start=ds.currtimesteps_1_1_1, count=ds.n_v_n_elements_n_species_1)
     end
 

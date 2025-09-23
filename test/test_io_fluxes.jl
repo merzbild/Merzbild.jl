@@ -13,11 +13,11 @@
 
     function compare_readin_to_actual!(fp_from_file, fp, n_timesteps)
         for i in 0:n_timesteps
-            set_surf_data!(fp, i)
+            set_flux_data!(fp, i)
 
-            @test maximum(abs.(sp.kinetic_energy_flux - fp_from_file["kinetic_energy_flux"][:,:,i+1])) < 2*eps()
-            @test maximum(abs.(sp.diagonal_momentum_flux - fp_from_file["diagonal_momentum_flux"][:,:,i+1])) < 2*eps()
-            @test maximum(abs.(sp.off_diagonal_momentum_flux - fp_from_file["off_diagonal_momentum_flux"][:,:,i+1])) < 2*eps()
+            @test maximum(abs.(fp.kinetic_energy_flux - fp_from_file["kinetic_energy_flux"][:,:,:,i+1])) < 2*eps()
+            @test maximum(abs.(fp.diagonal_momentum_flux - fp_from_file["diagonal_momentum_flux"][:,:,:,i+1])) < 2*eps()
+            @test maximum(abs.(fp.off_diagonal_momentum_flux - fp_from_file["off_diagonal_momentum_flux"][:,:,:,i+1])) < 2*eps()
         end
     end
 
@@ -66,11 +66,11 @@
         @test name in varnames
     end
 
-    @test size(props_read["kinetic_energy_flux"]) == (3, 2, 1, 3)
-    @test size(props_read["diagonal_momentum_flux"]) == (3, 2, 1, 3)
-    @test size(props_read["off_diagonal_momentum_flux"]) == (3, 2, 1, 3)
+    @test size(props_read["kinetic_energy_flux"]) == (3, 8, 1, 3)
+    @test size(props_read["diagonal_momentum_flux"]) == (3, 8, 1, 3)
+    @test size(props_read["off_diagonal_momentum_flux"]) == (3, 8, 1, 3)
 
-    compare_readin_to_actual!(props_read, surf_props, 2)
+    compare_readin_to_actual!(props_read, flux_props, 2)
     close(props_read)
     rm(sol_path)
 
@@ -78,8 +78,8 @@
     sol_path = joinpath(@__DIR__, "data", "tmp_skiplist.nc")
     ds = NCDataHolderFlux(sol_path, names_skip_list, species_data, flux_props)
 
-    set_surf_data!(surf_props, 0)
-    write_netcdf(ds, surf_props, 0)
+    set_flux_data!(flux_props, 0)
+    write_netcdf(ds, flux_props, 0)
     close_netcdf(ds)
 
     props_read =  NCDataset(sol_path, "r")
