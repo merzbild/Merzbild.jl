@@ -103,4 +103,43 @@
         @test flux_props_avg.off_diagonal_momentum_flux[:,cell,1] == [0.0, 0.0, 0.0]
     end
     clear_props!(flux_props)
+
+    pia.indexer[1,1].start1 = 1
+    pia.indexer[1,1].end1 = 4
+    pia.indexer[1,1].n_group1 = 4
+    pia.indexer[1,1].start2 = 0
+    pia.indexer[1,1].end2 = -1
+    pia.indexer[1,1].n_group2 = 0
+
+    # sorted particles, whole grid
+    compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props, grid)
+
+    # we don't write stuff to cells with no particles
+    for cell in [2,3,4,5,7,8]
+        @test flux_props.kinetic_energy_flux[:,cell,1] == [0.0, 0.0, 0.0]
+        @test flux_props.diagonal_momentum_flux[:,cell,1] == [0.0, 0.0, 0.0]
+        @test flux_props.off_diagonal_momentum_flux[:,cell,1] == [0.0, 0.0, 0.0]
+    end
+
+    @test maximum(abs.(flux_props.kinetic_energy_flux[:,1,1] - kef)) <= eps()
+    @test maximum(abs.(flux_props.diagonal_momentum_flux[:,1,1] - dmf)) <= eps()
+    @test maximum(abs.(flux_props.off_diagonal_momentum_flux[:,1,1] - odmf)) <= eps()
+
+    @test maximum(abs.(flux_props.kinetic_energy_flux[:,6,1] - kef2)) <= eps()
+    @test maximum(abs.(flux_props.diagonal_momentum_flux[:,1,1] - dmf2)) <= eps()
+    @test maximum(abs.(flux_props.off_diagonal_momentum_flux[:,1,1] - odmf2)) <= eps()
+
+    # finally, compute in chunk 3:7, so cell is skipped
+    clear_props!(flux_props)
+
+    compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props, grid, 3:7)
+    for cell in [1,2,3,4,5,7,8]
+        @test flux_props.kinetic_energy_flux[:,cell,1] == [0.0, 0.0, 0.0]
+        @test flux_props.diagonal_momentum_flux[:,cell,1] == [0.0, 0.0, 0.0]
+        @test flux_props.off_diagonal_momentum_flux[:,cell,1] == [0.0, 0.0, 0.0]
+    end
+
+    @test maximum(abs.(flux_props.kinetic_energy_flux[:,6,1] - kef2)) <= eps()
+    @test maximum(abs.(flux_props.diagonal_momentum_flux[:,1,1] - dmf2)) <= eps()
+    @test maximum(abs.(flux_props.off_diagonal_momentum_flux[:,1,1] - odmf2)) <= eps()
 end

@@ -171,7 +171,7 @@ function avg_props!(flux_props_avg::FluxProps, flux_props::FluxProps, n_avg_time
 end
 
 """
-    compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props, cell_chunk)
+    compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props, grid::G, cell_chunk) where {G<:AbstractGrid}
 
 Compute the flux densities of all species in a
 subset of cells and store the result in a `FluxProps` instance,
@@ -185,9 +185,10 @@ at the same timestep before calling this function for the same subset of cells.
 * `species_data`: the `Vector` of `SpeciesData`
 * `phys_props`: the `PhysProps` instance computed at the same timestep for the same subset of cells
 * `flux_props`: the `FluxProps` instance in which the computed fluxes are stored
+* `grid`: the physical grid
 * `cell_chunk`: the list of cell indices or range of cell indices in which to compute the properties
 """
-function compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props, cell_chunk)
+function compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props, grid::G, cell_chunk) where {G<:AbstractGrid}
     for species in 1:phys_props.n_species
         for cell in cell_chunk
 
@@ -216,7 +217,7 @@ function compute_flux_props_sorted!(particles, pia, species_data, phys_props, fl
 end
 
 """
-    compute_flux_props_sorted!(particles, pia, species_data, phys_props)
+    compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props, grid::G) where {G<:AbstractGrid}
 
 Compute the flux densities of all species in all
 cells and store the result in a `FluxProps` instance,
@@ -230,9 +231,10 @@ at the same timestep before calling this function.
 * `species_data`: the `Vector` of `SpeciesData`
 * `phys_props`: the `PhysProps` instance computed at the same timestep
 * `flux_props`: the `FluxProps` instance in which the computed fluxes are stored
+* `grid`: the physical grid
 """
-@inline function compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props)
-    compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props, 1:phys_props.n_cells)
+@inline function compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props, grid::G) where {G<:AbstractGrid}
+    compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props, grid, 1:phys_props.n_cells)
 end
 
 end
