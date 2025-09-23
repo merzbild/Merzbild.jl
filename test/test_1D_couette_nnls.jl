@@ -1,6 +1,9 @@
 
 @testset "couette test variable weight NNLS" begin
 
+    # NNLS merging seems to be quite sensitive to actual architecture/OS
+    # so we do only a few timesteps otherwise reference solution may diverge
+    # from the one obtained on a different machine
     T_wall = 300.0
     v_wall = 500.0
     L = 5e-4
@@ -8,9 +11,9 @@
     nx = 50
     ppc = 1000
     Δt = 2.59e-9
-    output_freq = 1000
-    n_timesteps = 3000
-    merge_threshold = 80
+    output_freq = 1
+    n_timesteps = 20
+    merge_threshold = 70
     merge_target = 60
     n_cons_moments = 5
 
@@ -143,7 +146,9 @@
     ndens_conservation = true
     ref_ndens = 2.5e19
 
-    for t in 1:3
+    tmax_test = 20
+
+    for t in 1:tmax_test
         if abs(sum(sol["ndens"][:, 1, t]) - ref_ndens) / ref_ndens > 1e-15
             ndens_conservation = false
         end
@@ -162,12 +167,15 @@
     ref_sol = NCDataset(ref_sol_path, "r")
     sol = NCDataset(sol_path_surf, "r")
  
-    @test maximum(abs.(ref_sol["np"][:, 1, 1:3] .- sol["np"][:, 1, 1:3])) < 2 * eps()
-    @test maximum(abs.(ref_sol["kinetic_energy_flux"][:, 1, 1:3] .- sol["kinetic_energy_flux"][:, 1, 1:3])) < 6.0e-11
+    @test maximum(abs.(ref_sol["np"][:, 1, 1:tmax_test] .- sol["np"][:, 1, 1:tmax_test])) < 2 * eps()
+    @test maximum(abs.(ref_sol["kinetic_energy_flux"][:, 1, 1:tmax_test]
+                       .- sol["kinetic_energy_flux"][:, 1, 1:tmax_test])) < 6.0e-11
 
-    @test maximum(abs.(sol["flux_incident"][:, 1, 1:3] - ref_sol["flux_incident"][:, 1, 1:3])) < 2 * eps()
+    @test maximum(abs.(sol["flux_incident"][:, 1, 1:tmax_test]
+                       - ref_sol["flux_incident"][:, 1, 1:tmax_test])) < 2 * eps()
 
-    @test maximum(abs.(sol["flux_incident"][:, 1, 1:3] + sol["flux_reflected"][:, 1, 1:3])) < 2 * eps()
+    @test maximum(abs.(sol["flux_incident"][:, 1, 1:tmax_test]
+                       + sol["flux_reflected"][:, 1, 1:tmax_test])) < 2 * eps()
 
     close(sol)
     rm(sol_path_surf)
