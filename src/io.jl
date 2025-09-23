@@ -316,7 +316,6 @@ function write_netcdf(ds, phys_props::PhysProps, timestep; sync_freq=0)
     end
 end
 
-
 """
     IOSkipListSurf
 
@@ -549,7 +548,6 @@ mutable struct NCDataHolderSurf <: AbstractNCDataHolder
     end
 end
 
-
 """
     write_netcdf(ds, surf_props::SurfProps, timestep; sync_freq=0)
     
@@ -681,8 +679,6 @@ function write_netcdf(nc_filename, pv::ParticleVector, pia, species, species_dat
 
     finalize(filehandle)
 end
-
-
 
 """
     write_netcdf(nc_filename, particles::Vector{ParticleVector}, pia, species_data; global_attributes=Dict{Any,Any}())
