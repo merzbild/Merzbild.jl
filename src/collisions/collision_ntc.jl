@@ -29,7 +29,7 @@ end
 
 Create an empty CollisionFactors instance (all values set to 0).
 """
-CollisionFactors() = CollisionFactors(0, 0.0, 0.0, 0, 0, 0)
+CollisionFactors() = CollisionFactors(0, 0, 0.0, 0, 0, 0)
 
 """
     create_collision_factors_array(n_species)
