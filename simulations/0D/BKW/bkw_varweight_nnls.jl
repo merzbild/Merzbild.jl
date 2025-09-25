@@ -73,7 +73,7 @@ function run(seed, n_up_to_total, n_full_up_to_total, threshold, ntarget_octree)
     pia = ParticleIndexerArray(n_sampled)
 
     phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
-    compute_props!(particles, pia, species_data, phys_props)
+    compute_props_with_total_moments!(particles, pia, species_data, phys_props)
 
     ds = NCDataHolder("scratch/data/tmp_nnls_$(n_full_up_to_total)full_upto$(n_up_to_total)_$(threshold)_$(seed).nc", species_data, phys_props)
 
@@ -114,7 +114,7 @@ function run(seed, n_up_to_total, n_full_up_to_total, threshold, ntarget_octree)
             end
         end
         
-        compute_props!(particles, pia, species_data, phys_props)
+        compute_props_with_total_moments!(particles, pia, species_data, phys_props)
         write_netcdf(ds, phys_props, ts)
     end
     close_netcdf(ds)

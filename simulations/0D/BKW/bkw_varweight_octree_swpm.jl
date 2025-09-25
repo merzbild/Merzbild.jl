@@ -1,4 +1,4 @@
-# BKW with octree merging + timing
+# BKW with octree merging
 # Important!
 # The time scaling in the analytical solution is different
 # Tref = 273.0
@@ -23,9 +23,9 @@ include("../../../src/Merzbild.jl")
 
 using ..Merzbild
 using Random
-using TimerOutputs
+using InteractiveUtils
 
-function run(seed)
+function run(seed::Int64, threshold::Int64, Ntarget::Int64, G)
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)
 
@@ -35,17 +35,15 @@ function run(seed)
     dt_scaled = 0.025
     n_t = 500
 
-    nv = 30
+    nv = 40
     np_base = 40^3  # some initial guess on # of particle in simulation
 
     # threshold = 10000
     # Ntarget = 8000
 
-    threshold = 300
-    Ntarget = 250
-    reset_timer!()
-
     oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    # oc = OctreeN2Merge(OctreeBinMeanSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    # oc = OctreeN2Merge(OctreeBinMedianSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
     T0::Float64 = 273.0
     sigma_ref = π * (interaction_data[1,1].vhs_d^2)
@@ -69,33 +67,24 @@ function run(seed)
     phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
     compute_props_with_total_moments!(particles, pia, species_data, phys_props)
 
-    ds = NCDataHolder("scratch/data/test_bkw_octree.nc", species_data, phys_props)
+    ds = NCDataHolder("scratch/data/octree_swpm_mean_$(threshold)_$(Ntarget)_$(seed).nc", species_data, phys_props)
     write_netcdf(ds, phys_props, 0)
 
-    collision_factors::CollisionFactors = CollisionFactors()
-    collision_data::CollisionData = CollisionData()
+    collision_factors = CollisionFactorsSWPM()
+    collision_data = CollisionData()
 
-    Fnum = n_dens/n_sampled
-    collision_factors.sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1], species_data[1], T0, Fnum)
-
+    collision_factors.sigma_g_max = estimate_sigma_g_w_max(interaction_data[1,1], species_data[1], T0, 1.0)
+    
     Δt::Float64 = dt_scaled * tref
     V::Float64 = 1.0
 
-    firstm = true
-
     for ts in 1:n_t
-        @timeit "collide" ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
+        swpm!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, G, Δt, V)
 
         if phys_props.np[1,1] > threshold
-            if firstm
-                # first merge is slower since we have a lot more particles at t=0
-                @timeit "merge: 1st time" merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
-                firstm = false
-            else
-                @timeit "merge" merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
-            end
+            merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
         end
-        if ts % 10 == 0
+        if ts % 100 == 0
             println(ts)
         end
         
@@ -103,8 +92,14 @@ function run(seed)
         write_netcdf(ds, phys_props, ts)
     end
     close_netcdf(ds)
-
-    print_timer()
 end
 
-run(1234)
+run(1, 600, 450, 1.0)
+
+# multiple runs with ensembling if needed
+# const thr_nn =  [[50, 30], [75, 50], [100, 70], [150, 100], [300, 200], [500, 300]]
+# for (thr, nn) in thr_nn
+#     for seed in 1:400
+#         run(seed, thr, nn)
+#     end
+# end
