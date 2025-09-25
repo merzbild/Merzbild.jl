@@ -11,6 +11,7 @@
 * I/O for `FluxProps` added
 * Documentation improvements
 * Improved test coverage
+* Single-species Stochastic Weighted Particle Method (SWPM) implemented (`swpm!` function)
 
 ## v0.7.1
 * More use of Muladd in a few places

@@ -26,7 +26,10 @@ export load_species_data, Particle, sample_particles_equal_weight!
 export Species, Interaction
 export compute_props!, compute_props_sorted!, compute_props_with_total_moments!
 export clear_props!, avg_props!
-export ParticleIndexer, ParticleIndexerArray, PhysProps, CollisionFactors, CollisionData, CollisionDataFP
+export ParticleIndexer, ParticleIndexerArray
+export PhysProps
+export CollisionFactors, CollisionFactorsSWPM
+export CollisionData, CollisionDataFP
 export SurfProps, reduce_surf_props!
 export squash_pia!
 export NCDataHolder, NCDataHolderSurf, IOSkipList, IOSkipListSurf, NCDataHolderFlux, IOSkipListFlux
@@ -34,6 +37,7 @@ export write_netcdf
 export close_netcdf
 export load_interaction_data, load_interaction_data_with_dummy, load_species_and_interaction_data
 export create_collision_factors_array
+export create_collision_factors_swpm_array
 export estimate_sigma_g_w_max, estimate_sigma_g_w_max!
 export ntc!, fp_linear!, swpm!
 export k_B
