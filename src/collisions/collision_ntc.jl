@@ -27,7 +27,7 @@ end
 """
     CollisionFactors()
 
-Create an empty CollisionFactors instance (all values set to 0).
+Create an empty `CollisionFactors` instance (all values set to 0).
 """
 CollisionFactors() = CollisionFactors(0, 0, 0.0, 0, 0, 0)
 
@@ -47,7 +47,7 @@ function create_collision_factors_array(n_species)
     coll_factor_array = Array{CollisionFactors, 3}(undef, (n_species, n_species, 1))
     for k in 1:n_species
         for i in 1:n_species
-            coll_factor_array[i,k,1] = CollisionFactors(0, 0.0, 0.0, 0, 0, 0)
+            coll_factor_array[i,k,1] = CollisionFactors()
         end
     end
     return coll_factor_array
@@ -71,7 +71,7 @@ function create_collision_factors_array(n_species, n_cells)
     for k in 1:n_cells
         for j in 1:n_species
             for i in 1:n_species
-                coll_factor_array[i,j,k] = CollisionFactors(0, 0.0, 0.0, 0, 0, 0)
+                coll_factor_array[i,j,k] = CollisionFactors()
             end
         end
     end
@@ -95,36 +95,6 @@ function create_collision_factors_array(pia::ParticleIndexerArray)
 end
 
 """
-    create_collision_factors_array(pia, interactions, species_data, T::Real, Fnum::Real; mult_factor=1.0)
-
-Create a 3-dimensional array of collision factors for all interaction pairs for all cells
-in the simulation, with shape `(n_species,n_species,n_cells)`.
-This will fill the array with the estimates ``(\\sigma g w)_{max}`` for all species in all cells, assuming
-a constant particle computational weight `Fnum`, a VHS cross-section, and that all species have a single temperature
-that is constant across all cells.
-
-# Positional arguments
-* `pia`: the ParticleIndexerArray instance
-* `interactions`: the 2-dimensional array of `Interaction` instances (of shape `(n_species, n_species)`) of all the pair-wise interactions
-* `species_data`: the vector of `Species` instances of the species in the flow 
-* `T`: the temperatures of the flow
-* `Fnum`: the constant computational weight of the particles
-
-# Keyword arguments
-* `mult_factor`: a factor by which to multiply the result (default value is 1.0)
-
-# Returns
-3-dimensional array of `CollisionFactors` instances with shape `(n_species,n_species,n_cells)` fille with estimated
-values of ``(\\sigma g w)_{max}``.
-"""
-function create_collision_factors_array(pia, interactions, species_data, T::Real, Fnum::Real; mult_factor=1.0)
-    coll_factor_array = create_collision_factors_array(pia)
-    estimate_sigma_g_w_max!(coll_factor_array, interactions, species_data, repeat([T], length(species_data)),
-                            Fnum; mult_factor=mult_factor)
-    return coll_factor_array
-end
-
-"""
     create_collision_factors_array(pia, interactions, species_data, T_list, Fnum::Real; mult_factor=1.0)
 
 Create a 3-dimensional array of collision factors for all interaction pairs for all cells
@@ -144,12 +114,42 @@ species is constant across all cells.
 * `mult_factor`: a factor by which to multiply the result (default value is 1.0)
 
 # Returns
-3-dimensional array of `CollisionFactors` instances with shape `(n_species,n_species,n_cells)` fille with estimated
+3-dimensional array of `CollisionFactors` instances with shape `(n_species,n_species,n_cells)` filled with estimated
 values of ``(\\sigma g w)_{max}``.
 """
 function create_collision_factors_array(pia, interactions, species_data, T_list, Fnum::Real; mult_factor=1.0)
     coll_factor_array = create_collision_factors_array(pia)
     estimate_sigma_g_w_max!(coll_factor_array, interactions, species_data, T_list,
+                            Fnum; mult_factor=mult_factor)
+    return coll_factor_array
+end
+
+"""
+    create_collision_factors_array(pia, interactions, species_data, T::Real, Fnum::Real; mult_factor=1.0)
+
+Create a 3-dimensional array of collision factors for all interaction pairs for all cells
+in the simulation, with shape `(n_species,n_species,n_cells)`.
+This will fill the array with the estimates ``(\\sigma g w)_{max}`` for all species in all cells, assuming
+a constant particle computational weight `Fnum`, a VHS cross-section, and that all species have a single temperature
+that is constant across all cells.
+
+# Positional arguments
+* `pia`: the ParticleIndexerArray instance
+* `interactions`: the 2-dimensional array of `Interaction` instances (of shape `(n_species, n_species)`) of all the pair-wise interactions
+* `species_data`: the vector of `Species` instances of the species in the flow 
+* `T`: the temperatures of the flow
+* `Fnum`: the constant computational weight of the particles
+
+# Keyword arguments
+* `mult_factor`: a factor by which to multiply the result (default value is 1.0)
+
+# Returns
+3-dimensional array of `CollisionFactors` instances with shape `(n_species,n_species,n_cells)` filled with estimated
+values of ``(\\sigma g w)_{max}``.
+"""
+function create_collision_factors_array(pia, interactions, species_data, T::Real, Fnum::Real; mult_factor=1.0)
+    coll_factor_array = create_collision_factors_array(pia)
+    estimate_sigma_g_w_max!(coll_factor_array, interactions, species_data, repeat([T], length(species_data)),
                             Fnum; mult_factor=mult_factor)
     return coll_factor_array
 end
