@@ -415,7 +415,7 @@ The result is then multiplied by `Fnum` and an (optional) factor `mult_factor`.
 * `mult_factor`: a factor by which to multiply the result (default value is 1.0)
 
 # Returns
-* the estimate of ``(\\sigma g w)_{max}``
+The estimate of ``(\\sigma g w)_{max}``.
 """
 function estimate_sigma_g_w_max(interaction, species1, species2, T1, T2, Fnum; mult_factor=1.0)
     g_thermal1 = sqrt(2 * T1 * k_B / species1.mass)
