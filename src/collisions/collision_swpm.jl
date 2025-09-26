@@ -114,11 +114,10 @@ species is constant across all cells.
 3-dimensional array of `CollisionFactorsSWPM` instances with shape `(n_species,n_species,n_cells)` filled with estimated
 values of ``(\\sigma g)_{max}``.
 """
-function create_collision_factors_array(pia, interactions, species_data, T_list; mult_factor=1.0)
-    coll_factor_array = create_collision_factors_array(pia)
-    # estimate_sigma_g_w_max asks for Fnum, so we just set it to 1.0
-    estimate_sigma_g_w_max!(coll_factor_array, interactions, species_data, T_list,
-                            1.0; mult_factor=mult_factor)
+function create_collision_factors_swpm_array(pia, interactions, species_data, T_list; mult_factor=1.0)
+    coll_factor_array = create_collision_factors_swpm_array(pia)
+
+    estimate_sigma_g_max!(coll_factor_array, interactions, species_data, T_list; mult_factor=mult_factor)
     return coll_factor_array
 end
 
