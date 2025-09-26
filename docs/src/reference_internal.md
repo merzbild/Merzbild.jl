@@ -12,10 +12,7 @@ Base.setindex!
 Base.length
 Base.resize!
 Merzbild.add_particle!
-Merzbild.update_particle_buffer_new_particle!(pv::ParticleVector, position)
-Merzbild.update_particle_buffer_new_particle!(pv::ParticleVector, pia, species)
-Merzbild.update_particle_buffer_new_particle!(pv::Vector{Particle}, pia, species)
-Merzbild.update_particle_buffer_new_particle!(pv::Vector{Particle}, position)
+Merzbild.update_particle_buffer_new_particle!
 Merzbild.update_buffer_index_new_particle!
 Merzbild.delete_particle!
 Merzbild.delete_particle_end!

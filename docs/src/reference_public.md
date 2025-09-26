@@ -81,25 +81,14 @@ CollisionFactorsSWPM()
 CollisionDataFP
 CollisionDataFP()
 CollisionDataFP(n_particles_in_cell)
-create_collision_factors_array(n_species)
-create_collision_factors_array(n_species, n_cells)
-create_collision_factors_array(pia::ParticleIndexerArray)
-create_collision_factors_array(pia, interactions, species_data, T::Real, Fnum::Real; mult_factor=1.0)
-create_collision_factors_array(pia, interactions, species_data, T_list, Fnum::Real; mult_factor=1.0)
-create_collision_factors_swpm_array(n_species)
-create_collision_factors_swpm_array(n_species, n_cells)
-create_collision_factors_swpm_array(pia::ParticleIndexerArray)
-create_collision_factors_swpm_array(pia, interactions, species_data, T::Real; mult_factor=1.0)
-create_collision_factors_swpm_array(pia, interactions, species_data, T_list; mult_factor=1.0)
+create_collision_factors_array
+create_collision_factors_swpm_array
 create_computed_crosssections
 estimate_sigma_g_w_max
 estimate_sigma_g_w_max!
 estimate_sigma_g_w_max_ntc_n_e!
 estimate_sigma_g_max!
-ntc!(rng, collision_factors, collision_data, interaction, particles, pia, cell, species, Δt, V)
-ntc!(rng, collision_factors, collision_data, interaction,
-              particles_1, particles_2, pia,
-              cell, species1, species2, Δt, V)
+ntc!
 ntc_n_e!
 ntc_n_e_es!
 swpm!
@@ -204,11 +193,7 @@ NCDataHolderSurf(nc_filename, species_data, surf_props; global_attributes=Dict{A
 NCDataHolderFlux
 NCDataHolderFlux(nc_filename, names_skip_list, species_data, flux_props; global_attributes=Dict{Any,Any}())
 NCDataHolderFlux(nc_filename, species_data, flux_props; global_attributes=Dict{Any,Any}())
-write_netcdf(ds, phys_props::PhysProps, timestep; sync_freq=0)
-write_netcdf(ds, surf_props::SurfProps, timestep; sync_freq=0)
-write_netcdf(ds, flux_props::FluxProps, timestep; sync_freq=0)
-write_netcdf(nc_filename, pv::ParticleVector, pia, species, species_data; global_attributes=Dict{Any,Any}())
-write_netcdf(nc_filename, particles::Vector{ParticleVector}, pia, species_data; global_attributes=Dict{Any,Any}())
+write_netcdf
 close_netcdf
 ```
 
