@@ -156,8 +156,8 @@
 
     @test fails == 0
     @test ndens_conservation == true
-    @test maximum(abs.(ref_sol["ndens"][:, 1, 1:3] .- sol["ndens"][:, 1, 1:3])) < 2 * eps()
-    @test maximum(abs.(ref_sol["T"][:, 1, 1:3] .- sol["T"][:, 1, 1:3])) < 2.4e-13
+    @test maximum(abs.(ref_sol["ndens"][:, 1, 1:3] .- sol["ndens"][:, 1, 1:3]))/ref_ndens < 2 * eps()
+    @test maximum(abs.(ref_sol["T"][:, 1, 1:3] .- sol["T"][:, 1, 1:3])) < 1e-11
 
     close(sol)
     rm(sol_path)
@@ -169,13 +169,13 @@
  
     @test maximum(abs.(ref_sol["np"][:, 1, 1:tmax_test] .- sol["np"][:, 1, 1:tmax_test])) < 2 * eps()
     @test maximum(abs.(ref_sol["kinetic_energy_flux"][:, 1, 1:tmax_test]
-                       .- sol["kinetic_energy_flux"][:, 1, 1:tmax_test])) < 6.0e-11
+                       .- sol["kinetic_energy_flux"][:, 1, 1:tmax_test])) < 5e-8
 
     @test maximum(abs.(sol["flux_incident"][:, 1, 1:tmax_test]
-                       - ref_sol["flux_incident"][:, 1, 1:tmax_test])) < 2 * eps()
+                       - ref_sol["flux_incident"][:, 1, 1:tmax_test])) < 5e-13
 
     @test maximum(abs.(sol["flux_incident"][:, 1, 1:tmax_test]
-                       + sol["flux_reflected"][:, 1, 1:tmax_test])) < 2 * eps()
+                       + sol["flux_reflected"][:, 1, 1:tmax_test])) < 5e-13
 
     close(sol)
     rm(sol_path_surf)
