@@ -94,7 +94,7 @@ function run(seed::Int64, threshold::Int64, Ntarget::Int64, G)
     close_netcdf(ds)
 end
 
-run(1, 600, 450, 1.0)
+run(1, 8000, 6000, 1.0)
 
 # multiple runs with ensembling if needed
 # const thr_nn =  [[50, 30], [75, 50], [100, 70], [150, 100], [300, 200], [500, 300]]
