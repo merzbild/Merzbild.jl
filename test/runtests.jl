@@ -59,6 +59,7 @@ include("test_chunking.jl")  # test chunking, chunk-based computes, surface redu
 include("test_particle_exchange.jl")  # test swapping and pushing of particles in chunked simulations
 include("test_particle_resort_after_exchange.jl")  # test re-sorting of particles after swap/push in chunked simulations
 include("test_roulette_merging.jl")  # roulette merge
+include("test_collision_utils_swpm.jl")  # SWPM collision factors estimation
 include("test_bkw_varweight_octree_swpm.jl")  # SWPM for BKW test case
 include("test_1D_couette_varweight_swpm.jl")  # SWPM for Couette flow
 include("test_aqua.jl")
