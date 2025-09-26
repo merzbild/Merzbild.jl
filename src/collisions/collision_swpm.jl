@@ -42,7 +42,7 @@ with shape `(n_species,n_species,1)`.
 3-dimensional array of `CollisionFactorsSWPM` instances with shape `(n_species,n_species,1)`.
 """
 function create_collision_factors_swpm_array(n_species)
-    coll_factor_array = Array{CollisionFactors, 3}(undef, (n_species, n_species, 1))
+    coll_factor_array = Array{CollisionFactorsSWPM, 3}(undef, (n_species, n_species, 1))
     for k in 1:n_species
         for i in 1:n_species
             coll_factor_array[i,k,1] = CollisionFactorsSWPM()
