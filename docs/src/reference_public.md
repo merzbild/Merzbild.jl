@@ -76,6 +76,8 @@ CollisionData
 CollisionData()
 CollisionFactors
 CollisionFactors()
+CollisionFactorsSWPM
+CollisionFactorsSWPM()
 CollisionDataFP
 CollisionDataFP()
 CollisionDataFP(n_particles_in_cell)
@@ -84,16 +86,23 @@ create_collision_factors_array(n_species, n_cells)
 create_collision_factors_array(pia::ParticleIndexerArray)
 create_collision_factors_array(pia, interactions, species_data, T::Real, Fnum::Real; mult_factor=1.0)
 create_collision_factors_array(pia, interactions, species_data, T_list, Fnum::Real; mult_factor=1.0)
+create_collision_factors_swpm_array(n_species)
+create_collision_factors_swpm_array(n_species, n_cells)
+create_collision_factors_swpm_array(pia::ParticleIndexerArray)
+create_collision_factors_swpm_array(pia, interactions, species_data, T::Real; mult_factor=1.0)
+create_collision_factors_swpm_array(pia, interactions, species_data, T_list; mult_factor=1.0)
 create_computed_crosssections
 estimate_sigma_g_w_max
 estimate_sigma_g_w_max!
 estimate_sigma_g_w_max_ntc_n_e!
+estimate_sigma_g_max!
 ntc!(rng, collision_factors, collision_data, interaction, particles, pia, cell, species, Δt, V)
 ntc!(rng, collision_factors, collision_data, interaction,
               particles_1, particles_2, pia,
               cell, species1, species2, Δt, V)
 ntc_n_e!
 ntc_n_e_es!
+swpm!
 ```
 
 ## Fokker-Planck computations
