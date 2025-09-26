@@ -146,9 +146,7 @@ values of ``(\\sigma g)_{max}``.
 """
 function create_collision_factors_swpm_array(pia, interactions, species_data, T::Real; mult_factor=1.0)
     coll_factor_array = create_collision_factors_swpm_array(pia)
-    # estimate_sigma_g_w_max asks for Fnum, so we just set it to 1.0
-    estimate_sigma_g_w_max!(coll_factor_array, interactions, species_data, repeat([T], length(species_data)),
-                            1.0; mult_factor=mult_factor)
+    estimate_sigma_g_max!(coll_factor_array, interactions, species_data, repeat([T], length(species_data)); mult_factor=mult_factor)
     return coll_factor_array
 end
 
