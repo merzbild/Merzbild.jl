@@ -12,6 +12,8 @@
 * Documentation improvements
 * Improved test coverage
 * Single-species Stochastic Weighted Particle Method (SWPM) implemented (`swpm!` function)
+* Tabulate cross-section computations and associated NTC routines for electron-neutral interactions now correctly deal with
+    how the out-of-table values should be handled.
 
 ## v0.7.1
 * More use of Muladd in a few places
