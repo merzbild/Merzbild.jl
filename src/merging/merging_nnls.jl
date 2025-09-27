@@ -633,12 +633,12 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging, lhs_matrix,
 
         g = norm(particles[i].v)
         compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index, extend)
-        lhs_matrix[nnls_merging.n_moments_vel+1, col_index] = get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g
-        lhs_matrix[nnls_merging.n_moments_vel+2, col_index] = get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g
-        nnls_merging.rhs_vector[nnls_merging.n_moments_vel+1] = nnls_merging.rhs_vector[nnls_merging.n_moments_vel+1] + get_cs_elastic(electron_neutral_interactions,
-                                                                                                                               computed_cs, neutral_species_index) * g * particles[i].w
-        nnls_merging.rhs_vector[nnls_merging.n_moments_vel+2] = nnls_merging.rhs_vector[nnls_merging.n_moments_vel+2] + get_cs_ionization(electron_neutral_interactions,
-                                                                                                                                  computed_cs, neutral_species_index) * g * particles[i].w
+        cse_g = get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g
+        csi_g = get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g
+        lhs_matrix[nnls_merging.n_moments_vel+1, col_index] = cse_g
+        lhs_matrix[nnls_merging.n_moments_vel+2, col_index] = csi_g
+        nnls_merging.rhs_vector[nnls_merging.n_moments_vel+1] = nnls_merging.rhs_vector[nnls_merging.n_moments_vel+1] + cse_g * particles[i].w
+        nnls_merging.rhs_vector[nnls_merging.n_moments_vel+2] = nnls_merging.rhs_vector[nnls_merging.n_moments_vel+2] + csi_g * particles[i].w
 
         col_index += 1
     end
@@ -660,10 +660,12 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging, lhs_matrix,
 
             g = norm(particles[i].v)
             compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index, extend)
-            lhs_matrix[nnls_merging.n_moments_vel+1, col_index] = get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g
-            lhs_matrix[nnls_merging.n_moments_vel+2, col_index] = get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g
-            nnls_merging.rhs_vector[nnls_merging.n_moments_vel+1] = nnls_merging.rhs_vector[nnls_merging.n_moments_vel+1] + get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g * particles[i].w
-            nnls_merging.rhs_vector[nnls_merging.n_moments_vel+2] = nnls_merging.rhs_vector[nnls_merging.n_moments_vel+2] + get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g * particles[i].w
+            cse_g = get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g
+            csi_g = get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g
+            lhs_matrix[nnls_merging.n_moments_vel+1, col_index] = cse_g
+            lhs_matrix[nnls_merging.n_moments_vel+2, col_index] = csi_g
+            nnls_merging.rhs_vector[nnls_merging.n_moments_vel+1] = nnls_merging.rhs_vector[nnls_merging.n_moments_vel+1] + cse_g * particles[i].w
+            nnls_merging.rhs_vector[nnls_merging.n_moments_vel+2] = nnls_merging.rhs_vector[nnls_merging.n_moments_vel+2] + csi_g * particles[i].w
 
             col_index += 1
         end

@@ -675,7 +675,7 @@ and was used to construct the `ElectronNeutralInteractions` instance.
 # Returns
 The value of the total collision cross-section.
 """
-function get_cs_total(electron_neutral_interactions, computed_cs, neutral_species_index)
+@inbounds function get_cs_total(electron_neutral_interactions, computed_cs, neutral_species_index)
     return computed_cs[electron_neutral_interactions.neutral_indexer[neutral_species_index]].cs_total
 end
 
@@ -696,7 +696,7 @@ and was used to construct the `ElectronNeutralInteractions` instance.
 # Returns
 The value of the elastic scattering cross-section.
 """
-function get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index)
+@inbounds function get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index)
     return computed_cs[electron_neutral_interactions.neutral_indexer[neutral_species_index]].cs_elastic
 end
 
@@ -717,7 +717,7 @@ and was used to construct the `ElectronNeutralInteractions` instance.
 # Returns
 The value of the electron-impact ionization scattering cross-section.
 """
-function get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index)
+@inbounds function get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index)
     return computed_cs[electron_neutral_interactions.neutral_indexer[neutral_species_index]].cs_ionization
 end
 
@@ -737,7 +737,7 @@ and was used to construct the `ElectronNeutralInteractions` instance.
 # Returns
 The ionization threshold energy of a specific neutral species.
 """
-function get_ionization_threshold(electron_neutral_interactions, neutral_species_index)
+@inbounds function get_ionization_threshold(electron_neutral_interactions, neutral_species_index)
     # the neutral_species_index is the absolute one (i.e. index in the list of all species)
     return electron_neutral_interactions.ionization[electron_neutral_interactions.neutral_indexer[neutral_species_index]].data.ΔE
 end
@@ -758,7 +758,7 @@ and was used to construct the `ElectronNeutralInteractions` instance.
 # Returns
 The `ElectronEnergySplit` value for the specific electron-neutral interaction.
 """
-function get_electron_energy_split(electron_neutral_interactions, neutral_species_index)
+@inbounds function get_electron_energy_split(electron_neutral_interactions, neutral_species_index)
     # the neutral_species_index is the absolute one (i.e. index in the list of all species)
     return electron_neutral_interactions.ionization[electron_neutral_interactions.neutral_indexer[neutral_species_index]].split
 end
