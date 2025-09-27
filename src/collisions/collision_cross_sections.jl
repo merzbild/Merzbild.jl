@@ -561,7 +561,7 @@ function compute_tabulated_cs_zero_continuation(tabulated_cs_data, E_coll)
 end
 
 """
-    compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index)
+    compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index, extend::CSExtend)
 
 Compute electron-impact ionization and excitation cross-sections, and electron-neutral elastic scattering
 crosss-sections, and return collision energy in eV. Here `neutral_species_index` is the index of the neutral

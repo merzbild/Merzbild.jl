@@ -488,7 +488,7 @@ end
 """
     ntc_n_e!(rng, collision_factors, collision_data, interaction,
              n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion,
-             pia, cell, species_n, species_e, species_ion, Δt, V; extend=CSExtendConstant)
+             pia, cell, species_n, species_e, species_ion, Δt, V; extend::CSExtend=CSExtendConstant)
 
 Perform electron-neutral elastic scattering and electron-impact ionization collisions.
 
@@ -519,7 +519,7 @@ Perform electron-neutral elastic scattering and electron-impact ionization colli
 """
 function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                   n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion,
-                  pia, cell, species_n, species_e, species_ion, Δt, V; extend=CSExtendConstant)
+                  pia, cell, species_n, species_e, species_ion, Δt, V; extend::CSExtend=CSExtendConstant)
     # no event splitting
     # compute ncoll
     # loop over particles
@@ -628,7 +628,7 @@ end
 """
     ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
              n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion,
-             pia, cell, species_n, species_e, species_ion, Δt, V; extend=CSExtendConstant)
+             pia, cell, species_n, species_e, species_ion, Δt, V; extend::CSExtend=CSExtendConstant)
 
 Perform electron-neutral elastic scattering and electron-impact ionization collisions
 using the event splitting method.
@@ -662,7 +662,7 @@ using the event splitting method.
 """
 function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
     n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion, 
-    pia, cell, species_n, species_e, species_ion, Δt, V)
+    pia, cell, species_n, species_e, species_ion, Δt, V; extend::CSExtend=CSExtendConstant)
     # event splitting
     # compute ncoll
     # loop over particles
