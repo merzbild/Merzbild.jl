@@ -347,6 +347,7 @@
     result = merge_nnls_based!(rng, mnnls_pos, particles[1], pia, 1, 1)
     
     @test length(mnnls_pos.rhs_vector) == 10
+    @test mnnls_pos.n_total_conserved == mnnls_pos.n_moments_vel + mnnls_pos.n_moments_pos
     
     @test result == 1
     @test pia.indexer[1,1].n_local[1] < 16
@@ -435,6 +436,8 @@
 
     mnnls_pos = NNLSMerge(add_vel_moments, 30; multi_index_moments_pos=pos_moments)
     mnnls_no_pos = NNLSMerge(add_vel_moments, 30)
+    @test mnnls_pos.n_total_conserved == mnnls_pos.n_moments_vel + mnnls_pos.n_moments_pos
+    @test mnnls_no_pos.n_total_conserved == mnnls_no_pos.n_moments_vel + mnnls_no_pos.n_moments_pos
 
     @test mnnls_pos.n_moments_vel == mnnls_no_pos.n_moments_vel
     @test mnnls_no_pos.n_moments_pos == 0

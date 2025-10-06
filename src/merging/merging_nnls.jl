@@ -559,7 +559,7 @@ function compute_lhs_and_rhs!(nnls_merging, lhs_matrix,
         end
     end
 
-    for i in 1:nnls_merging.n_moments_vel+nnls_merging.n_moments_pos
+    for i in 1:nnls_merging.n_total_conserved
         nnls_merging.rhs_vector[i] /= nnls_merging.w_total
     end
 
@@ -671,7 +671,7 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging, lhs_matrix,
         end
     end
 
-    for i in 1:nnls_merging.n_moments_vel+2+nnls_merging.n_moments_pos
+    for i in 1:nnls_merging.n_total_conserved
         nnls_merging.rhs_vector[i] /= nnls_merging.w_total
     end
 
@@ -1022,13 +1022,16 @@ process ``p``.
 function scale_lhs_rhs_rate_preserving!(nnls_merging, lhs_matrix, ref_cs_elastic, ref_cs_ion, scaling, lhs_ncols)
     scale_lhs_rhs!(nnls_merging, lhs_matrix, scaling, lhs_ncols)
 
+    scaler_el = nnls_merging.inv_vref / ref_cs_elastic
+    scaler_ion = nnls_merging.inv_vref / ref_cs_ion
+
     @inbounds for col in 1:lhs_ncols
-        lhs_matrix[nnls_merging.n_moments_vel+1, col] *= nnls_merging.inv_vref / ref_cs_elastic
-        lhs_matrix[nnls_merging.n_moments_vel+2, col] *= nnls_merging.inv_vref / ref_cs_ion
+        lhs_matrix[nnls_merging.n_moments_vel+1, col] *= scaler_el
+        lhs_matrix[nnls_merging.n_moments_vel+2, col] *= scaler_ion
     end
 
-    @inbounds nnls_merging.rhs_vector[nnls_merging.n_moments_vel+1] *= nnls_merging.inv_vref / ref_cs_elastic
-    @inbounds nnls_merging.rhs_vector[nnls_merging.n_moments_vel+2] *= nnls_merging.inv_vref / ref_cs_ion
+    @inbounds nnls_merging.rhs_vector[nnls_merging.n_moments_vel+1] *= scaler_el
+    @inbounds nnls_merging.rhs_vector[nnls_merging.n_moments_vel+2] *= scaler_ion
 end
 
 """
@@ -1192,8 +1195,8 @@ function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species;
             indexer = 1
         end
          
-        nnls_merging.work[indexer].QA = zeros(nnls_merging.n_moments_vel + nnls_merging.n_moments_pos, lhs_ncols)
-        lhs_matrix = zeros(nnls_merging.n_moments_vel + nnls_merging.n_moments_pos, lhs_ncols)
+        nnls_merging.work[indexer].QA = zeros(nnls_merging.n_total_conserved, lhs_ncols)
+        lhs_matrix = zeros(nnls_merging.n_total_conserved, lhs_ncols)
         resize!(nnls_merging.work[indexer].x, lhs_ncols)
         resize!(nnls_merging.work[indexer].w, lhs_ncols)
         resize!(nnls_merging.work[indexer].idx, lhs_ncols)
@@ -1316,8 +1319,8 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging,
             indexer = 1
         end
 
-        nnls_merging.work[indexer].QA = zeros(nnls_merging.n_moments_vel + nnls_merging.n_moments_pos, lhs_ncols)
-        lhs_matrix = zeros(nnls_merging.n_moments_vel + nnls_merging.n_moments_pos, lhs_ncols)
+        nnls_merging.work[indexer].QA = zeros(nnls_merging.n_total_conserved, lhs_ncols)
+        lhs_matrix = zeros(nnls_merging.n_total_conserved, lhs_ncols)
         resize!(nnls_merging.work[indexer].x, lhs_ncols)
         resize!(nnls_merging.work[indexer].w, lhs_ncols)
         resize!(nnls_merging.work[indexer].idx, lhs_ncols)
