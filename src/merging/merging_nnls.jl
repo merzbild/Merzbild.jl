@@ -1074,7 +1074,6 @@ function compute_post_merge_particles_nnls!(nnls_merging::NNLSMerge, x::Vector{F
             non_discarded_weight += x[i]
         end
     end
-    # println("ndw $al $(typeof(x)) $(typeof(non_discarded_weight)) $(typeof(column_norms)) $(w_threshold)")
 
     @inbounds if nonzero >= pia.indexer[cell, species].n_local
         return -1
@@ -1334,17 +1333,18 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging,
     nnls_merging.inv_vref = 1.0 / vref
 
     # create LHS matrix and fill RHS vector using existing particles
-    @inbounds col_index = compute_lhs_and_rhs_rate_preserving!(nnls_merging, lhs_matrix,
+    @inbounds col_index = compute_lhs_and_rhs_rate_preserving!(nnls_merging, nnls_merging.work[indexer].QA,
                                                      interaction[species,neutral_species_index],
                                                      electron_neutral_interactions, computed_cs, 
                                                      particles, pia, cell, species, neutral_species_index, extend)
     # and add more columns
-    @inbounds compute_lhs_particles_additional_rate_preserving!(rng, col_index, nnls_merging, lhs_matrix,
+    @inbounds compute_lhs_particles_additional_rate_preserving!(rng, col_index, nnls_merging, nnls_merging.work[indexer].QA,
                                       interaction[species,neutral_species_index], electron_neutral_interactions, computed_cs,
                                       particles, pia, cell, species, neutral_species_index, n_rand_pairs,
                                       centered_at_mean, v_multipliers, extend)
-    scale_lhs_rhs_rate_preserving!(nnls_merging, lhs_matrix, ref_cs_elatic, ref_cs_ion, scaling, lhs_ncols)
-    scale_columns!(lhs_matrix, column_norms)
+
+    scale_lhs_rhs_rate_preserving!(nnls_merging, nnls_merging.work[indexer].QA, ref_cs_elatic, ref_cs_ion, scaling, lhs_ncols)
+    scale_columns!(nnls_merging.work[indexer].QA, column_norms)
 
     lhs_matrix .= nnls_merging.work[indexer].QA
 
