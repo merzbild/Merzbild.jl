@@ -46,14 +46,19 @@
     @test particles[1].buffer == [13,12,11,10,9,8,7,6,5,4,3,2,1]
 
     particles = [ParticleVector(3)]
-    @test_throws UndefRefError particles[1][1]
-    @test_throws UndefRefError particles[1][2]
-    @test_throws UndefRefError particles[1][3]
+    for i in 1:3
+        @test particles[1][i].w == 0.0
+        @test maximum(abs.(particles[1][i].v)) == 0.0
+        @test maximum(abs.(particles[1][i].x)) == 0.0
+    end
 
     Merzbild.add_particle!(particles[1], 1, 20.0, [2.0, 2.0, 3.0], [11.0, 12.0, 14.0])
 
-    @test_throws UndefRefError particles[1][2]
-    @test_throws UndefRefError particles[1][3]
+    for i in 2:3
+        @test particles[1][i].w == 0.0
+        @test maximum(abs.(particles[1][i].v)) == 0.0
+        @test maximum(abs.(particles[1][i].x)) == 0.0
+    end
 
     @test particles[1][1].w == 20.0
     @test particles[1][1].v[1] == 2.0
@@ -64,7 +69,11 @@
     @test particles[1][1].x[3] == 14.0
 
     Merzbild.add_particle!(particles[1], 2, 40.0, [2.0, 2.0, 3.0], [11.0, 12.0, 14.0])
-    @test_throws UndefRefError particles[1][3]
+    for i in 3:3
+        @test particles[1][i].w == 0.0
+        @test maximum(abs.(particles[1][i].v)) == 0.0
+        @test maximum(abs.(particles[1][i].x)) == 0.0
+    end
 
     @test particles[1][1].w == 20.0
     @test particles[1][2].w == 40.0
