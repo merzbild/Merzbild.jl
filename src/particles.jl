@@ -202,12 +202,13 @@ end
 """
     ParticleVector(np)
 
-Create an empty `ParticleVector` instance of length `np` (all vectors will have length `np`).
+Create an empty `ParticleVector` instance of length `np` (all vectors will have length `np`), filled with particles with weight 0, velocity 0, position 0.
 
 # Positional arguments
 * `np`: the length of the `ParticleVector` instance to create
 """
-ParticleVector(np) = ParticleVector(Vector{Particle}(undef, np), Vector{Int64}(1:np), zeros(Int64, np),
+ParticleVector(np) = ParticleVector([Particle(0.0, SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0)) for _ in 1:np],
+                                    Vector{Int64}(1:np), zeros(Int64, np),
                                     Vector{Int64}(np:-1:1), np)
 
 """
@@ -258,9 +259,8 @@ end
 """
     Base.resize!(pv::ParticleVector, n::Integer)
 
-Resize a `ParticleVector` instance.
-
-Is usually called as `resize!(ParticleVector, n)`.
+Resize a `ParticleVector` instance, taking care of the indices, buffer, and creating placeholder new particles
+with weight 0, velocity 0, and position 0.
 
 # Positional arguments
 * `pv`: `ParticleVector` instance
@@ -273,6 +273,10 @@ function Base.resize!(pv::ParticleVector, n::Integer)
     resize!(pv.cell, n)
     resize!(pv.buffer, n)
     n_diff = n - old_len
+
+    @inbounds for i in old_len + 1:n
+        pv.particles[i] = Particle(0.0, SVector{3,Float64}(0.0,0.0,0.0), SVector{3,Float64}(0.0,0.0,0.0))
+    end
 
     # fill with new indices
     @inbounds pv.index[old_len + 1:n] = old_len + 1:n

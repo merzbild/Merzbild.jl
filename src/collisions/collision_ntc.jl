@@ -283,7 +283,9 @@ function ntc!(rng, collision_factors, collision_data, interaction, particles, pi
                     @inbounds Δw = particles[i].w - particles[k].w
                     @inbounds particles[i].w = particles[k].w
 
-                    @inbounds particles[pia.n_total[species]] = Particle(Δw, particles[i].v, particles[i].x)
+                    @inbounds particles[pia.n_total[species]].w = Δw
+                    @inbounds particles[pia.n_total[species]].v = particles[i].v
+                    @inbounds particles[pia.n_total[species]].x = particles[i].x
                 else  # (particles[k].w > particles[i].w)
                     if (length(particles) <= pia.n_total[species])
                         resize!(particles, length(particles)+DELTA_PARTICLES)
@@ -294,7 +296,9 @@ function ntc!(rng, collision_factors, collision_data, interaction, particles, pi
                     @inbounds Δw = particles[k].w - particles[i].w
                     @inbounds particles[k].w = particles[i].w
 
-                    @inbounds particles[pia.n_total[species]] = Particle(Δw, particles[k].v, particles[k].x)
+                    @inbounds particles[pia.n_total[species]].w = Δw
+                    @inbounds particles[pia.n_total[species]].v = particles[k].v
+                    @inbounds particles[pia.n_total[species]].x = particles[k].x
                 end
                 @inbounds scatter_vhs!(rng, collision_data, interaction[species, species], particles[i], particles[k])
             end
@@ -385,7 +389,9 @@ function ntc!(rng, collision_factors, collision_data, interaction,
                     @inbounds Δw = particles_1[i].w - particles_2[k].w
                     @inbounds particles_1[i].w = particles_2[k].w
 
-                    @inbounds particles_1[pia.n_total[species1]] = Particle(Δw, particles_1[i].v, particles_1[i].x)
+                    @inbounds particles_1[pia.n_total[species1]].w = Δw
+                    @inbounds particles_1[pia.n_total[species1]].v = particles_1[i].v
+                    @inbounds particles_1[pia.n_total[species1]].x = particles_1[i].x
                 else  # (particles[k].w > particles[i].w)
                     @inbounds if (length(particles_2) <= pia.n_total[species2])
                         resize!(particles_2, length(particles_2)+DELTA_PARTICLES)
@@ -395,7 +401,9 @@ function ntc!(rng, collision_factors, collision_data, interaction,
                     @inbounds Δw = particles_2[k].w - particles_1[i].w
                     @inbounds particles_2[k].w = particles_1[i].w
 
-                    @inbounds particles_2[pia.n_total[species2]] = Particle(Δw, particles_2[k].v, particles_2[k].x)
+                    @inbounds particles_2[pia.n_total[species2]].w = Δw
+                    @inbounds particles_2[pia.n_total[species2]].v = particles_2[k].v
+                    @inbounds particles_2[pia.n_total[species2]].x = particles_2[k].x
                 end
                 scatter_vhs!(rng, collision_data, interaction[species1, species2], particles_1[i], particles_2[k])
             end
@@ -574,7 +582,9 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                     @inbounds Δw = particles_n[i].w - particles_e[k].w
                     @inbounds particles_n[i].w = particles_e[k].w
 
-                    @inbounds particles_n[pia.n_total[species_n]] = Particle(Δw, particles_n[i].v, particles_n[i].x)
+                    @inbounds particles_n[pia.n_total[species_n]].w = Δw
+                    @inbounds particles_n[pia.n_total[species_n]].v = particles_n[i].v
+                    @inbounds particles_n[pia.n_total[species_n]].x = particles_n[i].x
                 elseif (particles_n[i].w == particles_e[k].w)
                     collision_factors.n_eq_w_coll_performed += 1
                 else  # (particles[k].w > particles[i].w)
@@ -586,7 +596,9 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                     @inbounds Δw = particles_e[k].w - particles_n[i].w
                     @inbounds particles_e[k].w = particles_n[i].w
 
-                    @inbounds particles_e[pia.n_total[species_e]] = Particle(Δw, particles_e[k].v, particles_e[k].x)
+                    @inbounds particles_e[pia.n_total[species_e]].w = Δw
+                    @inbounds particles_e[pia.n_total[species_e]].v = particles_e[k].v
+                    @inbounds particles_e[pia.n_total[species_e]].x = particles_e[k].x
                 end
 
                 # now we collide the 2 equal-weight particles
@@ -602,14 +614,18 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                     end
                     # create the ion particle
                     update_buffer_index_new_particle!(particles_ion, pia, cell, species_ion)
-                    @inbounds particles_ion[pia.n_total[species_ion]] = Particle(particles_n[i].w, particles_n[i].v, particles_n[i].x)
+                    @inbounds particles_ion[pia.n_total[species_ion]].w = particles_n[i].w
+                    @inbounds particles_ion[pia.n_total[species_ion]].v = particles_n[i].v
+                    @inbounds particles_ion[pia.n_total[species_ion]].x = particles_n[i].x
 
                     # add a second electron
                     @inbounds if (length(particles_e) <= pia.n_total[species_e])
                         resize!(particles_e, length(particles_e)+DELTA_PARTICLES)
                     end
                     update_buffer_index_new_particle!(particles_e, pia, cell, species_e)
-                    @inbounds particles_e[pia.n_total[species_e]] = Particle(particles_n[i].w, particles_e[k].v, particles_e[k].x)
+                    @inbounds particles_e[pia.n_total[species_e]].w = particles_n[i].w
+                    @inbounds particles_e[pia.n_total[species_e]].v = particles_e[k].v
+                    @inbounds particles_e[pia.n_total[species_e]].v = particles_e[k].x
 
                     # set neutral particle weight to 0
                     @inbounds particles_n[i].w = 0.0
@@ -718,7 +734,9 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
                     @inbounds Δw = particles_n[i].w - particles_e[k].w
                     @inbounds particles_n[i].w = particles_e[k].w
 
-                    @inbounds particles_n[pia.n_total[species_n]] = Particle(Δw, particles_n[i].v, particles_n[i].x)
+                    @inbounds particles_n[pia.n_total[species_n]].w = Δw
+                    @inbounds particles_n[pia.n_total[species_n]].v = particles_n[i].v
+                    @inbounds particles_n[pia.n_total[species_n]].x = particles_n[i].x
                 elseif (particles_n[i].w == particles_e[k].w)
                     collision_factors.n_eq_w_coll_performed += 1
                 else  # (particles[k].w > particles[i].w)
@@ -730,7 +748,9 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
                     @inbounds Δw = particles_e[k].w - particles_n[i].w
                     @inbounds particles_e[k].w = particles_n[i].w
 
-                    @inbounds particles_e[pia.n_total[species_e]] = Particle(Δw, particles_e[k].v, particles_e[k].x)
+                    @inbounds particles_e[pia.n_total[species_e]].w = Δw
+                    @inbounds particles_e[pia.n_total[species_e]].v = particles_e[k].v
+                    @inbounds particles_e[pia.n_total[species_e]].x = particles_e[k].x
                 end
 
                 # now we collide the 2 equal-weight particles
@@ -748,17 +768,23 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
                     end
                     # create the ion particle
                     update_buffer_index_new_particle!(particles_ion, pia, cell, species_ion)
-                    @inbounds particles_ion[pia.n_total[species_ion]] = Particle(w_ionized, particles_n[i].v, particles_n[i].x)
+                    @inbounds particles_ion[pia.n_total[species_ion]].w = w_ionized
+                    @inbounds particles_ion[pia.n_total[species_ion]].v = particles_n[i].v
+                    @inbounds particles_ion[pia.n_total[species_ion]].x = particles_n[i].x
 
                     # add 2 electrons (split + secondary)
                     if (length(particles_e) < pia.n_total[species_e] + 2)
                         resize!(particles_e, length(particles_e)+DELTA_PARTICLES)
                     end
                     update_buffer_index_new_particle!(particles_e, pia, cell, species_e)
-                    @inbounds particles_e[pia.n_total[species_e]] = Particle(w_ionized, particles_e[k].v, particles_e[k].x)
+                    @inbounds particles_e[pia.n_total[species_e]].w = w_ionized
+                    @inbounds particles_e[pia.n_total[species_e]].v = particles_e[k].v
+                    @inbounds particles_e[pia.n_total[species_e]].x = particles_e[k].x
                     @inbounds k1 = pia.n_total[species_e]
                     @inbounds update_buffer_index_new_particle!(particles_e, pia, cell, species_e)
-                    @inbounds particles_e[pia.n_total[species_e]] = Particle(w_ionized, particles_e[k].v, particles_e[k].x)
+                    @inbounds particles_e[pia.n_total[species_e]].w = w_ionized
+                    @inbounds particles_e[pia.n_total[species_e]].v = particles_e[k].v
+                    @inbounds particles_e[pia.n_total[species_e]].x = particles_e[k].x
                     @inbounds k2 = pia.n_total[species_e]
 
                     # elastic scattering
