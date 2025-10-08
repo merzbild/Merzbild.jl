@@ -5,4 +5,5 @@ from pathlib import Path
 
 for path in Path('simulations').rglob('*.jl'):
     print(f"Running {path}")
-    os.system(f"julia --project=. {path} > out.log 2> error.log")
+    path2 = path.replace("/", "_")
+    os.system(f"julia --project=. {path} > scratch/out_{path2}.log 2> scratch/error_{path2}.log")
