@@ -42,10 +42,10 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
     phys_props_avg = PhysProps(pia)
 
     # create struct for netCDF output
-    ds = NCDataHolder("couette_FP_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc).nc", species_data, phys_props)
+    ds = NCDataHolder("scratch/data/couette_FP_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc).nc", species_data, phys_props)
 
     # create struct for second netCDF, this one is for time-averaged 
-    ds_avg = NCDataHolder("avg_couette_FP_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc)_after$(avg_start).nc",
+    ds_avg = NCDataHolder("scratch/data/avg_couette_FP_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc)_after$(avg_start).nc",
                           species_data, phys_props)
 
     # compute and write data at t=0
