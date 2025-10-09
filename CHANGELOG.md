@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.7.3
+* Python plotting script for 1-D flows now allows for multiple files + plot labels
+
 ## v0.7.2
 * Added `w_threshold` keyword argument to NNLS merging to discard particles with very small weights
 * NNLS merging now also accepts a list of spatial moments to preserve (requires explicitly conserving 1-st order spatial moments, otherwise
