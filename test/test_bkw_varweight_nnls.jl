@@ -105,6 +105,8 @@
     natt = 0
     
     nnls_success_flag = 1
+    failed_merges = 0
+    total_merges = 0
 
     for ts in 1:n_t
         ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
@@ -112,7 +114,9 @@
         if phys_props.np[1,1] > threshold
             nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1; vref=vref, scaling=:vref)
 
+            total_merges += 1
             if nnls_success_flag == -1
+                failed_merges += 1
                 merge_octree_N2_based!(rng, ocm, particles[1], pia, 1, 1, ntarget_octree)
             end
         end
@@ -124,7 +128,10 @@
 
     @test abs(phys_props.T[1,1] - T0) < 5e-4
     @test abs(phys_props.n[1,1] / n_dens - 1.0) < 1e-11
-    @test phys_props.np[1,1] < threshold
+
+    # test that we performed merging and had no failed merges
+    @test total_merges > 0
+    @test failed_merges == 0
 
     ref_sol_path = joinpath(@__DIR__, "data", "bkw_vw_nnls_6full_upto8_150_seed0.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
