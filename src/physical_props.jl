@@ -262,7 +262,7 @@ function clear_props!(phys_props::PhysProps)
 end
 
 """
-    avg_props!(phys_props_avg, phys_props::PhysProps, n_avg_timesteps)
+    avg_props!(phys_props_avg::PhysProps, phys_props::PhysProps, n_avg_timesteps)
 
 Used to time-average computed physical properties, not including the total moments.
 For each instantaneous value of a property computed and stored in `phys_props`,
@@ -429,7 +429,7 @@ function compute_props_sorted!(particles, pia, species_data, phys_props, grid::G
 end
 
 """
-    compute_props_sorted!(particles, pia, species_data, phys_props, grid::AbstractGrid)
+    compute_props_sorted!(particles, pia, species_data, phys_props, grid::AbstractGrid) where {G<:AbstractGrid}
 
 Compute the physical properties of all species in all cells and store the result in a `PhysProps` instance,
 assuming the particles are sorted.

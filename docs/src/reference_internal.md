@@ -12,10 +12,7 @@ Base.setindex!
 Base.length
 Base.resize!
 Merzbild.add_particle!
-Merzbild.update_particle_buffer_new_particle!(pv::ParticleVector, position)
-Merzbild.update_particle_buffer_new_particle!(pv::ParticleVector, pia, species)
-Merzbild.update_particle_buffer_new_particle!(pv::Vector{Particle}, pia, species)
-Merzbild.update_particle_buffer_new_particle!(pv::Vector{Particle}, position)
+Merzbild.update_particle_buffer_new_particle!
 Merzbild.update_buffer_index_new_particle!
 Merzbild.delete_particle!
 Merzbild.delete_particle_end!
@@ -100,6 +97,7 @@ Merzbild.compute_lhs_particles_additional!
 Merzbild.compute_lhs_particles_additional_rate_preserving!
 Merzbild.scale_lhs_rhs_variance!
 Merzbild.scale_lhs_rhs_vref!
+Merzbild.scale_lhs_rhs_spatial_variance!
 Merzbild.scale_lhs_rhs!
 Merzbild.scale_lhs_rhs_rate_preserving!
 Merzbild.compute_post_merge_particles_nnls!
@@ -174,6 +172,7 @@ Merzbild.compute_thermal_velocity
 Merzbild.binary_search
 Merzbild.linear_interpolation
 Merzbild.compute_mixed_moment
+Merzbild.scale_columns!
 ```
 
 ## NNLS

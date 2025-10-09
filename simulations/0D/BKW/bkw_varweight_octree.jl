@@ -41,8 +41,8 @@ function run(seed::Int64, threshold::Int64, Ntarget::Int64)
     # threshold = 10000
     # Ntarget = 8000
 
-    # oc = create_merging_octree(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
-    # oc = create_merging_octree(OctreeBinMeanSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    # oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    # oc = OctreeN2Merge(OctreeBinMeanSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
     oc = OctreeN2Merge(OctreeBinMedianSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
     T0::Float64 = 273.0
@@ -65,9 +65,9 @@ function run(seed::Int64, threshold::Int64, Ntarget::Int64)
     pia = ParticleIndexerArray(n_sampled)
 
     phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
-    compute_props!(particles, pia, species_data, phys_props)
+    compute_props_with_total_moments!(particles, pia, species_data, phys_props)
 
-    ds = NCDataHolder("scratch/data/octree_median_$(threshold)_$(Ntarget)_$(seed).nc", species_data, phys_props)
+    ds = NCDataHolder("scratch/data/octree_mean_$(threshold)_$(Ntarget)_$(seed).nc", species_data, phys_props)
     write_netcdf(ds, phys_props, 0)
 
     collision_factors::CollisionFactors = CollisionFactors()
@@ -75,7 +75,6 @@ function run(seed::Int64, threshold::Int64, Ntarget::Int64)
 
     Fnum = n_dens/n_sampled
     collision_factors.sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1], species_data[1], T0, Fnum)
-
     Δt::Float64 = dt_scaled * tref
     V::Float64 = 1.0
 
@@ -89,13 +88,13 @@ function run(seed::Int64, threshold::Int64, Ntarget::Int64)
             println(ts)
         end
         
-        compute_props!(particles, pia, species_data, phys_props)
+        compute_props_with_total_moments!(particles, pia, species_data, phys_props)
         write_netcdf(ds, phys_props, ts)
     end
     close_netcdf(ds)
 end
 
-run(1, 50, 30)
+run(1, 8000, 6000)
 
 # multiple runs with ensembling if needed
 # const thr_nn =  [[50, 30], [75, 50], [100, 70], [150, 100], [300, 200], [500, 300]]

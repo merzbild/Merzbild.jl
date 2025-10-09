@@ -133,8 +133,8 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons, merging_
 
         if do_es
             @timeit "coll n-e ES" ntc_n_e_es!(rng, collision_factors[s1,s2,1], collision_data, interaction_data,
-                                            n_e_interactions, n_e_cs,
-                                            particles[s1], particles[s2], particles[s3], pia, 1, s1, s2, s3, Δt, V)
+                                              n_e_interactions, n_e_cs,
+                                              particles[s1], particles[s2], particles[s3], pia, 1, s1, s2, s3, Δt, V)
         else
             @timeit "coll n-e" ntc_n_e!(rng, collision_factors[s1,s2,1], collision_data, interaction_data,
                                         n_e_interactions, n_e_cs,

@@ -1,6 +1,7 @@
 # Usage example:
 # python scripts/plot_1D.py --file scratch/data/couette_0.0005_50_500.0_300.0_1000.nc --propname T --startt 1
 # --plotname plots/couette_T.png
+# velocity is plotted with an offset of a linear profile that goes from -500 to 500 m/s
 
 from matplotlib import pyplot as plt
 import argparse

@@ -179,7 +179,7 @@ function clear_props!(surf_props::SurfProps)
 end
 
 """
-    avg_props!(surf_props_avg, surf_props::SurfProps, n_avg_timesteps)
+    avg_props!(surf_props_avg::SurfProps, surf_props::SurfProps, n_avg_timesteps)
 
 Used to time-average computed surface properties.
 For each instantaneous value of a property computed and stored in `surf_props`,
@@ -191,7 +191,7 @@ it is divided by `n_avg_timesteps` and added to `surf_props_avg`.
     to be used for the averaging at the current timestep
 * `n_avg_timesteps`: the number of timesteps over which the averaging is performed
 """
-function avg_props!(surf_props_avg, surf_props, n_avg_timesteps)
+function avg_props!(surf_props_avg::SurfProps, surf_props::SurfProps, n_avg_timesteps)
     inv_nt_avg = 1.0 / n_avg_timesteps
 
     for species in 1:surf_props.n_species

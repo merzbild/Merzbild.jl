@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.7.2
+* Added `w_threshold` keyword argument to NNLS merging to discard particles with very small weights
+* NNLS merging now also accepts a list of spatial moments to preserve (requires explicitly conserving 1-st order spatial moments, otherwise
+the corresponding coordinates are set to 0); not implemented for rate-preserving merging
+* 1D example added for NNLS merging (`simulations/1D/couette_varweight_nnls.jl`)
+* NNLS merging speed-ups and stability improvements
+* New weighted median with interpolation function for octree merging
+* `FluxProps` structure added, along with `compute_flux_props!`, `compute_flux_props_sorted!` functions to compute fluxes in grid cells
+* I/O for `FluxProps` added
+* Documentation improvements
+* Improved test coverage
+* Single-species Stochastic Weighted Particle Method (SWPM) implemented (`swpm!` function)
+* Tabulate cross-section computations and associated NTC routines for electron-neutral interactions now correctly deal with
+how the out-of-table values should be handled
+* Speed-up of variable weight collisions
+* Creation of a `ParticleVector(n_particles)` now leads to it being filled with particles with weight, velocity, position 0
+* Resizing of a `ParticleVector` also leads to new particles being instantiated immediately and filled with weight, velocity, position 0
+
 ## v0.7.1
 * More use of Muladd in a few places
 * Roulette merge added (`merge_roulette!`)

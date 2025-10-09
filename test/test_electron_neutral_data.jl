@@ -80,6 +80,20 @@
         @test Merzbild.get_electron_energy_split(n_e_interactions, 1) == ElectronEnergySplitEqual
     end
 
+
+    for E_coll in [203.5]
+        # now we're out of bounds for the ionization cross-section and the value should 0.0
+        g = sqrt(2 * E_coll * Merzbild.eV_J / interaction_data[1,2].m_r)
+        Merzbild.compute_cross_sections!(n_e_cs, interaction_data[1,2], g, n_e_interactions, 1; extend=CSExtendZero)
+        @test abs(n_e_cs[1].cs_elastic * 1e20 - (4 + E_coll / 100.0)) / 1e20 < eps()
+
+        @test n_e_cs[1].cs_ionization  == 0.0
+
+        @test n_e_cs[1].prob_vec[1] == 1.0
+        @test n_e_cs[1].prob_vec[2] == 0.0
+        @test abs(sum(n_e_cs[1].prob_vec) - 1.0) < eps()
+    end
+
     coll_data = CollisionData()
     coll_data.E_coll_electron_eV = 107.5
     Merzbild.compute_g_new_ionization!(coll_data, interaction_data[1,2], 7.5, ElectronEnergySplitEqual)
@@ -89,4 +103,13 @@
     Merzbild.compute_g_new_ionization!(coll_data, interaction_data[1,2], 7.5, ElectronEnergySplitZeroE)
     @test coll_data.g_new_2 == 0.0
     @test (0.5 * Merzbild.e_mass_div_electron_volt * coll_data.g_new_1^2 + 7.5 - coll_data.E_coll_electron_eV) < 1e-14
+
+    dme = DataMissingException("Data not found")
+    @test dme.msg == "Data not found"
+
+    species_data_Ar = load_species_data(particles_data_path, ["Ar", "e-"])
+    @test_throws DataMissingException e_int_data = load_electron_neutral_interactions(species_data_Ar, e_n_data_path,
+                                                                                      Dict("Ar" => "LinearDB"),
+                                                                                      Dict("Ar" => ScatteringIsotropic),
+                                                                                      Dict("Ar" => ElectronEnergySplitEqual))
 end

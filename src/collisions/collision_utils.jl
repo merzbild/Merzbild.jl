@@ -415,7 +415,7 @@ The result is then multiplied by `Fnum` and an (optional) factor `mult_factor`.
 * `mult_factor`: a factor by which to multiply the result (default value is 1.0)
 
 # Returns
-* the estimate of ``(\\sigma g w)_{max}``
+The estimate of ``(\\sigma g w)_{max}``.
 """
 function estimate_sigma_g_w_max(interaction, species1, species2, T1, T2, Fnum; mult_factor=1.0)
     g_thermal1 = sqrt(2 * T1 * k_B / species1.mass)
@@ -463,7 +463,7 @@ Uses the same methodology as the estimate for a two-species interaction.
 # Keyword arguments
 * `mult_factor`: a factor by which to multiply the result (default value is 1.0)
 """
-function estimate_sigma_g_w_max!(collision_factors, interactions, species_data, T_list, Fnum::Number; mult_factor=1.0)
+function estimate_sigma_g_w_max!(collision_factors::Array{CollisionFactors}, interactions, species_data, T_list, Fnum::Number; mult_factor=1.0)
     for (k, species2) in enumerate(species_data)
         for (i, species1) in enumerate(species_data)
             sigma_g_w_max = estimate_sigma_g_w_max(interactions[i,k], species1, species2, T_list[i], T_list[k], Fnum, mult_factor=mult_factor)
@@ -479,7 +479,7 @@ end
     estimate_sigma_g_w_max!(collision_factors, interactions, species_data, T_list, Fnum; mult_factor=1.0)
 
 Estimate ``(\\sigma g w)_{max}`` for all species in all cells, assuming
-a species-specific computational weights `Fnum`, a VHS cross-section, and that each species' temperature is constant across all cells.
+species-specific computational weights `Fnum`, a VHS cross-section, and that each species' temperature is constant across all cells.
 Uses the same methodology as the estimate for a two-species interaction.
 
 # Positional arguments
@@ -492,7 +492,7 @@ Uses the same methodology as the estimate for a two-species interaction.
 # Keyword arguments
 * `mult_factor`: a factor by which to multiply the result (default value is 1.0)
 """
-function estimate_sigma_g_w_max!(collision_factors, interactions, species_data, T_list, Fnum::Vector; mult_factor=1.0)
+function estimate_sigma_g_w_max!(collision_factors::Array{CollisionFactors}, interactions, species_data, T_list, Fnum::Vector; mult_factor=1.0)
     for (k, species2) in enumerate(species_data)
         for (i, species1) in enumerate(species_data)
             sigma_g_w_max = estimate_sigma_g_w_max(interactions[i,k], species1, species2, T_list[i], T_list[k],
@@ -500,6 +500,35 @@ function estimate_sigma_g_w_max!(collision_factors, interactions, species_data, 
 
             for cell in 1:length(collision_factors[i,k,:])
                 collision_factors[i,k,cell].sigma_g_w_max = sigma_g_w_max
+            end
+        end
+    end
+end
+
+"""
+    estimate_sigma_g_max!(collision_factors::Array{CollisionFactorsSWPM}, interactions, species_data, T_list, Fnum; mult_factor=1.0)
+
+Estimate ``(\\sigma g)_{max}`` for all species in all cells, assuming
+a constant particle computational weight `Fnum`, a VHS cross-section, and that each species' temperature is constant across all cells.
+Uses the same methodology as the estimate for a two-species interaction.
+
+# Positional arguments
+* `collision_factors`: 3-dimensional array of `CollisionFactorsSWPM` of shape `(n_species, n_species, n_cells)`
+* `interactions`: the 2-dimensional array of `Interaction` instances (of shape `(n_species, n_species)`) of all the pair-wise interactions
+* `species_data`: the vector of `Species` instances of the species in the flow 
+* `T_list`: the list of temperatures of the species
+* `Fnum`: the constant computational weight of the particles
+
+# Keyword arguments
+* `mult_factor`: a factor by which to multiply the result (default value is 1.0)
+"""
+function estimate_sigma_g_max!(collision_factors::Array{CollisionFactorsSWPM}, interactions, species_data, T_list; mult_factor=1.0)
+    for (k, species2) in enumerate(species_data)
+        for (i, species1) in enumerate(species_data)
+            sigma_g_max = estimate_sigma_g_w_max(interactions[i,k], species1, species2, T_list[i], T_list[k], 1.0, mult_factor=mult_factor)
+
+            for cell in 1:length(collision_factors[i,k,:])
+                collision_factors[i,k,cell].sigma_g_max = sigma_g_max
             end
         end
     end

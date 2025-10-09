@@ -4,7 +4,8 @@ using ..Merzbild
 using Random
 using TimerOutputs
 
-function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, merge_target, Δt, output_freq, n_timesteps, avg_start)
+function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, merge_target, n_vel_up_total, n_vel_up_total_backup,
+             Δt, output_freq, n_timesteps, avg_start)
     reset_timer!()
 
     Random.seed!(seed)
@@ -47,25 +48,66 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     # create second struct for averaging of physical properties
     surf_props_avg = SurfProps(pia, grid)
 
+    domain_params_str = "$(L)_$(nx)_$(v_wall)_$(T_wall)" 
+    merge_params_str = "$(n_vel_up_total)_$(n_vel_up_total_backup)_$(merge_threshold)_$(merge_target)"
+
     # create struct for netCDF output
-    ds = NCDataHolder("scratch/data/couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(merge_threshold)_$(merge_target).nc", species_data, phys_props)
+    ds = NCDataHolder("scratch/data/couette_nnls_$(domain_params_str)_$(merge_params_str).nc", species_data, phys_props)
 
     # create struct for second netCDF, this one is for time-averaged 
-    ds_avg = NCDataHolder("scratch/data/avg_couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(merge_threshold)_$(merge_target)_after$(avg_start).nc",
+    ds_avg = NCDataHolder("scratch/data/avg_couette_nnls_$(domain_params_str)_$(merge_params_str)_after$(avg_start).nc",
                           species_data, phys_props)
 
     # create struct for time-averaged surface properties I/O
-    ds_surf_avg = NCDataHolderSurf("scratch/data/avg_couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(merge_threshold)_$(merge_target)_surf_after$(avg_start).nc",
+    ds_surf_avg = NCDataHolderSurf("scratch/data/avg_couette_nnls_$(domain_params_str)_$(merge_params_str)_surf_after$(avg_start).nc",
                                    species_data, surf_props_avg)
 
     # create and estimate collision factors
     collision_factors = create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum)
 
+
+    mim = []
+    n_moms = n_vel_up_total
+    for i in 1:n_moms
+        append!(mim, compute_multi_index_moments(i))
+    end
+
+    # conserve center of mass and variance in x direction
+    pos_moments = [[1,0,0],[2,0,0]]
+
+    init_np = merge_threshold
+    matrix_ncol_nprealloc = 25
+
+    # the main NNLS
+    @timeit "NNLSinit" mnnls = NNLSMerge(mim, init_np; multi_index_moments_pos=pos_moments, matrix_ncol_nprealloc=matrix_ncol_nprealloc)
+
+
+    mim_backup = []
+    n_moms_backup = n_vel_up_total_backup
+    for i in 1:n_moms_backup
+        append!(mim_backup, compute_multi_index_moments(i))
+    end
+    # this in case the main NNLS fails - we try with fewer moments
+    # and we also add fictitious particles, so the matrices to be pre-allocated have more columns
+    @timeit "NNLSinit backup" mnnls_backup = NNLSMerge(mim_backup, init_np+17; multi_index_moments_pos=pos_moments, matrix_ncol_nprealloc=matrix_ncol_nprealloc)
+
+    # this is the fallback merge in case NNLS fails
     oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+
+    println("# of preserved moments in main merge: ", length(mnnls.rhs_vector), ", in backup merge: ", length(mnnls_backup.rhs_vector))
 
     for cell in 1:grid.n_cells
         if pia.indexer[cell,1].n_local > merge_threshold
-            @timeit "merge (t=0)" merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+
+            @timeit "merge NNLS (t=0)" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1; centered_at_mean=false, v_multipliers=[], w_threshold=1e-12)
+
+            if nnls_success_flag == -1
+                @timeit "merge NNLS backup (t=0)" merge_nnls_based!(rng, mnnls_backup, particles[1], pia, cell, 1; v_multipliers=[0.25, 0.5, 1.0], w_threshold=1e-12)
+            end
+
+            if nnls_success_flag == -1
+                @timeit "merge octree (t=0)" merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+            end
         end
     end
     @timeit "squash (t=0)" squash_pia!(particles, pia)
@@ -79,7 +121,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
 
     for t in 1:n_timesteps
         if t % 1000 == 0
-            println(t)
+            println("$t, # of particles=$(pia.n_total[1])")
         end
 
         for cell in 1:grid.n_cells
@@ -87,7 +129,15 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
                                    collision_data, interaction_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
 
             if pia.indexer[cell,1].n_local > merge_threshold
-                @timeit "merge" merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+                @timeit "merge NNLS" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1; centered_at_mean=false, v_multipliers=[], w_threshold=1e-12)
+    
+                if nnls_success_flag == -1
+                    @timeit "merge NNLS backup" nnls_success_flag = merge_nnls_based!(rng, mnnls_backup, particles[1], pia, cell, 1; v_multipliers=[0.25, 0.5, 1.0], w_threshold=1e-12)
+                end
+    
+                if nnls_success_flag == -1
+                    @timeit "merge octree" merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+                end
                 @timeit "squash" squash_pia!(particles, pia)
             end
         end
@@ -103,10 +153,6 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
         # sort particles
         @timeit "sort" sort_particles!(gridsorter, grid, particles[1], pia, 1)
 
-        # count % of particles where indexing is disordered
-        if t % 1000 == 0
-            println(count_disordered_particles(particles[1], pia, 1) / pia.n_total[1] * 100.0)
-        end
 
         # compute props and do I/O
         if (t < avg_start)
@@ -134,6 +180,5 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     print_timer()
 end
 
-# run(1234, 300.0, 500.0, 5e-4, 5e22, 1000, 250, 150, 100, 2.59e-9, 1000, 5000, 14000)
-run(1234, 300.0, 500.0, 5e-4, 5e22, 50, 250, 150, 100, 2.59e-9, 1000, 50000, 14000)
-# run(1234, 300.0, 500.0, 5e-4, 5e22, 8, 200, 20, 16, 1e-1, 1000, 1, 14000)
+# preserve all velocity moments up to order 5, fall back to 4 moments if required
+run(1234, 300.0, 500.0, 5e-4, 5e22, 50, 250, 80, 60, 5, 4, 2.59e-9, 1000, 50000, 14000)

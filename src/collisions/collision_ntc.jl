@@ -27,9 +27,9 @@ end
 """
     CollisionFactors()
 
-Create an empty CollisionFactors instance (all values set to 0).
+Create an empty `CollisionFactors` instance (all values set to 0).
 """
-CollisionFactors() = CollisionFactors(0, 0.0, 0.0, 0, 0, 0)
+CollisionFactors() = CollisionFactors(0, 0, 0.0, 0, 0, 0)
 
 """
     create_collision_factors_array(n_species)
@@ -47,7 +47,7 @@ function create_collision_factors_array(n_species)
     coll_factor_array = Array{CollisionFactors, 3}(undef, (n_species, n_species, 1))
     for k in 1:n_species
         for i in 1:n_species
-            coll_factor_array[i,k,1] = CollisionFactors(0, 0.0, 0.0, 0, 0, 0)
+            coll_factor_array[i,k,1] = CollisionFactors()
         end
     end
     return coll_factor_array
@@ -71,7 +71,7 @@ function create_collision_factors_array(n_species, n_cells)
     for k in 1:n_cells
         for j in 1:n_species
             for i in 1:n_species
-                coll_factor_array[i,j,k] = CollisionFactors(0, 0.0, 0.0, 0, 0, 0)
+                coll_factor_array[i,j,k] = CollisionFactors()
             end
         end
     end
@@ -95,36 +95,6 @@ function create_collision_factors_array(pia::ParticleIndexerArray)
 end
 
 """
-    create_collision_factors_array(pia, interactions, species_data, T::Real, Fnum::Real; mult_factor=1.0)
-
-Create a 3-dimensional array of collision factors for all interaction pairs for all cells
-in the simulation, with shape `(n_species,n_species,n_cells)`.
-This will fill the array with the estimates ``(\\sigma g w)_{max}`` for all species in all cells, assuming
-a constant particle computational weight `Fnum`, a VHS cross-section, and that all species have a single temperature
-that is constant across all cells.
-
-# Positional arguments
-* `pia`: the ParticleIndexerArray instance
-* `interactions`: the 2-dimensional array of `Interaction` instances (of shape `(n_species, n_species)`) of all the pair-wise interactions
-* `species_data`: the vector of `Species` instances of the species in the flow 
-* `T`: the temperatures of the flow
-* `Fnum`: the constant computational weight of the particles
-
-# Keyword arguments
-* `mult_factor`: a factor by which to multiply the result (default value is 1.0)
-
-# Returns
-3-dimensional array of `CollisionFactors` instances with shape `(n_species,n_species,n_cells)` fille with estimated
-values of ``(\\sigma g w)_{max}``.
-"""
-function create_collision_factors_array(pia, interactions, species_data, T::Real, Fnum::Real; mult_factor=1.0)
-    coll_factor_array = create_collision_factors_array(pia)
-    estimate_sigma_g_w_max!(coll_factor_array, interactions, species_data, repeat([T], length(species_data)),
-                            Fnum; mult_factor=mult_factor)
-    return coll_factor_array
-end
-
-"""
     create_collision_factors_array(pia, interactions, species_data, T_list, Fnum::Real; mult_factor=1.0)
 
 Create a 3-dimensional array of collision factors for all interaction pairs for all cells
@@ -144,12 +114,42 @@ species is constant across all cells.
 * `mult_factor`: a factor by which to multiply the result (default value is 1.0)
 
 # Returns
-3-dimensional array of `CollisionFactors` instances with shape `(n_species,n_species,n_cells)` fille with estimated
+3-dimensional array of `CollisionFactors` instances with shape `(n_species,n_species,n_cells)` filled with estimated
 values of ``(\\sigma g w)_{max}``.
 """
 function create_collision_factors_array(pia, interactions, species_data, T_list, Fnum::Real; mult_factor=1.0)
     coll_factor_array = create_collision_factors_array(pia)
     estimate_sigma_g_w_max!(coll_factor_array, interactions, species_data, T_list,
+                            Fnum; mult_factor=mult_factor)
+    return coll_factor_array
+end
+
+"""
+    create_collision_factors_array(pia, interactions, species_data, T::Real, Fnum::Real; mult_factor=1.0)
+
+Create a 3-dimensional array of collision factors for all interaction pairs for all cells
+in the simulation, with shape `(n_species,n_species,n_cells)`.
+This will fill the array with the estimates ``(\\sigma g w)_{max}`` for all species in all cells, assuming
+a constant particle computational weight `Fnum`, a VHS cross-section, and that all species have a single temperature
+that is constant across all cells.
+
+# Positional arguments
+* `pia`: the ParticleIndexerArray instance
+* `interactions`: the 2-dimensional array of `Interaction` instances (of shape `(n_species, n_species)`) of all the pair-wise interactions
+* `species_data`: the vector of `Species` instances of the species in the flow 
+* `T`: the temperatures of the flow
+* `Fnum`: the constant computational weight of the particles
+
+# Keyword arguments
+* `mult_factor`: a factor by which to multiply the result (default value is 1.0)
+
+# Returns
+3-dimensional array of `CollisionFactors` instances with shape `(n_species,n_species,n_cells)` filled with estimated
+values of ``(\\sigma g w)_{max}``.
+"""
+function create_collision_factors_array(pia, interactions, species_data, T::Real, Fnum::Real; mult_factor=1.0)
+    coll_factor_array = create_collision_factors_array(pia)
+    estimate_sigma_g_w_max!(coll_factor_array, interactions, species_data, repeat([T], length(species_data)),
                             Fnum; mult_factor=mult_factor)
     return coll_factor_array
 end
@@ -261,7 +261,7 @@ function ntc!(rng, collision_factors, collision_data, interaction, particles, pi
             @inbounds sigma_g_w_max = sigma * collision_data.g * max(particles[i].w, particles[k].w)
 
             # update (σ g w)_max if needed
-            collision_factors.sigma_g_w_max = sigma_g_w_max > collision_factors.sigma_g_w_max ? sigma_g_w_max : collision_factors.sigma_g_w_max
+            collision_factors.sigma_g_w_max = max(sigma_g_w_max, collision_factors.sigma_g_w_max)
             
             if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
                 collision_factors.n_coll_performed += 1
@@ -283,7 +283,9 @@ function ntc!(rng, collision_factors, collision_data, interaction, particles, pi
                     @inbounds Δw = particles[i].w - particles[k].w
                     @inbounds particles[i].w = particles[k].w
 
-                    @inbounds particles[pia.n_total[species]] = Particle(Δw, particles[i].v, particles[i].x)
+                    @inbounds particles[pia.n_total[species]].w = Δw
+                    @inbounds particles[pia.n_total[species]].v = particles[i].v
+                    @inbounds particles[pia.n_total[species]].x = particles[i].x
                 else  # (particles[k].w > particles[i].w)
                     if (length(particles) <= pia.n_total[species])
                         resize!(particles, length(particles)+DELTA_PARTICLES)
@@ -294,7 +296,9 @@ function ntc!(rng, collision_factors, collision_data, interaction, particles, pi
                     @inbounds Δw = particles[k].w - particles[i].w
                     @inbounds particles[k].w = particles[i].w
 
-                    @inbounds particles[pia.n_total[species]] = Particle(Δw, particles[k].v, particles[k].x)
+                    @inbounds particles[pia.n_total[species]].w = Δw
+                    @inbounds particles[pia.n_total[species]].v = particles[k].v
+                    @inbounds particles[pia.n_total[species]].x = particles[k].x
                 end
                 @inbounds scatter_vhs!(rng, collision_data, interaction[species, species], particles[i], particles[k])
             end
@@ -366,7 +370,7 @@ function ntc!(rng, collision_factors, collision_data, interaction,
             @inbounds sigma_g_w_max = sigma * collision_data.g * max(particles_1[i].w, particles_2[k].w)
 
             # update (σ g w)_max if needed
-            collision_factors.sigma_g_w_max = sigma_g_w_max > collision_factors.sigma_g_w_max ? sigma_g_w_max : collision_factors.sigma_g_w_max
+            collision_factors.sigma_g_w_max = max(sigma_g_w_max, collision_factors.sigma_g_w_max)
 
             if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
                 collision_factors.n_coll_performed += 1
@@ -385,7 +389,9 @@ function ntc!(rng, collision_factors, collision_data, interaction,
                     @inbounds Δw = particles_1[i].w - particles_2[k].w
                     @inbounds particles_1[i].w = particles_2[k].w
 
-                    @inbounds particles_1[pia.n_total[species1]] = Particle(Δw, particles_1[i].v, particles_1[i].x)
+                    @inbounds particles_1[pia.n_total[species1]].w = Δw
+                    @inbounds particles_1[pia.n_total[species1]].v = particles_1[i].v
+                    @inbounds particles_1[pia.n_total[species1]].x = particles_1[i].x
                 else  # (particles[k].w > particles[i].w)
                     @inbounds if (length(particles_2) <= pia.n_total[species2])
                         resize!(particles_2, length(particles_2)+DELTA_PARTICLES)
@@ -395,7 +401,9 @@ function ntc!(rng, collision_factors, collision_data, interaction,
                     @inbounds Δw = particles_2[k].w - particles_1[i].w
                     @inbounds particles_2[k].w = particles_1[i].w
 
-                    @inbounds particles_2[pia.n_total[species2]] = Particle(Δw, particles_2[k].v, particles_2[k].x)
+                    @inbounds particles_2[pia.n_total[species2]].w = Δw
+                    @inbounds particles_2[pia.n_total[species2]].v = particles_2[k].v
+                    @inbounds particles_2[pia.n_total[species2]].x = particles_2[k].x
                 end
                 scatter_vhs!(rng, collision_data, interaction[species1, species2], particles_1[i], particles_2[k])
             end
@@ -435,10 +443,11 @@ during the next loop iteration.
 * `min_coll`: the minimum number of pairs to test
 * `n_loops`: the number of loops to perform (in each loop the number of collisions is computed using the
     estimated value of  ``(\\sigma g w)_{max}``)
+* `extend`: enum of `CSExtend` type that sets how out-of-range energy values are treated when computing cross-sections
 """
 function estimate_sigma_g_w_max_ntc_n_e!(rng, collision_factors, collision_data, interaction,
                                          n_e_interactions, n_e_cs, particles_n, particles_e,
-                                         pia, cell, species_n, species_e, Δt, V; min_coll=5, n_loops=3)
+                                         pia, cell, species_n, species_e, Δt, V; min_coll=5, n_loops=3, extend::CSExtend=CSExtendConstant)
     # compute ncoll
     # loop over particles
     # update sigma_g_w_max
@@ -471,11 +480,12 @@ function estimate_sigma_g_w_max_ntc_n_e!(rng, collision_factors, collision_data,
             @inbounds compute_g!(collision_data, particles_n[i], particles_e[k])
 
             if (collision_data.g > eps())
-                @inbounds collision_data.E_coll_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n)
+                @inbounds collision_data.E_coll_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n;
+                                                                             extend=extend)
                 @inbounds sigma_g_w_max = n_e_cs[species_n].cs_total * collision_data.g * max(particles_n[i].w, particles_e[k].w)
 
                 # update (σ g w)_max if needed
-                @inbounds collision_factors.sigma_g_w_max = sigma_g_w_max > collision_factors.sigma_g_w_max ? sigma_g_w_max : collision_factors.sigma_g_w_max
+                collision_factors.sigma_g_w_max = max(sigma_g_w_max, collision_factors.sigma_g_w_max)
             end
         end
     end
@@ -486,7 +496,7 @@ end
 """
     ntc_n_e!(rng, collision_factors, collision_data, interaction,
              n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion,
-             pia, cell, species_n, species_e, species_ion, Δt, V)
+             pia, cell, species_n, species_e, species_ion, Δt, V; extend::CSExtend=CSExtendConstant)
 
 Perform electron-neutral elastic scattering and electron-impact ionization collisions.
 
@@ -508,13 +518,16 @@ Perform electron-neutral elastic scattering and electron-impact ionization colli
 * `Δt`: timestep
 * `V`: cell volume
 
+# Keyword arguments
+* `extend`: enum of `CSExtend` type that sets how out-of-range energy values are treated when computing cross-sections
+
 # References
 * D.P. Schmidt, C.J. Rutland, A New Droplet Collision Algorithm.
     [J. Comput. Phys, 2000](https://doi.org/10.1006/jcph.2000.6568).
 """
 function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                   n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion,
-                  pia, cell, species_n, species_e, species_ion, Δt, V)
+                  pia, cell, species_n, species_e, species_ion, Δt, V; extend::CSExtend=CSExtendConstant)
     # no event splitting
     # compute ncoll
     # loop over particles
@@ -546,11 +559,12 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
 
         if (collision_data.g > eps())
 
-            @inbounds collision_data.E_coll_electron_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n)
+            @inbounds collision_data.E_coll_electron_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n;
+                                                                                  extend=extend)
             @inbounds sigma_g_w_max = get_cs_total(n_e_interactions, n_e_cs, species_n) * collision_data.g * max(particles_n[i].w, particles_e[k].w)
 
             # update (σ g w)_max if needed
-            collision_factors.sigma_g_w_max = sigma_g_w_max > collision_factors.sigma_g_w_max ? sigma_g_w_max : collision_factors.sigma_g_w_max
+            collision_factors.sigma_g_w_max = max(sigma_g_w_max, collision_factors.sigma_g_w_max)
 
             if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
                 collision_factors.n_coll_performed += 1
@@ -568,7 +582,9 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                     @inbounds Δw = particles_n[i].w - particles_e[k].w
                     @inbounds particles_n[i].w = particles_e[k].w
 
-                    @inbounds particles_n[pia.n_total[species_n]] = Particle(Δw, particles_n[i].v, particles_n[i].x)
+                    @inbounds particles_n[pia.n_total[species_n]].w = Δw
+                    @inbounds particles_n[pia.n_total[species_n]].v = particles_n[i].v
+                    @inbounds particles_n[pia.n_total[species_n]].x = particles_n[i].x
                 elseif (particles_n[i].w == particles_e[k].w)
                     collision_factors.n_eq_w_coll_performed += 1
                 else  # (particles[k].w > particles[i].w)
@@ -580,13 +596,14 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                     @inbounds Δw = particles_e[k].w - particles_n[i].w
                     @inbounds particles_e[k].w = particles_n[i].w
 
-                    @inbounds particles_e[pia.n_total[species_e]] = Particle(Δw, particles_e[k].v, particles_e[k].x)
+                    @inbounds particles_e[pia.n_total[species_e]].w = Δw
+                    @inbounds particles_e[pia.n_total[species_e]].v = particles_e[k].v
+                    @inbounds particles_e[pia.n_total[species_e]].x = particles_e[k].x
                 end
 
                 # now we collide the 2 equal-weight particles
                 R = rand(rng, Float64)  # decide which process we do
 
-                # println(n_e_cs[species_n].prob_vec, ", ", n_e_cs[species_n].cs_total, ", ", n_e_cs[species_n].cs_elastic)
                 @inbounds if (R < n_e_cs[species_n].prob_vec[1])  # TODO: fix indexing! 
                     # elastic collision
                     @inbounds scatter_vhs!(rng, collision_data, interaction[species_n, species_e], particles_n[i], particles_e[k])
@@ -597,14 +614,18 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                     end
                     # create the ion particle
                     update_buffer_index_new_particle!(particles_ion, pia, cell, species_ion)
-                    @inbounds particles_ion[pia.n_total[species_ion]] = Particle(particles_n[i].w, particles_n[i].v, particles_n[i].x)
+                    @inbounds particles_ion[pia.n_total[species_ion]].w = particles_n[i].w
+                    @inbounds particles_ion[pia.n_total[species_ion]].v = particles_n[i].v
+                    @inbounds particles_ion[pia.n_total[species_ion]].x = particles_n[i].x
 
                     # add a second electron
                     @inbounds if (length(particles_e) <= pia.n_total[species_e])
                         resize!(particles_e, length(particles_e)+DELTA_PARTICLES)
                     end
                     update_buffer_index_new_particle!(particles_e, pia, cell, species_e)
-                    @inbounds particles_e[pia.n_total[species_e]] = Particle(particles_n[i].w, particles_e[k].v, particles_e[k].x)
+                    @inbounds particles_e[pia.n_total[species_e]].w = particles_n[i].w
+                    @inbounds particles_e[pia.n_total[species_e]].v = particles_e[k].v
+                    @inbounds particles_e[pia.n_total[species_e]].v = particles_e[k].x
 
                     # set neutral particle weight to 0
                     @inbounds particles_n[i].w = 0.0
@@ -623,7 +644,7 @@ end
 """
     ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
              n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion,
-             pia, cell, species_n, species_e, species_ion, Δt, V)
+             pia, cell, species_n, species_e, species_ion, Δt, V; extend::CSExtend=CSExtendConstant)
 
 Perform electron-neutral elastic scattering and electron-impact ionization collisions
 using the event splitting method.
@@ -646,6 +667,9 @@ using the event splitting method.
 * `Δt`: timestep
 * `V`: cell volume
 
+# Keyword arguments
+* `extend`: enum of `CSExtend` type that sets how out-of-range energy values are treated when computing cross-sections
+
 # References
 * G. Oblapenko, D. Goldstein, P. Varghese, C. Moore, Hedging direct simulation Monte Carlo bets via event splitting.
     [J. Comput. Phys, 2022](https://doi.org/10.1016/j.jcp.2022.111390).
@@ -654,7 +678,7 @@ using the event splitting method.
 """
 function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
     n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion, 
-    pia, cell, species_n, species_e, species_ion, Δt, V)
+    pia, cell, species_n, species_e, species_ion, Δt, V; extend::CSExtend=CSExtendConstant)
     # event splitting
     # compute ncoll
     # loop over particles
@@ -686,11 +710,12 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
 
         if (collision_data.g > eps())
 
-            @inbounds collision_data.E_coll_electron_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n)
+            @inbounds collision_data.E_coll_electron_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n;
+                                                                                  extend=extend)
             @inbounds sigma_g_w_max = get_cs_total(n_e_interactions, n_e_cs, species_n) * collision_data.g * max(particles_n[i].w, particles_e[k].w)
 
             # update (σ g w)_max if needed
-            collision_factors.sigma_g_w_max = sigma_g_w_max > collision_factors.sigma_g_w_max ? sigma_g_w_max : collision_factors.sigma_g_w_max
+            collision_factors.sigma_g_w_max = max(sigma_g_w_max, collision_factors.sigma_g_w_max)
 
             if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
                 collision_factors.n_coll_performed += 1
@@ -709,7 +734,9 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
                     @inbounds Δw = particles_n[i].w - particles_e[k].w
                     @inbounds particles_n[i].w = particles_e[k].w
 
-                    @inbounds particles_n[pia.n_total[species_n]] = Particle(Δw, particles_n[i].v, particles_n[i].x)
+                    @inbounds particles_n[pia.n_total[species_n]].w = Δw
+                    @inbounds particles_n[pia.n_total[species_n]].v = particles_n[i].v
+                    @inbounds particles_n[pia.n_total[species_n]].x = particles_n[i].x
                 elseif (particles_n[i].w == particles_e[k].w)
                     collision_factors.n_eq_w_coll_performed += 1
                 else  # (particles[k].w > particles[i].w)
@@ -721,7 +748,9 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
                     @inbounds Δw = particles_e[k].w - particles_n[i].w
                     @inbounds particles_e[k].w = particles_n[i].w
 
-                    @inbounds particles_e[pia.n_total[species_e]] = Particle(Δw, particles_e[k].v, particles_e[k].x)
+                    @inbounds particles_e[pia.n_total[species_e]].w = Δw
+                    @inbounds particles_e[pia.n_total[species_e]].v = particles_e[k].v
+                    @inbounds particles_e[pia.n_total[species_e]].x = particles_e[k].x
                 end
 
                 # now we collide the 2 equal-weight particles
@@ -739,17 +768,23 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
                     end
                     # create the ion particle
                     update_buffer_index_new_particle!(particles_ion, pia, cell, species_ion)
-                    @inbounds particles_ion[pia.n_total[species_ion]] = Particle(w_ionized, particles_n[i].v, particles_n[i].x)
+                    @inbounds particles_ion[pia.n_total[species_ion]].w = w_ionized
+                    @inbounds particles_ion[pia.n_total[species_ion]].v = particles_n[i].v
+                    @inbounds particles_ion[pia.n_total[species_ion]].x = particles_n[i].x
 
                     # add 2 electrons (split + secondary)
                     if (length(particles_e) < pia.n_total[species_e] + 2)
                         resize!(particles_e, length(particles_e)+DELTA_PARTICLES)
                     end
                     update_buffer_index_new_particle!(particles_e, pia, cell, species_e)
-                    @inbounds particles_e[pia.n_total[species_e]] = Particle(w_ionized, particles_e[k].v, particles_e[k].x)
+                    @inbounds particles_e[pia.n_total[species_e]].w = w_ionized
+                    @inbounds particles_e[pia.n_total[species_e]].v = particles_e[k].v
+                    @inbounds particles_e[pia.n_total[species_e]].x = particles_e[k].x
                     @inbounds k1 = pia.n_total[species_e]
                     @inbounds update_buffer_index_new_particle!(particles_e, pia, cell, species_e)
-                    @inbounds particles_e[pia.n_total[species_e]] = Particle(w_ionized, particles_e[k].v, particles_e[k].x)
+                    @inbounds particles_e[pia.n_total[species_e]].w = w_ionized
+                    @inbounds particles_e[pia.n_total[species_e]].v = particles_e[k].v
+                    @inbounds particles_e[pia.n_total[species_e]].x = particles_e[k].x
                     @inbounds k2 = pia.n_total[species_e]
 
                     # elastic scattering

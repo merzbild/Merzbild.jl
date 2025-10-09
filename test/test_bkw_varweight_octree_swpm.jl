@@ -1,4 +1,4 @@
-@testset "bkw variable weight + NNLS merging" begin
+@testset "bkw variable weight + SWPM + octree N:2 merging" begin
 
 
     # Important!
@@ -22,6 +22,8 @@
     #     kk = N // 2
     #     return C**(kk - 1) * (kk - (kk - 1) * C)
 
+    G = 1.0
+
     function analytic(time, magic_factor, N)
         C = 1.0 .- 0.4 * exp.(-time * magic_factor / 6)
         kk = N / 2
@@ -40,28 +42,13 @@
     dt_scaled = 0.025
     n_t = 500
 
-    nv = 32
+    nv = 40
     np_base = 40^3  # some initial guess on # of particle in simulation
-    
-    n_full_up_to_total = 6
-    n_up_to_total = 8
 
-    threshold = 150
-    ntarget_octree = 100
+    threshold = 10000
+    Ntarget = 8000
 
-    mim = []
-    
-    n_moms = n_full_up_to_total
-    for i in 1:n_moms
-        append!(mim, compute_multi_index_moments(i))
-    end
-
-    for i in n_full_up_to_total+1:n_up_to_total
-        append!(mim, [[i, 0, 0], [0, i, 0], [0, 0, i]])
-    end
-
-    mnnls = NNLSMerge(mim, threshold)
-    ocm = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
     T0::Float64 = 273.0
     sigma_ref = π * (interaction_data[1,1].vhs_d^2)
@@ -90,35 +77,25 @@
     phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
     compute_props_with_total_moments!(particles, pia, species_data, phys_props)
 
-    sol_path = joinpath(@__DIR__, "data", "tmp_bkw_nnls.nc")
+    sol_path = joinpath(@__DIR__, "data", "tmp_bkw_octree_swpm.nc")
     ds = NCDataHolder(sol_path, species_data, phys_props)
     write_netcdf(ds, phys_props, 0)
 
-    collision_factors::CollisionFactors = CollisionFactors()
+    collision_factors = CollisionFactorsSWPM()
     collision_data::CollisionData = CollisionData()
 
     Fnum = n_dens/n_sampled
-    collision_factors.sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1], species_data[1], T0, Fnum)
+    collision_factors.sigma_g_max = estimate_sigma_g_w_max(interaction_data[1,1], species_data[1], T0, 1.0)
 
     Δt::Float64 = dt_scaled * tref
     V::Float64 = 1.0
-    natt = 0
-    
-    nnls_success_flag = 1
-    failed_merges = 0
-    total_merges = 0
 
     for ts in 1:n_t
-        ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
+        swpm!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, G, Δt, V)
 
         if phys_props.np[1,1] > threshold
-            nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1; vref=vref, scaling=:vref)
-
-            total_merges += 1
-            if nnls_success_flag == -1
-                failed_merges += 1
-                merge_octree_N2_based!(rng, ocm, particles[1], pia, 1, 1, ntarget_octree)
-            end
+            merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
+            # println(oc.Nbins)
         end
         
         compute_props_with_total_moments!(particles, pia, species_data, phys_props)
@@ -128,12 +105,9 @@
 
     @test abs(phys_props.T[1,1] - T0) < 5e-4
     @test abs(phys_props.n[1,1] / n_dens - 1.0) < 1e-11
+    @test phys_props.np[1,1] < threshold
 
-    # test that we performed merging and had no failed merges
-    @test total_merges > 0
-    @test failed_merges == 0
-
-    ref_sol_path = joinpath(@__DIR__, "data", "bkw_vw_nnls_6full_upto8_150_seed0.nc")
+    ref_sol_path = joinpath(@__DIR__, "data", "bkw_vw_octree_swpm_seed1234.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
     sol = NCDataset(sol_path, "r")
 
@@ -143,15 +117,23 @@
     sol_mom = sol["moments"]
 
     for mom_no in 1:length(moments_list)
-        diff = abs.(ref_mom[mom_no, 1, 1, :50] - sol_mom[mom_no, 1, 1, :50])
-        @test maximum(diff) <= 2.5e-12 # something weird going on in the test/prod environment  # * eps()
+        diff = abs.(ref_mom[mom_no, 1, 1, :] - sol_mom[mom_no, 1, 1, :])
+        @test maximum(diff) <= 1e-15
     end
 
     close(ref_sol)
 
     analytic_4 = analytic(sol["timestep"] * dt_scaled, magic_factor, 4)
     diff = abs.(analytic_4 .- sol_mom[1, 1, 1, :]) ./ analytic_4
-    @test maximum(diff) < 0.285
+    @test maximum(diff) < 0.02
+
+    analytic_6 = analytic(sol["timestep"] * dt_scaled, magic_factor, 6)
+    diff = abs.(analytic_6 .- sol_mom[2, 1, 1, :]) ./ analytic_6
+    @test maximum(diff) < 0.07
+
+    analytic_8 = analytic(sol["timestep"] * dt_scaled, magic_factor, 8)
+    diff = abs.(analytic_8 .- sol_mom[3, 1, 1, :]) ./ analytic_8
+    @test maximum(diff) < 0.15
 
     close(sol)
     rm(sol_path)

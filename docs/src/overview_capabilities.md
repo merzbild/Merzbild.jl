@@ -15,11 +15,12 @@ via an accommodation coefficient).
 ## Collisions
 The No-Time-Counter (NTC) approach of [Bird (1994)](https://doi.org/10.1093/oso/9780198561958.001.0001) is implemented for fixed-weight DSMC.
 The variable-weight NTC approach of [Schmidt and Rutland (2000)](https://doi.org/10.1006/jcph.2000.6568) is implemented for variable-weight DSMC.
+The Stochastic Weighted Particle Method (SWPM) of [Rjasanow, Wagner](https://doi.org/10.1007/3-540-27689-0) is implemented for variable-weight DSMC (currently single-species only).
 Event splitting ([Oblapenko et al. (2022)](https://doi.org/10.1016/j.jcp.2022.111390)) is implemented for neutral-electron interactions.
 
 ## Fokker-Planck collisions
 As an alternative to DSMC, one can use the stochastic Fokker-Planck algorithm to simulate the particle collisions.
-Currently, the linear Fokker-Planck model of [Gorhi, Torrilhon, and Jenny (2011)](https://doi.org/10.1017/jfm.2011.188) is implemented for fixed-weight particles.
+Currently, the linear Fokker-Planck model of [Gorji, Torrilhon, and Jenny (2011)](https://doi.org/10.1017/jfm.2011.188) is implemented for fixed-weight particles (currently single-species only)..
 
 |                        | **Linear**                                        | **Cubic** |
 |:----------------------:|:-----------------------------------------:|:----:|

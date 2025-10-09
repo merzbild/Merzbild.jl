@@ -64,7 +64,7 @@ function run(seed)
     pia = ParticleIndexerArray(n_sampled)
 
     phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
-    compute_props!(particles, pia, species_data, phys_props)
+    compute_props_with_total_moments!(particles, pia, species_data, phys_props)
 
     ds = NCDataHolder("scratch/data/tmp_bkw_grid.nc", species_data, phys_props)
     write_netcdf(ds, phys_props, 0)
@@ -85,7 +85,7 @@ function run(seed)
             merge_grid_based!(rng, mg, particles[1], pia, 1, 1, species_data, phys_props)
         end
         
-        compute_props!(particles, pia, species_data, phys_props)
+        compute_props_with_total_moments!(particles, pia, species_data, phys_props)
         write_netcdf(ds, phys_props, ts)
     end
     close_netcdf(ds)

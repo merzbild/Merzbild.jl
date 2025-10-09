@@ -37,7 +37,9 @@ followed by any more specific data (e.g. `n_e_interactions`, `n_e_cs`).
 
 8. Then the `surf_props` struct
 
-9. Then any function-specific non-struct parameters
+9. Then the `flux_props` struct
+
+10. Then any function-specific non-struct parameters
 
 For collisions with possible reactant products (e.g. ionizing collisions), first everything reactant-related,
 then everything product-related.

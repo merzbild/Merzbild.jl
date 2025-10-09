@@ -6,6 +6,7 @@ using NCDatasets
 using SpecialFunctions
 using StaticArrays
 using StableRNGs
+using LinearAlgebra
 
 include("test_indexing.jl")  # first we test indexing routines
 include("test_constants.jl")  # test constants
@@ -39,6 +40,8 @@ include("test_pia_contiguous.jl")  # test squash_pia
 include("test_debugging_functions.jl")  # test indexing debugging functions
 include("test_grid_1D_uniform.jl")  # test sampling and computes on 1D uniform grid
 include("test_grid_sorting.jl")  # test particle sorting routines
+include("test_flux_computes.jl")  # test computation of fluxes in grid cells
+include("test_io_fluxes.jl")  # test I/O of fluxes
 include("test_convection_1D.jl")  # test particle convection and surface interaction on a 1D grid
 include("test_collisions_1D.jl")  # test particle collisions on a grid
 include("test_io_multidim.jl")  # test netCDF I/O of physical properties on a grid
@@ -48,11 +51,15 @@ include("test_surface_props_1D_uniform.jl")  # test surface properties for 1-D u
 include("test_io_surf.jl")  # test I/O of surface properties
 include("test_1D_couette.jl")  # test Couette flow
 include("test_1D_couette_varweight.jl")  # test 1-D Couette flow, variable-weight DSMC, surface computes
+include("test_1D_couette_nnls.jl")  # test 1-D Couette flow, variable-weight DSMC, NNLS merging surface computes
 include("test_misc.jl")  # various misc utility functions
 include("test_collision_fp.jl")  # test Fokker-Planck collisions
 include("test_1D_couette_fp.jl")  # test  1-D Couette flow, particle Fokker-Planck collisions
 include("test_chunking.jl")  # test chunking, chunk-based computes, surface reduce, sampling on 1-D grid chunks
 include("test_particle_exchange.jl")  # test swapping and pushing of particles in chunked simulations
 include("test_particle_resort_after_exchange.jl")  # test re-sorting of particles after swap/push in chunked simulations
-include("test_roulette_merging.jl")
+include("test_roulette_merging.jl")  # roulette merge
+include("test_collision_utils_swpm.jl")  # SWPM collision factors estimation
+include("test_bkw_varweight_octree_swpm.jl")  # SWPM for BKW test case
+include("test_1D_couette_varweight_swpm.jl")  # SWPM for Couette flow
 include("test_aqua.jl")

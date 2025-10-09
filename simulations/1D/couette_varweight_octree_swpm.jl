@@ -4,7 +4,7 @@ using ..Merzbild
 using Random
 using TimerOutputs
 
-function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, merge_target, Δt, output_freq, n_timesteps, avg_start)
+function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, merge_target, Δt, output_freq, n_timesteps, avg_start, G)
     reset_timer!()
 
     Random.seed!(seed)
@@ -48,18 +48,18 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     surf_props_avg = SurfProps(pia, grid)
 
     # create struct for netCDF output
-    ds = NCDataHolder("scratch/data/couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(merge_threshold)_$(merge_target).nc", species_data, phys_props)
+    ds = NCDataHolder("scratch/data/couette_swpm_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(merge_threshold)_$(merge_target).nc", species_data, phys_props)
 
     # create struct for second netCDF, this one is for time-averaged 
-    ds_avg = NCDataHolder("scratch/data/avg_couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(merge_threshold)_$(merge_target)_after$(avg_start).nc",
+    ds_avg = NCDataHolder("scratch/data/avg_couette_swpm_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(merge_threshold)_$(merge_target)_after$(avg_start).nc",
                           species_data, phys_props)
 
     # create struct for time-averaged surface properties I/O
-    ds_surf_avg = NCDataHolderSurf("scratch/data/avg_couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(merge_threshold)_$(merge_target)_surf_after$(avg_start).nc",
+    ds_surf_avg = NCDataHolderSurf("scratch/data/avg_couette_swpm_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(merge_threshold)_$(merge_target)_surf_after$(avg_start).nc",
                                    species_data, surf_props_avg)
 
     # create and estimate collision factors
-    collision_factors = create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum)
+    collision_factors = create_collision_factors_swpm_array(pia, interaction_data, species_data, T_wall)
 
     oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
@@ -83,8 +83,8 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
         end
 
         for cell in 1:grid.n_cells
-            @timeit "collide" ntc!(rng, collision_factors[1, 1, cell],
-                                   collision_data, interaction_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
+            @timeit "collide" swpm!(rng, collision_factors[1, 1, cell],
+                                    collision_data, interaction_data, particles[1], pia, cell, 1, G, Δt, grid.cells[cell].V)
 
             if pia.indexer[cell,1].n_local > merge_threshold
                 @timeit "merge" merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
@@ -135,5 +135,5 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
 end
 
 # run(1234, 300.0, 500.0, 5e-4, 5e22, 1000, 250, 150, 100, 2.59e-9, 1000, 5000, 14000)
-run(1234, 300.0, 500.0, 5e-4, 5e22, 50, 250, 150, 100, 2.59e-9, 1000, 50000, 14000)
+run(1234, 300.0, 500.0, 5e-4, 5e22, 50, 250, 150, 100, 2.59e-9, 1000, 50000, 14000, 1.5)
 # run(1234, 300.0, 500.0, 5e-4, 5e22, 8, 200, 20, 16, 1e-1, 1000, 1, 14000)
