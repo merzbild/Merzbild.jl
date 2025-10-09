@@ -63,21 +63,21 @@ function fp_linear!(rng, collision_data_fp, interaction, species_data, particles
 
     for part_id in n_begin:n_end
         @inbounds particles[part_id].v = particles[part_id].v - collision_data_fp.vel_ave
-        @inbounds es_old = es_old + 0.5 * (particles[part_id].v[1]^2
-                                  + particles[part_id].v[2]^2
-                                  + particles[part_id].v[3]^2) * particles[part_id].w
+        @inbounds es_old = es_old + (particles[part_id].v[1]^2
+                                     + particles[part_id].v[2]^2
+                                     + particles[part_id].v[3]^2) * particles[part_id].w
     end
 
     if indexer.n_group2 > 0
         for part_id in indexer.start2:indexer.end2
             @inbounds particles[part_id].v = particles[part_id].v - collision_data_fp.vel_ave
-            @inbounds es_old = es_old + 0.5 * (particles[part_id].v[1]^2
-                                      + particles[part_id].v[2]^2
-                                      + particles[part_id].v[3]^2) * particles[part_id].w
+            @inbounds es_old = es_old + (particles[part_id].v[1]^2
+                                         + particles[part_id].v[2]^2
+                                         + particles[part_id].v[3]^2) * particles[part_id].w
         end
     end
 
-    es_old = es_old / local_w
+    es_old = 0.5 * es_old / local_w
 
     τ = compute_relaxation_time(interaction, species_data, species, V, es_old, local_w)
     A = exp(-Δt/τ)
@@ -91,9 +91,9 @@ function fp_linear!(rng, collision_data_fp, interaction, species_data, particles
         @inbounds particles[part_id].v = particles[part_id].v*A + C*SVector{3,Float64}(collision_data_fp.xvel_rand[i],
                                                                              collision_data_fp.yvel_rand[i],
                                                                              collision_data_fp.zvel_rand[i])
-        @inbounds es_new = es_new + 0.5 * (particles[part_id].v[1]^2
-                                  + particles[part_id].v[2]^2
-                                  + particles[part_id].v[3]^2) * particles[part_id].w
+        @inbounds es_new = es_new + (particles[part_id].v[1]^2
+                                     + particles[part_id].v[2]^2
+                                     + particles[part_id].v[3]^2) * particles[part_id].w
     end
 
     if indexer.n_group2 > 0
@@ -103,13 +103,13 @@ function fp_linear!(rng, collision_data_fp, interaction, species_data, particles
             @inbounds particles[part_id].v = particles[part_id].v*A + C*SVector{3,Float64}(collision_data_fp.xvel_rand[i],
                                                                                  collision_data_fp.yvel_rand[i],
                                                                                  collision_data_fp.zvel_rand[i])
-            @inbounds es_new = es_new + 0.5 * (particles[part_id].v[1]^2
+            @inbounds es_new = es_new + (particles[part_id].v[1]^2
                                       + particles[part_id].v[2]^2
                                       + particles[part_id].v[3]^2) * particles[part_id].w
         end
     end
 
-    es_new = es_new / local_w
+    es_new = 0.5 * es_new / local_w
 
     alpha = sqrt(es_old / es_new)
 
@@ -204,9 +204,9 @@ means for each component are exactly 0, and their variances are exactly 1.
     collision_data_fp.stddev = SVector{3,Float64}(sqrt.(n_local ./ collision_data_fp.stddev))
 
     for i in 1:n_local
-        @inbounds collision_data_fp.xvel_rand[i] *= collision_data_fp.stddev[1];
-        @inbounds collision_data_fp.yvel_rand[i] *= collision_data_fp.stddev[2];
-        @inbounds collision_data_fp.zvel_rand[i] *= collision_data_fp.stddev[3];
+        @inbounds collision_data_fp.xvel_rand[i] *= collision_data_fp.stddev[1]
+        @inbounds collision_data_fp.yvel_rand[i] *= collision_data_fp.stddev[2]
+        @inbounds collision_data_fp.zvel_rand[i] *= collision_data_fp.stddev[3]
     end
 end
 
