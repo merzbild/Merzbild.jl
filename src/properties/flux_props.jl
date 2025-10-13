@@ -84,7 +84,9 @@ function compute_flux_props!(particles, pia, species_data, phys_props::PhysProps
             c = SVector{3,Float64}(0.0, 0.0, 0.0)
 
             for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
-                c = particles[species][i].v - phys_props.v[:, cell, species]
+                c = particles[species][i].v - SVector{3,Float64}(phys_props.v[1, cell, species],
+                                                                 phys_props.v[2, cell, species],
+                                                                 phys_props.v[3, cell, species])
                 cxsq = c[1]^2
                 cysq = c[2]^2
                 czsq = c[3]^2
@@ -97,7 +99,9 @@ function compute_flux_props!(particles, pia, species_data, phys_props::PhysProps
         
             if pia.indexer[cell,species].n_group2 > 0
                 for i in pia.indexer[cell,species].start2:pia.indexer[cell,species].end2
-                    c = particles[species][i].v - phys_props.v[:, cell, species]
+                    c = particles[species][i].v - SVector{3,Float64}(phys_props.v[1, cell, species],
+                                                                    phys_props.v[2, cell, species],
+                                                                    phys_props.v[3, cell, species])
                     cxsq = c[1]^2
                     cysq = c[2]^2
                     czsq = c[3]^2
@@ -201,7 +205,9 @@ function compute_flux_props_sorted!(particles, pia, species_data, phys_props, fl
             c = SVector{3,Float64}(0.0, 0.0, 0.0)
 
             for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
-                c = particles[species][i].v - phys_props.v[:, cell, species]
+                c = particles[species][i].v - SVector{3,Float64}(phys_props.v[1, cell, species],
+                                                                 phys_props.v[2, cell, species],
+                                                                 phys_props.v[3, cell, species])
                 cxsq = c[1]^2
                 cysq = c[2]^2
                 czsq = c[3]^2
