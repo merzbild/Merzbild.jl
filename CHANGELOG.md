@@ -19,7 +19,7 @@ the corresponding coordinates are set to 0); not implemented for rate-preserving
 * Documentation improvements
 * Improved test coverage
 * Single-species Stochastic Weighted Particle Method (SWPM) implemented (`swpm!` function)
-* Tabulate cross-section computations and associated NTC routines for electron-neutral interactions now correctly deal with
+* Tabulated cross-section computations and associated NTC routines for electron-neutral interactions now correctly deal with
 how the out-of-table values should be handled
 * Speed-up of variable weight collisions
 * Creation of a `ParticleVector(n_particles)` now leads to it being filled with particles with weight, velocity, position 0
