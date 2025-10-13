@@ -70,6 +70,12 @@ avg_props!
 clear_props!
 ```
 
+## Collisional properties
+```@docs
+mean_free_path
+mean_collision_frequency
+```
+
 ## Collision computations
 ```@docs
 CollisionData

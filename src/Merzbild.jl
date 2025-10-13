@@ -7,13 +7,14 @@ include("constants.jl")
 include("utils.jl")
 include("particles.jl")
 include("distributions_and_sampling.jl")
-include("physical_props.jl")
-include("flux_props.jl")
+include("properties/physical_props.jl")
+include("properties/flux_props.jl")
+include("properties/collisional_props.jl")
 include("collisions/collisions.jl")
 include("grids/grids.jl")
 include("merging/merging.jl")
 include("pic/pic.jl")
-include("surface_props.jl")
+include("properties/surface_props.jl")
 include("io.jl")
 include("convection/convection.jl")
 include("parallel.jl")
@@ -64,5 +65,6 @@ export pretty_print_pia
 export ChunkExchanger, exchange_particles!, reset!, sort_particles_after_exchange!
 export count_disordered_particles, check_pia_is_correct, check_unique_index
 export FluxProps, compute_flux_props!, compute_flux_props_sorted!
+export mean_free_path, mean_collision_frequency
 
 end # module merzbild
