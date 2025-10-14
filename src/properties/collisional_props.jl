@@ -13,11 +13,11 @@ Compute elastic VHS mean free path for single-species collisions.
 Mean free path.
 
 # References
-* Eqn. (4.65) in "Molecular Gas Dynamics and the Direct Simulation of Gas Flows"
+* Eqn. (4.65) in "Molecular Gas Dynamics and the Direct Simulation of Gas Flows" or (D.21) in "Nonequilibrium Gas Dynamics and Molecular Simulation".
 """
 function mean_free_path(interaction, species, n, T)
     @inbounds λ = sqrt(2.0) * π * (interaction[species, species].vhs_d^2) * n
-    @inbounds λ *= (T / interaction[species, species].vhs_Tref)^(interaction[species, species].vhs_o - 0.5)
+    @inbounds λ *= (interaction[species, species].vhs_Tref / T)^(interaction[species, species].vhs_o - 0.5)
     return 1.0 / λ
 end
 
