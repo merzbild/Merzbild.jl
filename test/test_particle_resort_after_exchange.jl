@@ -347,7 +347,6 @@
     Merzbild.update_buffer_index_new_particle!(particles_chunks[chunk_id][1], pia_chunks[chunk_id], 2, 1)
 
     particles_chunks[chunk_id][1][pia_chunks[chunk_id].n_total[1]].w = 2.0
-    println(pia_chunks[chunk_id].n_total[1])
     for chunk_id in 1:2
         np = 0
         for cell in 1:2
