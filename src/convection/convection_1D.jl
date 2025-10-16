@@ -24,12 +24,12 @@ Convect a singe particle on a 1-D uniform grid.
         if (x_new >= grid.L)
             @inbounds t_rest -= abs((grid.L - x_old) / particle.v[1])
             bc_id = 2
-            wall_normal = -1
+            wall_normal = -1.0
             x_old = grid.L
         else
             @inbounds t_rest -= abs(x_old / particle.v[1])
             bc_id = 1
-            wall_normal = 1
+            wall_normal = 1.0
             x_old = 0.0
         end
 
@@ -79,12 +79,12 @@ Convect a singe particle on a 1-D uniform grid, updating surface properties if i
         if (x_new >= grid.L)
             @inbounds t_rest -= abs((grid.L - x_old) / particle.v[1])
             bc_id = 2
-            wall_normal = -1
+            wall_normal = -1.0
             x_old = grid.L
         else
             @inbounds t_rest -= abs(x_old / particle.v[1])
             bc_id = 1
-            wall_normal = 1
+            wall_normal = 1.0
             x_old = 0.0
         end
 

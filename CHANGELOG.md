@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.7.3
+* Fixes in particle exchange for multi-threaded computations
+* Python plotting script for 1-D flows now allows for multiple files + plot labels
+* `physical_props.jl', `surface_props.jl`, `flux_props.jl` files moved to new `src/properties` directory
+* Added computation of mean collision frequency and mean free path for single-species VHS gases: `mean_free_path`,
+`mean_collision_frequency`
+* Speed-up of computation of `FluxProps` (unnecessary allocations removed)
+* Reduced allocation in computation of `PhysProps` for sorted particles
+
 ## v0.7.2
 * Added `w_threshold` keyword argument to NNLS merging to discard particles with very small weights
 * NNLS merging now also accepts a list of spatial moments to preserve (requires explicitly conserving 1-st order spatial moments, otherwise
@@ -12,7 +21,7 @@ the corresponding coordinates are set to 0); not implemented for rate-preserving
 * Documentation improvements
 * Improved test coverage
 * Single-species Stochastic Weighted Particle Method (SWPM) implemented (`swpm!` function)
-* Tabulate cross-section computations and associated NTC routines for electron-neutral interactions now correctly deal with
+* Tabulated cross-section computations and associated NTC routines for electron-neutral interactions now correctly deal with
 how the out-of-table values should be handled
 * Speed-up of variable weight collisions
 * Creation of a `ParticleVector(n_particles)` now leads to it being filled with particles with weight, velocity, position 0

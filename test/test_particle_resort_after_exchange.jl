@@ -134,6 +134,27 @@
     @test particles_chunks[3][1].nbuffer == 2
     @test particles_chunks[3][1].buffer[1:2] == [3,4]
 
+    # we also test that re-writing local particle data works OK, no shared Particle instances
+    for chunk_id in 1:3
+        for cell in 1:4
+            s1 = pia_chunks[chunk_id].indexer[cell,1].start1
+            e1 = pia_chunks[chunk_id].indexer[cell,1].end1
+            for i in s1:e1
+                particles_chunks[chunk_id][1][i].w = chunk_id
+            end
+        end
+    end
+
+    for chunk_id in 1:3
+        for cell in 1:4
+            s1 = pia_chunks[chunk_id].indexer[cell,1].start1
+            e1 = pia_chunks[chunk_id].indexer[cell,1].end1
+            for i in s1:e1
+                @test particles_chunks[chunk_id][1][i].w == chunk_id
+            end
+        end
+    end
+
 
     # case 2
     # 4 cells, 2 chunks
@@ -250,5 +271,101 @@
 
     for i in pia_chunks[chunk_id].indexer[cell,1].start1:pia_chunks[chunk_id].indexer[cell,1].end1
         @test particles_chunks[chunk_id][1][i].w == 4.0
+    end
+
+    # we also test that re-writing local particle data works OK, no shared Particle instances
+    for chunk_id in 1:2
+        for cell in 1:4
+            s1 = pia_chunks[chunk_id].indexer[cell,1].start1
+            e1 = pia_chunks[chunk_id].indexer[cell,1].end1
+            for i in s1:e1
+                particles_chunks[chunk_id][1][i].w = chunk_id
+            end
+        end
+    end
+
+    for chunk_id in 1:2
+        for cell in 1:4
+            s1 = pia_chunks[chunk_id].indexer[cell,1].start1
+            e1 = pia_chunks[chunk_id].indexer[cell,1].end1
+            for i in s1:e1
+                @test particles_chunks[chunk_id][1][i].w == chunk_id
+            end
+        end
+    end
+
+    # case 3
+    n_chunks = 2
+    cell_chunks = [[1], [2]]
+    n_cells = 2
+    gridsorter_chunks = [GridSortInPlace(n_cells, 5) for i in 1:n_chunks]
+
+    particles_chunks = [[ParticleVector(5)], [ParticleVector(5)]]
+    pia_chunks = [ParticleIndexerArray(n_cells,1), ParticleIndexerArray(n_cells,1)]
+    np_actual = [3, 4]
+    positions = [[2.0, 2.0, 2.0], [-0.5, -0.5, 0.5, -0.5]]
+    cells = [[2,2,2],[1,1,1,1]]
+    np_in_cells = [[0,3], [4,0]]  # per-chunk info
+    offsets = [[0,1], [1,0]]  # per-cell, this is for easier setup of pia
+
+    chunk_exchanger = ChunkExchanger(cell_chunks, n_cells)
+    for chunk_id in 1:n_chunks
+        for np in 1:np_actual[chunk_id]
+            Merzbild.add_particle!(particles_chunks[chunk_id][1], np,
+                                   cells[chunk_id][np] * 1.0, [chunk_id, -chunk_id, chunk_id],
+                                   [positions[chunk_id][np], 0.5, 0.0])
+        end
+        pia_chunks[chunk_id].n_total[1] = np_actual[chunk_id]
+
+        for cell in 1:n_cells
+            pia_chunks[chunk_id].indexer[cell,1].n_local = np_in_cells[chunk_id][cell]
+            pia_chunks[chunk_id].indexer[cell,1].n_group1 = np_in_cells[chunk_id][cell]
+
+            if np_in_cells[chunk_id][cell] > 0
+                pia_chunks[chunk_id].indexer[cell,1].start1 = offsets[chunk_id][cell]
+                pia_chunks[chunk_id].indexer[cell,1].end1 = offsets[chunk_id][cell] + np_in_cells[chunk_id][cell] - 1
+            end
+        end
+    end
+
+    @test pia_chunks[1].n_total[1] == 3
+    @test pia_chunks[2].n_total[1] == 4
+
+    exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, 1)
+
+    for chunk_id in 1:n_chunks
+        sort_particles_after_exchange!(chunk_exchanger, gridsorter_chunks[chunk_id],
+                                       particles_chunks[chunk_id][1], pia_chunks[chunk_id],
+                                       cell_chunks[chunk_id], 1)
+    end
+
+    @test pia_chunks[1].n_total[1] == 4
+    @test pia_chunks[2].n_total[1] == 3
+
+    # add a new particle to chunk 2
+    chunk_id = 2
+    Merzbild.update_buffer_index_new_particle!(particles_chunks[chunk_id][1], pia_chunks[chunk_id], 2, 1)
+
+    particles_chunks[chunk_id][1][pia_chunks[chunk_id].n_total[1]].w = 2.0
+    for chunk_id in 1:2
+        np = 0
+        for cell in 1:2
+            s1 = pia_chunks[chunk_id].indexer[cell,1].start1
+            e1 = pia_chunks[chunk_id].indexer[cell,1].end1
+            for i in s1:e1
+                @test particles_chunks[chunk_id][1][i].w == chunk_id
+                np += 1
+            end
+
+            s2 = pia_chunks[chunk_id].indexer[cell,1].start2
+            e2 = pia_chunks[chunk_id].indexer[cell,1].end2
+            if pia_chunks[chunk_id].indexer[cell,1].n_group2 > 0
+                for i in s2:e2
+                    @test particles_chunks[chunk_id][1][i].w == chunk_id
+                    np += 1
+                end
+            end
+        end
+        @test np == 4
     end
 end

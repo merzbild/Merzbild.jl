@@ -7,6 +7,7 @@ using SpecialFunctions
 using StaticArrays
 using StableRNGs
 using LinearAlgebra
+using ChunkSplitters
 
 include("test_indexing.jl")  # first we test indexing routines
 include("test_constants.jl")  # test constants
@@ -58,8 +59,30 @@ include("test_1D_couette_fp.jl")  # test  1-D Couette flow, particle Fokker-Plan
 include("test_chunking.jl")  # test chunking, chunk-based computes, surface reduce, sampling on 1-D grid chunks
 include("test_particle_exchange.jl")  # test swapping and pushing of particles in chunked simulations
 include("test_particle_resort_after_exchange.jl")  # test re-sorting of particles after swap/push in chunked simulations
+include("test_couette_varweight_octree_chunking.jl")  # test serial but chunked variable-weight simulation
 include("test_roulette_merging.jl")  # roulette merge
 include("test_collision_utils_swpm.jl")  # SWPM collision factors estimation
 include("test_bkw_varweight_octree_swpm.jl")  # SWPM for BKW test case
 include("test_1D_couette_varweight_swpm.jl")  # SWPM for Couette flow
+include("test_collisional_props_computes.jl")  # collisional property computes
 include("test_aqua.jl")
+
+
+# tests assume that VHS data for Ar, He is
+# ["Ar,Ar"]
+# vhs_d = 4.11e-10
+# vhs_o = 0.81
+# vhs_Tref = 273.0
+# comment = "Created via (1/2) mixing rule"
+
+# ["Ar,He"]
+# vhs_d = 3.25e-10
+# vhs_o = 0.735
+# vhs_Tref = 273.0
+# comment = "Created via (1/2) mixing rule"
+
+# ["He,He"]
+# vhs_d = 2.33e-10
+# vhs_o = 0.66
+# vhs_Tref = 273.0
+# comment = "Created via (1/2) mixing rule"

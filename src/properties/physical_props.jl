@@ -345,7 +345,9 @@ function compute_props_sorted!(particles, pia, species_data, phys_props, cell_ch
     
             @inbounds phys_props.np[cell,species] = np
             @inbounds phys_props.n[cell,species] = n
-            @inbounds phys_props.v[:,cell,species] = v
+            @inbounds phys_props.v[1,cell,species] = v[1]
+            @inbounds phys_props.v[2,cell,species] = v[2]
+            @inbounds phys_props.v[3,cell,species] = v[3]
             @inbounds phys_props.T[cell,species] = T
         end
     end
@@ -421,7 +423,9 @@ function compute_props_sorted!(particles, pia, species_data, phys_props, grid::G
         
                 @inbounds phys_props.np[cell,species] = np
                 @inbounds phys_props.n[cell,species] = n * grid.cells[cell].inv_V
-                @inbounds phys_props.v[:,cell,species] = v
+                @inbounds phys_props.v[1,cell,species] = v[1]
+                @inbounds phys_props.v[2,cell,species] = v[2]
+                @inbounds phys_props.v[3,cell,species] = v[3]
                 @inbounds phys_props.T[cell,species] = T
             end
         end
