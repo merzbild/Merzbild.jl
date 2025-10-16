@@ -1,5 +1,6 @@
 [deps]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+ChunkSplitters = "ae650224-84b6-46f8-82ea-d812ca08434e"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 NCDatasets = "85f8d34a-cbdd-5861-8df4-14fed0d494ab"
