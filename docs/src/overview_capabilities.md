@@ -56,6 +56,6 @@ for the LXCat data.
 Output of the computed macroscopic properties is in NetCDF4 format.
 
 ## Parallel computations
-Multithreading is supported via domain decomposition,
+Multithreading for both fixed- and variable-weight DSMC simulations is supported via domain decomposition,
 see [the section on setting up multithreaded simulations](@ref "Multithreaded simulations") for more details.
-Multithreaded variable-weight DSMC computations have not been tested yet.
+Multi-threaded Fokker-Planck simulations have not been tested yet.

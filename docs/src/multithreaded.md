@@ -38,8 +38,9 @@ can occur. Some of this functionality will be re-used to make MPI simulations po
 
 ## Example: multithreaded Couette flow simulation
 
-Below is an example of a multithreaded Couette flow simulation. To run in multithreaded mode, one should start
+Below is an example of a fixed-weight DSMC multithreaded Couette flow simulation. To run in multithreaded mode, one should start
 julia specifying the number of threads: `julia --threads NTHREADS`. The file can also be found under `simulations/1D/couette_multithreaded.jl`.
+A variable-weight example can be found under `simulations/1D/couette_multithreaded_varweight_octree.jl`.
 
 The [ChunkSplitters.jl](https://github.com/JuliaFolds2/ChunkSplitters.jl)
 library is used to perform domain decomposition, by splitting the range of cell indices `1:nx` into independent chunks.
