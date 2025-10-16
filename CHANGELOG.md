@@ -1,9 +1,11 @@
 # Changelog
 
+## v0.7.4
+
 ## v0.7.3
 * Fixes in particle exchange for multi-threaded computations
 * Python plotting script for 1-D flows now allows for multiple files + plot labels
-* `physical_props.jl', `surface_props.jl`, `flux_props.jl` files moved to new `src/properties` directory
+* `physical_props.jl`, `surface_props.jl`, `flux_props.jl` files moved to new `src/properties` directory
 * Added computation of mean collision frequency and mean free path for single-species VHS gases: `mean_free_path`,
 `mean_collision_frequency`
 * Speed-up of computation of `FluxProps` (unnecessary allocations removed)
