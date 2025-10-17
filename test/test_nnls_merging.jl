@@ -553,4 +553,13 @@
     end
 
     @test abs(new_w - tw) < 4.5e-15
+
+
+    # finally test the edge case of init_np = total_np and no pre-allocated matrices, v_multipliers=[]
+    # reset particles
+    particles = [create_particles2(mult=2.0,mult2=2.0)]
+    pia = ParticleIndexerArray(length(particles[1]))
+
+    mnnls = NNLSMerge(add_vel_moments, length(particles[1]); multi_index_moments_pos=[])
+    merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1; centered_at_mean=false, n_rand_pairs=0, v_multipliers=[], w_threshold=1e-12)
 end

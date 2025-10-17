@@ -149,7 +149,7 @@
     E_new = 0.5 * sum([particles[i].w * sum(particles[i].v.^2) for i in 1:np_new])/wnew
     @test abs(E_new - E0)/E0 < 1e-15
 
-    # finally test the edge case of 
+    # finally test the edge case of init_np = total_np and no pre-allocated matrices, v_multipliers=[]
     # reset particles
     particles, pia = create_particles(ndens)
 
