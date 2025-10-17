@@ -133,9 +133,12 @@
 
     @test np_new < 24
 
+    k_rate_elastic = rate_elastic / w0
+    k_rate_ionization = rate_ionization / w0
+
     # test rate coefficients
-    @test abs(nnls_rp.rhs_vector[8] * w0 * vref * cs_ref - rate_elastic)/rate_elastic < 4*eps()
-    @test abs(nnls_rp.rhs_vector[9] * w0 * vref * cs_ref - rate_ionization)/rate_ionization < 4*eps()
+    @test abs(nnls_rp.rhs_vector[8] - k_rate_elastic)/k_rate_elastic < 4*eps()
+    @test abs(nnls_rp.rhs_vector[9] - k_rate_ionization)/k_rate_ionization < 4*eps()
 
     @test maximum(abs.(nnls.rhs_vector - nnls_rp.rhs_vector[1:7])) < 4*eps()
 

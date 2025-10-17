@@ -1022,16 +1022,19 @@ process ``p``.
 function scale_lhs_rhs_rate_preserving!(nnls_merging, lhs_matrix, ref_cs_elastic, ref_cs_ion, scaling, lhs_ncols)
     scale_lhs_rhs!(nnls_merging, lhs_matrix, scaling, lhs_ncols)
 
-    scaler_el = nnls_merging.inv_vref / ref_cs_elastic
-    scaler_ion = nnls_merging.inv_vref / ref_cs_ion
+    # scaler_el = nnls_merging.inv_vref / ref_cs_elastic
+    # scaler_ion = nnls_merging.inv_vref / ref_cs_ion
 
-    @inbounds for col in 1:lhs_ncols
-        lhs_matrix[nnls_merging.n_moments_vel+1, col] *= scaler_el
-        lhs_matrix[nnls_merging.n_moments_vel+2, col] *= scaler_ion
-    end
+    # scaler_el = 1.0 / (max(nnls_merging.rhs_vector[nnls_merging.n_moments_vel+1], 1e-30))
+    # scaler_ion = 1.0 / (max(nnls_merging.rhs_vector[nnls_merging.n_moments_vel+2], 1e-30))
 
-    @inbounds nnls_merging.rhs_vector[nnls_merging.n_moments_vel+1] *= scaler_el
-    @inbounds nnls_merging.rhs_vector[nnls_merging.n_moments_vel+2] *= scaler_ion
+    # @inbounds for col in 1:lhs_ncols
+    #     lhs_matrix[nnls_merging.n_moments_vel+1, col] *= scaler_el
+    #     lhs_matrix[nnls_merging.n_moments_vel+2, col] *= scaler_ion
+    # end
+
+    # @inbounds nnls_merging.rhs_vector[nnls_merging.n_moments_vel+1] *= scaler_el
+    # @inbounds nnls_merging.rhs_vector[nnls_merging.n_moments_vel+2] *= scaler_ion
 end
 
 """
