@@ -1344,9 +1344,10 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging,
                                       centered_at_mean, v_multipliers, extend)
 
     scale_lhs_rhs_rate_preserving!(nnls_merging, nnls_merging.work[indexer].QA, ref_cs_elatic, ref_cs_ion, scaling, lhs_ncols)
-    scale_columns!(nnls_merging.work[indexer].QA, column_norms)
 
     lhs_matrix .= nnls_merging.work[indexer].QA
+
+    scale_columns!(nnls_merging.work[indexer].QA, column_norms)
 
     nnls_merging.work[indexer].Qb .= nnls_merging.rhs_vector
     solve!(nnls_merging.work[indexer], iteration_mult * size(nnls_merging.work[indexer].QA, 2), 1e-14)

@@ -138,16 +138,14 @@
     @test abs(nnls_rp.rhs_vector[9] * w0 * vref * cs_ref - rate_ionization)/rate_ionization < 4*eps()
 
     @test maximum(abs.(nnls.rhs_vector - nnls_rp.rhs_vector[1:7])) < 4*eps()
-    println(nnls.rhs_vector)
-    println(nnls_rp.rhs_vector)
 
     wnew = sum([particles[i].w for i in 1:np_new])
-    @test abs(wnew - w0)/w0 < 1e-14
+    @test abs(wnew - w0)/w0 < 1e-15
 
     v_new = sum([particles[i].w * particles[i].v for i in 1:np_new])/wnew
     @test maximum(abs.(v0)) < 1e-14
 
     # mean velocity is 0, so we can just sum up 0.5 v^2 and get energy (per unit mass)
     E_new = 0.5 * sum([particles[i].w * sum(particles[i].v.^2) for i in 1:np_new])/wnew
-    @test abs(E_new - E0)/E0 < 1e-14
+    @test abs(E_new - E0)/E0 < 1e-15
 end
