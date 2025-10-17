@@ -148,4 +148,21 @@
     # mean velocity is 0, so we can just sum up 0.5 v^2 and get energy (per unit mass)
     E_new = 0.5 * sum([particles[i].w * sum(particles[i].v.^2) for i in 1:np_new])/wnew
     @test abs(E_new - E0)/E0 < 1e-15
+
+    # finally test the edge case of 
+    # reset particles
+    particles, pia = create_particles(ndens)
+
+    nnls_rp = NNLSMerge(mim, 24; rate_preserving=true)
+
+    result = merge_nnls_based_rate_preserving!(rng, nnls_rp,
+                                               interaction_data, n_e_interactions, computed_cs,
+                                               particles, pia, 1, 1, 1,
+                                               cs_ref, cs_ref; scaling=:variance,
+                                               vref=vref, n_rand_pairs=0, max_err=1e-11,
+                                               centered_at_mean=false, v_multipliers=[], iteration_mult=2,
+                                               extend=CSExtendConstant)
+
+    @test result == 1
+    @test pia.n_total[1] < 24
 end
