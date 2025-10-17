@@ -80,6 +80,17 @@
 
     ndens = 1e15
     particles, pia = create_particles(ndens)
+    # set some reference values
+    vref = 5e5
+    cs_ref = 1e-19
+
+    result = merge_nnls_based!(rng, nnls, particles, pia, 1, 1; vref=vref, scaling=:variance)
+
+    @test result == 1
+    @test pia.n_total[1] < 24
+
+    # reset particles
+    particles, pia = create_particles(ndens)
 
     w0 = sum([particles[i].w for i in 1:24])
     @test abs(w0 - ndens)/ndens < 2*eps()
@@ -108,9 +119,6 @@
     end
 
     @test rate_ionization > 0.0
-    # set some reference values
-    vref = 5e5
-    cs_ref = 1e-19
 
     result = merge_nnls_based_rate_preserving!(rng, nnls_rp,
                                                interaction_data, n_e_interactions, computed_cs,
@@ -128,6 +136,10 @@
     # test rate coefficients
     @test abs(nnls_rp.rhs_vector[8] * w0 * vref * cs_ref - rate_elastic)/rate_elastic < 4*eps()
     @test abs(nnls_rp.rhs_vector[9] * w0 * vref * cs_ref - rate_ionization)/rate_ionization < 4*eps()
+
+    @test maximum(abs.(nnls.rhs_vector - nnls_rp.rhs_vector[1:7])) < 4*eps()
+    println(nnls.rhs_vector)
+    println(nnls_rp.rhs_vector)
 
     wnew = sum([particles[i].w for i in 1:np_new])
     @test abs(wnew - w0)/w0 < 1e-14
