@@ -136,7 +136,7 @@
     k_rate_elastic = rate_elastic / w0
     k_rate_ionization = rate_ionization / w0
 
-    # test rate coefficients
+    # test RHS rate coefficients
     @test abs(nnls_rp.rhs_vector[8] - k_rate_elastic)/k_rate_elastic < 4*eps()
     @test abs(nnls_rp.rhs_vector[9] - k_rate_ionization)/k_rate_ionization < 4*eps()
 
@@ -151,6 +151,27 @@
     # mean velocity is 0, so we can just sum up 0.5 v^2 and get energy (per unit mass)
     E_new = 0.5 * sum([particles[i].w * sum(particles[i].v.^2) for i in 1:np_new])/wnew
     @test abs(E_new - E0)/E0 < 1e-15
+
+    # test conservation of rates
+    rate_elastic_new = 0.0
+    rate_ionization_new = 0.0
+
+    for i in 1:np_new
+        v_magnitude = norm(particles[i].v)
+        
+        Merzbild.compute_cross_sections!(computed_cs, interaction_data[1,2], v_magnitude,
+                                         n_e_interactions, 1; extend=CSExtendConstant)
+
+        cs_elastic = Merzbild.get_cs_elastic(n_e_interactions, computed_cs, 1)
+        @test abs(cs_elastic - 1e-19) / 1e-19 < 2 * eps()
+
+        rate_elastic_new += particles[i].w * cs_elastic * v_magnitude
+
+        rate_ionization_new += particles[i].w * Merzbild.get_cs_ionization(n_e_interactions, computed_cs, 1) * v_magnitude
+    end
+
+    @test abs(rate_elastic_new - rate_elastic)/rate_elastic < 1e-15
+    @test abs(rate_ionization_new - rate_ionization)/rate_ionization < 1e-15
 
     # finally test the edge case of init_np = total_np and no pre-allocated matrices, v_multipliers=[]
     # reset particles
