@@ -199,13 +199,29 @@
     n_add += 8 * length(v_multipliers)
     lhs_ncols = pia.indexer[1, 1].n_local + n_add + n_rand_pairs
     lhs_matrix = zeros(mnnls.n_moments_vel, lhs_ncols)
+    vel_pos_matrix = zeros(6, lhs_ncols)
 
-    Merzbild.compute_lhs_and_rhs!(mnnls, lhs_matrix,
+    Merzbild.compute_lhs_and_rhs!(mnnls, lhs_matrix, vel_pos_matrix,
                                   particles[1], pia, 1, 1)
     # we didn't compute anything using the additional particles
     @test sum(abs.(lhs_matrix[:, pia.indexer[1, 1].n_local+1:end])) == 0
 
-    Merzbild.compute_lhs_particles_additional!(rng, pia.indexer[1, 1].n_local+1, mnnls, lhs_matrix,
+    max_v_diff = 0.0
+    max_x_diff = 0.0
+    for i in 1:length(particles[1])
+        max_v_diff = max(abs.(vel_pos_matrix[1,i] - particles[1][i].v[1]),
+                         abs.(vel_pos_matrix[2,i] - particles[1][i].v[2]),
+                         abs.(vel_pos_matrix[3,i] - particles[1][i].v[3]),
+                         max_v_diff)
+        max_x_diff = max(abs.(vel_pos_matrix[4,i] - particles[1][i].x[1]),
+                         abs.(vel_pos_matrix[5,i] - particles[1][i].x[2]),
+                         abs.(vel_pos_matrix[6,i] - particles[1][i].x[3]),
+                         max_x_diff)
+    end
+    @test max_v_diff <= 2*eps()
+    @test max_x_diff <= 2*eps()
+
+    Merzbild.compute_lhs_particles_additional!(rng, pia.indexer[1, 1].n_local+1, mnnls, lhs_matrix, vel_pos_matrix,
                                                particles[1], pia, 1, 1,
                                                n_rand_pairs, centered_at_mean, v_multipliers)
 
@@ -222,13 +238,14 @@
     n_add += 8 * length(v_multipliers)
     lhs_ncols = pia.indexer[1, 1].n_local + n_add + n_rand_pairs
     lhs_matrix = zeros(mnnls.n_moments_vel, lhs_ncols)
+    vel_pos_matrix = zeros(6, lhs_ncols)
 
-    Merzbild.compute_lhs_and_rhs!(mnnls, lhs_matrix,
+    Merzbild.compute_lhs_and_rhs!(mnnls, lhs_matrix, vel_pos_matrix,
                                   particles[1], pia, 1, 1)
     # we didn't compute anything using the additional particles
     @test sum(abs.(lhs_matrix[:, pia.indexer[1, 1].n_local+1:end])) == 0
 
-    Merzbild.compute_lhs_particles_additional!(rng, pia.indexer[1, 1].n_local+1, mnnls, lhs_matrix,
+    Merzbild.compute_lhs_particles_additional!(rng, pia.indexer[1, 1].n_local+1, mnnls, lhs_matrix, vel_pos_matrix,
                                                particles[1], pia, 1, 1,
                                                n_rand_pairs, centered_at_mean, v_multipliers)
 
@@ -244,11 +261,12 @@
     lhs_ncols = 2
     # 7, 
     lhs_matrix = zeros(mnnls3.n_moments_vel, lhs_ncols)
+    vel_pos_matrix = zeros(6, lhs_ncols)
 
     particles = [create_particles4()]
     pia = ParticleIndexerArray(length(particles[1]))
 
-    Merzbild.compute_lhs_and_rhs!(mnnls3, lhs_matrix,
+    Merzbild.compute_lhs_and_rhs!(mnnls3, lhs_matrix, vel_pos_matrix,
                                   particles[1], pia, 1, 1)
 
     lhs_matrix_2 = copy(lhs_matrix)
@@ -449,9 +467,10 @@
 
     lhs_matrix_pos = zeros(mnnls_pos.n_moments_vel + mnnls_pos.n_moments_pos, lhs_ncols)
     lhs_matrix_no_pos = zeros(mnnls_no_pos.n_moments_vel, lhs_ncols)
-    Merzbild.compute_lhs_and_rhs!(mnnls_pos, lhs_matrix_pos,
+    vel_pos_matrix = zeros(6, lhs_ncols)
+    Merzbild.compute_lhs_and_rhs!(mnnls_pos, lhs_matrix_pos, vel_pos_matrix,
                                   particles[1], pia, 1, 1)
-    Merzbild.compute_lhs_and_rhs!(mnnls_no_pos, lhs_matrix_no_pos,
+    Merzbild.compute_lhs_and_rhs!(mnnls_no_pos, lhs_matrix_no_pos, vel_pos_matrix,
                                   particles[1], pia, 1, 1)
 
     @test maximum(abs.(mnnls_pos.rhs_vector[1:mnnls_pos.n_moments_vel] - mnnls_no_pos.rhs_vector)) < 2*eps()
@@ -553,7 +572,6 @@
     end
 
     @test abs(new_w - tw) < 4.5e-15
-
 
     # finally test the edge case of init_np = total_np and no pre-allocated matrices, v_multipliers=[]
     # reset particles
