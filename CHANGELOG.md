@@ -1,8 +1,11 @@
 # Changelog
 
 ## v0.7.4
-* Fixed rate-preserving NNLS merging, it can be considered more or less stable now
+* Fixed rate-preserving NNLS merging, it can be considered more or less stable now, but only for the 0D case,
+as preservation of spatial moments is not implemented
+* NNLS merging improvements (store original, non-scaled velocities and positions separately)
 * Improved test coverage
+* Slight re-ordering of `pretty_print_pia` output
 
 ## v0.7.3
 * Fixes in particle exchange for multi-threaded computations
