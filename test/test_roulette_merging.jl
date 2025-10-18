@@ -182,6 +182,7 @@
         @test vp[i].x[3] == 2.0
     end
 
+    # check that if we have post-merge particles in group2, the weight is still conserved
     vp = ParticleVector(12)
 
     x_cell1 = [0.05, 0.05, 0.05, 0.45]
