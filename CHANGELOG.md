@@ -1,6 +1,8 @@
 # Changelog
 
 ## v0.7.4
+* Fixed rate-preserving NNLS merging, it can be considered more or less stable now
+* Improved test coverage
 
 ## v0.7.3
 * Fixes in particle exchange for multi-threaded computations
