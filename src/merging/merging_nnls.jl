@@ -1277,7 +1277,7 @@ function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species;
     n_add = n_add + 8 * length(v_multipliers)
     @inbounds lhs_ncols = pia.indexer[cell, species].n_local + n_add + n_rand_pairs
 
-    if (lhs_ncols > nnls_merging.lhs_matrix_ncols_end) || (lhs_ncols < nnls_merging.lhs_matrix_ncols_start)
+    if (lhs_ncols > nnls_merging.lhs_matrix_ncols_end) || (lhs_ncols < nnls_merging.lhs_matrix_ncols_start) || length(nnls_merging.lhs_matrices) == 0
         indexer = nnls_merging.lhs_matrix_ncols_end - nnls_merging.lhs_matrix_ncols_start + 2
 
         # we either have pre-allocation [1,2,...[Workspace]]
@@ -1404,7 +1404,7 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging,
     n_add = n_add + 8 * length(v_multipliers)
     @inbounds lhs_ncols = pia.indexer[cell, species].n_local + n_add + n_rand_pairs
 
-    if (lhs_ncols > nnls_merging.lhs_matrix_ncols_end) || (lhs_ncols < nnls_merging.lhs_matrix_ncols_start)
+    if (lhs_ncols > nnls_merging.lhs_matrix_ncols_end) || (lhs_ncols < nnls_merging.lhs_matrix_ncols_start) || length(nnls_merging.lhs_matrices) == 0
         indexer = nnls_merging.lhs_matrix_ncols_end - nnls_merging.lhs_matrix_ncols_start + 2
 
         # we either have pre-allocation [1,2,...[Workspace]]
