@@ -306,7 +306,6 @@
     end
 
     # similar test but now we have the conservative version
-    # and we also don't conserve momentum and energy
     vp = ParticleVector(12)
 
     x_cell1 = [0.05, 0.05, 0.05, 0.45]
@@ -422,4 +421,83 @@
         @test maximum(abs.(v0_new - v0_per_cell[cell])) < 2e-15
         @test abs(E_new - E_per_cell[cell]) < 2*eps()
     end
+
+    # check that we actually delete random particles
+    n_attempts = 150
+    counts_deleted = [n_attempts, n_attempts, n_attempts, n_attempts, n_attempts]  # we will decrease this counter
+    for attempt in 1:n_attempts
+
+        vp = ParticleVector(12)
+
+        x_cell1 = [0.05, 0.05, 0.05, 0.45]
+        for i in 1:4
+            Merzbild.update_particle_buffer_new_particle!(vp, i)
+            vp[i] = Particle(i, [1.0*i, 3.0 + 2.0*i^2, 4.0-0.3*i], [x_cell1[i], 0.0, 1.0])
+        end
+
+        x_cell2 = [0.55, 0.95, 0.8, 0.85, 0.99]
+        for i in 5:5
+            Merzbild.update_particle_buffer_new_particle!(vp, i)
+            vp[i] = Particle(2.0, [1.0, -3.0+(i*0.2)^3, -4.0+0.3*i], [x_cell2[i-4], 0.0, 2.0])
+        end
+
+        x_cell3 = [10.0, 11.0, 12.0]
+        for i in 6:8
+            Merzbild.update_particle_buffer_new_particle!(vp, i)
+            vp[i] = Particle(3.0+0.5*i, [1.0*i, 20.0+0.5*i, 20.0-0.2*i], [x_cell3[i-5], 0.0, 3.0])
+        end
+
+        # add more particles to cell2 with x-velocities 2, 3, 4, 5
+        for i in 9:12
+            Merzbild.update_particle_buffer_new_particle!(vp, i)
+            vp[i] = Particle(2.0+i, [1.0*i - 7.0, -3.0-0.05*i^2, -4.0+0.5*i], [x_cell2[i-7], 0.0, 2.0])
+        end
+
+        pia = ParticleIndexerArray(3, 1)
+
+        pia.n_total[1] = 12
+
+        pia.indexer[1,1].n_local = 4
+        pia.indexer[1,1].n_group1 = 4
+        pia.indexer[1,1].start1 = 1
+        pia.indexer[1,1].end1 = 4
+
+        pia.indexer[1,1].n_group2 = 0
+        pia.indexer[1,1].start2 = 0
+        pia.indexer[1,1].end2 = -1
+
+        pia.indexer[2,1].n_local = 5
+        pia.indexer[2,1].n_group1 = 1
+        pia.indexer[2,1].start1 = 5
+        pia.indexer[2,1].end1 = 5
+
+        pia.indexer[2,1].n_group2 = 4
+        pia.indexer[2,1].start2 = 9
+        pia.indexer[2,1].end2 = 12
+
+        pia.indexer[3,1].n_local = 3
+        pia.indexer[3,1].n_group1 = 3
+        pia.indexer[3,1].start1 = 6
+        pia.indexer[3,1].end1 = 8
+
+        pia.indexer[3,1].n_group2 = 0
+        pia.indexer[3,1].start2 = 0
+        pia.indexer[3,1].end2 = -1
+
+        pia.contiguous[1] = true
+
+        merge_roulette!(rng, vp, pia, 2, 1, 3; conservative=false)
+
+        for i in pia.indexer[2,1].start1:pia.indexer[2,1].end1
+            counts_deleted[round(Int64, vp[i].v[1])] -= 1
+        end
+
+        for i in pia.indexer[2,1].start2:pia.indexer[2,1].end2
+            counts_deleted[round(Int64, vp[i].v[1])] -= 1
+        end
+    end
+    @test sum(counts_deleted) == 2 * n_attempts
+    @test minimum(counts_deleted) > 0  # each particle is deleted at least once
+    @test maximum(counts_deleted) < 1.2 * (2 * n_attempts / 5) # delete 2 particles per merge, 1.2 is to account for randomness
+    @test maximum(counts_deleted) > 0.8 * (2 * n_attempts / 5) # delete 2 particles per merge, 0.8 is to account for randomness
 end
