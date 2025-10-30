@@ -28,7 +28,7 @@ function merge_roulette!(rng, particles, pia, cell, species, target_np; conserva
 
     # initial density, velocity, energy
     w_total0 = 0.0
-    v0 = SVector{3,Float64}([0.0, 0.0, 0.0])
+    v0 = SVector{3,Float64}(0.0, 0.0, 0.0)
     E0 = 0.0
     if conservative
         w_total0 = 0.0
@@ -128,7 +128,7 @@ function merge_roulette!(rng, particles, pia, cell, species, target_np; conserva
 
     # now we re-scale velocities if needed
     if conservative
-        v_mean_new = SVector{3,Float64}([0.0, 0.0, 0.0])
+        v_mean_new = SVector{3,Float64}(0.0, 0.0, 0.0)
         E_new = 0.0
 
         @inbounds s1 = pia.indexer[cell,species].start1
