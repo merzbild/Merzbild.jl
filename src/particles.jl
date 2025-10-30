@@ -746,13 +746,19 @@ function pretty_print_pia(pia, species)
     n_cells = size(pia.indexer)[1]
     println("Total: $(pia.n_total[species])")
     for cell in 1:n_cells
+        out_string = ""
         if pia.indexer[cell,species].n_group1 > 0
-            println("Cell $cell: [$(pia.indexer[cell,species].start1), $(pia.indexer[cell,species].end1)]")
+            out_string *= "Cell $cell: group1: [$(pia.indexer[cell,species].start1), $(pia.indexer[cell,species].end1)]"
         end
-    end
-    for cell in 1:n_cells
         if pia.indexer[cell,species].n_group2 > 0
-            println("Cell $cell: [$(pia.indexer[cell,species].start2), $(pia.indexer[cell,species].end2)]")
+            if pia.indexer[cell,species].n_group1 > 0
+                out_string *= " group2: [$(pia.indexer[cell,species].start2), $(pia.indexer[cell,species].end2)]"
+            else
+                out_string *= "Cell $cell: group2: [$(pia.indexer[cell,species].start2), $(pia.indexer[cell,species].end2)]"
+            end
+        end
+        if out_string != ""
+            println(out_string)
         end
     end
 end

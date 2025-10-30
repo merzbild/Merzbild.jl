@@ -1,0 +1,8 @@
+# VHS collision model parameters for each species
+
+# diameter (m)
+# omega
+# tref
+# alpha
+
+Ar   4.11e-10 0.81  273.15  1.0

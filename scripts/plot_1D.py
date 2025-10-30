@@ -2,6 +2,11 @@
 # python scripts/plot_1D.py --file scratch/data/couette_0.0005_50_500.0_300.0_1000.nc --propname T --startt 1
 # --plotname plots/couette_T.png --labels "Couette"
 # velocity is plotted with an offset of a linear profile that goes from -500 to 500 m/s
+# spartafile: optional path to SPARTA output file
+# spartavarid: number of the variable in the file to plot
+# it is assumed that the sparta cells are sorted, are the same ones as used in Merzbild.jl
+# the output should begin at line 10, line 9 is the header line
+# ITEM: CELLS id f_1[1] f_1[2] f_1[3] f_1[4] f_1[5] f_1[6] - to plot id set varid to 0, f_1[1] - set to 1, etc.
 
 from matplotlib import pyplot as plt
 import argparse
@@ -14,6 +19,8 @@ parser.add_argument("--propname", required=True)
 parser.add_argument("--plotname", required=True)
 parser.add_argument("--startt", required=True)
 parser.add_argument("--labels", nargs='+')
+parser.add_argument("--spartafile", required=False)
+parser.add_argument("--spartavarid", required=False)
 args = parser.parse_args()
 
 
@@ -68,6 +75,23 @@ for label, file in zip(labels, args.files):
 
     ds.close()
         
+if args.spartafile:
+    if not args.spartavarid:
+        print("No SPARTA variable number given!")
+    else:
+        varid = int(args.spartavarid)
+        sp_data = []
+        with open(args.spartafile) as f:
+            for i, line in enumerate(f):
+                if i>=9:
+                    lsp = line.split()
+                    sp_data.append(float(lsp[varid]))
+        if propname in ["ndens", "np", "T"]:
+            ax.plot(x_arr, sp_data, label=f"SPARTA, nt={i}", linewidth=2)
+        else:
+            voffset = np.linspace(-500, 500, nx)
+            ax.plot(x_arr, np.array(sp_data) - voffset, label=f"SPARTA, nt={i}", linewidth=2)
+
 ax.legend(fontsize=legend_size, ncol=2, framealpha=1.0)
 
 ax.grid()

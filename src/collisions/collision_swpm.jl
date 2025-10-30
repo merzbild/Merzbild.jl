@@ -233,51 +233,50 @@ function swpm!(rng, collision_factors_swpm, collision_data, interaction, particl
     collision_factors_swpm.n_coll = n_coll_int
     collision_factors_swpm.n_coll_performed = 0
 
-    for _ in 1:n_coll_int
-        # TODO: check if 0 or 1 !!!
-        @inbounds i = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species].n_local)
-        @inbounds k = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species].n_local)
+    @inbounds for _ in 1:n_coll_int
+        i = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species].n_local)
+        k = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species].n_local)
 
         while (i == k)
-            @inbounds k = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species].n_local)
+            k = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species].n_local)
         end
 
         # example: bounds from [1,4], [7,9]; n_total = 7
         # n_group1 = 4, n_group2 = 3
         # i = 0,1,2,3 - [1,4]
         # i = 4,5,6 - [7,9]
-        @inbounds i = map_cont_index(pia.indexer[cell, species], i)
-        @inbounds k = map_cont_index(pia.indexer[cell, species], k)
+        i = map_cont_index(pia.indexer[cell, species], i)
+        k = map_cont_index(pia.indexer[cell, species], k)
         
-        @inbounds compute_g!(collision_data, particles[i], particles[k])
+        compute_g!(collision_data, particles[i], particles[k])
         # println("NTC: ", particle_indexer.n_total, ", ", length(particles))
         if (collision_data.g > eps())
 
-            @inbounds sigma = sigma_vhs(interaction[species, species], collision_data.g)
-            @inbounds sigma_g_max = sigma * collision_data.g
+            sigma = sigma_vhs(interaction[species, species], collision_data.g)
+            sigma_g_max = sigma * collision_data.g
 
             # update (σ g)_max if needed
             collision_factors_swpm.sigma_g_max = max(sigma_g_max, collision_factors_swpm.sigma_g_max)
             
             if (rand(rng, Float64) < sigma_g_max * max(particles[i].w, particles[k].w) * inv_w_max / collision_factors_swpm.sigma_g_max)
                 collision_factors_swpm.n_coll_performed += 1
-                @inbounds compute_com!(collision_data, interaction[species, species], particles[i], particles[k])
+                compute_com!(collision_data, interaction[species, species], particles[i], particles[k])
                 # do collision
                 if (length(particles) <= pia.n_total[species])
                     resize!(particles, length(particles)+DELTA_PARTICLES)
                 end
 
-                @inbounds Δw = min(particles[i].w, particles[k].w) * wtf
+                Δw = min(particles[i].w, particles[k].w) * wtf
 
-                @inbounds particles[i].w -= Δw
-                @inbounds particles[k].w -= Δw
+                particles[i].w -= Δw
+                particles[k].w -= Δw
 
                 update_buffer_index_new_particle!(particles, pia, cell, species)
-                @inbounds particles[pia.n_total[species]] = Particle(Δw, particles[i].v, particles[i].x)
+                particles[pia.n_total[species]] = Particle(Δw, particles[i].v, particles[i].x)
                 update_buffer_index_new_particle!(particles, pia, cell, species)
-                @inbounds particles[pia.n_total[species]] = Particle(Δw, particles[k].v, particles[k].x)
-                @inbounds scatter_vhs!(rng, collision_data, interaction[species, species],
-                                       particles[pia.n_total[species]-1], particles[pia.n_total[species]])
+                particles[pia.n_total[species]] = Particle(Δw, particles[k].v, particles[k].x)
+                scatter_vhs!(rng, collision_data, interaction[species, species],
+                             particles[pia.n_total[species]-1], particles[pia.n_total[species]])
             end
         end
     end
