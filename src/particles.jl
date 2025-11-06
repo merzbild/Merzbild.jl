@@ -74,7 +74,7 @@ particles are in group 1, with indices starting from 1.
 # Positional arguments
 * `n_particles`: the number of particles
 """
-ParticleIndexer(n_particles) = ParticleIndexer(n_particles, 1, n_particles, n_particles, 0, 0, 0)
+ParticleIndexer(n_particles) = ParticleIndexer(n_particles, 1, n_particles, n_particles, 0, -1, 0)
 
 """
     ParticleIndexer()

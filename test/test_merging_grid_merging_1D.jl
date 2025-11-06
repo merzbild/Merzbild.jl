@@ -1,4 +1,4 @@
-@testset "octree_merging 1D" begin
+@testset "grid-based merging 1D" begin
     
     function create_particles_in_2cells()
     # create 4 particles in 2 cells
@@ -8,13 +8,13 @@
         x_cell1 = [0.05, 0.05, 0.05, 0.45]
         for i in 1:4
             Merzbild.update_particle_buffer_new_particle!(vp, i)
-            vp[i] = Particle(2.0, [0.5, -3.0, 4.0], [x_cell1[i], 0.0, 0.0])
+            vp[i] = Particle(2.0, [0.5 - i^2, -3.0 + i, 4.0 + 0.3 * i], [x_cell1[i], 0.0, 0.0])
         end
 
         x_cell2 = [0.55, 0.95, 0.85, 0.99]
         for i in 5:8
             Merzbild.update_particle_buffer_new_particle!(vp, i)
-            vp[i] = Particle(3.0, [0.5, -3.0, 4.0], [x_cell2[i-4], 0.0, 0.0])
+            vp[i] = Particle(3.0, [0.5 + i^2, -3.0 + 2 * i, 4.0 - i], [x_cell2[i-4], 0.0, 0.0])
         end
 
         pia_ = ParticleIndexerArray(grid.n_cells, 1)
@@ -54,11 +54,12 @@
     
     particles, pia = create_particles_in_2cells()
     
-    octree = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
+    mg = GridN2Merge(1, 1, 1, 5.5)
+    compute_props!(particles, pia, species_data, phys_props)
     
     # test that merging without accounting for domain bounds leads to out-of-domain particles
-    merge_octree_N2_based!(rng, octree, particles[1], pia, 1, 1, 2)
-    merge_octree_N2_based!(rng, octree, particles[1], pia, 2, 1, 2)
+    merge_grid_based!(rng, mg, particles[1], pia, 1, 1, species_data, phys_props)
+    merge_grid_based!(rng, mg, particles[1], pia, 2, 1, species_data, phys_props)
 
     @test pia.indexer[1,1].n_local == 2
     @test pia.indexer[1,1].n_group1 == 2
@@ -89,10 +90,11 @@
 
     # reset
     particles, pia = create_particles_in_2cells()
-    
+
     # now we make sure particles stay inside grid
-    merge_octree_N2_based!(rng, octree, particles[1], pia, 1, 1, 2, grid)
-    merge_octree_N2_based!(rng, octree, particles[1], pia, 2, 1, 2, grid)
+    compute_props!(particles, pia, species_data, phys_props)
+    merge_grid_based!(rng, mg, particles[1], pia, 1, 1, species_data, phys_props, grid)
+    merge_grid_based!(rng, mg, particles[1], pia, 2, 1, species_data, phys_props, grid)
 
     @test pia.indexer[1,1].n_local == 2
     @test pia.indexer[1,1].n_group1 == 2

@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.7.5
+* Octree and grid-based merging can now handle bins/cells with only zero-weight particles inside
+* Grid-based merging 1D version added
+
 ## v0.7.4
 * Fixed rate-preserving NNLS merging, it can be considered more or less stable now, but only for the 0D case,
 as preservation of spatial moments is not implemented
