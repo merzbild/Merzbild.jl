@@ -1328,7 +1328,7 @@ end
     merge_nnls_based_rate_preserving!(rng, nnls_merging,
                                            interaction, electron_neutral_interactions, computed_cs,
                                            particles, pia, cell, species, neutral_species_index,
-                                           ref_cs_elatic, ref_cs_ion; scaling=:variance,
+                                           ref_cs_elastic, ref_cs_ion; scaling=:variance,
                                            vref=1.0, n_rand_pairs=0, max_err=1e-11,
                                            centered_at_mean=true, v_multipliers=[0.5, 1.0], iteration_mult=2,
                                            extend::CSExtend=CSExtendConstant)
@@ -1349,7 +1349,10 @@ the value of the multiplier times the velocity variance of that component (times
 or, if this value is outside of the bounding box, the closest bounding value of the velocity component in that direction
 is used instead and also multiplied by the variance multiplier.
 The reference velocity is also used in conjunction with the reference cross-sections to scale the parts of
-the NNLS matrix and RHS corresponding to conservation of electron-neutral collision rates.
+the NNLS matrix and RHS corresponding to conservation of electron-neutral collision rates. The reference rate is computed
+as ``\\sigma_{r,ref} v_{ref}``, where ``\\sigma_{r,ref}`` is the reference process cross-section. In case `scaling==:variance`,
+the reference velocity for the computation of reference rates is computed as ``v_{ref} = \\sqrt{E_x^2 + E_y^2 + E_z^2}``,
+where ``E_x``, ``E_y``, ``E_z`` are the variances of the velocity in the corresponding directions.
 
 # Positional arguments
 * `rng`: the random number generator instance
@@ -1364,8 +1367,8 @@ the NNLS matrix and RHS corresponding to conservation of electron-neutral collis
 * `species`: the index of the species being merged
 * `neutral_species_index`: the index of the neutral species which is the collision partner in the electron-neutral
     collisions for which approximate rates are being preserved.
-* `ref_cs_elatic`: the reference elastic scattering cross-section used to scale the rates (currently not used)
-* `ref_cs_ion`: the reference electron-impact ionization cross-section used to scale the rates (currently not used)
+* `ref_cs_elastic`: the reference elastic scattering cross-section used to scale the rates
+* `ref_cs_ion`: the reference electron-impact ionization cross-section used to scale the rates
 
 # Keyword arguments
 * `vref`: the reference velocity used to scale the velocities in the case of `scaling=:vref`
@@ -1394,7 +1397,7 @@ the number of non-zero (or smaller than `w_threshold`) elements in the solution 
 function merge_nnls_based_rate_preserving!(rng, nnls_merging,
                                            interaction, electron_neutral_interactions, computed_cs,
                                            particles, pia, cell, species, neutral_species_index,
-                                           ref_cs_elatic, ref_cs_ion; vref=1.0, scaling=:variance,
+                                           ref_cs_elastic, ref_cs_ion; vref=1.0, scaling=:variance,
                                            n_rand_pairs=0, max_err=1e-11,
                                            centered_at_mean=true, v_multipliers=[0.5, 1.0], iteration_mult=2, w_threshold=0.0,
                                            extend::CSExtend=CSExtendConstant)
@@ -1443,7 +1446,17 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging,
                                       particles, pia, cell, species, neutral_species_index, n_rand_pairs,
                                       centered_at_mean, v_multipliers, extend)
 
-    scale_lhs_rhs_rate_preserving!(nnls_merging, nnls_merging.work[indexer].QA, 1.0, 1.0, scaling, lhs_ncols)
+    
+    if scaling==:variance
+        vr_tmp = sqrt(nnls_merging.Ex^2 + nnls_merging.Ey^2 + nnls_merging.Ez^2)
+        ref_k_elastic = ref_cs_elastic * vr_tmp
+        ref_k_ion = ref_cs_ion * vr_tmp
+    else
+        ref_k_elastic = ref_cs_elastic * vref
+        ref_k_ion = ref_cs_ion * vref
+    end
+
+    scale_lhs_rhs_rate_preserving!(nnls_merging, nnls_merging.work[indexer].QA, ref_k_elastic, ref_k_ion, scaling, lhs_ncols)
 
     scale_columns!(nnls_merging.work[indexer].QA, column_norms)
 

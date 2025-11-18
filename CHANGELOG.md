@@ -2,6 +2,7 @@
 
 ## v0.7.6
 * Speed-up of variable weight SWPM collisions
+* Rate-preserving merging now makes use of reference process cross-sections
 
 ## v0.7.5
 * Octree and grid-based merging can now handle bins/cells with only zero-weight particles inside
