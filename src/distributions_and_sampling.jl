@@ -207,8 +207,8 @@ function sample_bkw!(rng, particles, nparticles, offset, m, T, v0)
     vy = v_abs .* sintheta .* sin.(ϕ)
     vz = v_abs .* cos.(Θ)
 
-    for i in 1:nparticles
-        @inbounds particles[i+offset].v = vscale * SVector{3,Float64}(vx[i], vy[i], vz[i]) .+ v0
+    @inbounds for i in 1:nparticles
+        particles[i+offset].v = vscale * SVector{3,Float64}(vx[i], vy[i], vz[i]) .+ v0
     end
 end
 
@@ -252,12 +252,12 @@ the distribution has the prescribed computational weight/density.
 """
 function evaluate_distribution_on_grid!(vdf, distribution_function, grid, w_total, cutoff_v; normalize=true)
     w = 0.0
-    for k in 1:grid.base_grid.nz
+    @inbounds for k in 1:grid.base_grid.nz
         for j in 1:grid.base_grid.ny
             for i in 1:grid.base_grid.nx
-                @inbounds if (sqrt(grid.vx_grid[i]^2 + grid.vy_grid[j]^2 + grid.vz_grid[k]^2) <= cutoff_v)
-                    @inbounds vdf.w[i,j,k] = distribution_function(grid.vx_grid[i], grid.vy_grid[j], grid.vz_grid[k])
-                    @inbounds w += vdf.w[i,j,k]
+                if (sqrt(grid.vx_grid[i]^2 + grid.vy_grid[j]^2 + grid.vz_grid[k]^2) <= cutoff_v)
+                    vdf.w[i,j,k] = distribution_function(grid.vx_grid[i], grid.vy_grid[j], grid.vz_grid[k])
+                    w += vdf.w[i,j,k]
                 end
             end
         end
@@ -323,14 +323,14 @@ function sample_on_grid!(rng, vdf_func, particles, nv, m, T, n_total,
 
     pid = 0
     n_sampled = 0
-    for k in 1:v_grid.base_grid.nz
+    @inbounds for k in 1:v_grid.base_grid.nz
         for j in 1:v_grid.base_grid.ny
             for i in 1:v_grid.base_grid.nx
-                @inbounds if vdf.w[i,j,k] > 0.0
+                if vdf.w[i,j,k] > 0.0
                     pid += 1
                     n_sampled += 1
 
-                    @inbounds add_particle!(particles, pid, vdf.w[i,j,k],
+                    add_particle!(particles, pid, vdf.w[i,j,k],
                                   SVector{3}(v_grid.vx_grid[i] + noise * v_grid.dx * (0.5 - rand(rng, Float64)) + v_offset[1],
                                              v_grid.vy_grid[j] + noise * v_grid.dy * (0.5 - rand(rng, Float64)) + v_offset[2],
                                              v_grid.vz_grid[k] + noise * v_grid.dz * (0.5 - rand(rng, Float64)) + v_offset[3]),
@@ -432,13 +432,13 @@ Note: This does not update the particle weights, positions, or any indexing stru
 function sample_maxwellian!(rng, particles, nparticles, offset, m, T, v0)
     vscale = compute_thermal_velocity(m, T)
 
-    for i in 1:nparticles
+    @inbounds for i in 1:nparticles
         vn = sqrt(-log(rand(rng, Float64)))
         vr = sqrt(-log(rand(rng, Float64)))
         theta1 = twopi * rand(rng, Float64)
         theta2 = twopi * rand(rng, Float64)
 
-        @inbounds particles[i+offset].v = vscale * SVector{3,Float64}(vn * cos(theta1), vr * cos(theta2), vr * sin(theta2)) + v0
+        particles[i+offset].v = vscale * SVector{3,Float64}(vn * cos(theta1), vr * cos(theta2), vr * sin(theta2)) + v0
     end
 end
 
@@ -492,12 +492,12 @@ function sample_particles_equal_weight!(rng, particles, pia, cell, species,
 
     offset = start - 1
 
-    for i in 1:nparticles
+    @inbounds for i in 1:nparticles
         add_particle!(particles, i+offset, Fnum,  SVector{3}(0.0, 0.0, 0.0),
                       SVector{3}(xlo + rand(rng, Float64) * (xhi - xlo),
                                  ylo + rand(rng, Float64) * (yhi - ylo),
                                  zlo + rand(rng, Float64) * (zhi - zlo)))
-        @inbounds particles.cell[i+offset] = cell
+        particles.cell[i+offset] = cell
     end
 
     v0 = SVector{3}(vx0, vy0, vz0)
