@@ -205,4 +205,30 @@
         @test isnan(particles24[1][i].x[1]) == false
         @test particles24[1][i].w > 0
     end
+
+    gm = GridN2Merge(4, [0.5, 0.7, 0.9])
+    @test gm.Nx == 4
+    @test gm.Ny == 4
+    @test gm.Nz == 4
+    @test maximum(abs.(gm.extent_multiplier .- [0.5, 0.7, 0.9])) < 2 * eps()
+
+    gm = GridN2Merge(6, 1.5)
+    @test gm.Nx == 6
+    @test gm.Ny == 6
+    @test gm.Nz == 6
+    @test maximum(abs.(gm.extent_multiplier .- [1.5, 1.5, 1.5])) < 2 * eps()
+
+    gm = GridN2Merge(4, 6, 2, 3.0, 2.0, 1.0)
+    @test gm.Nx == 4
+    @test gm.Ny == 6
+    @test gm.Nz == 2
+    @test maximum(abs.(gm.extent_multiplier .- [3.0, 2.0, 1.0])) < 2 * eps()
+    # GridN2Merge(N::Int, extent_multiplier::T) where T <: AbstractArray = GridN2Merge(N, N, N, extent_multiplier)
+    # GridN2Merge(N::Int, extent_multiplier::Float64) = GridN2Merge(N, N, N, extent_multiplier)
+    # GridN2Merge(Nx::Int, Ny::Int, Nz::Int,
+    #         extent_multiplier_x::Float64,
+    #         extent_multiplier_y::Float64,
+    #         extent_multiplier_z::Float64) = GridN2Merge(Nx, Ny, Nz, [extent_multiplier_x,
+    #                                                                  extent_multiplier_y,
+    #                                                                  extent_multiplier_z])
 end
