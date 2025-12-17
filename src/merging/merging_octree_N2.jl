@@ -641,6 +641,12 @@ function compute_bin_props!(octree, bin_id, particles)
     bs = octree.bin_start[bin_id]
     be = octree.bin_end[bin_id]
 
+    @inbounds if (octree.bins[bin_id].w) == 0
+        # we can discard any particles in the bin
+        octree.bins[bin_id].np = 0
+        return 
+    end
+
     @inbounds octree.full_bins[bin_id].v_mean = SVector{3, Float64}(0.0, 0.0, 0.0)
     @inbounds octree.full_bins[bin_id].v_std_sq = SVector{3, Float64}(0.0, 0.0, 0.0)
 
@@ -796,7 +802,7 @@ end
 
 
 """
-    compute_new_particles!(rng, octree::OctreeN2Merge, particles, pia, cell, species, grid)
+    compute_new_particles!(rng, octree::OctreeN2Merge, particles, pia, cell, species, grid::Grid1DUniform)
 
 Compute post-merge particles particles based on octree bin properties; placing out-of-domain particles back into the domain.
 
@@ -858,9 +864,9 @@ function compute_new_particles!(rng, octree::OctreeN2Merge, particles, pia, cell
             particles[i].v = octree.full_bins[bin_id].v1
 
             if (octree.full_bins[bin_id].x1[1] < grid.min_x)
-                particles[i].x = [grid.min_x, octree.full_bins[bin_id].x1[2], octree.full_bins[bin_id].x1[3]]
+                particles[i].x = SVector{3,Float64}(grid.min_x, octree.full_bins[bin_id].x1[2], octree.full_bins[bin_id].x1[3])
             elseif (octree.full_bins[bin_id].x1[1] > grid.max_x)
-                particles[i].x = [grid.max_x, octree.full_bins[bin_id].x1[2], octree.full_bins[bin_id].x1[3]]
+                particles[i].x = SVector{3,Float64}(grid.max_x, octree.full_bins[bin_id].x1[2], octree.full_bins[bin_id].x1[3])
             else
                 particles[i].x = octree.full_bins[bin_id].x1
             end
@@ -871,9 +877,9 @@ function compute_new_particles!(rng, octree::OctreeN2Merge, particles, pia, cell
             particles[i].v = octree.full_bins[bin_id].v2
 
             if (octree.full_bins[bin_id].x2[1] < grid.min_x)
-                particles[i].x = [grid.min_x, octree.full_bins[bin_id].x2[2], octree.full_bins[bin_id].x2[3]]
+                particles[i].x = SVector{3,Float64}(grid.min_x, octree.full_bins[bin_id].x2[2], octree.full_bins[bin_id].x2[3])
             elseif (octree.full_bins[bin_id].x2[1] > grid.max_x)
-                particles[i].x = [grid.max_x, octree.full_bins[bin_id].x2[2], octree.full_bins[bin_id].x2[3]]
+                particles[i].x = SVector{3,Float64}(grid.max_x, octree.full_bins[bin_id].x2[2], octree.full_bins[bin_id].x2[3])
             else
                 particles[i].x = octree.full_bins[bin_id].x2
             end
@@ -1035,9 +1041,9 @@ function merge_octree_N2_based!(rng, octree, particles, pia, cell, species, targ
 end
 
 """
-    merge_octree_N2_based!(rng, octree, particles, pia, cell, species, target_np, grid)
+    merge_octree_N2_based!(rng, octree, particles, pia, cell, species, target_np, grid::Grid1DUniform)
 
-Perform octree N:2 merging, checking whether particle positions end up outside of the simulation domain, and pushing them back into the domain
+Perform octree N:2 merging, checking whether particle positions end up outside of the simulation domain, and placing them back into the domain
 if needed.
 
 # Positional arguments

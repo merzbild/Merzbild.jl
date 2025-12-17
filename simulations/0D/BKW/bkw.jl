@@ -58,7 +58,7 @@ function run(seed)
     particles::Vector{ParticleVector} = [ParticleVector(n_particles)]
     pia = ParticleIndexerArray(0)
 
-    sample_particles_equal_weight!(rng, particles[1], pia, 1, 1, n_particles, T0, species_data[1].mass, Fnum,
+    sample_particles_equal_weight!(rng, particles[1], pia, 1, 1, n_particles, species_data[1].mass, T0, Fnum,
                                    0.0, 1.0, 0.0, 1.0, 0.0, 1.0; distribution=:BKW)
 
     phys_props = PhysProps(1, 1, [4, 6, 8, 10], Tref=T0)

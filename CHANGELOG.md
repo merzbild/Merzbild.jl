@@ -1,6 +1,24 @@
 # Changelog
 
+## v0.7.6
+* Speed-up of variable weight SWPM collisions
+* Rate-preserving merging now makes use of reference process cross-sections
+* Fix in `simulations/OD/BKW/bkw.jl`
+* Clean-up of some `@inbounds` macros in sampling routines
+* Option to set merging grid extent explicitly when calling `merge_grid_based!`
+* Improved test coverage
+
+## v0.7.5
+* Octree and grid-based merging can now handle bins/cells with only zero-weight particles inside
+* Grid-based merging 1D version added
+
 ## v0.7.4
+* Fixed rate-preserving NNLS merging, it can be considered more or less stable now, but only for the 0D case,
+as preservation of spatial moments is not implemented
+* NNLS merging improvements (store original, non-scaled velocities and positions separately)
+* Improved test coverage
+* Slight re-ordering of `pretty_print_pia` output
+* `conservative` keyword added to `merge_roulette!` merging algorithm to ensure conservation of momentum and energy
 
 ## v0.7.3
 * Fixes in particle exchange for multi-threaded computations

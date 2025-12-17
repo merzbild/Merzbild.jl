@@ -34,6 +34,7 @@ include("test_nnls_merging.jl")  # test NNLS-based merging
 include("test_nnls_merging_buffer_sorting.jl")  # then we test that particles are freed correctly in NNLS-based merging
 include("test_bkw_varweight_nnls.jl")  # test NNLS-based merging
 include("test_electron_neutral_data.jl")  # test loading of XML LXCat-like data
+include("test_nnls_ratepreserving_merging.jl")  # test NNLS merging with rate preservation
 include("test_acceleration.jl")  # test acceleration of charge particles
 include("test_indexing_particlevector.jl")  # test particle vector and multi-cell indexing
 include("test_indexing_particlebuffer.jl")  # test buffer in ParticleVector
@@ -47,6 +48,7 @@ include("test_convection_1D.jl")  # test particle convection and surface interac
 include("test_collisions_1D.jl")  # test particle collisions on a grid
 include("test_io_multidim.jl")  # test netCDF I/O of physical properties on a grid
 include("test_io_particle.jl")  # test dump of particles
+include("test_merging_grid_merging_1D.jl")  # test grid-based merging in 1-D
 include("test_octree_merging_1D.jl")  # test octree merging in 1-D
 include("test_surface_props_1D_uniform.jl")  # test surface properties for 1-D uniform grid
 include("test_io_surf.jl")  # test I/O of surface properties

@@ -7,6 +7,7 @@
         Synthetic data for testing</Source>
         <Reference>
         - Linear dependence of cross-section on energy, He.
+        - Constant cross-sections, Ar.
         </Reference>
     </References>
 
@@ -26,7 +27,7 @@
         Merzbild.jl reference
         </HowToReference>
         <MerzbildUrl>
-        https://git-ce.rwth-aachen.de/georgii.oblapenko/merzbild.jl
+        https://github.com/merzbild/Merzbild.jl
         </MerzbildUrl>
         
         <Groups>
@@ -94,6 +95,98 @@
                     
                     <DataY type="Cross section" units="m2" size="3">
                     0.000000e+0 1.0e-25 1.0e-24 
+                    </DataY>
+                    </Process>
+                </Processes>
+            </Group>
+        </Groups>
+    </Database>
+
+
+    <Database name="Constant elastic and ionizaton cross-sections, Ar" id="ConstantDB">
+        <Permlink>
+        knstmrd.github.io
+        </Permlink>
+        <Description>
+        These data are constant (sigma=1e-19 for elastic and cross-section, sigma=2.0e-20 for ionization cross-section).
+        </Description>
+
+        <Contact>
+        email georgii.oblapenko@fastmail.com
+        </Contact>
+
+        <HowToReference>
+        Merzbild.jl reference
+        </HowToReference>
+        <MerzbildUrl>
+        https://github.com/merzbild/Merzbild.jl
+        </MerzbildUrl>
+        
+        <Groups>
+            <Group id="Ar">
+                <Description>
+                Const E-sigma relationship</Description>
+                <Processes>
+                    <Process class="Scattering Cross Sections" type="Elastic">
+                        <Species>
+                            <Reactant>e</Reactant><Reactant>He</Reactant>
+                            <Product>E</Product><Product>He</Product>
+                        </Species>
+                        
+                        <Reaction>
+                        E + Ar -&gt; E + Ar
+                        </Reaction>
+                        
+                        <Parameters>
+                            <mM>
+                            1.37396e-5
+                            </mM>
+                            <Parameter>
+                            complete set
+                            </Parameter>
+                        </Parameters>
+                        <Comment>
+                        Constant, sigma = 1e-19
+                        </Comment>
+                        <DataX type="Energy" units="eV" size="4">
+                        0.000000e+0 1.0e2 5.0e2 1.0e3
+                        </DataX>
+                        <DataY type="Cross section" units="m2" size="4">
+                        1.0e-19 1.0e-19 1.0e-19 1.0e-19
+                        </DataY>
+                    </Process>
+
+                    <Process class="Scattering Cross Sections" type="Ionization">
+                    <Species>
+                        <Reactant>e</Reactant><Reactant>Ar</Reactant>
+                        <Product>E</Product><Product>E</Product><Product>Ar^+</Product>
+                    </Species>
+                    
+                    <Reaction>
+                    E + Ar -&gt; E + E + Ar^+
+                    </Reaction>
+                    
+                    <Parameters>
+                        <E units="eV">
+                        1.576e+1
+                        </E>
+                        <Parameter>
+                        complete set
+                        </Parameter>
+                    </Parameters>
+                    <Comment>
+                        Constant
+                    </Comment>
+                    <Updated>
+                    2024-10-17
+                    </Updated>
+                    
+                    <DataX type="Energy" units="eV" size="3">
+                    1.576e+1 3.0e+1 1.0e+2
+                    </DataX>
+                    
+                    <DataY type="Cross section" units="m2" size="3">
+                    0.000000e+0 2.0e-20 2.0e-20
                     </DataY>
                     </Process>
                 </Processes>
