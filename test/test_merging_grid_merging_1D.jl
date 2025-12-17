@@ -133,4 +133,20 @@
 
     @test phys_props.n[1,1] == 8.0
     @test phys_props.n[2,1] == 12.0
+
+    particles, pia = create_particles_in_2cells()
+    # 
+    mg = GridN2Merge(2, 2, 2, 5.5)
+
+    merge_grid_based!(rng, mg, particles[1], pia, 1, 1, species_data, [-16.0, 0.0], [-2.0, 3.0], [4.29, 5.21], grid)
+    merge_grid_based!(rng, mg, particles[1], pia, 2, 1, species_data, [0.0, 17.0], [-2.0, 6.0], [-0.5, 3.5], grid)
+    gridsorter = GridSortInPlace(grid, pia.n_total[1])
+    sort_particles!(gridsorter, grid, particles[1], pia, 1)
+
+    compute_props!(particles, pia, species_data, phys_props)
+    @test phys_props.np[1,1] == 4
+    @test phys_props.np[2,1] == 2
+
+    @test phys_props.n[1,1] == 8.0
+    @test phys_props.n[2,1] == 12.0
 end

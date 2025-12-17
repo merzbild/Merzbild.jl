@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.7.6
+* Speed-up of variable weight SWPM collisions
+* Rate-preserving merging now makes use of reference process cross-sections
+* Fix in `simulations/OD/BKW/bkw.jl`
+* Clean-up of some `@inbounds` macros in sampling routines
+* Option to set merging grid extent explicitly when calling `merge_grid_based!`
+* Improved test coverage
+
 ## v0.7.5
 * Octree and grid-based merging can now handle bins/cells with only zero-weight particles inside
 * Grid-based merging 1D version added

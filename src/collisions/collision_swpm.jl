@@ -272,9 +272,13 @@ function swpm!(rng, collision_factors_swpm, collision_data, interaction, particl
                 particles[k].w -= Δw
 
                 update_buffer_index_new_particle!(particles, pia, cell, species)
-                particles[pia.n_total[species]] = Particle(Δw, particles[i].v, particles[i].x)
+                particles[pia.n_total[species]].w = Δw
+                particles[pia.n_total[species]].v = particles[i].v
+                particles[pia.n_total[species]].x = particles[i].x
                 update_buffer_index_new_particle!(particles, pia, cell, species)
-                particles[pia.n_total[species]] = Particle(Δw, particles[k].v, particles[k].x)
+                particles[pia.n_total[species]].w = Δw
+                particles[pia.n_total[species]].v = particles[k].v
+                particles[pia.n_total[species]].x = particles[k].x
                 scatter_vhs!(rng, collision_data, interaction[species, species],
                              particles[pia.n_total[species]-1], particles[pia.n_total[species]])
             end

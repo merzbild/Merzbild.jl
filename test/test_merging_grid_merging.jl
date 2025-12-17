@@ -205,4 +205,46 @@
         @test isnan(particles24[1][i].x[1]) == false
         @test particles24[1][i].w > 0
     end
+
+    mg = GridN2Merge(4, [0.5, 0.7, 0.9])
+    @test mg.Nx == 4
+    @test mg.Ny == 4
+    @test mg.Nz == 4
+    @test maximum(abs.(mg.extent_multiplier .- [0.5, 0.7, 0.9])) < 2 * eps()
+
+    mg = GridN2Merge(6, 1.5)
+    @test mg.Nx == 6
+    @test mg.Ny == 6
+    @test mg.Nz == 6
+    @test maximum(abs.(mg.extent_multiplier .- [1.5, 1.5, 1.5])) < 2 * eps()
+
+    mg = GridN2Merge(4, 6, 2, 3.0, 2.0, 1.0)
+    @test mg.Nx == 4
+    @test mg.Ny == 6
+    @test mg.Nz == 2
+    @test maximum(abs.(mg.extent_multiplier .- [3.0, 2.0, 1.0])) < 2 * eps()
+
+    particles24 = [create_24_3particles_in_octant(weights=weights_arr)]
+    compute_props!(particles24, pia, species_data, phys_props)
+    n0_computed = phys_props.n[1,1]
+    np0_computed = phys_props.np[1,1]
+    T0_computed = phys_props.T[1,1]
+    v0_computed = phys_props.v[:,1,1]
+
+    mg = GridN2Merge(4, 8, 2, 3.0, 2.0, 1.0)
+    merge_grid_based!(rng, mg, particles24[1], pia, 1, 1, species_data, [-3.0, 2.0], [-2.5, 2.5], [-2.0, 4.5])
+
+    @test mg.extent_v_lower == [-3.0, -2.5, -2.0]
+    @test mg.extent_v_upper == [2.0, 2.5, 4.5]
+    @test mg.extent_v_mid == [-0.5, 0.0, 1.25]
+    @test maximum(abs.(mg.Δv .- [1.25, 0.625, 3.25])) < 2*eps()
+
+    compute_props!(particles24, pia, species_data, phys_props)
+    @test pia.n_total[1] < 24
+    @test pia.n_total[1] == phys_props.np[1,1]
+    @test abs(phys_props.n[1,1] - n0_computed) < eps()
+    @test abs(phys_props.T[1,1] - T0_computed) < 1e-14
+    @test abs(v0_computed[1] - phys_props.v[1,1,1]) < 1e-14
+    @test abs(v0_computed[2] - phys_props.v[2,1,1]) < 1e-14
+    @test abs(v0_computed[3] - phys_props.v[3,1,1]) < 1e-14
 end

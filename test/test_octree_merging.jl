@@ -43,6 +43,21 @@
         return vp
     end
 
+    function create_2particles_total()
+    # create just 2 particles
+        vp = ParticleVector(2)
+
+        i = 0
+        i += 1
+        Merzbild.update_particle_buffer_new_particle!(vp, i)
+        vp[i] = create_particle_in_octant(1, 9.0 - 1 - 0.5, w=1)
+        i += 1
+        Merzbild.update_particle_buffer_new_particle!(vp, i)
+        vp[i] = create_particle_in_octant(1, 9.0 - 1 + 0.5, w=2)
+
+        return vp
+    end
+
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
     species_data::Vector{Species} = load_species_data(particles_data_path, "Ar")
 
@@ -255,4 +270,45 @@
         @test isnan(particles24[1][i].x[1]) == false
         @test particles24[1][i].w > 0
     end
+
+    particles2 = [create_2particles_total()]
+    pia = ParticleIndexerArray(2)
+
+    pia.indexer[1,1].n_local = 2
+    pia.indexer[1,1].n_group1 = 2
+    pia.indexer[1,1].start1 = 1
+    pia.indexer[1,1].end1 = 2
+
+    pia.indexer[1,1].n_group2 = 0
+    pia.indexer[1,1].start2 = 0
+    pia.indexer[1,1].end2 = -1
+
+    # even the top-level bin cannot be refined
+    merge_octree_N2_based!(rng, octree2, particles2[1], pia, 1, 1, 16)
+    @test octree2.bins[1].np == 2
+    @test octree2.n_particles == 2
+    @test octree2.bins[1].can_be_refined == false
+
+    # non-inheriting bin bounds version
+    particles24 = [create_24_3particles_in_octant()]
+    pia = ParticleIndexerArray(24)
+
+    # symmetric octree with split at v0 = (0.0, 0.0, 0.0)
+    octree = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC, bin_bounds_compute=OctreeBinBoundsInherit)
+    merge_octree_N2_based!(rng, octree, particles24[1], pia, 1, 1, 16)
+    compute_props!(particles24, pia, species_data, phys_props)
+
+    n0_computed = phys_props.n[1,1]
+    np0_computed = phys_props.np[1,1]
+    T0_computed = phys_props.T[1,1]
+    v0_computed = phys_props.v[:,1,1]
+
+    compute_props!(particles24, pia, species_data, phys_props)
+
+    @test pia.n_total[1] == phys_props.np[1,1]
+    @test abs(phys_props.n[1,1] - n0_computed) < eps()
+    @test abs(phys_props.T[1,1] - T0_computed) < 1e-14
+    @test abs(v0_computed[1] - phys_props.v[1,1,1]) < 1e-14
+    @test abs(v0_computed[2] - phys_props.v[2,1,1]) < 1e-14
+    @test abs(v0_computed[3] - phys_props.v[3,1,1]) < 1e-14
 end

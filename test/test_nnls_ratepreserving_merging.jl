@@ -137,8 +137,11 @@
     k_rate_ionization = rate_ionization / w0
 
     # test RHS rate coefficients
-    @test abs(nnls_rp.rhs_vector[8] - k_rate_elastic)/k_rate_elastic < 4*eps()
-    @test abs(nnls_rp.rhs_vector[9] - k_rate_ionization)/k_rate_ionization < 4*eps()
+    scaled_k_elastic = k_rate_elastic / (cs_ref * sqrt(nnls_rp.Ex^2 + nnls_rp.Ey^2 + nnls_rp.Ez^2))
+    scaled_k_ion = k_rate_ionization / (cs_ref * sqrt(nnls_rp.Ex^2 + nnls_rp.Ey^2 + nnls_rp.Ez^2))
+
+    @test abs(nnls_rp.rhs_vector[8] - scaled_k_elastic)/scaled_k_elastic < 4*eps()
+    @test abs(nnls_rp.rhs_vector[9] - scaled_k_ion)/scaled_k_ion < 4*eps()
 
     @test maximum(abs.(nnls.rhs_vector - nnls_rp.rhs_vector[1:7])) < 4*eps()
 
@@ -223,7 +226,10 @@
     k_rate_ionization = rate_ionization / w0
 
     # test RHS rate coefficients
-    @test abs(nnls_rp.rhs_vector[8] - k_rate_elastic)/k_rate_elastic < 4*eps()
+
+    scaled_k_elastic = k_rate_elastic / (cs_ref * sqrt(nnls_rp.Ex^2 + nnls_rp.Ey^2 + nnls_rp.Ez^2))
+
+    @test abs(nnls_rp.rhs_vector[8] - scaled_k_elastic)/scaled_k_elastic < 4*eps()
     @test abs(nnls_rp.rhs_vector[9] - k_rate_ionization) < 4*eps()
 
     @test maximum(abs.(nnls.rhs_vector - nnls_rp.rhs_vector[1:7])) < 4*eps()
