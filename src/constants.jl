@@ -31,7 +31,7 @@ const twopi::Float64 = 2 * π
 """
 Electron mass divided by 1 eV, kg/J
 """
-const e_mass_div_electron_volt = 5.6856301e-12  # m_e / eV, kg/J
+const e_mass_div_electron_volt = 5.685630060187e-12  # m_e / eV, kg/J
 
 """
 Positive and negative direction signs
