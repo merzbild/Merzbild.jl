@@ -491,14 +491,14 @@ end
 """
     create_computed_crosssections(electron_neutral_interactions)
 
-Create a vector of `ComputedCrossSection` instances for the electron-neutral interactions.
+Create a vector of `ComputedCrossSections` instances for the electron-neutral interactions.
 
 Positional arguments
 * `electron_neutral_interactions`: the `ElectronNeutralInteractions` instance for which the
     cross-sections will be computed
 
 # Returns
-Vector of `ComputedCrossSection` of length `electron_neutral_interactions.n_neutrals`.
+Vector of `ComputedCrossSections` of length `electron_neutral_interactions.n_neutrals`.
 """
 function create_computed_crosssections(electron_neutral_interactions)
     res::Vector{ComputedCrossSections} = []
@@ -582,30 +582,30 @@ The electron-neutral collision energy in eV.
 function compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index, extend::CSExtend)
     # the neutral_species_index is the absolute one (i.e. index in the list of all species)
     # this is used in the NNLS merging approach
-    E_coll_electron_eV = 0.5 * g^2 * e_mass_div_electron_volt  # convert to eV
-    E_coll = 0.5 * g^2 * interaction.m_r * eV_J_inv
+    # E_coll_electron_eV = 0.5 * g^2 * e_mass_div_electron_volt  # convert to eV
+    E_coll_eV = 0.5 * g^2 * interaction.m_r * eV_J_inv
 
     @inbounds i_neutral = electron_neutral_interactions.neutral_indexer[neutral_species_index]
 
     @inbounds computed_cs[i_neutral].n_excitations = electron_neutral_interactions.excitation_sink[i_neutral].n_reactions
 
     if extend == CSExtendConstant
-        @inbounds computed_cs[i_neutral].cs_elastic = compute_tabulated_cs_constant_continuation(electron_neutral_interactions.elastic[i_neutral].data, E_coll)
-        @inbounds computed_cs[i_neutral].cs_ionization = compute_tabulated_cs_constant_continuation(electron_neutral_interactions.ionization[i_neutral].data, E_coll_electron_eV)
+        @inbounds computed_cs[i_neutral].cs_elastic = compute_tabulated_cs_constant_continuation(electron_neutral_interactions.elastic[i_neutral].data, E_coll_eV)
+        @inbounds computed_cs[i_neutral].cs_ionization = compute_tabulated_cs_constant_continuation(electron_neutral_interactions.ionization[i_neutral].data, E_coll_eV)
 
         @inbounds for i in 1:computed_cs[i_neutral].n_excitations
-            computed_cs[i_neutral].cs_excitation[i] = compute_tabulated_cs_constant_continuation(electron_neutral_interactions.excitation_sink[i_neutral].data, E_coll_electron_eV)
+            computed_cs[i_neutral].cs_excitation[i] = compute_tabulated_cs_constant_continuation(electron_neutral_interactions.excitation_sink[i_neutral].data, E_coll_eV)
         end
     else
-        @inbounds computed_cs[i_neutral].cs_elastic = compute_tabulated_cs_zero_continuation(electron_neutral_interactions.elastic[i_neutral].data, E_coll)
-        @inbounds computed_cs[i_neutral].cs_ionization = compute_tabulated_cs_zero_continuation(electron_neutral_interactions.ionization[i_neutral].data, E_coll_electron_eV)
+        @inbounds computed_cs[i_neutral].cs_elastic = compute_tabulated_cs_zero_continuation(electron_neutral_interactions.elastic[i_neutral].data, E_coll_eV)
+        @inbounds computed_cs[i_neutral].cs_ionization = compute_tabulated_cs_zero_continuation(electron_neutral_interactions.ionization[i_neutral].data, E_coll_eV)
 
         @inbounds for i in 1:computed_cs[i_neutral].n_excitations
-            computed_cs[i_neutral].cs_excitation[i] = compute_tabulated_cs_zero_continuation(electron_neutral_interactions.excitation_sink[i_neutral].data, E_coll_electron_eV)
+            computed_cs[i_neutral].cs_excitation[i] = compute_tabulated_cs_zero_continuation(electron_neutral_interactions.excitation_sink[i_neutral].data, E_coll_eV)
         end
     end
 
-    return E_coll_electron_eV
+    return E_coll_eV
 end
 
 
@@ -635,7 +635,7 @@ The electron-neutral collision energy in eV.
 """
 function compute_cross_sections!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index; extend::CSExtend=CSExtendConstant)
     # the neutral_species_index is the absolute one (i.e. index in the list of all species)
-    E_coll_electron_eV = compute_cross_sections_only!(computed_cs, interaction, g,
+    E_coll_eV = compute_cross_sections_only!(computed_cs, interaction, g,
                                                       electron_neutral_interactions, neutral_species_index, extend)
 
     @inbounds i_neutral = electron_neutral_interactions.neutral_indexer[neutral_species_index]
@@ -655,7 +655,7 @@ function compute_cross_sections!(computed_cs, interaction, g, electron_neutral_i
         computed_cs[i_neutral].cdf_prob_vec[2+i] = computed_cs[i_neutral].prob_vec[1+i] + computed_cs[i_neutral].cdf_prob_vec[1+i]
     end
 
-    return E_coll_electron_eV
+    return E_coll_eV
 end
 
 """

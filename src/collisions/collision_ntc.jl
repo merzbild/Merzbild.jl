@@ -427,7 +427,7 @@ during the next loop iteration.
 * `collision_data`: `CollisionData` instance used for storing collisional quantities
 * `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
 * `n_e_interactions`: the `ElectronNeutralInteractions` instance
-* `n_e_cs`: the `ComputedCrossSections` instance
+* `n_e_cs`: a vector of `ComputedCrossSections` instances
 * `particles_n`: `ParticleVector` of the particles of neutral species
 * `particles_e`: `ParticleVector` of the particles of the electron species
 * `pia`: the `ParticleIndexerArray`
@@ -503,7 +503,7 @@ Perform electron-neutral elastic scattering and electron-impact ionization colli
 * `collision_data`: `CollisionData` instance used for storing collisional quantities
 * `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
 * `n_e_interactions`: the `ElectronNeutralInteractions` instance
-* `n_e_cs`: the `ComputedCrossSections` instance
+* `n_e_cs`: a vector of `ComputedCrossSections` instances
 * `particles_n`: `ParticleVector` of the particles of neutral species
 * `particles_e`: `ParticleVector` of the particles of the electron species
 * `particles_ion`: `ParticleVector` of the particles of the ion species
@@ -556,7 +556,7 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
 
         if (collision_data.g > eps())
 
-            collision_data.E_coll_electron_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n;
+            collision_data.E_coll_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n;
                                                                                   extend=extend)
             sigma_g_w_max = get_cs_total(n_e_interactions, n_e_cs, species_n) * collision_data.g * max(particles_n[i].w, particles_e[k].w)
 
@@ -652,7 +652,7 @@ using the event splitting method.
 * `collision_data`: `CollisionData` instance used for storing collisional quantities
 * `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
 * `n_e_interactions`: the `ElectronNeutralInteractions` instance
-* `n_e_cs`: the `ComputedCrossSections` instance
+* `n_e_cs`: a vector of `ComputedCrossSections` instances
 * `particles_n`: `ParticleVector` of the particles of neutral species
 * `particles_e`: `ParticleVector` of the particles of the electron species
 * `particles_ion`: `ParticleVector` of the particles of the ion species
@@ -707,7 +707,7 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
 
         if (collision_data.g > eps())
 
-            collision_data.E_coll_electron_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n;
+            collision_data.E_coll_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n;
                                                                                   extend=extend)
             sigma_g_w_max = get_cs_total(n_e_interactions, n_e_cs, species_n) * collision_data.g * max(particles_n[i].w, particles_e[k].w)
 
