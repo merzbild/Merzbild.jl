@@ -95,14 +95,14 @@
     end
 
     coll_data = CollisionData()
-    coll_data.E_coll_electron_eV = 107.5
+    coll_data.E_coll_eV = 107.5
     Merzbild.compute_g_new_ionization!(coll_data, interaction_data[1,2], 7.5, ElectronEnergySplitEqual)
     @test abs(coll_data.g_new_1 - coll_data.g_new_2) < eps()
-    @test (Merzbild.e_mass_div_electron_volt * coll_data.g_new_1^2 + 7.5 - coll_data.E_coll_electron_eV) < 1e-14
+    @test (Merzbild.e_mass_div_electron_volt * coll_data.g_new_1^2 + 7.5 - coll_data.E_coll_eV) < 1e-14
 
     Merzbild.compute_g_new_ionization!(coll_data, interaction_data[1,2], 7.5, ElectronEnergySplitZeroE)
     @test coll_data.g_new_2 == 0.0
-    @test (0.5 * Merzbild.e_mass_div_electron_volt * coll_data.g_new_1^2 + 7.5 - coll_data.E_coll_electron_eV) < 1e-14
+    @test (0.5 * Merzbild.e_mass_div_electron_volt * coll_data.g_new_1^2 + 7.5 - coll_data.E_coll_eV) < 1e-14
 
     dme = DataMissingException("Data not found")
     @test dme.msg == "Data not found"
