@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.7.7
+* Improved scattering modelling for ionization reactions based on Nanbu's paper
+* Added tests for ionization reaction scattering
+* Documentation improvements (new sections on ionization modelling and on debugging)
+
 ## v0.7.6
 * Speed-up of variable weight SWPM collisions
 * Rate-preserving merging now makes use of reference process cross-sections
