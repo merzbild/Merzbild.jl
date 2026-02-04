@@ -61,6 +61,16 @@
                                                           Dict("Ar" => ScatteringIsotropic),
                                                           Dict("Ar" => ElectronEnergySplitEqual))
 
+
+    # we do a trick here
+    # we don't have actual neutral particles
+    # so we can't set `species` to 3 (electrons), because indexing gets messed up
+    # but then interactions[1,1] would be used which has the collision reduced mass of Argon-Argon
+    # leading to wrong rates
+    # so we just fix that by replacing Ar-Ar interactions with Ar-e interactions
+
+    interaction_data[1,1] = interaction_data[1,2]
+
     computed_cs = create_computed_crosssections(n_e_interactions)
 
     # conserve only the lowest-order moments
@@ -230,6 +240,8 @@
     scaled_k_elastic = k_rate_elastic / (cs_ref * sqrt(nnls_rp.Ex^2 + nnls_rp.Ey^2 + nnls_rp.Ez^2))
 
     @test abs(nnls_rp.rhs_vector[8] - scaled_k_elastic)/scaled_k_elastic < 4*eps()
+
+    # compare to absolute value since it should be 0
     @test abs(nnls_rp.rhs_vector[9] - k_rate_ionization) < 4*eps()
 
     @test maximum(abs.(nnls.rhs_vector - nnls_rp.rhs_vector[1:7])) < 4*eps()
