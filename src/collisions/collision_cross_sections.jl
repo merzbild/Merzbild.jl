@@ -582,7 +582,6 @@ The electron-neutral collision energy in eV.
 function compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index, extend::CSExtend)
     # the neutral_species_index is the absolute one (i.e. index in the list of all species)
     # this is used in the NNLS merging approach
-    # E_coll_electron_eV = 0.5 * g^2 * e_mass_div_electron_volt  # convert to eV
     E_coll_eV = 0.5 * g^2 * interaction.m_r * eV_J_inv
 
     @inbounds i_neutral = electron_neutral_interactions.neutral_indexer[neutral_species_index]
