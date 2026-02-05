@@ -538,10 +538,10 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
     @inbounds n_coll_float = compute_n_coll_two_species(rng, collision_factors,
                                               pia.indexer[cell, species_n].n_local, pia.indexer[cell, species_e].n_local, Δt, V)
 
-    mass_ratio = species_e.mass / species_n.mass
-
     # need to index into n_e_cs
     @inbounds species_n_en_i = n_e_interactions.neutral_indexer[species_n]
+    
+    mass_ratio = n_e_interactions.mass_ratios[species_n_en_i]
 
     n_coll_int = floor(Int64, n_coll_float)
     # println(n_coll_float, ", ", n_coll_int)
@@ -701,8 +701,11 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
     collision_factors.n_coll = n_coll_int
     collision_factors.n_coll_performed = 0
     collision_factors.n_eq_w_coll_performed = 0
+
+    # need to index into n_e_cs
+    @inbounds species_n_en_i = n_e_interactions.neutral_indexer[species_n]
     
-    mass_ratio = species_e.mass / species_n.mass
+    mass_ratio = n_e_interactions.mass_ratios[species_n_en_i]
 
     @inbounds for _ in 1:n_coll_int
         i = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species_n].n_local)

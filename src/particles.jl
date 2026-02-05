@@ -974,3 +974,42 @@ function check_unique_index(pv, pia, species)
 
     return true, 0
 end
+
+
+
+"""
+    check_unique_buffer(pv)
+
+Test that the buffer elements in the active part of a buffer in a `ParticleVector` instance
+are unique (active part is `pv.buffer[1:pv.nbuffer]`).
+This function allocates a temporary dictionary and is thus intended for
+debugging/verifying code and not for efficient simulations.
+
+# Positional arguments
+* `pv`: the `ParticleVector` instance for which to check buffer
+
+# Returns
+If a non-unique index is in the active part of the buffer, the
+function returns `(false, i)`, where `i` is the first location at which
+the non-unique index is encountered **for the second time**
+(so if it is present at locations `i1, i2, i3, etc.`, `i2` will be returned).
+
+If buffer is correct, returns `(true, 0)`.
+"""
+function check_unique_buffer(pv)
+    # the code here explicitly does not use @inbounds
+    # as we aim for correctness, not efficiency
+    index_counts = Dict{Int64,Int64}()
+
+    for i in 1:pv.nbuffer
+        pid = pv.buffer[i]
+
+        if haskey(index_counts, pid)
+            return false, i
+        else
+            index_counts[pid] = 1
+        end
+    end
+    
+    return true, 0
+end

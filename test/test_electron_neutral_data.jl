@@ -17,6 +17,9 @@
     @test length(n_e_interactions.elastic[1].data.sigma) == 4
     @test length(n_e_interactions.ionization[1].data.E) == 3
     @test length(n_e_interactions.ionization[1].data.sigma) == 3
+    @test length(n_e_interactions.mass_ratios) == 1
+
+    @test abs(n_e_interactions.mass_ratios[1] - 0.00013698321251127821) / 0.00013698321251127821 < 4 * eps()
 
     @test n_e_interactions.elastic[1].data.E[1] == 0.0
     @test n_e_interactions.elastic[1].data.E[end] == 1e3

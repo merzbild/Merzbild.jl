@@ -117,6 +117,8 @@ and `neutral_indexer[2] = 1`, `neutral_indexer[5] = 2`.
 
 # Fields
 * `n_neutrals`: number of neutral species for which the data has been loaded
+* `mass_ratios`: ratio of electron mass to mass of neutrals; this uses the electron mass as given in the `Species` instance,
+    so heavy electrons are possible
 * `neutral_indexer`: array that maps indices of neutral species
     in the full list of species to local indices in the `ElectronNeutralInteractions` structure
 * `elastic`: an array of `ElasticScattering` instances (of length `n_neutrals`) holding the cross-section data on elastic scattering
@@ -128,6 +130,7 @@ and `neutral_indexer[2] = 1`, `neutral_indexer[5] = 2`.
 """
 struct ElectronNeutralInteractions
    n_neutrals::Int32
+   mass_ratios::Vector{Float64}
    neutral_indexer::Vector{Int32}  # neutral_indexer[species_index] = index of the species in the sub-list of neutral species
    elastic::Vector{ElasticScattering}
    ionization::Vector{Ionization}
@@ -436,6 +439,7 @@ of the cross-section database in the XML file to use for the species
 """
 function load_electron_neutral_interactions(species_data, filename, databases, scattering_laws, energy_splits)
     neutral_indexer::Vector{Int32} = []
+    mass_ratios::Vector{Float64} = []
     elastic_cs_vector::Vector{ElasticScattering} = []
     ionization_cs_vector::Vector{Ionization} = []
     excitation_sink_cs_vector::Vector{ExcitationSink} = []
@@ -443,11 +447,20 @@ function load_electron_neutral_interactions(species_data, filename, databases, s
     xml_data = read(filename, Node)
     n_db = length(xml_data[end]) - 1 # number of databases
 
+    e_mass = 0.0
+
+    for species in species_data
+        if species.name == "e-"
+            e_mass = species.mass
+        end
+    end
+
     neutral_subindex = 0
     for species in species_data
         if species.charge == 0
             neutral_subindex += 1
             push!(neutral_indexer, neutral_subindex)
+            push!(mass_ratios, e_mass/species.mass)
             found = false
             for i in 2:2+n_db-1
                 if attributes(xml_data[end][i])["id"] == databases[species.name]
@@ -485,7 +498,7 @@ function load_electron_neutral_interactions(species_data, filename, databases, s
         end
     end
 
-    return ElectronNeutralInteractions(neutral_subindex, neutral_indexer, elastic_cs_vector, ionization_cs_vector, excitation_sink_cs_vector)
+    return ElectronNeutralInteractions(neutral_subindex, mass_ratios, neutral_indexer, elastic_cs_vector, ionization_cs_vector, excitation_sink_cs_vector)
 end
 
 """
