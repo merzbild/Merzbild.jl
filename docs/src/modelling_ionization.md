@@ -102,7 +102,7 @@ of [Oblapenko et al. (2022)](https://doi.org/10.1016/j.jcp.2022.111390) and redu
 but is suitable only for variable-weight simulations with particle merging.
 The function implements the collision mechanics as described in [Nanbu (2000)](https://doi.org/10.1109/27.887765);
 apart from taking a `ElectronNeutralInteractions` and a `Vector` of `ComputedCrossSections` (with
-`n_neutral_species` elements). Additionally, an `extend` keyword argument of enum type [`CSExtend`](@ref)
+`n_neutral_species` elements). Additionally, an `extend` keyword argument of enum type [`Merzbild.CSExtend`](@ref)
 can be set that governs how cross-sections will be computed for energies that are outside of the range of tabulated values.
 In this case the cross-sections are either assumed to be equal to the nearest in-range value (`extend=CSExtendConstant`, default
 behaviour), or are set to 0 (`extend=CSExtendZero`).
