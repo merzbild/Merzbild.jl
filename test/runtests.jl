@@ -35,7 +35,8 @@ include("test_nnls_merging_buffer_sorting.jl")  # then we test that particles ar
 include("test_bkw_varweight_nnls.jl")  # test NNLS-based merging
 include("test_electron_neutral_data.jl")  # test loading of XML LXCat-like data
 include("test_nnls_ratepreserving_merging.jl")  # test NNLS merging with rate preservation
-include("test_acceleration.jl")  # test acceleration of charge particles
+include("test_acceleration.jl")  # test acceleration of charged particles
+include("test_collision_ionizing.jl")  # test ionizing collisions
 include("test_indexing_particlevector.jl")  # test particle vector and multi-cell indexing
 include("test_indexing_particlebuffer.jl")  # test buffer in ParticleVector
 include("test_pia_contiguous.jl")  # test squash_pia

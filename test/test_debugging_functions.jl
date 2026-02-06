@@ -137,4 +137,17 @@
     Cell 3: group2: [6, 8]
     Cell 4: group1: [9, 9]
     """
+
+    pv = ParticleVector(20)
+
+    println(pv.nbuffer)
+    println(pv.buffer)
+
+    @test check_unique_buffer(pv) == (true, 0)
+
+    pv.buffer[2] = pv.buffer[4]
+    @test check_unique_buffer(pv) == (false, 4)
+
+    pv.nbuffer = 3
+    @test check_unique_buffer(pv) == (true, 0)
 end

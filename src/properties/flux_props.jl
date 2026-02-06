@@ -75,14 +75,15 @@ In case particles are sorted, `compute_flux_props_sorted!` will be more efficien
 * `grid`: the physical grid
 """
 function compute_flux_props!(particles, pia, species_data, phys_props::PhysProps, flux_props::FluxProps, grid::G) where {G<:AbstractGrid}
+    c = SVector{3,Float64}(0.0, 0.0, 0.0)
+
     for species in 1:flux_props.n_species
         @inbounds for cell in 1:flux_props.n_cells
 
             kefd = SVector{3,Float64}(0.0, 0.0, 0.0)  # kinetic_energy_flux
             dmfd = SVector{3,Float64}(0.0, 0.0, 0.0)  # diagonal_momentum_flux
             odmfd = SVector{3,Float64}(0.0, 0.0, 0.0)  # off_diagonal_momentum_flux
-            c = SVector{3,Float64}(0.0, 0.0, 0.0)
-
+            
             for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
                 c = particles[species][i].v - SVector{3,Float64}(phys_props.v[1, cell, species],
                                                                  phys_props.v[2, cell, species],

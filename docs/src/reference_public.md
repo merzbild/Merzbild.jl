@@ -27,6 +27,7 @@ count_disordered_particles
 check_unique_index
 check_pia_is_correct
 pretty_print_pia
+check_unique_buffer
 ```
 
 ## Loading species and interaction data
