@@ -55,8 +55,8 @@ Enum for various splittings of electron energy in electron-impact ionization rea
     
 Enum defining how to extend cross-sections in case energy is outside of tabulated range.
 # Possible values:
-* `CSContinueConstant`: continue with closest value in array
-* `CSContinueZero`: continue with zero
+* `CSExtendConstant`: continue with closest value in array
+* `CSExtendZero`: continue with zero
 """
 @enum CSExtend CSExtendConstant=1 CSExtendZero=2
 
