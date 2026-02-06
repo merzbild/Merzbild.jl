@@ -20,6 +20,7 @@ makedocs(
             "Contiguous indexing" => "contiguous_indexing.md",
             "Modelling ionization reactions" => "modelling_ionization.md",
             "Multithreaded simulations" => "multithreaded.md",
+            "Debugging Merzbild" => "debugging.md",
         ],
         "API reference" => [
             "Public API reference" => "reference_public.md",

@@ -427,7 +427,7 @@ during the next loop iteration.
 * `collision_data`: `CollisionData` instance used for storing collisional quantities
 * `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
 * `n_e_interactions`: the `ElectronNeutralInteractions` instance
-* `n_e_cs`: the `ComputedCrossSections` instance
+* `n_e_cs`: a vector of `ComputedCrossSections` instances
 * `particles_n`: `ParticleVector` of the particles of neutral species
 * `particles_e`: `ParticleVector` of the particles of the electron species
 * `pia`: the `ParticleIndexerArray`
@@ -452,6 +452,9 @@ function estimate_sigma_g_w_max_ntc_n_e!(rng, collision_factors, collision_data,
     # collide
     @inbounds collision_factors.n1 = pia.indexer[cell, species_n].n_local
     @inbounds collision_factors.n2 = pia.indexer[cell, species_e].n_local
+
+    # need to index into n_e_cs
+    @inbounds species_n_en_i = n_e_interactions.neutral_indexer[species_n]
 
     @inbounds for _ in 1:n_loops
         n_coll_float = compute_n_coll_two_species(rng, collision_factors,
@@ -479,7 +482,7 @@ function estimate_sigma_g_w_max_ntc_n_e!(rng, collision_factors, collision_data,
             if (collision_data.g > eps())
                 collision_data.E_coll_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n;
                                                                              extend=extend)
-                sigma_g_w_max = n_e_cs[species_n].cs_total * collision_data.g * max(particles_n[i].w, particles_e[k].w)
+                sigma_g_w_max = n_e_cs[species_n_en_i].cs_total * collision_data.g * max(particles_n[i].w, particles_e[k].w)
 
                 # update (σ g w)_max if needed
                 collision_factors.sigma_g_w_max = max(sigma_g_w_max, collision_factors.sigma_g_w_max)
@@ -503,7 +506,7 @@ Perform electron-neutral elastic scattering and electron-impact ionization colli
 * `collision_data`: `CollisionData` instance used for storing collisional quantities
 * `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
 * `n_e_interactions`: the `ElectronNeutralInteractions` instance
-* `n_e_cs`: the `ComputedCrossSections` instance
+* `n_e_cs`: a vector of `ComputedCrossSections` instances
 * `particles_n`: `ParticleVector` of the particles of neutral species
 * `particles_e`: `ParticleVector` of the particles of the electron species
 * `particles_ion`: `ParticleVector` of the particles of the ion species
@@ -534,6 +537,12 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
     @inbounds collision_factors.n2 = pia.indexer[cell, species_e].n_local
     @inbounds n_coll_float = compute_n_coll_two_species(rng, collision_factors,
                                               pia.indexer[cell, species_n].n_local, pia.indexer[cell, species_e].n_local, Δt, V)
+
+    # need to index into n_e_cs
+    @inbounds species_n_en_i = n_e_interactions.neutral_indexer[species_n]
+    
+    mass_ratio = n_e_interactions.mass_ratios[species_n_en_i]
+
     n_coll_int = floor(Int64, n_coll_float)
     # println(n_coll_float, ", ", n_coll_int)
 
@@ -556,7 +565,7 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
 
         if (collision_data.g > eps())
 
-            collision_data.E_coll_electron_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n;
+            collision_data.E_coll_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n;
                                                                                   extend=extend)
             sigma_g_w_max = get_cs_total(n_e_interactions, n_e_cs, species_n) * collision_data.g * max(particles_n[i].w, particles_e[k].w)
 
@@ -601,7 +610,7 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                 # now we collide the 2 equal-weight particles
                 R = rand(rng, Float64)  # decide which process we do
 
-                if (R < n_e_cs[species_n].prob_vec[1])  # TODO: fix indexing! 
+                if (R < n_e_cs[species_n_en_i].prob_vec[1]) 
                     # elastic collision
                     scatter_vhs!(rng, collision_data, interaction[species_n, species_e], particles_n[i], particles_e[k])
                 else
@@ -631,7 +640,8 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                     compute_g_new_ionization!(collision_data, interaction[species_n, species_e],
                                               get_ionization_threshold(n_e_interactions, species_n), get_electron_energy_split(n_e_interactions, species_n))
 
-                    scatter_ionization_electrons!(rng, collision_data, particles_e, k, pia.n_total[species_e])
+                    scatter_ionization_electrons_and_ion!(rng, collision_data, particles_e, particles_ion,
+                                                          k1, k2, pia.n_total[species_ion], mass_ratio)
                 end
             end
         end
@@ -652,7 +662,7 @@ using the event splitting method.
 * `collision_data`: `CollisionData` instance used for storing collisional quantities
 * `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
 * `n_e_interactions`: the `ElectronNeutralInteractions` instance
-* `n_e_cs`: the `ComputedCrossSections` instance
+* `n_e_cs`: a vector of `ComputedCrossSections` instances
 * `particles_n`: `ParticleVector` of the particles of neutral species
 * `particles_e`: `ParticleVector` of the particles of the electron species
 * `particles_ion`: `ParticleVector` of the particles of the ion species
@@ -692,6 +702,11 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
     collision_factors.n_coll_performed = 0
     collision_factors.n_eq_w_coll_performed = 0
 
+    # need to index into n_e_cs
+    @inbounds species_n_en_i = n_e_interactions.neutral_indexer[species_n]
+    
+    mass_ratio = n_e_interactions.mass_ratios[species_n_en_i]
+
     @inbounds for _ in 1:n_coll_int
         i = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species_n].n_local)
         k = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species_e].n_local)
@@ -707,7 +722,7 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
 
         if (collision_data.g > eps())
 
-            collision_data.E_coll_electron_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n;
+            collision_data.E_coll_eV = compute_cross_sections!(n_e_cs, interaction[species_n, species_e], collision_data.g, n_e_interactions, species_n;
                                                                                   extend=extend)
             sigma_g_w_max = get_cs_total(n_e_interactions, n_e_cs, species_n) * collision_data.g * max(particles_n[i].w, particles_e[k].w)
 
@@ -752,10 +767,10 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
 
                 # now we collide the 2 equal-weight particles
                 
-                if (n_e_cs[species_n].prob_vec[2] == 0.0)
+                if (n_e_cs[species_n_en_i].prob_vec[2] == 0.0)
                     scatter_vhs!(rng, collision_data, interaction[species_n, species_e], particles_n[i], particles_e[k])
                 else
-                    w_ionized = particles_e[k].w * n_e_cs[species_n].prob_vec[2]
+                    w_ionized = particles_e[k].w * n_e_cs[species_n_en_i].prob_vec[2]
     
                     particles_n[i].w -= w_ionized
                     particles_e[k].w -= w_ionized
@@ -766,7 +781,7 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
                     # create the ion particle
                     update_buffer_index_new_particle!(particles_ion, pia, cell, species_ion)
                     particles_ion[pia.n_total[species_ion]].w = w_ionized
-                    particles_ion[pia.n_total[species_ion]].v = particles_n[i].v
+                    # particles_ion[pia.n_total[species_ion]].v = particles_n[i].v
                     particles_ion[pia.n_total[species_ion]].x = particles_n[i].x
 
                     # add 2 electrons (split + secondary)
@@ -790,7 +805,8 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
                     compute_g_new_ionization!(collision_data, interaction[species_n, species_e],
                                               get_ionization_threshold(n_e_interactions, species_n), get_electron_energy_split(n_e_interactions, species_n))
 
-                    scatter_ionization_electrons!(rng, collision_data, particles_e, k1, k2)
+                    scatter_ionization_electrons_and_ion!(rng, collision_data, particles_e, particles_ion,
+                                                          k1, k2, pia.n_total[species_ion], mass_ratio)
                 end
             end
         end

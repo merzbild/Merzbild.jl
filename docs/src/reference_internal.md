@@ -45,7 +45,7 @@ Merzbild.compute_g!
 Merzbild.compute_g_new_ionization!
 Merzbild.scatter_vhs!
 Merzbild.scatter_electron_vhs!
-Merzbild.scatter_ionization_electrons!
+Merzbild.scatter_ionization_electrons_and_ion!
 Merzbild.sigma_vhs
 Merzbild.compute_tabulated_cs_constant_continuation
 Merzbild.compute_tabulated_cs_zero_continuation

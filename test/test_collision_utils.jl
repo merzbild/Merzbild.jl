@@ -146,10 +146,14 @@
     Merzbild.update_particle_buffer_new_particle!(particles_electron, 2)
     particles_electron[2] = Particle(4.0,  SVector{3}(-50000.0, -60000.0, -70000.0), SVector{3}(100.0, 200.0, 400.0))
 
-    Merzbild.scatter_ionization_electrons!(rng, collision_data, particles_electron, 1, 2)
-    Merzbild.scatter_electron_vhs!(rng, collision_data, particles_electron[1], collision_data.g_new_1)
-    Merzbild.scatter_electron_vhs!(rng, collision_data, particles_electron[2], collision_data.g_new_2)
+    # ions are just to call the function; more detailed testing in test_collision_ionizing
+    particles_ion = ParticleVector(1)
+    Merzbild.update_particle_buffer_new_particle!(particles_ion, 1)
+    particles_ion[1] = Particle(1.0,  SVector{3}(0.0, 0.0, 0.0), SVector{3}(0.0, 0.0, 0.0))
 
+    Merzbild.scatter_ionization_electrons_and_ion!(rng, collision_data, particles_electron, particles_ion, 1, 2, 1, 1e-5)
+
+    # since v_com = (0,0,0) we don't need to subtract it
     @test (sqrt(sum(particles_electron[1].v.^2)) - collision_data.g_new_1) / collision_data.g_new_1 < 2*eps()
     @test (sqrt(sum(particles_electron[2].v.^2)) - collision_data.g_new_2) / collision_data.g_new_2 < 2*eps()
 

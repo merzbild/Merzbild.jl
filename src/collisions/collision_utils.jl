@@ -14,7 +14,6 @@ Structure to store temporary collision data for a specific collision (relative v
 * `g`: magnitude of relative velocity
 * `E_coll`: relative translational energy of the colliding particles
 * `E_coll_eV`: relative translational energy of the colliding particles in electron-volt
-* `E_coll_electron_eV`: collisional energy of the an electron in electron-volt for electron-neutral collisions
 * `g_vec`: vector of pre-collisional relative velocity
 * `g_vec_new`: vector of post-collisional relative velocity
 * `g_new_1`: magnitude of post-collisional relative velocity of the first particle in the collision pair
@@ -25,7 +24,6 @@ mutable struct CollisionData
     g::Float64
     E_coll::Float64  # in case we also need to store the collision energy
     E_coll_eV::Float64  # in case we also need to store the collision energy in eV
-    E_coll_electron_eV::Float64  # collision energy of impacting electron in eV
     g_vec::SVector{3,Float64}
     g_vec_new::SVector{3,Float64}
     g_new_1::Float64
@@ -33,7 +31,7 @@ mutable struct CollisionData
 end
 
 """
-    CollisionData
+    CollisionDataFP
 
 Structure to store temporary collision data for the particle Fokker-Planck approach.
 
@@ -107,7 +105,7 @@ end
 
 Create an empty CollisionData instance.
 """
-CollisionData() = CollisionData(SVector{3,Float64}(0.0, 0.0, 0.0), 0.0, 0.0, 0.0, 0.0,
+CollisionData() = CollisionData(SVector{3,Float64}(0.0, 0.0, 0.0), 0.0, 0.0, 0.0,
                                 SVector{3,Float64}(0.0, 0.0, 0.0),
                                 SVector{3,Float64}(0.0, 0.0, 0.0), 0.0, 0.0)
 
@@ -547,7 +545,7 @@ Compute post-ionization magnitudes of the relative velocities of the impacting a
     if `ElectronEnergySplitZeroE`, one electron takes all of the energy
 """
 function compute_g_new_ionization!(collision_data, interaction, E_i, energy_splitting)
-    E_new_coll = collision_data.E_coll_electron_eV - E_i
+    E_new_coll = collision_data.E_coll_eV - E_i
 
     if (energy_splitting == ElectronEnergySplitEqual)
         collision_data.g_new_1 = sqrt(E_new_coll / e_mass_div_electron_volt)
