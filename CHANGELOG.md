@@ -1,5 +1,7 @@
 # Changelog
 
+## v0.7.8
+
 ## v0.7.7
 * Improved scattering modelling for ionization reactions based on Nanbu's paper
 * Added tests for ionization reaction scattering
