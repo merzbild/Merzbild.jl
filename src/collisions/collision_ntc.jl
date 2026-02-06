@@ -610,7 +610,7 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                 # now we collide the 2 equal-weight particles
                 R = rand(rng, Float64)  # decide which process we do
 
-                if (R < n_e_cs[species_n_en_i].prob_vec[1])  # TODO: fix indexing! 
+                if (R < n_e_cs[species_n_en_i].prob_vec[1]) 
                     # elastic collision
                     scatter_vhs!(rng, collision_data, interaction[species_n, species_e], particles_n[i], particles_e[k])
                 else
