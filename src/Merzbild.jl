@@ -66,5 +66,6 @@ export ChunkExchanger, exchange_particles!, reset!, sort_particles_after_exchang
 export count_disordered_particles, check_pia_is_correct, check_unique_index, check_unique_buffer
 export FluxProps, compute_flux_props!, compute_flux_props_sorted!
 export mean_free_path, mean_collision_frequency
+export generate_1_factorization
 
 end # module merzbild

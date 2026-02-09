@@ -521,3 +521,52 @@ function sort_particles_after_exchange!(chunk_exchanger, gridsort, particles, pi
         particles.index[i] = gridsort.sorted_indices[i]
     end
 end
+
+"""
+    generate_1_factorization(N_chunks)
+
+Construct a `Vector{Vector{Tuple{Int64,Int64}}}` with the following properties:
+* tuple elements `i` and `j` range from `1` to `N_chunks`
+* tuples `(i,j)` and `(j,i)` are considered equivalent
+* each tuple `(i,j)` (up to equivalency) appears in the result exactly once
+* in each `Vector` of tuples all numbers are unique
+* tuples `(i,i)` do not appear
+* the `Vector`s of tuples are as long as possible.
+
+This corresponds to a 1-factorization of a complete graph; the resulting
+`Vector` of `Vector`s of `Tuple`s can be iterated over, and particle exchange
+can be performed between chunks listed in the `Tuple`s in a given `Vector`
+using multi-threaded, since each chunk appears at most once in a given vector.
+This allows to multi-thread the particle exchange step.
+
+
+# Positional arguments
+* `N_chunks`: number of chunks
+
+# Returns
+A `Vector` of `Vector`s of `Tuple`s corresponding to the 1-factorization of a complete
+graph with `N_chunks` vertices.
+"""
+function generate_1_factorization(N_chunks)
+    pairs = [(i, j) for i in 1:N_chunks for j in i+1:N_chunks]
+
+    list_of_lists::Vector{Vector{Tuple{Int64,Int64}}} = []
+
+    for (i, j) in pairs
+        assigned = false
+        for inner_list in list_of_lists
+            used_i = any(p -> i in p, inner_list)
+            used_j = any(p -> j in p, inner_list)
+            if !(used_i || used_j)
+                push!(inner_list, (i, j))
+                assigned = true
+                break
+            end
+        end
+        if !assigned
+            push!(list_of_lists, [(i, j)])
+        end
+    end
+
+    return list_of_lists
+end
