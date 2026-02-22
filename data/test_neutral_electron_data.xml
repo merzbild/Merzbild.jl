@@ -108,7 +108,7 @@
         knstmrd.github.io
         </Permlink>
         <Description>
-        These data are constant (sigma=1e-19 for elastic and cross-section, sigma=2.0e-20 for ionization cross-section).
+        These data are constant (sigma=1e-19 for elastic cross-section, sigma=2.0e-20 for ionization cross-section).
         </Description>
 
         <Contact>
