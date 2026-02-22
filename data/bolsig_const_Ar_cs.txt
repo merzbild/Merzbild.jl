@@ -1,0 +1,78 @@
+This is dummy data for Ar+e collisions in the LXCat text format; the data
+is exactly the same as in test_neutral_electron_data.xml in ConstantDB.
+This can be used with the bolsig_input_const_Ar.dat file to run a Bolsig+ simulation
+to produce reference data for ionization rate coefficients.
+
+CROSS SECTION DATA FORMAT
+In downloaded files, each collision process is defined by a block consisting of
+1st line
+Keyword in capitals indicating the type of the collision. Possible collision types are elastic, effective, excitation,
+ionization, or attachment (capital letters required, key words are case sensitive), where "elastic" is used to denote
+the elastic momentum transfer cross section and where "effective" denotes the total momentum transfer cross section (sum
+of elastic momentum transfer and total inelastic cross sections).  The latter is useful for solving the Boltzmann
+equation in the 2-term approximation.
+2nd line
+Name of the target particle species. This name is a character string, freely chosen by the user, e.g. "Ar". Optionally
+for excitation processes, the name of the corresponding excited state can be specified on the same line, separated from
+the first name either by arrow "->" (dash + greater than) or by double-head arrow "<->" (less than + dash +
+greater than), e.g. "Ar -> Ar*" and "Ar <-> Ar*", respectively. In the later case BOLSIG+ will automatically
+define the inverse superelastic process, constructing the superelastic cross-section by detailed balancing, and
+considering the indicated excited state as the target. In this case, the ratio of statistical weights must be input in
+the 3rd line (see below).
+3rd line
+For elastic and effective collisions, the ratio of the electron mass to the target particle mass. For excitation or
+ionization collisions, the electron energy loss (nominally the threshold energy) in eV. For attachment, the 3rd line is
+missing. In case of an excitation process where an excited state has been indicated on the 2nd line using double-head
+arrow "<->", the 3rd line must specify also ratio of the statistical weights of the final state to the initial state
+as the second parameter in 3rd line this is needed by BOLSIG+ to calculate the de-excitation cross-section. The
+statistical weight ratio, if given, will also be used by the automatic superelastics option in BOLSIG+. If this ratio is
+not provided then BOLSIG+ will assume it unity.
+from 4th line (optionally)
+User comments and reference information, maximum 100 lines. The only constraint on format is that these comment lines
+must not start with a number.
+Finally
+Table of the cross section as a function of energy. The table starts and ends by a line of dashes "------" (at least 5),
+and has otherwise two numbers per line: the energy in eV and the cross section in m2.
+
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+DATABASE:         ConstantDB
+PERMLINK:         N/A
+DESCRIPTION:      Constant cross-section values (1e-19 for elastic, 2e-20 for ionization)
+CONTACT:          Georgii Oblapenko
+HOW TO REFERENCE: N/A
+xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+************************************************************************************************************************
+
+
+********************************************************** Ar **********************************************************
+
+ELASTIC
+Ar
+ 1.360000e-5
+SPECIES: e / Ar
+PROCESS: E + Ar -> E + Ar, Elastic
+PARAM.:  m/M = 0.0000136, complete set
+COMMENT: From Biagi elastic MOMENTUM-TRANSFER CROSS SECTION.
+UPDATED: 2026-02-22
+COLUMNS: Energy (eV) | Cross section (m2)
+-----------------------------
+ 0.000000e+0	1.000000e-19
+ 1.000000e+2	1.000000e-19
+ 5.000000e+2	1.000000e-19
+ 1.000000e+3	1.000000e-19
+-----------------------------
+
+IONIZATION
+Ar -> Ar^+
+ 1.570000e+1
+SPECIES: e / Ar
+PROCESS: E + Ar -> E + E + Ar+, Ionization
+PARAM.:  E = 15.7 eV, complete set
+UPDATED: 2026-02-22
+COLUMNS: Energy (eV) | Cross section (m2)
+-----------------------------
+ 1.570000e+1	0.000000e+0
+ 3.000000e+1	1.000000e-20
+ 1.000000e+2	1.000000e-20
+-----------------------------
