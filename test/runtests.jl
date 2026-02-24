@@ -37,6 +37,7 @@ include("test_electron_neutral_data.jl")  # test loading of XML LXCat-like data
 include("test_nnls_ratepreserving_merging.jl")  # test NNLS merging with rate preservation
 include("test_acceleration.jl")  # test acceleration of charged particles
 include("test_collision_ionizing.jl")  # test ionizing collisions
+include("test_ionization_sim.jl")  # test 0D ionization simulation without event splitting
 include("test_indexing_particlevector.jl")  # test particle vector and multi-cell indexing
 include("test_indexing_particlebuffer.jl")  # test buffer in ParticleVector
 include("test_pia_contiguous.jl")  # test squash_pia
