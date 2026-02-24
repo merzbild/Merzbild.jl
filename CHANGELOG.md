@@ -1,6 +1,9 @@
 # Changelog
 
 ## v0.7.8
+* Fixed ionization simulations without event splitting
+* Tests for simulations with elastic and ionizing electron-neutral collisions (without event splitting)
+* Threaded swap of particles for multi-threaded simulations now possible
 
 ## v0.7.7
 * Improved scattering modelling for ionization reactions based on Nanbu's paper
