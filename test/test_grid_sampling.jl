@@ -21,7 +21,7 @@
         particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, n_particles)]
 
         n_sampled = sample_maxwellian_on_grid!(rng, particles[1], nv, species_data[1].mass, T0, n_dens,
-        0.0, 1.0, 0.0, 1.0, 0.0, 1.0; v_mult=3.5, cutoff_mult=8.0, noise=0.0, v_offset=v0)
+        0.0, 0.5, 0.0, 1.0, 0.0, 2.0; v_mult=3.5, cutoff_mult=8.0, noise=0.0, v_offset=v0)
         
         pia = ParticleIndexerArray(n_sampled)
 
@@ -35,5 +35,28 @@
         @test abs(phys_props.moments[1,1,1] .- 1.0) < 1e-4  # test 4th moment
         @test abs(phys_props.moments[2,1,1] .- 1.0) < 2e-4  # test 6th moment
         @test abs(phys_props.moments[3,1,1] .- 1.0) < 5e-4  # test 8th moment
+
+
+        @inbounds pia.indexer[1, 1].start2 == 0
+        @inbounds pia.indexer[1, 1].end2 == -1
+        @inbounds pia.indexer[1, 1].n_group2 == 0
+
+        oob = false
+
+        for i in 1:n_sampled
+            if particles[1][i].x[1] < 0.0 || particles[1][i].x[1] > 0.5
+                oob = true
+                break
+            end
+            if particles[1][i].x[2] < 0.0 || particles[1][i].x[2] > 1.0
+                oob = true
+                break
+            end
+            if particles[1][i].x[3] < 0.0 || particles[1][i].x[3] > 2.0
+                oob = true
+                break
+            end
+        end
+        @test oob == false
     end
 end

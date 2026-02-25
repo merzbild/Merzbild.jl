@@ -24,6 +24,7 @@ const DELTA_PARTICLES::Int32 = 256
 
 export sample_maxwellian_on_grid!, sample_on_grid!, bkw, maxwellian
 export load_species_data, Particle, sample_particles_equal_weight!
+export sample_particles_phase_box_weighted!
 export Species, Interaction
 export compute_props!, compute_props_sorted!, compute_props_with_total_moments!
 export clear_props!, avg_props!

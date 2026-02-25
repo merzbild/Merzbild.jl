@@ -27,7 +27,7 @@ The function returns the total number of particles sampled (which may be less th
 of `cutoff_mult`).
 
 The `sample_particles_phase_box_weighted`, unlike the grid-based sampling, is not deterministic, and samples
-particle velocities uniformly in a box in phase space (with the extent and speed cut-off set similar to the grid-based sampling).
+particle velocities uniformly in a box in phase space (with the extent set similar to the grid-based sampling).
 The particle weights are computed based on the value of a prescribed Maxwellian at that velocity, and re-scaled to ensure the correct
 number density; the streaming velocity is added afterwards.
 

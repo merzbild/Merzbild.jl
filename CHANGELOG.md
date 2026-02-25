@@ -4,6 +4,8 @@
 * Fixed ionization simulations without event splitting
 * Tests for simulations with elastic and ionizing electron-neutral collisions (without event splitting)
 * Threaded swap of particles for multi-threaded simulations now possible
+* New `sample_particles_phase_box_weighted!` sampling function added for variable-weight particle sampling
+from an equilibrium distribution
 
 ## v0.7.7
 * Improved scattering modelling for ionization reactions based on Nanbu's paper

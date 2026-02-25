@@ -508,4 +508,87 @@ function sample_particles_equal_weight!(rng, particles, pia, cell, species,
     end
 end
 
+"""
+    sample_particles_phase_box_weighted(rng, particles, pia, cell, species,
+                                        nparticles, m, T, Fnum, xlo, xhi, ylo, yhi, zlo, zhi;
+                                        v_mult=3.5, vx0=0.0, vy0=0.0, vz0=0.0)
+
+Sample variable-weight particles of a specific species in a specific cell from a Maxwellian.
+The velocities are sampled in a uniform box in phase space with extent ±`v_mult * v_thermal`
+in each direction,
+where `v_thermal` is the thermal velocity ``\\sqrt(2kT/m)``, and `v_mult` is a
+user-defined parameter, and their weights are computed proportional
+to the value of a Maxwell distribution at temperature T at those velocities.
+A streaming velocity component can be added to all of the sampled particles' velocities.
+The positions of the particles are assumed to be randomly distributed in a cuboid.
+
+
+# Positional arguments
+* `rng`: the random number generator
+* `particles`: the `Vector`-like structure holding the particles
+* `pia`: the `ParticleIndexerArray`
+* `cell`: the cell index
+* `species`: the species index
+* `nparticles`: the number of particles to sample
+* `m`: species' mass
+* `T`: temperature
+* `n_total`: the total computational weight (number of physical particles) to be sampled
+* `xlo`: the lower bound of the x coordinates of the particles
+* `xhi`: the upper bound of the x coordinates of the particles
+* `ylo`: the lower bound of the y coordinates of the particles
+* `yhi`: the upper bound of the y coordinates of the particles
+* `zlo`: the lower bound of the z coordinates of the particles
+* `zhi`: the upper bound of the z coordinates of the particles
+
+# Keyword arguments
+* `v_mult`: the value by which the thermal velocity is multiplied to compute the extent of the velocity box
+* `vx0`: the x-velocity offset to add to the particle velocities
+* `vy0`: the y-velocity offset to add to the particle velocities
+* `vz0`: the z-velocity offset to add to the particle velocities
+"""
+function sample_particles_phase_box_weighted!(rng, particles, pia, cell, species,
+                           nparticles, m, T, n_total, xlo, xhi, ylo, yhi, zlo, zhi;
+                           v_mult=3.5, vx0=0.0, vy0=0.0, vz0=0.0)
+
+    @inbounds start = pia.n_total[species] + 1                                    
+    @inbounds pia.indexer[cell, species].n_local = nparticles
+    @inbounds pia.n_total[species] += nparticles
+
+    @inbounds pia.indexer[cell, species].start1 = start
+    @inbounds pia.indexer[cell, species].end1 = start - 1 + nparticles
+    @inbounds pia.indexer[cell, species].n_group1 = nparticles
+
+    @inbounds pia.indexer[cell, species].start2 = 0
+    @inbounds pia.indexer[cell, species].end2 = -1
+    @inbounds pia.indexer[cell, species].n_group2 = 0
+
+    offset = start - 1
+
+    w_tot = 0.0
+
+    v_factor = m / (2 * k_B * T)
+
+    v_max = v_mult * compute_thermal_velocity(m, T)
+
+    @inbounds for i in 1:nparticles
+        v_x = (2 * (rand(rng, Float64) - 0.5)) * v_max
+        v_y = (2 * (rand(rng, Float64) - 0.5)) * v_max
+        v_z = (2 * (rand(rng, Float64) - 0.5)) * v_max
+
+        # compute value of Maxwellian
+        w = exp(-v_factor * (v_x^2 + v_y^2 + v_z^2))
+        w_tot += w
+
+        add_particle!(particles, i+offset, w,  SVector{3}(v_x + vx0, v_y + vy0, v_z + vz0),
+                      SVector{3}(xlo + rand(rng, Float64) * (xhi - xlo),
+                                 ylo + rand(rng, Float64) * (yhi - ylo),
+                                 zlo + rand(rng, Float64) * (zhi - zlo)))
+        particles.cell[i+offset] = cell
+    end
+
+    @inbounds for i in 1:nparticles
+        particles[i].w *= n_total / w_tot
+    end
+end
+
 end
