@@ -111,9 +111,9 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons, merging_
 
     # neutral-neutral
     Fnum_neutral_mean = n_dens_neutrals / n_sampled[1]
-    collision_factors[1,1].sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1],
-                                                                  species_data[1], T0,
-                                                                  Fnum_neutral_mean)
+    collision_factors[1,1,1].sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1],
+                                                                    species_data[1], T0,
+                                                                    Fnum_neutral_mean)
                              
     s1 = index_neutral
     s2 = index_electron
@@ -166,5 +166,5 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons, merging_
     close_netcdf(ds)
 end
 
-run(1234, 400.0, 500000, 300, 200, OctreeBinMidSplit, adds=0, do_es=false)
-run(1234, 400.0, 500000, 300, 200, OctreeBinMidSplit, adds=0, do_es=true)
+# run(1234, 400.0, 500000, 300, 200, OctreeBinMidSplit, adds=0, do_es=false)
+run(1234, 400.0, 500000, 3000, 2000, OctreeBinMidSplit, adds=0, do_es=true)

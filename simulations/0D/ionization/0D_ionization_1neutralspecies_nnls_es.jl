@@ -145,9 +145,9 @@ function run(seed, E_Tn, n_t,
 
     # neutral-neutral
     Fnum_neutral_mean = n_dens_neutrals / n_sampled[1]
-    collision_factors[1,1].sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1],
-                                                                  species_data[1], T0,
-                                                                  Fnum_neutral_mean)
+    collision_factors[1,1,1].sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1],
+                                                                    species_data[1], T0,
+                                                                    Fnum_neutral_mean)
                              
     s1 = index_neutral
     s2 = index_electron
