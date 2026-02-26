@@ -178,7 +178,7 @@ phys_props = PhysProps(1, 1, [], Tref=T0)
 compute_props!(particles, pia, species_data, phys_props)
 
 ds = NCDataHolder("output_bkw_octree.nc", species_data, phys_props)
-write_netcdf_phys_props(ds, phys_props, 0)
+write_netcdf(ds, phys_props, 0)
 
 collision_factors = create_collision_factors_array(1)  # 1-species, 0-D
 collision_data = CollisionData()
@@ -188,7 +188,6 @@ Fnum = ndens/Ntarget
 
 # estimate (sigma_g_w)_max
 estimate_sigma_g_w_max!(collision_factors, interaction_data, species_data, [T0], Fnum)
-
 
 # set number of timesteps and scaled timestep
 n_t = 100
@@ -206,14 +205,16 @@ for ts in 1:n_t
 
     # check if we need to merge
     if pia.indexer[1,1].n_local > Nthreshold
-        merge_octree_N2_based!(oc, particles[1], pia, 1, 1, Ntarget)
+        merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
     end
+
+    # print number of particles every 10 timesteps
     if ts % 10 == 0
         println("t=$ts, np=$(pia.indexer[1,1].n_local)")
     end
     
     compute_props!(particles, pia, species_data, phys_props)
-    write_netcdf_phys_props(ds, phys_props, ts)
+    write_netcdf(ds, phys_props, ts)
 end
 close_netcdf(ds)
 ```

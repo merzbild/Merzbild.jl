@@ -48,6 +48,7 @@ bkw
 sample_on_grid!
 sample_maxwellian_on_grid!
 sample_particles_equal_weight!
+sample_particles_phase_box_weighted!
 ```
 
 ## Computing grid and surface macroscopic properties
@@ -212,6 +213,7 @@ exchange_particles!
 sort_particles_after_exchange!
 reset!
 reduce_surf_props!
+generate_1_factorization
 ```
 
 ## Particle-in-Cell
