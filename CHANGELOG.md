@@ -6,6 +6,8 @@
 * Threaded swap of particles for multi-threaded simulations now possible
 * New `sample_particles_phase_box_weighted!` sampling function added for variable-weight particle sampling
 from an equilibrium distribution
+* Variable-weight simulation examples now perform merging before the time loop is started, and
+collision factor estimates use mean post-merge particle weight
 
 ## v0.7.7
 * Improved scattering modelling for ionization reactions based on Nanbu's paper
