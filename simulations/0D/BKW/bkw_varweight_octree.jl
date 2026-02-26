@@ -70,10 +70,16 @@ function run(seed::Int64, threshold::Int64, Ntarget::Int64)
     ds = NCDataHolder("scratch/data/octree_mean_$(threshold)_$(Ntarget)_$(seed).nc", species_data, phys_props)
     write_netcdf(ds, phys_props, 0)
 
+    Fnum = n_dens/n_sampled  # start with this Fnum estimate
+
+    if phys_props.np[1,1] > threshold
+        merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
+        Fnum = n_dens/Ntarget  # effective Fnum in case we merged
+    end
+
     collision_factors::CollisionFactors = CollisionFactors()
     collision_data::CollisionData = CollisionData()
 
-    Fnum = n_dens/n_sampled
     collision_factors.sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1], species_data[1], T0, Fnum)
     Δt::Float64 = dt_scaled * tref
     V::Float64 = 1.0

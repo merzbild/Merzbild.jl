@@ -73,6 +73,12 @@ function run(seed)
     collision_data::CollisionData = CollisionData()
 
     Fnum = n_dens/n_sampled
+
+    if phys_props.np[1,1] > threshold
+        merge_grid_based!(rng, mg, particles[1], pia, 1, 1, species_data, phys_props)
+        Fnum = n_dens / pia.n_total[1]  # update Fnum estimate
+    end
+
     collision_factors.sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1], species_data[1], T0, Fnum)
 
     Δt::Float64 = dt_scaled * tref

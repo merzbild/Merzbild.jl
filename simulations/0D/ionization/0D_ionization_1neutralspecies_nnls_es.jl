@@ -145,6 +145,12 @@ function run(seed, E_Tn, n_t,
 
     # neutral-neutral
     Fnum_neutral_mean = n_dens_neutrals / n_sampled[1]
+
+    if pia.n_total[1] > threshold_neutrals
+        @timeit "merge n" merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
+        Fnum_neutral_mean = n_dens_neutrals / np_target_neutrals  # update Fnum estimate
+    end
+
     collision_factors[1,1,1].sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1],
                                                                     species_data[1], T0,
                                                                     Fnum_neutral_mean)
@@ -152,6 +158,39 @@ function run(seed, E_Tn, n_t,
     s1 = index_neutral
     s2 = index_electron
     s3 = index_ion
+
+    # merge electrons
+    if pia.n_total[3] > threshold_electrons
+        if firstm
+            if rate_preserving
+                @timeit "NNLSmerge: 1st time" nnls_success_flag = merge_nnls_based_rate_preserving!(rng, mnnls_rp, 
+                interaction_data, n_e_interactions, n_e_cs,
+                particles[3], pia, 1, 3, index_neutral,
+                ref_cs_elastic, ref_cs_ionization; vref=vref, scaling=:vref)
+            else
+                @timeit "NNLSmerge: 1st time" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[3], pia, 1, 3;
+                                                                                    vref=vref, scaling=:vref)
+            end
+            firstm = false
+        else
+            if rate_preserving
+                @timeit "NNLSmerge" nnls_success_flag = merge_nnls_based_rate_preserving!(rng, mnnls_rp, 
+                interaction_data, n_e_interactions, n_e_cs,
+                particles[3], pia, 1, 3, index_neutral,
+                ref_cs_elastic, ref_cs_ionization; vref=vref, scaling=:vref)
+            else
+                @timeit "NNLSmerge" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[3], pia, 1, 3;
+                                                                            vref=vref, scaling=:vref)
+            end
+            
+        end
+
+        if nnls_success_flag == -1
+            println("Resorting to octree merging")
+            @timeit "Octreemerge e" merge_octree_N2_based!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons_octree)
+        end
+    end
+
     # neutral-electron
     estimate_sigma_g_w_max_ntc_n_e!(rng, collision_factors[s1,s2,1], collision_data, interaction_data,
                                     n_e_interactions, n_e_cs,

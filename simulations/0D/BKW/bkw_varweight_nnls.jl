@@ -79,10 +79,29 @@ function run(seed, n_up_to_total, n_full_up_to_total, threshold, ntarget_octree)
 
     write_netcdf(ds, phys_props, 0)
 
+    Fnum = n_dens/n_sampled
+
+    if phys_props.np[1,1] > threshold
+        if firstm
+            @timeit "NNLSmerge: 1st time" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1;
+                                                                                vref=vref, scaling=:vref)
+            firstm = false
+        else
+            @timeit "NNLSmerge" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1;
+                                                                        vref=vref, scaling=:vref)
+        end
+
+        if nnls_success_flag == -1
+            println("Resorting to octree merging on timestep $ts")
+            @timeit "Octreemerge" merge_octree_N2_based!(rng, ocm, particles[1], pia, 1, 1, ntarget_octree)
+        end
+
+        Fnum = n_dens / pia.n_total[1]  # update Fnum estimate
+    end
+
     collision_factors::CollisionFactors = CollisionFactors()
     collision_data::CollisionData = CollisionData()
 
-    Fnum = n_dens/n_sampled
     collision_factors.sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1], species_data[1], T0, Fnum)
 
     Δt::Float64 = dt_scaled * tref

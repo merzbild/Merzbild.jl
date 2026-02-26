@@ -70,6 +70,10 @@ function run(seed::Int64, threshold::Int64, Ntarget::Int64, G)
     ds = NCDataHolder("scratch/data/octree_swpm_mean_$(threshold)_$(Ntarget)_$(seed).nc", species_data, phys_props)
     write_netcdf(ds, phys_props, 0)
 
+    if phys_props.np[1,1] > threshold
+        merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
+    end
+
     collision_factors = CollisionFactorsSWPM()
     collision_data = CollisionData()
 

@@ -62,10 +62,6 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     ds_surf_avg = NCDataHolderSurf("scratch/data/avg_couette_nnls_$(domain_params_str)_$(merge_params_str)_surf_after$(avg_start).nc",
                                    species_data, surf_props_avg)
 
-    # create and estimate collision factors
-    collision_factors = create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum)
-
-
     mim = []
     n_moms = n_vel_up_total
     for i in 1:n_moms
@@ -111,6 +107,10 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
         end
     end
     @timeit "squash (t=0)" squash_pia!(particles, pia)
+
+    Fnum_post = Fnum * ppc_sampled / pia.indexer[1,1].n_local
+    # create and estimate collision factors
+    collision_factors = create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum_post)
 
     # compute and write data at t=0
     compute_props!(particles, pia, species_data, phys_props)

@@ -80,10 +80,6 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     ds_surf_avg = NCDataHolderSurf("scratch/data/avg_mt$(n_threads)_$(n_chunks)ch_couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc_sampled)_$(merge_threshold)_$(merge_target)_octree_surf_after$(avg_start).nc",
                                    species_data, surf_props_avg)
 
-    # create and estimate collision factors
-    collision_factors = [create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum)
-                         for pia in pia_chunks]
-
     # create merging structs
     oc_chunks = [OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000) for cell_chunks in cell_chunks]
 
@@ -95,6 +91,11 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
         squash_pia!(particles_chunks[chunk_id], pia_chunks[chunk_id])
         compute_props_sorted!(particles_chunks[chunk_id], pia_chunks[chunk_id], species_data, phys_props, cell_chunks[chunk_id])
     end
+
+    # create and estimate collision factors
+    # we correct Fnum estimate since we performed merging
+    collision_factors = [create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum * ppc_sampled / merge_target)
+                         for pia in pia_chunks]
 
     # compute data at t=0
     @timeit "props compute" @threads for (chunk_id, cell_chunk) in enumerate(cell_chunks)

@@ -109,8 +109,22 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons, merging_
     collision_factors = create_collision_factors_array(3)
     collision_data = CollisionData()
 
-    # neutral-neutral
     Fnum_neutral_mean = n_dens_neutrals / n_sampled[1]
+
+    if pia.n_total[1] > threshold_neutrals
+        @timeit "merge n" merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
+        Fnum_neutral_mean = n_dens_neutrals / np_target_neutrals
+    end
+
+    if pia.n_total[2] > threshold_ion
+        @timeit "merge i" merge_grid_based!(rng, mg_ions, particles[2], pia, 1, 2, species_data, phys_props)
+    end
+
+    if pia.n_total[3] > threshold_electrons
+        @timeit "merge e" merge_octree_N2_based!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
+    end
+
+    # neutral-neutral
     collision_factors[1,1,1].sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1],
                                                                     species_data[1], T0,
                                                                     Fnum_neutral_mean)
@@ -124,7 +138,6 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons, merging_
                                     particles[s1], particles[s2], pia, 1, s1, s2, Δt, V, min_coll=15, n_loops=6)
 
     for ts in 1:n_t
-
         if ts % 20000 == 0
             println(ts)
         end
