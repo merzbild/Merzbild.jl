@@ -159,6 +159,8 @@ function run(seed, E_Tn, n_t,
     s2 = index_electron
     s3 = index_ion
 
+    firstm = true
+    
     # merge electrons
     if pia.n_total[3] > threshold_electrons
         if firstm
@@ -196,7 +198,6 @@ function run(seed, E_Tn, n_t,
                                     n_e_interactions, n_e_cs,
                                     particles[s1], particles[s2], pia, 1, s1, s2, Δt, V, min_coll=15, n_loops=6)
 
-    firstm = true
     nnls_success_flag = 1
 
     for ts in 1:n_t
