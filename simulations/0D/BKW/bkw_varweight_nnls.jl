@@ -81,6 +81,8 @@ function run(seed, n_up_to_total, n_full_up_to_total, threshold, ntarget_octree)
 
     Fnum = n_dens/n_sampled
 
+    firstm = true
+
     if phys_props.np[1,1] > threshold
         if firstm
             @timeit "NNLSmerge: 1st time" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1;
@@ -107,7 +109,6 @@ function run(seed, n_up_to_total, n_full_up_to_total, threshold, ntarget_octree)
     Δt::Float64 = dt_scaled * tref
     V::Float64 = 1.0
 
-    firstm = true
     nnls_success_flag = 1
 
     for ts in 1:n_t
