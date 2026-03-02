@@ -29,4 +29,5 @@ function run(seed)
     close_netcdf(ds)
 end
 
+const n_t = 10
 run(1234)
