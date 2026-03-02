@@ -271,12 +271,13 @@ function run(seed, E_Tn, n_t,
     close_netcdf(ds)
 end
 
+const n_t = 500000
 const paramset = [8, 6, 150, 100]
 # run(1234, 400.0, 500000, paramset[1], paramset[2], paramset[3], paramset[4], adds=0, rate_preserving=false, do_es=false)
 # run(1234, 400.0, 500000, paramset[1], paramset[2], paramset[3], paramset[4], adds=0, rate_preserving=false, do_es=true)
 
-run(1234, 400.0, 500000, paramset[1], paramset[2], paramset[3], paramset[4], adds=0, rate_preserving=true, do_es=false)
-run(1234, 400.0, 500000, paramset[1], paramset[2], paramset[3], paramset[4], adds=0, rate_preserving=true, do_es=true)
+run(1234, 400.0, n_t, paramset[1], paramset[2], paramset[3], paramset[4], adds=0, rate_preserving=true, do_es=false)
+run(1234, 400.0, n_t, paramset[1], paramset[2], paramset[3], paramset[4], adds=0, rate_preserving=true, do_es=true)
 # const params = [[10, 8, 250, 170], [9, 7, 200, 140], [8, 6, 150, 100], [7, 5, 100, 70], [6, 4, 75, 50], [5, 3, 50, 30]]
 # const seeds = [1, 2, 3, 4, 5, 6, 7]
 # for sadd in seeds

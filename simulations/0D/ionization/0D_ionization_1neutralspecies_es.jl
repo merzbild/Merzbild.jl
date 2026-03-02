@@ -179,5 +179,6 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons, merging_
     close_netcdf(ds)
 end
 
+const n_t = 500000
 # run(1234, 400.0, 500000, 300, 200, OctreeBinMidSplit, adds=0, do_es=false)
-run(1234, 400.0, 500000, 3000, 2000, OctreeBinMidSplit, adds=0, do_es=true)
+run(1234, 400.0, n_t, 3000, 2000, OctreeBinMidSplit, adds=0, do_es=true)

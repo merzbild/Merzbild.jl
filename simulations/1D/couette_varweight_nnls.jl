@@ -180,5 +180,6 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     print_timer()
 end
 
+const n_t = 50000
 # preserve all velocity moments up to order 5, fall back to 4 moments if required
-run(1234, 300.0, 500.0, 5e-4, 5e22, 50, 250, 80, 60, 5, 4, 2.59e-9, 1000, 50000, 14000)
+run(1234, 300.0, 500.0, 5e-4, 5e22, 50, 250, 80, 60, 5, 4, 2.59e-9, 1000, n_t, 14000)

@@ -189,4 +189,5 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     print_timer()
 end
 
-run(1234, 300.0, 500.0, 5e-4, 5e22, 500, 500, 130, 100, 2.59e-9, 1000, 50000, 14000; chunk_count_multiplier=1, preallocation_margin_multiplier=1.5)
+const n_t = 50000
+run(1234, 300.0, 500.0, 5e-4, 5e22, 500, 500, 130, 100, 2.59e-9, 1000, n_t, 14000; chunk_count_multiplier=1, preallocation_margin_multiplier=1.5)

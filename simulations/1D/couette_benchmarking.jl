@@ -85,4 +85,5 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
     print_timer()
 end
 
-run(1234, 300.0, 500.0, 5e-4, 5e22, 50, 1000, 2.59e-9, 50000, 14000)
+const n_t = 50000
+run(1234, 300.0, 500.0, 5e-4, 5e22, 50, 1000, 2.59e-9, n_t, 14000)

@@ -96,6 +96,6 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
     print_timer()
 end
 
-N_steps = 50000
+const n_t = 50000
 
-run(1234, 300.0, 500.0, 5e-4, 5e22, 50, 1000, 2.59e-9, 1000, N_steps, 14000)
+run(1234, 300.0, 500.0, 5e-4, 5e22, 50, 1000, 2.59e-9, 1000, n_t, 14000)
