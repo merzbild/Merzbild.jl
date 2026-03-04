@@ -6,8 +6,8 @@ using TimerOutputs
 using Base.Threads
 using ChunkSplitters
 
-function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, merge_target, Δt, output_freq, n_timesteps, avg_start; chunk_count_multiplier=1,
-             preallocation_margin_multiplier=1.0)
+function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, merge_target, Δt, output_freq, n_timesteps, avg_start;
+    chunk_count_multiplier=1, preallocation_margin_multiplier=1.0, parallel_exchange=true)
     reset_timer!()
 
     n_threads = Threads.nthreads()
@@ -104,6 +104,9 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
 
     n_avg = n_timesteps - avg_start + 1
 
+    exchange_list = generate_1_factorization(n_chunks)
+    println("exchange_list = $(exchange_list)")
+
     for t in 1:n_timesteps
         if t % 1000 == 0
             println(t)
@@ -150,7 +153,16 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
         end
 
         # move particles between chunks
-        @timeit "exchange" exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, 1)
+        if parallel_exchange
+            @timeit "exchange" for exchange_partial in exchange_list
+                @threads for exchange_pair in exchange_partial
+                    exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, 
+                                        1, exchange_pair[1], exchange_pair[2])
+                end
+            end
+        else
+            @timeit "exchange" exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, 1)
+        end
 
         # reset indexing, compute physical properties if needed
         @timeit "re-sort + compute props" @threads for chunk_id in 1:n_chunks
@@ -190,4 +202,5 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
 end
 
 const n_t = 50000
-run(1234, 300.0, 500.0, 5e-4, 5e22, 500, 500, 130, 100, 2.59e-9, 1000, n_t, 14000; chunk_count_multiplier=1, preallocation_margin_multiplier=1.5)
+run(1234, 300.0, 500.0, 5e-4, 5e22, 500, 500, 130, 100, 2.59e-9, 1000, n_t, 14000;
+    chunk_count_multiplier=1, preallocation_margin_multiplier=1.5, parallel_exchange=true)
