@@ -56,7 +56,32 @@ The physical properties are also computed in multithreaded mode.
 
 Inside the time loop, collisions, convection, and sorting are performed inside a `@threads` block. The `chunk_exchanger` data
 is also cleared in this multithreaded loop to prepare it for the movement of particles between chunks.
-Once the block finishes, the particles are moved between chunks via a serial call to [`sort_particles_after_exchange!`](@ref).
+Once the block finishes, the particles are moved between chunks.
+
+
+This can be done in two ways: either via a serial call to [`exchange_particles!`](@ref), or
+a threaded call to [`exchange_particles!`](@ref). For the serial version, the call looks like this:
+
+```julia
+exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, 1)
+```
+
+The equivalent threaded version looks like this:
+```julia
+for exchange_partial in exchange_list
+    @threads for exchange_pair in exchange_partial
+        exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, 
+                            1, exchange_pair[1], exchange_pair[2])
+    end
+end
+```
+Here `exchange_list` is a fixed list of chunk pairs that allows for thread-safe particle exchange; it is pre-computed
+before the start of the collision loop: `exchange_list = generate_1_factorization(n_chunks)`.
+It should be noted that threaded particle exchange is not necessarily faster than the serial exchange, due to the overhead
+of threading. Example multi-threaded simulations in the `simulations` directory have an optional parameter `parallel_exchange`
+that can be used to toggle serial and parallel particle exchange to see which is faster for a given problem.
+
+After the particles have been exchanged, they are sorted via a threaded call to [`sort_particles_after_exchange!`](@ref).
 Finally, the indexing is reset, and physical grid properties are computed, again inside a `@threads` block.
 The reduction operation for the surface properties, as well as averaging of grid and surface properties, is performed serially
 at the end of the timestep.
