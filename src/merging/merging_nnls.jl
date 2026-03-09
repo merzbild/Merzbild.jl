@@ -731,6 +731,195 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging, lhs_matrix, vel_pos_
     return col_index
 end
 
+
+
+"""
+    compute_lhs_and_rhs_rate_preserving!(nnls_merging, lhs_matrix, vel_pos_matrix,
+                                         interaction, electron_neutral_interactions, computed_cs,
+                                         particles, particles_neutral, pia, cell, species, neutral_species_index, extend)
+
+Compute LHS matrix and RHS vector for the rate-preserving NNLS merging (for electrons). Exact
+    elastic scattering and electron-impact ionization rates are conserved.
+
+# Positional arguments
+* `nnls_merging`: the `NNLSMerge` instance where the RHS vector will be stored
+* `lhs_matrix`: the matrix of size `n_total_conserved x n_particles`, where
+    `n_total_conserved` is the number of conserved moments and `n_particles` is the pre-merge number of particles
+    + any fictitious particles
+* `vel_pos_matrix`: the matrix of size `6 x n_particles`, where `n_particles` is the pre-merge number of particles
+    + any fictitious particles, where their velocities and positions will be stored
+* `interaction`: the `Interaction` instance describing the electron-neutral interaction being considered
+* `electron_neutral_interactions`:  the `ElectronNeutralInteractions` instance storing the tabulated cross-section
+    data used to compute the rates
+* `computed_cs`: the vector of `ComputedCrossSection` instances in which the computed values will be stored
+* `particles`: the `ParticleVector` instance containing the particles that are being merged
+* `particles_neutrals`: the `ParticleVector` instance containing the neutral collision partner particles
+* `pia`: the `ParticleIndexerArray` instance
+* `cell`: the index of the grid cell in which particles are being merged
+* `species`: the index of the species being merged
+* `neutral_species_index`: the index of the neutral species which is the collision partner in the electron-neutral
+    collisions for which approximate rates are being preserved.
+* `extend`: enum of `CSExtend` type that sets how out-of-range energy values are treated when computing cross-sections
+"""
+function compute_lhs_and_rhs_rate_preserving!(nnls_merging, lhs_matrix, vel_pos_matrix,
+                                              interaction, electron_neutral_interactions, computed_cs,
+                                              particles, particles_neutral, pia, cell, species, neutral_species_index, extend)
+    n_moms = nnls_merging.n_moments_vel
+    
+    nnls_merging.Ex = 0.0
+    nnls_merging.Ey = 0.0
+    nnls_merging.Ez = 0.0
+    nnls_merging.rhs_vector .= 0.0
+
+    compute_w_total_v0!(nnls_merging, particles, pia, cell, species)
+    # v0 = norm(nnls_merging.v0)
+
+    col_index = 1
+    @inbounds s1 = pia.indexer[cell,species].start1
+    @inbounds e1 = pia.indexer[cell,species].end1
+    @inbounds for i in s1:e1
+        # w_total += particles[i].w
+
+        nnls_merging.Ex = nnls_merging.Ex + particles[i].w * (particles[i].v[1] - nnls_merging.v0[1])^2
+        nnls_merging.Ey = nnls_merging.Ey + particles[i].w * (particles[i].v[2] - nnls_merging.v0[2])^2
+        nnls_merging.Ez = nnls_merging.Ez + particles[i].w * (particles[i].v[3] - nnls_merging.v0[3])^2
+
+        vel_pos_matrix[1, col_index] = particles[i].v[1]
+        vel_pos_matrix[2, col_index] = particles[i].v[2]
+        vel_pos_matrix[3, col_index] = particles[i].v[3]
+        vel_pos_matrix[4, col_index] = particles[i].x[1]
+        vel_pos_matrix[5, col_index] = particles[i].x[2]
+        vel_pos_matrix[6, col_index] = particles[i].x[3]
+
+        for n_mom in 1:n_moms
+            tmp_ccm = ccm(particles[i].v, nnls_merging.v0, nnls_merging.mim[n_mom])
+            nnls_merging.rhs_vector[n_mom] = nnls_merging.rhs_vector[n_mom] + particles[i].w * tmp_ccm
+            lhs_matrix[n_mom, col_index] = tmp_ccm
+        end
+
+        cse_g = 0.0
+        csi_g = 0.0
+        w_k = 0.0
+
+        @inbounds k_s1 = pia.indexer[cell,neutral_species_index].start1
+        @inbounds k_e1 = pia.indexer[cell,neutral_species_index].end1
+        @inbounds for k in k_s1:k_e1
+            g = norm(particles[i].v - particles_neutral[k].v)
+            compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index, extend)
+            cse_g = cse_g + get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g * particles_neutral[k].w
+            csi_g = csi_g + get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g * particles_neutral[k].w
+            w_k = w_k + particles_neutral[k].w
+        end
+
+        if pia.indexer[cell,neutral_species_index].n_group2 > 0
+            @inbounds k_s2 = pia.indexer[cell,neutral_species_index].start2
+            @inbounds k_e2 = pia.indexer[cell,neutral_species_index].end2
+
+            @inbounds for k in k_s2:k_e2
+                g = norm(particles[i].v - particles_neutral[k].v)
+                compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index, extend)
+                cse_g = cse_g + get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g * particles_neutral[k].w
+                csi_g = csi_g + get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g * particles_neutral[k].w
+                w_k = w_k + particles_neutral[k].w
+            end
+        end
+
+        if w_k > 0
+            cse_g = cse_g / w_k
+            csi_g = csi_g / w_k
+        end
+
+        lhs_matrix[nnls_merging.n_moments_vel+1, col_index] = cse_g
+        lhs_matrix[nnls_merging.n_moments_vel+2, col_index] = csi_g
+        nnls_merging.rhs_vector[nnls_merging.n_moments_vel+1] = nnls_merging.rhs_vector[nnls_merging.n_moments_vel+1] + cse_g * particles[i].w
+        nnls_merging.rhs_vector[nnls_merging.n_moments_vel+2] = nnls_merging.rhs_vector[nnls_merging.n_moments_vel+2] + csi_g * particles[i].w
+
+        col_index += 1
+    end
+
+    @inbounds if pia.indexer[cell,species].n_group2 > 0
+        @inbounds s2 = pia.indexer[cell,species].start2
+        @inbounds e2 = pia.indexer[cell,species].end2
+
+        @inbounds for i in s2:e2
+            nnls_merging.Ex = nnls_merging.Ex + particles[i].w * (particles[i].v[1] - nnls_merging.v0[1])^2
+            nnls_merging.Ey = nnls_merging.Ey + particles[i].w * (particles[i].v[2] - nnls_merging.v0[2])^2
+            nnls_merging.Ez = nnls_merging.Ez + particles[i].w * (particles[i].v[3] - nnls_merging.v0[3])^2
+
+            vel_pos_matrix[1, col_index] = particles[i].v[1]
+            vel_pos_matrix[2, col_index] = particles[i].v[2]
+            vel_pos_matrix[3, col_index] = particles[i].v[3]
+            vel_pos_matrix[4, col_index] = particles[i].x[1]
+            vel_pos_matrix[5, col_index] = particles[i].x[2]
+            vel_pos_matrix[6, col_index] = particles[i].x[3]
+
+            # w_total += particles[i].w
+            for n_mom in 1:nnls_merging.n_moments_vel
+                tmp_ccm = ccm(particles[i].v, nnls_merging.v0, nnls_merging.mim[n_mom])
+                nnls_merging.rhs_vector[n_mom] = nnls_merging.rhs_vector[n_mom] + particles[i].w * tmp_ccm
+                lhs_matrix[n_mom, col_index] = tmp_ccm
+            end
+
+            # g = norm(particles[i].v)
+            # compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index, extend)
+            # cse_g = get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g
+            # csi_g = get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g
+
+            cse_g = 0.0
+            csi_g = 0.0
+            w_k = 0.0
+
+            @inbounds k_s1 = pia.indexer[cell,neutral_species_index].start1
+            @inbounds k_e1 = pia.indexer[cell,neutral_species_index].end1
+            @inbounds for k in k_s1:k_e1
+                g = norm(particles[i].v - particles_neutral[k].v)
+                compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index, extend)
+                cse_g = cse_g + get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g
+                csi_g = csi_g + get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g
+                w_k = w_k + particles_neutral[k].w
+            end
+
+            if pia.indexer[cell,neutral_species_index].n_group2 > 0
+                @inbounds k_s2 = pia.indexer[cell,neutral_species_index].start2
+                @inbounds k_e2 = pia.indexer[cell,neutral_species_index].end2
+
+                @inbounds for k in k_s2:k_e2
+                    g = norm(particles[i].v - particles_neutral[k].v)
+                    compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index, extend)
+                    cse_g = cse_g + get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g
+                    csi_g = csi_g + get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g
+                    w_k = w_k + particles_neutral[k].w
+                end
+            end
+
+            if w_k > 0
+                cse_g = cse_g / w_k
+                csi_g = csi_g / w_k
+            end
+
+            lhs_matrix[nnls_merging.n_moments_vel+1, col_index] = cse_g
+            lhs_matrix[nnls_merging.n_moments_vel+2, col_index] = csi_g
+            nnls_merging.rhs_vector[nnls_merging.n_moments_vel+1] = nnls_merging.rhs_vector[nnls_merging.n_moments_vel+1] + cse_g * particles[i].w
+            nnls_merging.rhs_vector[nnls_merging.n_moments_vel+2] = nnls_merging.rhs_vector[nnls_merging.n_moments_vel+2] + csi_g * particles[i].w
+
+            col_index += 1
+        end
+    end
+
+    for i in 1:nnls_merging.n_total_conserved
+        nnls_merging.rhs_vector[i] /= nnls_merging.w_total
+    end
+
+    nnls_merging.Ex /= nnls_merging.w_total
+    nnls_merging.Ey /= nnls_merging.w_total
+    nnls_merging.Ez /= nnls_merging.w_total
+    nnls_merging.Ex = sqrt(nnls_merging.Ex)
+    nnls_merging.Ey = sqrt(nnls_merging.Ey)
+    nnls_merging.Ez = sqrt(nnls_merging.Ez)
+
+    return col_index
+end
+
 """
     compute_lhs_particles_additional!(rng, col_index, nnls_merging, lhs_matrix, vel_pos_matrix,
                                       particles, pia, cell, species,
@@ -1236,7 +1425,7 @@ For a given variance multiplier (an entry in the `v_multipliers` parameter, whic
 8 particles are added, one in each octant. Each of the particles velocity components is given either by
 the value of the multiplier times the velocity variance of that component (times +1 or -1 depending on the octant),
 or, if this value is outside of the bounding box, the closest bounding value of the velocity component in that direction
-is used instead and also multiplied by the variance multiplier.
+is used instead and also multiplied by the variance multiplier. Note: this **will be removed in v0.8.0**.
 
 # Positional arguments
 * `rng`: the random number generator instance
@@ -1347,7 +1536,7 @@ For a given variance multiplier (an entry in the `v_multipliers` parameter, whic
 8 particles are added, one in each octant. Each of the particles velocity components is given either by
 the value of the multiplier times the velocity variance of that component (times +1 or -1 depending on the octant),
 or, if this value is outside of the bounding box, the closest bounding value of the velocity component in that direction
-is used instead and also multiplied by the variance multiplier.
+is used instead and also multiplied by the variance multiplier. Note: this **will be removed in v0.8.0**.
 The reference velocity is also used in conjunction with the reference cross-sections to scale the parts of
 the NNLS matrix and RHS corresponding to conservation of electron-neutral collision rates. The reference rate is computed
 as ``\\sigma_{r,ref} v_{ref}``, where ``\\sigma_{r,ref}`` is the reference process cross-section. In case `scaling==:variance`,
@@ -1446,6 +1635,131 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging,
                                       particles, pia, cell, species, neutral_species_index, n_rand_pairs,
                                       centered_at_mean, v_multipliers, extend)
 
+    
+    if scaling==:variance
+        vr_tmp = sqrt(nnls_merging.Ex^2 + nnls_merging.Ey^2 + nnls_merging.Ez^2)
+        ref_k_elastic = ref_cs_elastic * vr_tmp
+        ref_k_ion = ref_cs_ion * vr_tmp
+    else
+        ref_k_elastic = ref_cs_elastic * vref
+        ref_k_ion = ref_cs_ion * vref
+    end
+
+    scale_lhs_rhs_rate_preserving!(nnls_merging, nnls_merging.work[indexer].QA, ref_k_elastic, ref_k_ion, scaling, lhs_ncols)
+
+    scale_columns!(nnls_merging.work[indexer].QA, column_norms)
+
+    nnls_merging.work[indexer].Qb .= nnls_merging.rhs_vector
+    solve!(nnls_merging.work[indexer], iteration_mult * size(nnls_merging.work[indexer].QA, 2), 1e-14)
+    return compute_post_merge_particles_nnls!(nnls_merging, nnls_merging.work[indexer].x, particles, pia, cell, species,
+                                              lhs_ncols, vel_pos_matrix,
+                                              max_err, w_threshold, indexer, column_norms)
+end
+
+"""
+    merge_nnls_based_rate_preserving!(rng, nnls_merging,
+                                      interaction, electron_neutral_interactions, computed_cs,
+                                      particles, particles_neutral, pia, cell, species, neutral_species_index,
+                                      ref_cs_elastic, ref_cs_ion; vref=1.0, scaling=:variance,
+                                      max_err=1e-11,
+                                      iteration_mult=2, w_threshold=0.0,
+                                      extend::CSExtend=CSExtendConstant)
+
+Perform NNLS-based merging of electrons that conserves **exact** elastic scattering and electron-impact ionization rates
+for one specific neutral species.
+The NNLS system is scaled to improve numerical stability, the scaling algorithm is set by the `scaling` parameter.
+Even if scaling is done using the computed variances, `vref` might be used in case those variances are small.
+
+The reference velocity is also used in conjunction with the reference cross-sections to scale the parts of
+the NNLS matrix and RHS corresponding to conservation of electron-neutral collision rates. The reference rate is computed
+as ``\\sigma_{r,ref} v_{ref}``, where ``\\sigma_{r,ref}`` is the reference process cross-section. In case `scaling==:variance`,
+the reference velocity for the computation of reference rates is computed as ``v_{ref} = \\sqrt{E_x^2 + E_y^2 + E_z^2}``,
+where ``E_x``, ``E_y``, ``E_z`` are the variances of the velocity in the corresponding directions.
+
+This version does not use any fictitious particles.
+
+# Positional arguments
+* `rng`: the random number generator instance
+* `nnls_merging`: the `NNLSMerge` instance
+* `interaction`: the `Interaction` instance describing the electron-neutral interaction being considered
+* `electron_neutral_interactions`:  the `ElectronNeutralInteractions` instance storing the tabulated cross-section
+    data used to compute the rates
+* `computed_cs`: the vector of `ComputedCrossSection` instances in which the computed values will be stored
+* `particles`: the `ParticleVector` instance containing the particles to be merged
+* `particles_neutral`: the `ParticleVector` instance containing the neutral collision partner particles (they are not affected by the merge)
+* `pia`: the `ParticleIndexerArray` instance
+* `cell`: the index of the grid cell in which particles are being merged
+* `species`: the index of the species being merged
+* `neutral_species_index`: the index of the neutral species which is the collision partner in the electron-neutral
+    collisions for which approximate rates are being preserved.
+* `ref_cs_elastic`: the reference elastic scattering cross-section used to scale the rates
+* `ref_cs_ion`: the reference electron-impact ionization cross-section used to scale the rates
+
+# Keyword arguments
+* `vref`: the reference velocity used to scale the velocities in the case of `scaling=:vref`
+* `scaling`: how to scale entries in the LHS and RHS of the NNLS system - either based on
+    the reference velocity `vref` (`scaling=:vref`)
+    or on the computed variances in each direction (`scaling=:variance`)
+* `max_err`: maximum allowed value of the residual of the NNLS system
+* `iteration_mult`: the number by which the number of columns of the NNLS system matrix is multiplied, this gives the maximum
+    number of iterations of the NNLS algorithm
+* `w_threshold`: any particles with a relative weight smaller than this value will be discarded (and the weight of the remaining particles re-scaled)
+* `extend`: enum of `CSExtend` type that sets how out-of-range energy values are treated when computing cross-sections
+
+# Returns
+If the residual exceeds `max_err` or
+the number of non-zero (or smaller than `w_threshold`) elements in the solution vector is equal to the original number of particles,
+`-1` is returned to signify a failure of the merging algorithm.
+
+# References
+* G. Oblapenko, A Non-Negative Least Squares-based Approach for Moment-Preserving Particle Merging.
+    [arXiv preprint, 2025](https://doi.org/10.48550/arXiv.2412.12354).
+"""
+function merge_nnls_based_rate_preserving!(rng, nnls_merging,
+                                           interaction, electron_neutral_interactions, computed_cs,
+                                           particles, particles_neutral, pia, cell, species, neutral_species_index,
+                                           ref_cs_elastic, ref_cs_ion; vref=1.0, scaling=:variance,
+                                           max_err=1e-11,
+                                           iteration_mult=2, w_threshold=0.0,
+                                           extend::CSExtend=CSExtendConstant)
+
+    # create LHS matrix
+    n_add = centered_at_mean ? 1 : 0
+    n_add = n_add + 8 * length(v_multipliers)
+    @inbounds lhs_ncols = pia.indexer[cell, species].n_local + n_add + n_rand_pairs
+
+    if (lhs_ncols > nnls_merging.lhs_matrix_ncols_end) || (lhs_ncols < nnls_merging.lhs_matrix_ncols_start) || length(nnls_merging.lhs_matrices) == 0
+        indexer = nnls_merging.lhs_matrix_ncols_end - nnls_merging.lhs_matrix_ncols_start + 2
+
+        # we either have pre-allocation [1,2,...[Workspace]]
+        # [1,2,Workspace]
+        # [Workspace] - we don't pre-allocate if range is exactly 1 particle
+        if indexer == 2
+            indexer = 1
+        end
+
+        nnls_merging.work[indexer].QA = zeros(nnls_merging.n_total_conserved, lhs_ncols)
+        lhs_matrix = zeros(nnls_merging.n_total_conserved, lhs_ncols)
+        vel_pos_matrix = zeros(6, lhs_ncols)
+        resize!(nnls_merging.work[indexer].x, lhs_ncols)
+        resize!(nnls_merging.work[indexer].w, lhs_ncols)
+        resize!(nnls_merging.work[indexer].idx, lhs_ncols)
+        column_norms = zeros(lhs_ncols)
+    else
+        indexer = lhs_ncols - nnls_merging.lhs_matrix_ncols_start + 1
+        lhs_matrix = nnls_merging.lhs_matrices[lhs_ncols - nnls_merging.lhs_matrix_ncols_start + 1]
+        vel_pos_matrix = nnls_merging.vel_pos_matrices[lhs_ncols - nnls_merging.lhs_matrix_ncols_start + 1]
+        column_norms = nnls_merging.column_norms[indexer]
+    end
+    nnls_merging.vref = vref
+    nnls_merging.inv_vref = 1.0 / vref
+
+    # create LHS matrix and fill RHS vector using existing particles
+    @inbounds col_index = compute_lhs_and_rhs_rate_preserving!(nnls_merging, nnls_merging.work[indexer].QA,
+                                                     vel_pos_matrix,
+                                                     interaction[species,neutral_species_index],
+                                                     electron_neutral_interactions, computed_cs, 
+                                                     particles, particles_neutral, pia, cell, species, neutral_species_index, extend)
     
     if scaling==:variance
         vr_tmp = sqrt(nnls_merging.Ex^2 + nnls_merging.Ey^2 + nnls_merging.Ez^2)
