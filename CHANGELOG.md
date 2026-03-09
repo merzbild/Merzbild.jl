@@ -9,6 +9,7 @@ from an equilibrium distribution
 * Variable-weight simulation examples now perform merging before the time loop is started, and
 collision factor estimates use mean post-merge particle weight
 * `run_examples.py` now runs each example only for 10 timesteps
+* Documentation of simulation files in `simulations` directory added (`simulations/README.md`)
 
 ## v0.7.7
 * Improved scattering modelling for ionization reactions based on Nanbu's paper

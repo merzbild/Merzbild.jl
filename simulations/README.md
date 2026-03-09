@@ -36,6 +36,9 @@ timing of various parts of the simulation
 * `1D/couette_varweight_octree_swpm.jl` - Couette flow simulation with variable weight particles and octree N:2 merging; uses the SWPM collision algorithm
 * `1D/couette_varweight_octree.jl` -  Couette flow simulation with variable weight particles and octree N:2 merging
 * `1D/couette_with_surface_quantities.jl` - Couette flow simulation with fixed-weight particles and surface properties output
+* `1D/fourier_varweight_fw.jl` - Fourier flow simulation with fixed-weight particles
+* `1D/fourier_varweight_nnls.jl` - Fourier flow simulation with variable weight particles and NNLS merging
+* `1D/fourier_varweight_octree.jl` - Fourier flow simulation with variable weight particles and octree N:2 merging
 
 # Paper reproducibility
 
@@ -58,5 +61,6 @@ For the ionization test case:
 
 For the Fourier flow test case:
 * `1D/fourier_fw.jl` - for the reference fixed-weight simulations
-* `1D/fourier_varweight_octree_ntc.jl` - for the variable-weight simulations using octree N:2 merging
-* `1D/fourier_varweight_nnls_ntc.jl` - for the variable-weight simulations using octree N:2 merging
+* `1D/fourier_varweight_octree.jl` - for the variable-weight simulations using octree N:2 merging (the commented `const params = ...` line
+contains all the different target and threshold particle numbers used in the simulation)
+* `1D/fourier_varweight_nnls.jl` - for the variable-weight simulations using octree N:2 merging
