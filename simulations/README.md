@@ -2,6 +2,7 @@
 This file provides a short overview of the different simulations in `simulations`. Specific simulation setups that were used
 for results in publications are found at the end of this file in the "Paper reproducibility" section.
 Unless noted, simulations use the NTC collision algorithm (or the variable-weight version thereof).
+By default simulations output data into `scratch/data`, and `scratch` is included in `.gitignore`.
 
 ## 0D simulations
 
@@ -9,6 +10,7 @@ Unless noted, simulations use the NTC collision algorithm (or the variable-weigh
 * `0D/basic/basic_collisions_multispecies.jl` - initializes 2 species at different densities and temperature, performs collisions for multiple
 time-steps
 * `0D/basic/basic_sampling_and_io.jl` - samples particles, computes physical properties and writes them to disk
+* `0D/basic/sample_and_merge.jl` - samples particles and merges them immediately, outputting various statistics
 
 ### BKW relaxation
 * `0D/BKW/bkw_varweight_nnls.jl` - BKW simulation using variable-weight particles and grid-based merging
@@ -51,6 +53,10 @@ order of operations affecting round-off errors, etc.), they should be runnable f
 Python scripts to postprocess results to produce plots
 are available in `scripts/reproducibility/nnls_2026`: `process_bkw.py`, `process_ionization.py`, `process_fourier.py`.
 Details on executing the scripts can be found at the start of the script files.
+
+For the sampling test case:
+* `0D/basic/sample_and_merge.jl` - for the simulations that sample particles and merge them (using two different sampling
+strategies)
 
 For the BKW test case (see the commented-out part on "multiple runs with ensembling if needed" for running with multiple ensembles):
 * `0D/BKW/bkw.jl` - for the reference fixed-weight simulations
