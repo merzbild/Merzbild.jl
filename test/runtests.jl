@@ -35,7 +35,8 @@ include("test_nnls_merging.jl")  # test NNLS-based merging
 include("test_nnls_merging_buffer_sorting.jl")  # then we test that particles are freed correctly in NNLS-based merging
 include("test_bkw_varweight_nnls.jl")  # test NNLS-based merging
 include("test_electron_neutral_data.jl")  # test loading of XML LXCat-like data
-include("test_nnls_ratepreserving_merging.jl")  # test NNLS merging with rate preservation
+include("test_nnls_ratepreserving_merging.jl")  # test NNLS merging with approximate rate preservation
+include("test_nnls_exact_ratepreserving_merging.jl")  # test NNLS merging with exact rate preservation 
 include("test_acceleration.jl")  # test acceleration of charged particles
 include("test_collision_ionizing.jl")  # test ionizing collisions
 include("test_ionization_sim.jl")  # test 0D ionization simulation without event splitting
