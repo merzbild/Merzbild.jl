@@ -39,11 +39,11 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons, merging_
     end
 
     if merging_bin_split == OctreeBinMidSplit
-        fname = "../../Data/PIC_DSMC/NNLS_merging/0D_ionization/Ar_e/octree_mid_macc$(addstr)/Ar_$(Efield_int)Tn_octree_mid_$(threshold_electrons)_to_$(np_target_electrons)"
+        fname = "scratch/data/ionization_Ar_$(Efield_int)Tn_octree_mid_$(threshold_electrons)_to_$(np_target_electrons)"
     elseif merging_bin_split == OctreeBinMeanSplit
-        fname = "../../Data/PIC_DSMC/NNLS_merging/0D_ionization/Ar_e/octree_mean_macc$(addstr)/Ar_$(Efield_int)Tn_octree_mean_$(threshold_electrons)_to_$(np_target_electrons)"
+        fname = "scratch/data/ionization_Ar_$(Efield_int)Tn_octree_mean_$(threshold_electrons)_to_$(np_target_electrons)"
     elseif merging_bin_split == OctreeBinMedianSplit
-        fname = "../../Data/PIC_DSMC/NNLS_merging/0D_ionization/Ar_e/octree_median_macc$(addstr)/Ar_$(Efield_int)Tn_octree_median_$(threshold_electrons)_to_$(np_target_electrons)"
+        fname = "scratch/data/ionization_Ar_$(Efield_int)Tn_octree_median_$(threshold_electrons)_to_$(np_target_electrons)"
     end
 
     if adds == 0
@@ -72,17 +72,15 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons, merging_
     index_ion = 2
     index_electron = 3
 
-
     nv_heavy = 20  # init neutrals and ions on a coarser grid
     nv_electrons = 40
     np_base_heavy = nv_heavy^3  # some initial guess on # of particles in simulation
     np_base_electrons = nv_electrons^3  # some initial guess on # of particles in simulation
 
-    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
-    oc_electrons = OctreeN2Merge(merging_bin_split; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=8000)
+    oc_electrons = OctreeN2Merge(merging_bin_split; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=8000)
     mg_ions = GridN2Merge(Nmerging_ions, Nmerging_ions, Nmerging_ions, 3.5)
 
-   
     particles = [ParticleVector(np_base_heavy),
                  ParticleVector(np_base_heavy),
                  ParticleVector(np_base_electrons)]
@@ -96,24 +94,13 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons, merging_
                                                       v_mult=3.5, cutoff_mult=8.0, noise=0.0, v_offset=[0.0, 0.0, 0.0])
     end
 
-    # println(n_sampled)
-
     pia = ParticleIndexerArray(n_sampled)
 
     phys_props::PhysProps = PhysProps(1, 3, [], Tref=T0)
     compute_props!(particles, pia, species_data, phys_props)
 
-    ds = NCDataHolder(fname, ["v", "moments"], species_data, phys_props)
-    write_netcdf(ds, phys_props, 0)
-
-    collision_factors = create_collision_factors_array(3)
-    collision_data = CollisionData()
-
-    Fnum_neutral_mean = n_dens_neutrals / n_sampled[1]
-
     if pia.n_total[1] > threshold_neutrals
         @timeit "merge n" merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
-        Fnum_neutral_mean = n_dens_neutrals / np_target_neutrals
     end
 
     if pia.n_total[2] > threshold_ion
@@ -124,10 +111,19 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons, merging_
         @timeit "merge e" merge_octree_N2_based!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
     end
 
+    squash_pia!(particles, pia)
+
+    ds = NCDataHolder(fname, ["v", "moments"], species_data, phys_props)
+    write_netcdf(ds, phys_props, 0)
+
+    collision_factors = create_collision_factors_array(3)
+    collision_data = CollisionData()
+
     # neutral-neutral
-    collision_factors[1,1,1].sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1],
-                                                                    species_data[1], T0,
-                                                                    Fnum_neutral_mean)
+    Fnum_neutral_mean = n_dens_neutrals / pia.indexer[1,1].n_local
+    collision_factors[1,1].sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1],
+                                                                  species_data[1], T0,
+                                                                  Fnum_neutral_mean)
                              
     s1 = index_neutral
     s2 = index_electron
@@ -179,6 +175,23 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons, merging_
     close_netcdf(ds)
 end
 
-const n_t = 500000
 # run(1234, 400.0, 500000, 300, 200, OctreeBinMidSplit, adds=0, do_es=false)
-run(1234, 400.0, n_t, 3000, 2000, OctreeBinMidSplit, adds=0, do_es=true)
+# const params = [[45, 38], [69, 58], [105, 88], [146, 122], [200, 166], [266, 220],   # 1.2
+#                 [41, 38], [62, 58], [95, 88], [131, 122], [178, 166], [236, 220]]  # 1.075
+# const params = [[45, 38], [69, 58], [105, 88],   # 1.2
+#                 [41, 38], [62, 58], [95, 88]]  # 1.075
+# const params = [[41, 38], [62, 58], [95, 88], [131, 122], [178, 166], [236, 220]]    
+const params = [[5000, 4000]]    # 1.2
+n_t = 700_000
+for param in params
+    run(1234, 400.0, n_t, param[1], param[2], OctreeBinMidSplit, adds=0, do_es=true)
+end
+
+# for adds in 33:64
+#     for param in params
+#         run(1234, 400.0, 700_000, param[1], param[2], OctreeBinMidSplit, adds=adds, do_es=true)
+#     end
+#     for param in params
+#         run(1234, 100.0, 5_000_000, param[1], param[2], OctreeBinMidSplit, adds=adds, do_es=true)
+#     end
+# end
