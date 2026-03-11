@@ -67,6 +67,7 @@ For the ionization test case (**when run over all ensembles, these produce VERY 
 external data from [LXCat](https://us.lxcat.net/home/) is required for the cross-sections (IST-Lisbon database):
 * `0D/ionization/0D_ionization_1neutralspecies_es.jl` - for the variable-weight simulations using octree N:2 merging
 * `0D/ionization/0D_ionization_1neutralspecies_nnls_es.jl` - for the variable-weight simulations using different versions of NNLS merging
+(uncomment lines below comment "Uncomment set-up below ..." to get the full set-up running over all parameters and ensembles)
 
 For the Fourier flow test case:
 * `1D/fourier_fw.jl` - for the reference fixed-weight simulations
