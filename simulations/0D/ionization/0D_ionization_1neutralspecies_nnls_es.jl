@@ -22,6 +22,7 @@ seed values and parameter values.
 Positional arguments:
 * `seed`: random seed values
 * `E_Tn`: electric field value in Townsend
+* `n_t`: number of timesteps to run for
 * `n_full_up_to_total`: all mixed moments up to this order are conserved
 * `threshold_electrons`: threshold number of electrons after which they are merged
 * `np_target_electrons_octree`: in case NNLS merging fails and backup NNLS merging fails, resorting
@@ -273,7 +274,7 @@ function run(seed, E_Tn, n_t,
     close_netcdf(ds)
 end
 
-#  paramset is a list with 3 elements: number of velocity moments conserved, threshold number of particles,
+# paramset is a list with 3 elements: number of velocity moments conserved, threshold number of particles,
 # target number of particles for backup octree merging (in case octree fails)
 # if NNLS with param[1] velocity moments fails, a backup NNLS is called with param[1]-1 moments, if that fails - octree is called
 paramset = [5, 69, 58]
