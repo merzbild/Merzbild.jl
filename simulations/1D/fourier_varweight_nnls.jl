@@ -210,10 +210,14 @@ end
 # if NNLS with param[1] velocity moments fails, a backup NNLS is called with param[1]-1 moments, if that fails - octree is called
 const params = [[4, 45, 38]]
 # const params = [[4, 45, 38], [5, 69, 58], [6, 105, 88], [7, 146, 122], [8, 200, 166]] - iterate over all merging parameters
+# uncomment line above to run over the parameter sets used for "Moment-preserving particle merging via non-negative least squares"
 
-const x_moms = 2
+const x_moms = 2  # spatial moments of up to this order are conserved
+
+const n_t = 3500000
 
 for param in params
     println(x_moms, ", ", param)
-    run(1234, 350.0, 300.0, 600.0, 0.0, 5e-3, 1.5e-3 * 101325.0, 1000, 500, param[2], param[3], param[1], x_moms, 4e-10, 3_500_000, 500_000, "Fourier_NNLS")
+    run(1234, 350.0, 300.0, 600.0, 0.0, 5e-3, 1.5e-3 * 101325.0, 1000, 500,
+        param[2], param[3], param[1], x_moms, 4e-10, n_t, 500_000, "Fourier_NNLS")
 end
