@@ -287,33 +287,29 @@ for do_event_splitting in [false, true]  # try out different collision schemes
 end
 
 #  # Uncomment set-up below to run over the parameter sets used for "Moment-preserving particle merging via non-negative least squares"
-# params = [[4, 45, 38], [5, 69, 58], [6, 105, 88], [7, 146, 122], [8, 200, 166], [9, 266, 220],   # 1.2
-#           [4, 41, 38], [5, 62, 58], [6, 95, 88], [7, 131, 122], [8, 178, 166], [9, 236, 220]]  # 1.075
-#                 # [4, 50, 36], [5, 66, 55], [6, 100, 85], [7, 142, 120], [8, 200, 164], [9, 264, 220]
-
-#  # 0:nseeds gives us 64 runs for each parameter set
-# const nseeds = 63
+#  # the 4th value in each parameter list is the number of ensembles that are run with different random seeds 
+# params = [[4, 41, 38, 64], [5, 62, 58, 64], [6, 95, 88, 64], [7, 131, 122, 15], [8, 178, 166, 15], [9, 236, 220, 15]]  # 1.075
 
 #  # we need more timesteps for the weaker field
 # for (n_t, external_E_field_Tn) in zip([600000, 5000000], [400.0, 100.0])
 
 #     # iterate over parameters 
 #     for paramset in params
-#         for sadd in 0:nseeds
+#         for sadd in 0:paramset[4]-1
 #             run(1234, external_E_field_Tn, n_t,
 #                 paramset[1], paramset[2], paramset[3], adds=sadd, rate_preserving=:off, do_es=true)
 #         end
 #     end
 
 #     for paramset in params
-#         for sadd in 0:nseeds
+#         for sadd in 0:paramset[4]-1
 #             run(1234, external_E_field_Tn, n_t,
 #                 paramset[1], paramset[2], paramset[3], adds=sadd, rate_preserving=:approximate, do_es=true)
 #         end
 #     end
 
 #     for paramset in params
-#         for sadd in 0:nseeds
+#         for sadd in 0:paramset[4]-1
 #             run(1234, external_E_field_Tn, n_t,
 #                 paramset[1], paramset[2], paramset[3], adds=sadd, rate_preserving=:exact, do_es=true)
 #         end
