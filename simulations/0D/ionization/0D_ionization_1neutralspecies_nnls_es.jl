@@ -20,10 +20,10 @@ Data is written to `scratch/data` by default, adjust `fname` if necessary.
 seed values and parameter values.
 
 Positional arguments:
-* `seed`: random seed values
+* `seed`: random seed value
 * `E_Tn`: electric field value in Townsend
 * `n_t`: number of timesteps to run for
-* `n_full_up_to_total`: all mixed moments up to this order are conserved
+* `n_full_up_to_total`: all mixed moments up to this order are conserved during merging
 * `threshold_electrons`: threshold number of electrons after which they are merged
 * `np_target_electrons_octree`: in case NNLS merging fails and backup NNLS merging fails, resorting
 to octree merging with this target number of electrons

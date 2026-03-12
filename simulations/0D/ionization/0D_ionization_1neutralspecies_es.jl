@@ -24,7 +24,7 @@ Data is written to `scratch/data` by default, adjust `fname` if necessary.
 seed values and parameter values.
 
 Positional arguments:
-* `seed`: random seed values
+* `seed`: random seed value
 * `E_Tn`: electric field value in Townsend
 * `n_t`: number of timesteps to run for
 * `threshold_electrons`: threshold number of electrons after which they are merged
