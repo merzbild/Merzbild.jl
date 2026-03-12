@@ -288,10 +288,10 @@ end
 
 #  # Uncomment set-up below to run over the parameter sets used for "Moment-preserving particle merging via non-negative least squares"
 #  # the 4th value in each parameter list is the number of ensembles that are run with different random seeds 
-# params = [[4, 41, 38, 64], [5, 62, 58, 64], [6, 95, 88, 64], [7, 131, 122, 15], [8, 178, 166, 15], [9, 236, 220, 15]]  # 1.075
+# params = [[4, 41, 38, 64], [5, 62, 58, 64], [6, 95, 88, 64], [7, 131, 122, 16], [8, 178, 166, 16], [9, 236, 220, 16]]  # 1.075
 
 #  # we need more timesteps for the weaker field
-# for (n_t, external_E_field_Tn) in zip([600000, 5000000], [400.0, 100.0])
+# for (n_t, external_E_field_Tn) in zip([500000, 5000000], [400.0, 100.0])
 
 #     # iterate over parameters 
 #     for paramset in params
