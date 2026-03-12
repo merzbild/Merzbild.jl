@@ -162,14 +162,14 @@ end
 #  # third is the target number of particles for the backup octree merging
 #  # fourth is the number of ensembles that are run with different random seeds 
 
-const params = [[4, 50, 36, 10800], [5, 66, 55, 4800], [6, 100, 85, 2160], [7, 142, 120, 1040], [8, 200, 164, 560], [9, 264, 220, 400]]
+# const params = [[4, 50, 36, 10800], [5, 66, 55, 4800], [6, 100, 85, 2160], [7, 142, 120, 1040], [8, 200, 164, 560], [9, 264, 220, 400]]
 
-for paramset in params
-    println("$paramset with $(paramset[4]) seeds")
-    for seed in 1:paramset[4]
-        if seed % 100 == 0
-            println(seed, ", ", paramset)
-        end
-        run(seed, paramset[1], paramset[2], paramset[3])
-    end
-end
+# for paramset in params
+#     println("$paramset with $(paramset[4]) seeds")
+#     for seed in 1:paramset[4]
+#         if seed % 100 == 0
+#             println(seed, ", ", paramset)
+#         end
+#         run(seed, paramset[1], paramset[2], paramset[3])
+#     end
+# end
