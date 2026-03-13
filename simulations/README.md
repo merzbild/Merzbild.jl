@@ -59,7 +59,6 @@ For the sampling test case:
 strategies)
 
 For the BKW test case (see the commented-out part on "multiple runs with ensembling if needed" for running with multiple ensembles):
-* `0D/BKW/bkw.jl` - for the reference fixed-weight simulations
 * `0D/BKW/bkw_varweight_octree.jl` - for the variable-weight simulations using octree N:2 merging
 * `0D/BKW/bkw_varweight_nnls.jl` - for the variable-weight simulations using NNLS merging
 
