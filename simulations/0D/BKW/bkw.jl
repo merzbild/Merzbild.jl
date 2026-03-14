@@ -67,7 +67,7 @@ function run(seed)
     println(phys_props.v)
     println(phys_props.T)
 
-    ds = NCDataHolder("bkw.nc", species_data, phys_props)
+    ds = NCDataHolder("scratch/data/bkw.nc", species_data, phys_props)
     write_netcdf(ds, phys_props, 0)
 
     collision_factors::CollisionFactors = CollisionFactors()
