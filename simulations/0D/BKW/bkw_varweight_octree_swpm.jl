@@ -67,7 +67,7 @@ function run(seed::Int64, threshold::Int64, Ntarget::Int64, G)
     phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
     compute_props_with_total_moments!(particles, pia, species_data, phys_props)
 
-    ds = NCDataHolder("scratch/data/octree_swpm_mean_$(threshold)_$(Ntarget)_$(seed).nc", species_data, phys_props)
+    ds = NCDataHolder("scratch/data/bkw_octree_swpm_mean_$(threshold)_$(Ntarget)_$(seed).nc", species_data, phys_props)
     write_netcdf(ds, phys_props, 0)
 
     if phys_props.np[1,1] > threshold
