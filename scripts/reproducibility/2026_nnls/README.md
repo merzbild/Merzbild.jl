@@ -15,3 +15,7 @@ The parameters of the simulations (number of random seeds, timestep, etc.) are s
 then plotting parameters (font sizes, font families) are set. If `savefigs` is set to true, the produced figures will be saved as PDFs.
 
 The file produces 3 plots.
+
+## Post-processing of 0D ionization results
+
+## Post-processing of 1D Fourier results
