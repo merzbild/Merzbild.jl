@@ -288,6 +288,8 @@ end
 
 #  # Uncomment set-up below to run over the parameter sets used for "Moment-preserving particle merging via non-negative least squares"
 #  # the 4th value in each parameter list is the number of ensembles that are run with different random seeds 
+#  # these simulations produce large amounts of data - a single 400 Tn simulation file is 200+ MB in size,
+#  # a single 100 Tn simulation file is 2+ GB in size
 
 # params = [[4, 41, 38, 64], [5, 62, 58, 64], [6, 95, 88, 64], [7, 131, 122, 16], [8, 178, 166, 16], [9, 236, 220, 16]]  # 1.075
 
