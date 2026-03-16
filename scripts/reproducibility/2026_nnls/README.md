@@ -3,7 +3,8 @@ The scripts in this directory are
 for post-processing the numerical results for the paper ["Moment-preserving particle merging via non-negative least squares"](TODO: link)
 by G. Oblapenko and M. Torrilhon.
 
-The results were computed using `Merzbild.jl` version `0.7.8`, Julia version `1.12`. The scripts require `numpy`, `scipy`, `matplotlib`, netCDF4`.
+The results were computed using `Merzbild.jl` version `0.7.8`, Julia version `1.12`. The Python
+scripts require `numpy`, `scipy`, `matplotlib`, `netCDF4`.
 
 ## Post-processing of BKW results
 The numerical results produced by `bkw_varweight_octree.jl` and `bkw_varweight_nnls.jl` can be post-processed
