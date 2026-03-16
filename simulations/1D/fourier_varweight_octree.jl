@@ -64,9 +64,6 @@ function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
     flux_props = FluxProps(pia)
     flux_props_avg = FluxProps(pia)
 
-    # create struct for netCDF output
-    # ds = NCDataHolder("scratch/data/couette_swpm_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(merge_threshold)_$(merge_target).nc", species_data, phys_props)
-
     # create struct for second netCDF, this one is for time-averaged 
     ds_avg = NCDataHolder("scratch/data/avg_$(name)_ntc_$(L)_$(nx)_$(v_wall)_$(T_wall1)_$(T_wall2)_$(merge_threshold)_$(merge_target)_after$(avg_start).nc",
                           species_data, phys_props)
