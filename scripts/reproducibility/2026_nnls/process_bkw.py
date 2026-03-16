@@ -69,7 +69,7 @@ for octree_mid_seed_n, run in zip(octree_mid_seeds, octree_mid_runs):
         threshold = run[0]
         Ntarget = run[1]
         
-        ds = Dataset(f"scratch/data/octree_mid_{threshold}_{Ntarget}_{seed}.nc")
+        ds = Dataset(f"scratch/data/bkw_octree_mid_{threshold}_{Ntarget}_{seed}.nc")
         
         octree_mid_data[threshold]["t"] = np.asarray(ds.variables["timestep"][:].data)
         np_arr[seed-1, :] = np.asarray(ds.variables["np"][:].data[1:, 0, 0])
@@ -108,10 +108,7 @@ for (nnls_seed_n, run) in zip(nnls_seeds, nnls_runs):
     for seed in range(1,nnls_seed_n+1):
         threshold = run[0]
         
-        if nnls_seed_n == 10800:
-            ds = Dataset(f"scratch/data/nnls_{run[0]}full_{run[1]}_{seed}.nc")
-        else:
-            ds = Dataset(f"scratch/data/nnls_{run[0]}full_{run[1]}_{seed}.nc")
+        ds = Dataset(f"scratch/data/bkw_nnls_{run[0]}full_{run[1]}_{seed}.nc")
         
         nnls_data[threshold]["t"] = np.asarray(ds.variables["timestep"][:].data)
         np_arr[seed-1, :] = np.asarray(ds.variables["np"][:].data[1:, 0, 0])
