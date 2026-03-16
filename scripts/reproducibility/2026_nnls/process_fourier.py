@@ -1,8 +1,6 @@
 import numpy as np
 from netCDF4 import Dataset
 from matplotlib import pyplot as plt
-from scipy import constants
-from scipy.special import gamma
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
 
 savefigs = False
