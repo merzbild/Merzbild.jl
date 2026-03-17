@@ -12,6 +12,9 @@ collision factor estimates use mean post-merge particle weight
 * Documentation of simulation files in `simulations` directory added (`simulations/README.md`)
 * Exact rate-conserving version of NNLS added
 * Simulation examples added for Fourier flow
+* Simulation example added that simply samples and merges particles and computes various statistics
+* Reproducibility setups added for "Moment-preserving particle merging via non-negative least squares" (simulation parameters and
+post-processing scripts)
 
 ## v0.7.7
 * Improved scattering modelling for ionization reactions based on Nanbu's paper
