@@ -101,7 +101,7 @@ function run(seed::Int64, threshold::Int64, ntarget::Int64)
 end
 
 # run BKW test case with merging called if particle count exceeds 150 and merged down to 100 particles
-# run(1, 150, 100)
+run(1, 150, 100)
 
 
 #  # Uncomment set-up below to run over the parameter sets used for "Moment-preserving particle merging via non-negative least squares"

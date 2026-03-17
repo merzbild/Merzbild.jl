@@ -153,7 +153,7 @@ end
 
 # run with merging conserving all mixed moments up to order 6; merging is called when particle count exceeds 100
 # octree merging with 85 target particles is used when all else fails
-# run(0, 6, 100, 85)
+run(0, 6, 100, 85)
 
 
 #  # Uncomment set-up below to run over the parameter sets used for "Moment-preserving particle merging via non-negative least squares"
