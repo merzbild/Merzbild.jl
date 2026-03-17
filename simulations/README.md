@@ -55,6 +55,8 @@ are available in `scripts/reproducibility/2026_nnls`: `process_bkw.py`, `process
 `process_ionization.py`, `process_fourier.py`.
 Details on executing the scripts can be found at the start of the script files and in the `scripts/reproducibility/2026_nnls/README.md`
 file.
+The parameter sets used for the paper are commented out (as running over all parameter sets takes a while); the simulation files
+have notes on which commented-out-lines need to be uncommented to run the full simulations used to produce the data for the paper.
 
 For the sampling test case:
 * `0D/basic/sample_and_merge.jl` - for the simulations that sample particles and merge them (using two different sampling
@@ -79,6 +81,45 @@ contains all the different target and threshold particle numbers used in the sim
 
 ### Reference values
 Reference values that can be expected to be produced by some of the simulations are provided below. `Merzbild.jl` version `0.7.8`, Julia version `1.12`.
+
+Running `0D/basic/sample_and_merge.jl` with `Nt = 10000` and `params = [[4, 36]]` produces the following output (rounded to third decimal place):
+```bash
+NNLS merging: [4, 36]; sampling method: equal_weight
+10000/10000
+Npost = 35.0
+weight ratio: 2591.674
+weight std: 0.0309
+weight log std: 1.427
+f_tail(500.0): 0.261 -> 0.251
+f_tail(750.0): 0.029 -> 0.030
+
+Octree merging: [4, 36]; sampling method: equal_weight
+10000/10000
+Npost = 26.856
+weight ratio: 40.835
+weight std: 0.028
+weight log std: 1.225
+f_tail(500.0): 0.261 -> 0.292
+f_tail(750.0): 0.029 -> 0.003
+
+NNLS merging: [4, 36]; sampling method: weighted_samples
+10000/10000
+Npost = 35.0
+weight ratio: 79954.614
+weight std: 0.041
+weight log std: 2.424
+f_tail(500.0): 0.276 -> 0.249
+f_tail(750.0): 0.031 -> 0.021
+
+Octree merging: [4, 36]; sampling method: weighted_samples
+10000/10000
+Npost = 29.9759
+weight ratio: 1.015e15
+weight std: 0.043
+weight log std: 6.320
+f_tail(500.0): 0.276 -> 0.272
+f_tail(750.0): 0.031 -> 0.018
+```
 
 Running `0D/ionization/0D_ionization_1neutralspecies_es.jl` with `paramset = [12000, 6000]`, `external_E_field_Tn = 400.0`, and `n_t = 500000`,
 and then running `compute_rate.py` on the two results (with and without event splitting) will give the following output (rounded to second decimal place):
