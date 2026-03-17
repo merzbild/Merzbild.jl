@@ -4,6 +4,32 @@ using ..Merzbild
 using Random
 using TimerOutputs
 
+"""
+    run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
+        ppc_sampled,
+        Δt, n_timesteps, avg_start,
+        name)
+
+Run a Fourier flow simulation with fixed-weight particles. Output is time-averaged and written to file
+with name `avg_[name]_ntc_[L]_[nx]_[v_wall]_[T_wall1]_[T_wall2]_after[avg_start].nc` (fluxes
+and surface properties following similar naming scheme) in `scratch/data/`.
+
+Positional arguments:
+* `seed`: random seed value
+* `T_bg0`: initial temperature of gas
+* `T_wall1`: temperature of left wall
+* `T_wall2`: temperature of right wall
+* `v_wall`: left wall will have y-velocity of `-v_wall`, right wall will have y-velocity of `v_wall` (set to 0 for Fourier
+simulation)
+* `L`: length of domain in meters
+* `p0`: initial gas pressure in Pa
+* `nx`: number of grid cells
+* `ppc_sampled`: number of particles sampled in each cell
+* `Δt`: timestep size
+* `n_timesteps`: total number of timesteps to run for
+* `avg_start`: timestep after which averaging begins
+* `name`: name to append to start of output files
+"""
 function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
              ppc_sampled,
              Δt, n_timesteps, avg_start,
