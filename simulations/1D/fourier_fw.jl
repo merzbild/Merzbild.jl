@@ -130,5 +130,5 @@ function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
     print_timer()
 end
 
-const n_t = 3_500_000
+const n_t = 3500000
 run(1234, 350.0, 300.0, 600.0, 0.0, 5e-3, 1.5e-3 * 101325.0, 1000, 500, 4e-10, n_t, 500_000, "Fourier_FW")
