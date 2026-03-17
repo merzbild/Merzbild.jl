@@ -76,3 +76,11 @@ For the Fourier flow test case:
 * `1D/fourier_varweight_octree.jl` - for the variable-weight simulations using octree N:2 merging (the commented `const params = ...` line
 contains all the different target and threshold particle numbers used in the simulation)
 * `1D/fourier_varweight_nnls.jl` - for the variable-weight simulations using NNLS merging
+
+### Reference values
+Reference values that can be expected to be produced by some of the simulations are provided below. `Merzbild.jl` version `0.7.8`, Julia version `1.12`.
+
+Running `0D/ionization/0D_ionization_1neutralspecies_es.jl` with `paramset = [12000, 6000]`, `external_E_field_Tn = 400.0`, and `n_t = 500000`,
+and then running `compute_rate.py` on the two results (with and without event splitting) will give the following output (rounded to second decimal place):
+* `python3 scripts/compute_rate.py --filename scratch/data/ionization_Ar_400Tn_octree_mid_12000_to_6000_es.nc --tstart 150000 --tend 500000 --nid 0 --ionid 1 --eid 2 --dt 5e-14`: `4.46e-15 6.80`
+* `python3 scripts/compute_rate.py --filename scratch/data/ionization_Ar_400Tn_octree_mid_12000_to_6000.nc --tstart 150000 --tend 500000 --nid 0 --ionid 1 --eid 2 --dt 5e-14`: `4.47e-15 6.82`
