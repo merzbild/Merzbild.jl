@@ -53,7 +53,8 @@ order of operations affecting round-off errors, etc.), they should be runnable f
 Python scripts to postprocess results to produce plots
 are available in `scripts/reproducibility/2026_nnls`: `process_bkw.py`, `process_ionization_compute_rates.py`,
 `process_ionization.py`, `process_fourier.py`.
-Details on executing the scripts can be found at the start of the script files.
+Details on executing the scripts can be found at the start of the script files and in the `scripts/reproducibility/2026_nnls/README.md`
+file.
 
 For the sampling test case:
 * `0D/basic/sample_and_merge.jl` - for the simulations that sample particles and merge them (using two different sampling
@@ -66,7 +67,7 @@ For the BKW test case (see the commented-out part on "multiple runs with ensembl
 For the ionization test case (**when run over all ensembles, these produce VERY LARGE amounts of data, 100s of GBs**);
 external data from [LXCat](https://us.lxcat.net/home/) is required for the cross-sections (IST-Lisbon database):
 * `0D/ionization/0D_ionization_1neutralspecies_es.jl` - for the variable-weight simulations using octree N:2 merging
-(uncomment lines below comment "Uncomment set-up below ..." to get the full set-up running over all parameters and ensembles; setting `paramset` to [TODO, TODO] will produce results used as reference values)
+(uncomment lines below comment "Uncomment set-up below ..." to get the full set-up running over all parameters and ensembles; setting `paramset` to [12000, 6000] will produce results used as reference values)
 * `0D/ionization/0D_ionization_1neutralspecies_nnls_es.jl` - for the variable-weight simulations using different versions of NNLS merging
 (uncomment lines below comment "Uncomment set-up below ..." to get the full set-up running over all parameters and ensembles)
 
@@ -74,4 +75,4 @@ For the Fourier flow test case:
 * `1D/fourier_fw.jl` - for the reference fixed-weight simulations
 * `1D/fourier_varweight_octree.jl` - for the variable-weight simulations using octree N:2 merging (the commented `const params = ...` line
 contains all the different target and threshold particle numbers used in the simulation)
-* `1D/fourier_varweight_nnls.jl` - for the variable-weight simulations using octree N:2 merging
+* `1D/fourier_varweight_nnls.jl` - for the variable-weight simulations using NNLS merging
