@@ -6,6 +6,11 @@ from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
 savefigs = False
 # savefigs = True - uncomment to save plots
 
+# x-axis (mm)
+x_ax = np.linspace(0, 5, 1000)
+# output is # of physical particles in cell, we need number density, hence the scaling factor
+nd_c = 1.0 / (5e-3/1000)
+
 # this is the list of all octree runs for error-vs-average number of particles plots
 oc_runs = ["45_38", "69_58", "105_88", "146_122", "200_166"]
 # this is the list of all NNLS runs for error-vs-average number of particles plots
@@ -14,7 +19,7 @@ nnls_runs = ["45_38", "69_58", "105_88", "146_122", "200_166"]
 # prefix to directory with data
 pref = "scratch/data/"
 
-# 3 datasets used to plot example results
+# 3 datasets used to plot example results, 69:58 (approximately) merging
 data_nnls = f"{pref}avg_Fourier_NNLS_ntc_0.005_1000_0.0_300.0_600.0_69_58_after500000.nc"
 data_oc = f"{pref}data/avg_Fourier_octree_ntc_0.005_1000_0.0_300.0_600.0_69_58_after500000.nc"
 data_fw = f"{pref}data/avg_Fourier_FW_ntc_0.005_1000_0.0_300.0_600.0_after500000.nc"
@@ -82,17 +87,11 @@ ref_s_ke = np.asarray(ds["kinetic_energy_flux"][0,0,:])
 ref_s_fi = np.asarray(ds["flux_incident"][0,0,:])
 ds.close()
 
-# x-axis (mm)
-x_ax = np.linspace(0, 5, 1000)
-
 # plot example profiles of T and number density
 fig = plt.figure(figsize=(20,6))
 
 ax1 = fig.add_subplot(1,2,1)
 ax2 = fig.add_subplot(1,2,2)
-
-# output is # of physical particles in cell, we need number density, hence the scaling factor
-nd_c = 1.0 / (5e-3/1000)
 
 # plot results
 for (ax, v, cf) in zip([ax1,ax2], ["T", "ndens"], [1.0, nd_c]):

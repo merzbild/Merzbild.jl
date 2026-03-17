@@ -20,3 +20,10 @@ The file produces 3 plots.
 ## Post-processing of 0D ionization results
 
 ## Post-processing of 1D Fourier results
+The numerical results produced by `fourier_fw.jl`, `fourier_varweight_nnls.jl` and `fourier_varweight_octree.jl`
+can be processed with the `process_fourier.py` script. The script loads the files automatically: output files are assumed to be located in
+`scratch/data`, octree results are assumed to be named `avg_Fourier_octree_ntc_0.005_1000_0.0_300.0_600.0_{threshold}_{Ntarget}_after500000.nc`,
+NNLS results are assumed to be named `avg_Fourier_nnls_ntc_0.005_1000_0.0_300.0_600.0_{threshold}_{Ntarget}_after500000.nc`.
+
+The parameters of the simulations (size of cells, etc.) are set at the top of the script after the imports;
+then plotting parameters (font sizes, font families) are set. If `savefigs` is set to true, the produced figures will be saved as PDFs.
