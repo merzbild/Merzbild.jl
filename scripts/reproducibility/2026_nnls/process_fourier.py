@@ -8,7 +8,7 @@ savefigs = True  # - uncomment to save plots
 
 # this is the timestep after which the averaging of results was turned on in the simulation
 # assumes filenames end with "_after{avg_start}.nc"
-avg_start = 1000
+avg_start = 500000
 
 # x-axis (mm)
 x_ax = np.linspace(0, 5, 1000)
