@@ -208,7 +208,7 @@ end
 # target number of particles for merging
 paramset = [45, 38]
 external_E_field_Tn = 400.0
-n_t = 2000
+n_t = 500000
 for do_event_splitting in [false, true]  # try out different collision schemes
     run(1234, external_E_field_Tn, n_t, paramset[1], paramset[2], merging_bin_split=OctreeBinMidSplit, adds=0, do_es=do_event_splitting)
 end
