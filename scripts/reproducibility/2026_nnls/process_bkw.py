@@ -5,7 +5,7 @@ from scipy import constants
 from scipy.special import gamma
 
 savefigs = False
-# savefigs = True - uncomment to save plots
+# savefigs = True  # - uncomment to save plots
 
 # number of timesteps (including the 0th timestep) and timestep size in each simulation
 n_t = 601

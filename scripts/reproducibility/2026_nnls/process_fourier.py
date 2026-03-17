@@ -4,7 +4,11 @@ from matplotlib import pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
 
 savefigs = False
-# savefigs = True - uncomment to save plots
+savefigs = True  # - uncomment to save plots
+
+# this is the timestep after which the averaging of results was turned on in the simulation
+# assumes filenames end with "_after{avg_start}.nc"
+avg_start = 1000
 
 # x-axis (mm)
 x_ax = np.linspace(0, 5, 1000)
@@ -20,9 +24,9 @@ nnls_runs = ["45_38", "69_58", "105_88", "146_122", "200_166"]
 pref = "scratch/data/"
 
 # 3 datasets used to plot example results, 69:58 (approximately) merging
-data_nnls = f"{pref}avg_Fourier_NNLS_ntc_0.005_1000_0.0_300.0_600.0_69_58_after500000.nc"
-data_oc = f"{pref}data/avg_Fourier_octree_ntc_0.005_1000_0.0_300.0_600.0_69_58_after500000.nc"
-data_fw = f"{pref}data/avg_Fourier_FW_ntc_0.005_1000_0.0_300.0_600.0_after500000.nc"
+data_nnls = f"{pref}avg_Fourier_NNLS_ntc_0.005_1000_0.0_300.0_600.0_69_58_after{avg_start}.nc"
+data_oc = f"{pref}avg_Fourier_octree_ntc_0.005_1000_0.0_300.0_600.0_69_58_after{avg_start}.nc"
+data_fw = f"{pref}avg_Fourier_FW_ntc_0.005_1000_0.0_300.0_600.0_after{avg_start}.nc"
 
 # plotting parameters
 label_size = 24
@@ -42,13 +46,13 @@ oc_s_p = {}
 oc_s_ke = {}
 oc_s_fi = {}
 for oc in oc_runs:    
-    ds = Dataset(f"{pref}avg_Fourier_octree_ntc_0.005_1000_0.0_300.0_600.0_{oc}_after500000.nc")
+    ds = Dataset(f"{pref}avg_Fourier_octree_ntc_0.005_1000_0.0_300.0_600.0_{oc}_after{avg_start}.nc")
     oc_T[oc] = np.asarray(ds["T"][:][0,0,:])
     oc_n[oc] = np.asarray(ds["ndens"][:][0,0,:])
     oc_np[oc] = np.asarray(ds["np"][:][0,0,:])
     ds.close()
 
-    ds = Dataset(f"{pref}avg_Fourier_octree_ntc_0.005_1000_0.0_300.0_600.0_{oc}_surf_after500000.nc")
+    ds = Dataset(f"{pref}avg_Fourier_octree_ntc_0.005_1000_0.0_300.0_600.0_{oc}_surf_after{avg_start}.nc")
     oc_s_p[oc] = np.asarray(ds["normal_pressure"][0,0,:])
     oc_s_ke[oc] = np.asarray(ds["kinetic_energy_flux"][0,0,:])
     oc_s_fi[oc] = np.asarray(ds["flux_incident"][0,0,:])
@@ -63,25 +67,25 @@ nnls_s_ke = {}
 nnls_s_fi = {}
 
 for nnls in nnls_runs:
-    ds = Dataset(f"{pref}avg_Fourier_NNLS_ntc_0.005_1000_0.0_300.0_600.0_{nnls}_after500000.nc")
+    ds = Dataset(f"{pref}avg_Fourier_NNLS_ntc_0.005_1000_0.0_300.0_600.0_{nnls}_after{avg_start}.nc")
     nnls_T[nnls] = np.asarray(ds["T"][:][0,0,:])
     nnls_n[nnls] = np.asarray(ds["ndens"][:][0,0,:])
     nnls_np[nnls] = np.asarray(ds["np"][:][0,0,:])
     ds.close()
 
-    ds = Dataset(f"{pref}avg_Fourier_NNLS_ntc_0.005_1000_0.0_300.0_600.0_{nnls}_surf_after500000.nc")
+    ds = Dataset(f"{pref}avg_Fourier_NNLS_ntc_0.005_1000_0.0_300.0_600.0_{nnls}_surf_after{avg_start}.nc")
     nnls_s_p[nnls] = np.asarray(ds["normal_pressure"][0,0,:])
     nnls_s_ke[nnls] = np.asarray(ds["kinetic_energy_flux"][0,0,:])
     nnls_s_fi[nnls] = np.asarray(ds["flux_incident"][0,0,:])
     ds.close()
 
 # load reference values for bulk and surface properties
-ds = Dataset(f"{pref}avg_Fourier_FW_ntc_0.005_1000_0.0_300.0_600.0_after500000.nc")
+ds = Dataset(f"{pref}avg_Fourier_FW_ntc_0.005_1000_0.0_300.0_600.0_after{avg_start}.nc")
 ref_T = np.asarray(ds["T"][:][0,0,:])
 ref_n = np.asarray(ds["ndens"][:][0,0,:])
 ds.close()
 
-ds = Dataset(f"{pref}avg_Fourier_FW_ntc_0.005_1000_0.0_300.0_600.0_surf_after500000.nc")
+ds = Dataset(f"{pref}avg_Fourier_FW_ntc_0.005_1000_0.0_300.0_600.0_surf_after{avg_start}.nc")
 ref_s_p = np.asarray(ds["normal_pressure"][0,0,:])
 ref_s_ke = np.asarray(ds["kinetic_energy_flux"][0,0,:])
 ref_s_fi = np.asarray(ds["flux_incident"][0,0,:])
