@@ -82,7 +82,7 @@ contains all the different target and threshold particle numbers used in the sim
 ### Reference values
 Reference values that can be expected to be produced by some of the simulations are provided below. `Merzbild.jl` version `0.7.8`, Julia version `1.12`.
 
-Running `0D/basic/sample_and_merge.jl` with `Nt = 10000` and `params = [[4, 36]]` produces the following output (rounded to third decimal place):
+Running `0D/basic/sample_and_merge.jl` with `n_t = 10000` and `params = [[4, 36]]` produces the following output (rounded to third decimal place):
 ```bash
 NNLS merging: [4, 36]; sampling method: equal_weight
 10000/10000

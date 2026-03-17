@@ -279,7 +279,9 @@ end
 # if NNLS with param[1] velocity moments fails, a backup NNLS is called with param[1]-1 moments, if that fails - octree is called
 paramset = [5, 69, 58]
 external_E_field_Tn = 400.0
-n_t = 500000  # set this to a smaller value (i.e. 10000) if you just want to check that the file runs
+
+# set this to a smaller value (i.e. 10000) if you just want to check that the file runs
+n_t = 500000
 for do_event_splitting in [false, true]  # try out different collision schemes
     run(1234, external_E_field_Tn, n_t, paramset[1], paramset[2], paramset[3], adds=0, rate_preserving=:off, do_es=do_event_splitting)
     run(1234, external_E_field_Tn, n_t, paramset[1], paramset[2], paramset[3], adds=0, rate_preserving=:approximate, do_es=do_event_splitting)

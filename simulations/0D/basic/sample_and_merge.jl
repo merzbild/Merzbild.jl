@@ -179,19 +179,19 @@ function run(seed, merge_method, merge_parameter, Nsamples; sampling_method=:equ
     println()
 end
 
-Nt = 10000  # number of samples for each run
+n_t = 10000  # number of samples for each run
 params = [[4, 36]]
 
 #  # uncomment lines below to run over the parameter sets used for "Moment-preserving particle merging via non-negative least squares"
 # params = [[4, 36], [5, 55], [6, 85], [7, 120], [8, 164], [9, 220]]
-# Nt = 100000  # number of samples for each run
+# n_t = 100000  # number of samples for each run
 
 for paramset in params
     for sm in [:equal_weight, :weighted_samples]
         println("NNLS merging: $paramset; sampling method: $(sm)")
-        run(1, :nnls, paramset[1], Nt; sampling_method=sm)
+        run(1, :nnls, paramset[1], n_t; sampling_method=sm)
 
         println("Octree merging: $paramset; sampling method: $(sm)")
-        run(1, :octree, paramset[2], Nt; sampling_method=sm)
+        run(1, :octree, paramset[2], n_t; sampling_method=sm)
     end
 end
