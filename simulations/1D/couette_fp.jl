@@ -51,7 +51,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
     # compute and write data at t=0
     compute_props!(particles, pia, species_data, phys_props)
     write_netcdf(ds, phys_props, 0)
-    write_grid("couette_$(L)_$(nx)_grid.nc", grid)
+    write_grid("scratch/data/couette_$(L)_$(nx)_grid.nc", grid)
 
     n_avg = n_timesteps - avg_start + 1
 
