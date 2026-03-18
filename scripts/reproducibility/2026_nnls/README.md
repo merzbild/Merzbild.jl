@@ -18,9 +18,16 @@ then plotting parameters (font sizes, font families) are set. If `savefigs` is s
 The file produces 3 plots.
 
 ## Post-processing of 0D ionization results
-`convert_ionization_data.py`: convert output of `Merzbild.jl` to leaner files containing only relevant data
-(ionization rate coefficients, electron temperatures, number of electron particles)
-`process_ionization.py`: take converted files and produce plots.
+The numerical results produced by `0D_ionization_1neutralspecies_es.jl` and `0D_ionization_1neutralspecies_nnls_es.jl`
+can be processed by two scripts:
+
+* `convert_ionization_data.py`: converts output of `Merzbild.jl` to leaner files containing only relevant data
+(ionization rate coefficients, electron temperatures, number of electron particles). The parameters of the simulations
+(number of random seeds, applied electric field strength, timestep, etc.) are set at the top of the script after the imports;
+they are used to produce a `run_names_and_seeds` list: each element is a tuple, the first element of which
+is the prefix of the output file to process, and the second is the number of random seeds the simulation was run with.
+Uncomment different lines to process results produced by the octree or NNLS merging methods
+* `process_ionization.py`: takes converted files and produces plot
 
 ## Post-processing of 1D Fourier results
 The numerical results produced by `fourier_fw.jl`, `fourier_varweight_nnls.jl` and `fourier_varweight_octree.jl`
