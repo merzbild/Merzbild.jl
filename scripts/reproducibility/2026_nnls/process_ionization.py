@@ -9,17 +9,21 @@ dt = 5e-14
 field_Tn = 100
 
 
-path_to_dir = ""
+path_to_dir = "scratch/data/"
+
+# assumed to be equal across all runs
 n_seeds_for_run = [63, 63, 63, 15, 15, 15]
+
+# parameters of runs with octree merging
 octree_runs = [[41, 38], [62, 58], [95, 88], [131, 122], [178, 166], [236, 220]]
 
-# nnls without rate preservation
+# parameters of runs with nnls merging without rate preservation
 nnls_runs = [[4, 41, 38], [5, 62, 58], [6, 95, 88], [7, 131, 122], [8, 178, 166], [9, 236, 220]]
 
-# nnls with approximate rate preservation
+# parameters of runs with nnls merging with approximate rate preservation
 nnls_rp_runs = [[4, 41, 38], [5, 62, 58], [6, 95, 88], [7, 131, 122], [8, 178, 166], [9, 236, 220]]
 
-# nnls with exact rate preservation
+# parameters of runs with nnls merging with exact rate preservation
 nnls_erp_runs = [[4, 41, 38], [5, 62, 58], [6, 95, 88], [7, 131, 122], [8, 178, 166], [9, 236, 220]]
 
 
@@ -94,35 +98,43 @@ for field_Tn in [100, 400]:
     octree_data[field_Tn] = {x[0]: {} for x in octree_runs}
     for ns, run in zip(n_seeds_for_run, octree_runs):
         print(run)
+        filename = f"{path_to_dir}ionization_Ar_{field_Tn}Tn_octree_mid_{run[0]}_to_{run[1]}"
         avg_of_bias, bias_of_avg, mk, nk, npm, Te, nTe = get_bias_mean_noise_np_from_rate_file(ref_val_mean,
-                                                                                      ts_min, ts_max, f"Ar_{field_Tn}Tn_octree_mid_{run[0]}_to_{run[1]}", nseeds=ns)
-        octree_data[field_Tn][run[0]] = {"avg_of_bias": avg_of_bias, "bias_of_avg": bias_of_avg, "mean": mk, "noise": nk, "np": npm, "T_e": Te, "std_T_e": nTe}
-
+                                                                                               ts_min, ts_max,
+                                                                                               filename,
+                                                                                               nseeds=ns)
+        octree_data[field_Tn][run[0]] = {"avg_of_bias": avg_of_bias, "bias_of_avg": bias_of_avg, "mean": mk,
+                                         "noise": nk, "np": npm, "T_e": Te, "std_T_e": nTe}
 
     nnls_data[field_Tn] = {x[0]: {} for x in nnls_runs}
     for ns, run in zip(n_seeds_for_run, nnls_runs):
         print(run)
+        filename = f"{path_to_dir}ionization_Ar_{field_Tn}Tn_NNLS_{run[0]}full_{run[1]}"
         avg_of_bias, bias_of_avg, mk, nk, npm, Te, nTe = get_bias_mean_noise_np_from_rate_file(ref_val_mean,
                                                                                                ts_min, ts_max, 
-                                                                                               f"{field_Tn}Tn_NNLS_{run[0]}full_{run[1]}",
+                                                                                               filename,
                                                                                                nseeds=ns)
-        nnls_data[field_Tn][run[0]] = {"avg_of_bias": avg_of_bias, "bias_of_avg": bias_of_avg, "mean": mk, "noise": nk, "np": npm, "T_e": Te, "std_T_e": nTe}
+        nnls_data[field_Tn][run[0]] = {"avg_of_bias": avg_of_bias, "bias_of_avg": bias_of_avg, "mean": mk,
+                                       "noise": nk, "np": npm, "T_e": Te, "std_T_e": nTe}
 
     nnls_rp_data[field_Tn] = {x[0]: {} for x in nnls_rp_runs}
     for ns, run in zip(n_seeds_for_run, nnls_rp_runs):
         print(run)
+        filename = f"{path_to_dir}ionization_Ar_{field_Tn}Tn_NNLS_approx_{run[0]}full_{run[1]}"
         avg_of_bias, bias_of_avg, mk, nk, npm, Te, nTe = get_bias_mean_noise_np_from_rate_file(ref_val_mean,
                                                                                                ts_min, ts_max, 
-                                                                                               f"Tn_NNLSrate_approx_{run[0]}full_{run[1]}",
+                                                                                               filename,
                                                                                                nseeds=ns)
-        nnls_rp_data[field_Tn][run[0]] = {"avg_of_bias": avg_of_bias, "bias_of_avg": bias_of_avg, "mean": mk, "noise": nk, "np": npm, "T_e": Te, "std_T_e": nTe}
+        nnls_rp_data[field_Tn][run[0]] = {"avg_of_bias": avg_of_bias, "bias_of_avg": bias_of_avg, "mean": mk,
+                                          "noise": nk, "np": npm, "T_e": Te, "std_T_e": nTe}
 
-    
     nnls_erp_data[field_Tn] = {x[0]: {} for x in nnls_erp_runs}
-    for ns, run in zip(n_seeds_for_run, nnls_rp_runs):
+    for ns, run in zip(n_seeds_for_run, nnls_erp_runs):
         print(run)
+        filename = f"{path_to_dir}ionization_Ar_{field_Tn}Tn_NNLS_exact_{run[0]}full_{run[1]}"
         avg_of_bias, bias_of_avg, mk, nk, npm, Te, nTe = get_bias_mean_noise_np_from_rate_file(ref_val_mean,
                                                                                                ts_min, ts_max, 
-                                                                                               f"Tn_NNLSrate_exact_{run[0]}full_{run[1]}",
+                                                                                               filename,
                                                                                                nseeds=ns)
-        nnls_erp_data[field_Tn][run[0]] = {"avg_of_bias": avg_of_bias, "bias_of_avg": bias_of_avg, "mean": mk, "noise": nk, "np": npm, "T_e": Te, "std_T_e": nTe}
+        nnls_erp_data[field_Tn][run[0]] = {"avg_of_bias": avg_of_bias, "bias_of_avg": bias_of_avg, "mean": mk,
+                                           "noise": nk, "np": npm, "T_e": Te, "std_T_e": nTe}
