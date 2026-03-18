@@ -1,8 +1,5 @@
 import numpy as np
 from netCDF4 import Dataset
-from matplotlib import pyplot as plt
-from scipy import constants
-from scipy.special import gamma
 
 # convert ionization results to a set of files containing instantaneous values of
 # 1) ionization rate coefficients 2) electron temperature 3) number of electron particles
