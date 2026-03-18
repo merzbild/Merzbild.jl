@@ -30,7 +30,7 @@ path_to_dir = "scratch/data/"
 nnls_runs = [[4, 41, 38], [5, 62, 58], [6, 95, 88], [7, 131, 122], [8, 178, 166], [9, 236, 220]] 
 n_seeds_for_run = [63, 63, 63, 15, 15, 15]
 nnlstypes = ["", "rate_exact", "rate_approx"]
-run_names = [f"{path_to_dir}ionization_Ar_{field_Tn}Tn_NNLS{rp}_{run[0]}_to_{run[1]}_es" for run in nnls_runs for rp in nnlstypes]
+run_names = [f"{path_to_dir}ionization_Ar_{field_Tn}Tn_NNLS{rp}_{run[0]}full_{run[1]}_es" for run in nnls_runs for rp in nnlstypes]
 
 print(run_names)
 
