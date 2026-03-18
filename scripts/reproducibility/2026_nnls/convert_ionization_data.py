@@ -11,7 +11,8 @@ from scipy.special import gamma
 # or {path_to_dir}/{fname}.nc (if seed == 0)
 # first, a run_names list is constructed (one run_name per parameter set), and then iterated over
 # a second list (n_seeds_for_run) contains the number of different starting random seeds for each corresponding
-# run in run_names (if seeds = 0,...,N were used, n_seeds_for_run should be [N-1])
+# run (if seeds = 0,...,N were used, n_seeds_for_run should be [N-1])
+# these are used to construct run_names_and_seeds, where each element is a tuple with a specific file prefix and the number of seeds
 # output is written to {path_to_dir}/{fname}_seed{seed}_rate_data_only.nc
 
 field_Tn = 400
@@ -22,16 +23,19 @@ path_to_dir = "scratch/data/"
 # octree simulation parameters, uncomment these and comment out the NNLS run_names to use the former
 # octree_runs = [[41, 38], [62, 58], [95, 88], [131, 122], [178, 166], [236, 220]]
 # n_seeds_for_run = [63, 63, 63, 15, 15, 15]
-# run_names = [f"{path_to_dir}ionization_Ar_{field_Tn}Tn_octree_mid_{run[0]}_to_{run[1]}_es" for run in octree_runs]
+# run_names_and_seeds = [(f"{path_to_dir}ionization_Ar_{field_Tn}Tn_octree_mid_{run[0]}_to_{run[1]}_es", ns)
+#                        for run, ns in zip(octree_runs, n_seeds_for_run)]
+# print(run_names_and_seeds)
 
 # NNLS simulation parameters, uncomment these and comment out the octree run_names to use the former
 # nnlstypes refers to whether rate preservation is exact, approximate, or turned off
 nnls_runs = [[4, 41, 38], [5, 62, 58], [6, 95, 88], [7, 131, 122], [8, 178, 166], [9, 236, 220]] 
 n_seeds_for_run = [63, 63, 63, 15, 15, 15]
 nnlstypes = ["", "rate_exact", "rate_approx"]
-run_names = [f"{path_to_dir}ionization_Ar_{field_Tn}Tn_NNLS{rp}_{run[0]}full_{run[1]}_es" for run in nnls_runs for rp in nnlstypes]
+run_names_and_seeds = [(f"{path_to_dir}ionization_Ar_{field_Tn}Tn_NNLS{rp}_{run[0]}full_{run[1]}_es", ns)
+                       for run, ns in zip(nnls_runs, n_seeds_for_run) for rp in nnlstypes]
 
-print(run_names)
+print(run_names_and_seeds)
 
 # for ns, run in zip(n_seeds_for_run, octree_runs):
 #     post_process(f"/home/georgii/Data/Sciebo/PIC_DSMC/NNLS_Paper/ionization/Ar_{field_Tn}Tn_octree_mid_{run[0]}_to_{run[1]}", nseeds=ns)
@@ -84,5 +88,5 @@ def post_process(fname, nseeds):
     for adds in range(nseeds):
         post_process_single_run(fname + f"_seed{adds+1}")
 
-for ns, run in zip(n_seeds_for_run, run_names):
+for (run, ns) in run_names_and_seeds:
     post_process(run, nseeds=ns)
