@@ -19,7 +19,6 @@ dt = 5e-14
 
 path_to_dir = "scratch/data/"
 
-
 # octree simulation parameters, uncomment these and comment out the NNLS run_names to use the former
 # octree_runs = [[41, 38], [62, 58], [95, 88], [131, 122], [178, 166], [236, 220]]
 # n_seeds_for_run = [63, 63, 63, 15, 15, 15]
@@ -79,11 +78,11 @@ def post_process_single_run(fname, species_e=2):
 
 # process a set of files that have a naming scheme: {fname}_seed{seed}.nc (or {fname}.nc in case seed=0)
 def post_process(fname, nseeds):
-    print(f"Processing {fname} with {nseeds} seeds")
+    print(f"Processing {fname} with {nseeds} seeds ({nseeds+1} files in total)")
     post_process_single_run(fname)
     
     for adds in range(nseeds):
         post_process_single_run(fname + f"_seed{adds+1}")
 
-# for ns, run in zip(n_seeds_for_run, run_names):
-#     post_process(run, nseeds=ns)
+for ns, run in zip(n_seeds_for_run, run_names):
+    post_process(run, nseeds=ns)
