@@ -4,6 +4,10 @@ for results in publications are found at the end of this file in the "Paper repr
 Unless noted, simulations use the NTC collision algorithm (or the variable-weight version thereof).
 By default simulations output data into `scratch/data`, and `scratch` is included in `.gitignore`.
 
+The root directory of `Merzbild.jl` has a `run_examples.py` script; calling that will iterate over all files in `simulations`
+and run them, replacing `n_t = VALUE` with `n_t = 10` and erroring otherwise; so this will run any simulation for 10 timesteps only
+just to check that they runs without errors. After executing a simulation, the script resets `n_t` to the original value.
+
 ## 0D simulations
 
 ### Basic set-ups
