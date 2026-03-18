@@ -7,7 +7,6 @@ savefigs = False
 # savefigs = True  # - uncomment to save plots
 
 dt = 5e-14
-field_Tn = 400
 
 path_to_dir = "scratch/data/"
 

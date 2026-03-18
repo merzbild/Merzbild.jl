@@ -27,8 +27,10 @@ can be processed by two scripts:
 they are used to produce a `run_names_and_seeds` list: each element is a tuple, the first element of which
 is the prefix of the output file to process, and the second is the number of random seeds the simulation was run with.
 Uncomment different lines to process results produced by the octree or NNLS merging methods. Note that the rates in the output
-are multiplied by 1e15.
-* `process_ionization.py`: takes converted files and produces plot
+are multiplied by 1e15. Depending on the number of simulations, this might take a while.
+* `process_ionization.py`: takes converted files and produces 5 plots. The parameters of the simulations
+are set at the top of the script after the imports; the field strengths are hard-coded (100 and 400 Tn).
+Reference values are two `{field_strength: value}1 dictionaries (for ionization rate coefficient and electron temperature). 
 
 ## Post-processing of 1D Fourier results
 The numerical results produced by `fourier_fw.jl`, `fourier_varweight_nnls.jl` and `fourier_varweight_octree.jl`
