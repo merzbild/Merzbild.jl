@@ -51,7 +51,7 @@ the following simulation files were used. `Merzbild.jl` version `0.7.8`, Julia v
 and whilst the results are subject to change between `Merzbild.jl` and Julia versions (changes in random number generators,
 order of operations affecting round-off errors, etc.), they should be runnable for each release.
 Python scripts to postprocess results to produce plots
-are available in `scripts/reproducibility/2026_nnls`: `process_bkw.py`, `process_ionization_compute_rates.py`,
+are available in `scripts/reproducibility/2026_nnls`: `process_bkw.py`, `convert_ionization_data.py`,
 `process_ionization.py`, `process_fourier.py`.
 Details on executing the scripts can be found at the start of the script files and in the `scripts/reproducibility/2026_nnls/README.md`
 file.

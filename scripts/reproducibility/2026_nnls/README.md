@@ -18,6 +18,9 @@ then plotting parameters (font sizes, font families) are set. If `savefigs` is s
 The file produces 3 plots.
 
 ## Post-processing of 0D ionization results
+`convert_ionization_data.py`: convert output of `Merzbild.jl` to leaner files containing only relevant data
+(ionization rate coefficients, electron temperatures, number of electron particles)
+`process_ionization.py`: take converted files and produce plots.
 
 ## Post-processing of 1D Fourier results
 The numerical results produced by `fourier_fw.jl`, `fourier_varweight_nnls.jl` and `fourier_varweight_octree.jl`
