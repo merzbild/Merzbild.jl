@@ -26,7 +26,8 @@ can be processed by two scripts:
 (number of random seeds, applied electric field strength, timestep, etc.) are set at the top of the script after the imports;
 they are used to produce a `run_names_and_seeds` list: each element is a tuple, the first element of which
 is the prefix of the output file to process, and the second is the number of random seeds the simulation was run with.
-Uncomment different lines to process results produced by the octree or NNLS merging methods
+Uncomment different lines to process results produced by the octree or NNLS merging methods. Note that the rates in the output
+are multiplied by 1e15.
 * `process_ionization.py`: takes converted files and produces plot
 
 ## Post-processing of 1D Fourier results

@@ -2,7 +2,7 @@ import numpy as np
 from netCDF4 import Dataset
 
 # convert ionization results to a set of files containing instantaneous values of
-# 1) ionization rate coefficients 2) electron temperature 3) number of electron particles
+# 1) ionization rate coefficients (multiplied by 1e15) 2) electron temperature 3) number of electron particles
 # that can then be used in post-processing/plotting scripts
 # files are assumed to be named as {path_to_dir}/{fname}_seed{seed}.nc (if seed > 1)
 # or {path_to_dir}/{fname}.nc (if seed == 0)
