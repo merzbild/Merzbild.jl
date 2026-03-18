@@ -77,7 +77,6 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     # the main NNLS
     @timeit "NNLSinit" mnnls = NNLSMerge(mim, init_np; multi_index_moments_pos=pos_moments, matrix_ncol_nprealloc=matrix_ncol_nprealloc)
 
-
     mim_backup = []
     n_moms_backup = n_vel_up_total_backup
     for i in 1:n_moms_backup
