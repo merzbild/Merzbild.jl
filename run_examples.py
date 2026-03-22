@@ -53,7 +53,23 @@ def restore_nt(file_path, original_nt):
     with open(file_path, 'w') as f:
         f.writelines(restored_lines)
 
+def ensure_path_exists(path):
+    path = Path(path)
+    if not path.exists():
+        answer = input(f"Path '{path}' does not exist. Create it (scratch directory is already in gitignore)? (y/n) ")
+        if answer.lower() == 'y':
+            path.mkdir(parents=True, exist_ok=True)
+            print(f"Created path: {path}")
+        else:
+            print(f"Path '{path}' was not created, quitting script execution.")
+            exit()
+    # else:
+    #     print(f"Path '{path}' already exists.")
+    return path.exists()
+
 for path in Path('simulations').rglob('*.jl'):
+    ensure_path_exists("scratch/data")
+    ensure_path_exists("scratch/logs")
     print(f"Processing {path}")
     path2 = str(path).replace("/", "_")
 
