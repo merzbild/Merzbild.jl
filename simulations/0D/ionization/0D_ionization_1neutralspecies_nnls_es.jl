@@ -36,7 +36,8 @@ if `:exact`, exact rate-preserving NNLS merging is used
 * `do_es`: if `true`, event splitting is used for electron-neutral collisions
 """
 function run(seed, E_Tn, n_t,
-             n_full_up_to_total, threshold_electrons, np_target_electrons_octree;
+             n_full_up_to_total, threshold_electrons, np_target_electrons_octree,
+             cross_section_filepath;
              adds=0, rate_preserving=:off, do_es=true)
     
             
@@ -109,8 +110,7 @@ function run(seed, E_Tn, n_t,
     species_data::Vector{Species} = load_species_data("data/particles.toml", ["Ar", "Ar+", "e-"])
     interaction_data::Array{Interaction, 2} = load_interaction_data_with_dummy("data/vhs.toml", species_data)
 
-
-    n_e_interactions = load_electron_neutral_interactions(species_data, "../../Data/cross_sections/Ar_IST_Lisbon.xml",
+    n_e_interactions = load_electron_neutral_interactions(species_data, cross_section_filepath,
                                                           Dict("Ar" => "IST-Lisbon"),
                                                           Dict("Ar" => ScatteringIsotropic),
                                                           Dict("Ar" => ElectronEnergySplitEqual))
@@ -280,12 +280,18 @@ end
 paramset = [5, 69, 58]
 external_E_field_Tn = 400.0
 
+# path to IST-Lisbon cross-section data
+ist_lisbon_filepath = "../../Data/cross_sections/Ar_IST_Lisbon.xml"
+
 # set this to a smaller value (i.e. 10000) if you just want to check that the file runs
 n_t = 500000
 for do_event_splitting in [false, true]  # try out different collision schemes
-    run(1234, external_E_field_Tn, n_t, paramset[1], paramset[2], paramset[3], adds=0, rate_preserving=:off, do_es=do_event_splitting)
-    run(1234, external_E_field_Tn, n_t, paramset[1], paramset[2], paramset[3], adds=0, rate_preserving=:approximate, do_es=do_event_splitting)
-    run(1234, external_E_field_Tn, n_t, paramset[1], paramset[2], paramset[3], adds=0, rate_preserving=:exact, do_es=do_event_splitting)
+    run(1234, external_E_field_Tn, n_t, paramset[1], paramset[2], paramset[3],
+        ist_lisbon_filepath; adds=0, rate_preserving=:off, do_es=do_event_splitting)
+    run(1234, external_E_field_Tn, n_t, paramset[1], paramset[2], paramset[3],
+        ist_lisbon_filepath; adds=0, rate_preserving=:approximate, do_es=do_event_splitting)
+    run(1234, external_E_field_Tn, n_t, paramset[1], paramset[2], paramset[3],
+        ist_lisbon_filepath; adds=0, rate_preserving=:exact, do_es=do_event_splitting)
 end
 
 #  # Uncomment set-up below to run over the parameter sets used for "Moment-preserving particle merging via non-negative least squares"

@@ -37,7 +37,8 @@ Keyword arguments:
 to end of output filename (use for ensemble simulations)
 * `do_es`: if `true`, event splitting is used for electron-neutral collisions
 """
-function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons; merging_bin_split=OctreeBinMidSplit, adds=0, do_es=true)
+function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons,
+             cross_section_filepath; merging_bin_split=OctreeBinMidSplit, adds=0, do_es=true)
     T0 = 300.0
     T0_e = Merzbild.eV * 2.0  # T_e(t=0) = 2eV
     n_dens_neutrals = 1e23
@@ -90,7 +91,7 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons; merging_
     interaction_data::Array{Interaction, 2} = load_interaction_data_with_dummy("data/vhs.toml", species_data)
 
 
-    n_e_interactions = load_electron_neutral_interactions(species_data, "../../Data/cross_sections/Ar_IST_Lisbon.xml",
+    n_e_interactions = load_electron_neutral_interactions(species_data, cross_section_filepath,
                                                           Dict("Ar" => "IST-Lisbon"),
                                                           Dict("Ar" => ScatteringIsotropic),
                                                           Dict("Ar" => ElectronEnergySplitEqual))
@@ -209,8 +210,12 @@ end
 paramset = [45, 38]
 external_E_field_Tn = 400.0
 n_t = 500000
+
+# path to IST-Lisbon cross-section data
+ist_lisbon_filepath = "../../Data/cross_sections/Ar_IST_Lisbon.xml"
+
 for do_event_splitting in [false, true]  # try out different collision schemes
-    run(1234, external_E_field_Tn, n_t, paramset[1], paramset[2], merging_bin_split=OctreeBinMidSplit, adds=0, do_es=do_event_splitting)
+    run(1234, external_E_field_Tn, n_t, paramset[1], paramset[2], ist_lisbon_filepath; merging_bin_split=OctreeBinMidSplit, adds=0, do_es=do_event_splitting)
 end
 
 
@@ -226,21 +231,21 @@ end
 #     for paramset in params
 #         for sadd in 0:params[3]-1
 #             run(1234, external_E_field_Tn, n_t,
-#                 paramset[1], paramset[2], merging_bin_split=OctreeBinMidSplit, adds=sadd, do_es=true)
+#                 paramset[1], paramset[2], ist_lisbon_filepath; merging_bin_split=OctreeBinMidSplit, adds=sadd, do_es=true)
 #         end
 #     end
 
 #     for paramset in params
 #         for sadd in 0:params[3]-1
 #             run(1234, external_E_field_Tn, n_t,
-#                 paramset[1], paramset[2], merging_bin_split=OctreeBinMidSplit, adds=sadd, do_es=true)
+#                 paramset[1], paramset[2], ist_lisbon_filepath; merging_bin_split=OctreeBinMidSplit, adds=sadd, do_es=true)
 #         end
 #     end
 
 #     for paramset in params
 #         for sadd in 0:params[3]-1
 #             run(1234, external_E_field_Tn, n_t,
-#                 paramset[1], paramset[2], merging_bin_split=OctreeBinMidSplit, adds=sadd, do_es=true)
+#                 paramset[1], paramset[2], ist_lisbon_filepath; merging_bin_split=OctreeBinMidSplit, adds=sadd, do_es=true)
 #         end
 #     end
 # end
