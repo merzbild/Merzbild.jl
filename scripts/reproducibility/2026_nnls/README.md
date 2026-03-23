@@ -3,7 +3,7 @@ The scripts in this directory are
 for post-processing the numerical results for the paper ["Moment-preserving particle merging via non-negative least squares"](TODO: link)
 by G. Oblapenko and M. Torrilhon. The scripts require data produced by the simulations (see the "Paper reproducibility" section in `simulations/README.md`).
 By default it is assumed that the outputs of the simulations are located in `scratch/data`, this can be adjusted by changing the value of the `pref` variable
-at the start of the scripts. Change `savefigs` to `False` to turn off saving figure as PDFs.
+at the start of the scripts. Change `savefigs` to `False` to turn off saving figures as PDFs.
 
 The results were computed using `Merzbild.jl` version `0.7.8`, Julia version `1.12`. The Python
 scripts require `numpy`, `scipy`, `matplotlib`, `netCDF4`.
@@ -54,3 +54,5 @@ NNLS results are assumed to be named `avg_Fourier_nnls_ntc_0.005_1000_0.0_300.0_
 
 The parameters of the simulations (size of cells, etc.) are set at the top of the script after the imports;
 then plotting parameters (font sizes, font families) are set. If `savefigs` is set to true, the produced figures will be saved as PDFs.
+
+The file produces 5 plots.
