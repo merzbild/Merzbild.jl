@@ -1,6 +1,7 @@
 import os
 import re
 from pathlib import Path
+import argparse
 
 def find_and_replace_nt(file_path):
     # Read the file
@@ -67,19 +68,29 @@ def ensure_path_exists(path):
     #     print(f"Path '{path}' already exists.")
     return path.exists()
 
-for path in Path('simulations').rglob('*.jl'):
-    ensure_path_exists("scratch/data")
-    ensure_path_exists("scratch/logs")
-    print(f"Processing {path}")
-    path2 = str(path).replace("/", "_")
 
-    # Find and replace n_t
-    original_nt = find_and_replace_nt(path)
+def main(logdir=None):
+    for path in Path('simulations').rglob('*.jl'):
+        ensure_path_exists("scratch/data")
+        ensure_path_exists(logdir)
+        print(f"Processing {path}")
+        path2 = str(path).replace("/", "_")
 
-    # Run the Julia script
-    print(f"Running {path} with n_t = 10")
-    os.system(f"julia --project=. {path} > scratch/logs/out_{path2}.log 2> scratch/logs/error_{path2}.log")
+        # Find and replace n_t
+        original_nt = find_and_replace_nt(path)
 
-    # Restore the original n_t value
-    restore_nt(path, original_nt)
-    print(f"Restored n_t = {original_nt} in {path}")
+        # Run the Julia script
+        print(f"Running {path} with n_t = 10")
+        os.system(f"julia --project=. {path} > scratch/logs/out_{path2}.log 2> scratch/logs/error_{path2}.log")
+
+        # Restore the original n_t value
+        restore_nt(path, original_nt)
+        print(f"Restored n_t = {original_nt} in {path}")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Script to run example simulations in simulations/")
+    parser.add_argument("--logdir", type=str, help="Directory for log file output", default="scratch/logs")
+    args = parser.parse_args()
+    print(f"Will write logs to {args.logdir}")
+
+    main(logdir=args.logdir)
