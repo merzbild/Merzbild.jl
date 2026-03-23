@@ -127,6 +127,7 @@ function run(seed, merge_method, merge_parameter, Nsamples, io_handle; sampling_
 
     n_post = 0.0
 
+    Nsamples_end = 0
     for i in 1:Nsamples
         particles::Vector{ParticleVector} = [ParticleVector(np_base)]
 
@@ -150,9 +151,14 @@ function run(seed, merge_method, merge_parameter, Nsamples, io_handle; sampling_
 
         if merge_method == :octree
             merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, merge_parameter)
+            Nsamples_end += 1
         else
-            merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1;
-                              vref=vref, scaling=:variance, centered_at_mean=false, v_multipliers=[], iteration_mult=8)
+            flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1;
+                                     vref=vref, scaling=:variance, centered_at_mean=false, v_multipliers=[], iteration_mult=8)
+
+            if flag != -1
+                Nsamples_end += 1
+            end
         end
 
         w_tail_post_1 += tail_function(particles[1], pia, tail_vel_1)
@@ -169,20 +175,20 @@ function run(seed, merge_method, merge_parameter, Nsamples, io_handle; sampling_
         end
     end
 
-    r_w_pre /= Nsamples
-    std_w_pre /= Nsamples
-    std_logw_pre /= Nsamples
+    r_w_pre /= Nsamples_end
+    std_w_pre /= Nsamples_end
+    std_logw_pre /= Nsamples_end
 
-    r_w /= Nsamples
-    std_w /= Nsamples
-    std_logw /= Nsamples
+    r_w /= Nsamples_end
+    std_w /= Nsamples_end
+    std_logw /= Nsamples_end
 
-    w_tail_pre_1 /= Nsamples
-    w_tail_pre_2 /= Nsamples
-    w_tail_post_1 /= Nsamples
-    w_tail_post_2 /= Nsamples
+    w_tail_pre_1 /= Nsamples_end
+    w_tail_pre_2 /= Nsamples_end
+    w_tail_post_1 /= Nsamples_end
+    w_tail_post_2 /= Nsamples_end
 
-    n_post /= Nsamples
+    n_post /= Nsamples_end
 
     println("Npost = $n_post")
     println("pre-merge weight ratio: ", r_w_pre)
