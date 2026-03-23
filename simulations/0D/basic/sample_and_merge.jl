@@ -149,6 +149,7 @@ function run(seed, merge_method, merge_parameter, Nsamples, io_handle; sampling_
         std_w_pre += rwo[2]
         std_logw_pre += rwo[3]
 
+        flag = 1
         if merge_method == :octree
             merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, merge_parameter)
             Nsamples_end += 1
@@ -161,14 +162,16 @@ function run(seed, merge_method, merge_parameter, Nsamples, io_handle; sampling_
             end
         end
 
-        w_tail_post_1 += tail_function(particles[1], pia, tail_vel_1)
-        w_tail_post_2 += tail_function(particles[1], pia, tail_vel_2)
+        if flag != -1
+            w_tail_post_1 += tail_function(particles[1], pia, tail_vel_1)
+            w_tail_post_2 += tail_function(particles[1], pia, tail_vel_2)
 
-        rwo = ratio(particles[1], pia)
-        r_w += rwo[1]
-        std_w += rwo[2]
-        std_logw += rwo[3]
-        n_post += pia.indexer[1,1].n_local
+            rwo = ratio(particles[1], pia)
+            r_w += rwo[1]
+            std_w += rwo[2]
+            std_logw += rwo[3]
+            n_post += pia.indexer[1,1].n_local
+        end
 
         if i%10000 == 0
             println("$i/$Nsamples")
