@@ -3,6 +3,18 @@ import re
 from pathlib import Path
 import argparse
 
+# list of files and names of variables pointing to external data so that the script can check
+file_with_external_data_list = [("simulations/0D/ionization/0D_ionization_1neutralspecies_es.jl", "cs_n_e_filepath"),
+                                ("simulations/0D/ionization/0D_ionization_1neutralspecies_nnls_es.jl", "cs_n_e_filepath"),]
+
+def extract_key_value(filepath, key):
+    with open(filepath, 'r') as f:
+        for line in f:
+            if line.strip().startswith(f"{key} = "):
+                value = line.split('=')[1].strip().strip('"').strip("'")
+                return value
+    return None
+
 def find_and_replace_nt(file_path):
     # Read the file
     with open(file_path, 'r') as f:
@@ -76,16 +88,30 @@ def main(logdir=None):
         print(f"Processing {path}")
         path2 = str(path).replace("/", "_")
 
-        # Find and replace n_t
-        original_nt = find_and_replace_nt(path)
+        run_sim = True
+        for file_kv in file_with_external_data_list:
+            if str(path).endswith(file_kv[0]):
+                value = extract_key_value(path, file_kv[1])
+                if value is not None:
+                    exists = os.path.exists(value)
+                    if not exists:
+                        answer = input(f"External file {value} required by {file_kv[0]} not found. Skip simulation (if no, error will be produced)? (y/n) ")
+                        if answer.lower() == 'y':
+                            run_sim = False
+        
+        if run_sim:
+            # Find and replace n_t
+            original_nt = find_and_replace_nt(path)
 
-        # Run the Julia script
-        print(f"Running {path} with n_t = 10")
-        os.system(f"julia --project=. {path} > scratch/logs/out_{path2}.log 2> scratch/logs/error_{path2}.log")
+            # Run the Julia script
+            print(f"Running {path} with n_t = 10")
+            os.system(f"julia --project=. {path} > scratch/logs/out_{path2}.log 2> scratch/logs/error_{path2}.log")
 
-        # Restore the original n_t value
-        restore_nt(path, original_nt)
-        print(f"Restored n_t = {original_nt} in {path}")
+            # Restore the original n_t value
+            restore_nt(path, original_nt)
+            print(f"Restored n_t = {original_nt} in {path}")
+        else:
+            print(f"Skipping {path}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Script to run example simulations in simulations/")

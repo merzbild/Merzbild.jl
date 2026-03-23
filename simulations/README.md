@@ -11,7 +11,8 @@ just to check that they runs without errors. After executing a simulation, the s
 If a simulation does not have a line `n_t = VALUE` or `const n_t = VALUE`, the script will throw an error.
 The script has an optional parameter, `logdir` (defaults to `scratch/logs`), console output and errors are written to `logdir`.
 Simulation data is written to `scratch/data`. If these two directories do not exist,
-the script will ask whether to create them.
+the script will ask whether to create them. If a simulation file requires external data, the script will check whether the data exists -
+if not, script will ask user whether to skip the simulation or proceed with an error.
 
 ## 0D simulations
 
@@ -142,7 +143,7 @@ For the BKW test case (see the commented-out part on "multiple runs with ensembl
 * `0D/BKW/bkw_varweight_nnls.jl` - for the variable-weight simulations using NNLS merging
 
 For the ionization test case (**when run over all ensembles, these produce VERY LARGE amounts of data, 100s of GBs**);
-external data from [LXCat](https://us.lxcat.net/home/) is required for the cross-sections (IST-Lisbon database):
+external data from [LXCat](https://us.lxcat.net/home/) is required for the cross-sections (IST-Lisbon database) (see notes above on exact XML format required):
 * `0D/ionization/0D_ionization_1neutralspecies_es.jl` - for the variable-weight simulations using octree N:2 merging
 (uncomment lines below comment "Uncomment set-up below ..." to get the full set-up running over all parameters and ensembles; setting `paramset` to [12000, 6000] will produce results used as reference values)
 * `0D/ionization/0D_ionization_1neutralspecies_nnls_es.jl` - for the variable-weight simulations using different versions of NNLS merging
