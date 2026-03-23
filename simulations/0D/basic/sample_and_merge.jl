@@ -214,23 +214,23 @@ n_t = 10000
 params = [[4, 36]]
 
 #  # uncomment lines below to run over the parameter sets used for "Moment-preserving particle merging via non-negative least squares"
-params = [[4, 36], [5, 55], [6, 85]]
-n_t = 100000  # number of samples for each run
+# params = [[4, 36], [5, 55], [6, 85], [7, 120], [8, 164], [9, 220]]
+# n_t = 100000  # number of samples for each run
 
-pref = "scratch/data"
+# pref = "scratch/data"
 
-for (sm, fname) in zip([:equal_weight, :weighted_samples], ["equalweight", "weighted"])
-    io_nnls = open("$(pref)/nnls_$(fname).log", "w")
-    io_octree = open("$(pref)/octree_$(fname).log", "w")
+# for (sm, fname) in zip([:equal_weight, :weighted_samples], ["equalweight", "weighted"])
+#     io_nnls = open("$(pref)/nnls_$(fname).log", "w")
+#     io_octree = open("$(pref)/octree_$(fname).log", "w")
 
-    for paramset in params
-        println("NNLS merging: $paramset; sampling method: $(sm)")
-        run(1, :nnls, paramset[1], n_t, io_nnls; sampling_method=sm)
+#     for paramset in params
+#         println("NNLS merging: $paramset; sampling method: $(sm)")
+#         run(1, :nnls, paramset[1], n_t, io_nnls; sampling_method=sm)
 
-        println("Octree merging: $paramset; sampling method: $(sm)")
-        run(1, :octree, paramset[2], n_t, io_octree; sampling_method=sm)
-    end
+#         println("Octree merging: $paramset; sampling method: $(sm)")
+#         run(1, :octree, paramset[2], n_t, io_octree; sampling_method=sm)
+#     end
 
-    close(io_nnls)
-    close(io_octree)
-end
+#     close(io_nnls)
+#     close(io_octree)
+# end
