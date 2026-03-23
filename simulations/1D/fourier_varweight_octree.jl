@@ -176,7 +176,7 @@ function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
     print_timer()
 end
 
-const n_t = 10
+const n_t = 3500000
 # const params = [[45, 38], [69, 58], [105, 88], [146, 122], [200, 166], [266, 220]] - iterate over all N:M merges
 const params = [[45, 38]]
 
