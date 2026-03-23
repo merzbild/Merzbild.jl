@@ -65,12 +65,12 @@ end
 
 
 """
-    run(seed, merge_method, merge_parameter, Nsamples; sampling_method=:equal_weight)
+    run(seed, merge_method, merge_parameter, Nsamples, io_handle; sampling_method=:equal_weight)
 
 Sample 500 particles with total weight 1, merge them using either octree merging or NNLS merging,
 compute how the tail functionals and weight distribution are affected by the merging
 by repeating the sample-and-merge processed over `Nsamples` independent runs.
-The function prints the various statistics after the computation is finished.
+The function prints the various statistics after the computation is finished and writes them to a file as well.
 
 Positional arguments:
 * `seed`: the initial random seed
@@ -78,6 +78,7 @@ Positional arguments:
 * `merge_parameter`: if octree merging is used, this is the number of particles to merge down to;
 if NNLS merging is used, this is the maximum total order of the mixed velocity moments to conserve
 * `Nsamples`: number of independent sample-and-merge simulations to run
+* `io_handle`: handle of file to write output to
 
 Keyword arguments:
 * `sampling_method`: if `:equal_weight`, equal_weight particles are sampled by sampling their velocities
@@ -85,7 +86,7 @@ from a Maxwell--Boltzmann distribution. If `:weighted_samples`, the particle vel
 from a uniform distribution in a cube, and particles' weights are computed as being proportional
 to the value of the Maxwell--Boltzmann distribution at their velocities
 """
-function run(seed, merge_method, merge_parameter, Nsamples; sampling_method=:equal_weight)
+function run(seed, merge_method, merge_parameter, Nsamples, io_handle; sampling_method=:equal_weight)
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)
 
@@ -106,6 +107,10 @@ function run(seed, merge_method, merge_parameter, Nsamples; sampling_method=:equ
 
     vref = sqrt(2 * k_B * T0 / species_data[1].mass)
     Fnum = ndens / np_base
+
+    r_w_pre = 0.0
+    std_w_pre = 0.0
+    std_logw_pre = 0.0
 
     r_w = 0.0
     std_w = 0.0
@@ -138,6 +143,11 @@ function run(seed, merge_method, merge_parameter, Nsamples; sampling_method=:equ
         w_tail_pre_1 += tail_function(particles[1], pia, tail_vel_1)
         w_tail_pre_2 += tail_function(particles[1], pia, tail_vel_2)
 
+        rwo = ratio(particles[1], pia)
+        r_w_pre += rwo[1]
+        std_w_pre += rwo[2]
+        std_logw_pre += rwo[3]
+
         if merge_method == :octree
             merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, merge_parameter)
         else
@@ -159,6 +169,10 @@ function run(seed, merge_method, merge_parameter, Nsamples; sampling_method=:equ
         end
     end
 
+    r_w_pre /= Nsamples
+    std_w_pre /= Nsamples
+    std_logw_pre /= Nsamples
+
     r_w /= Nsamples
     std_w /= Nsamples
     std_logw /= Nsamples
@@ -171,12 +185,25 @@ function run(seed, merge_method, merge_parameter, Nsamples; sampling_method=:equ
     n_post /= Nsamples
 
     println("Npost = $n_post")
+    println("pre-merge weight ratio: ", r_w_pre)
+    println("pre-merge weight std: ", std_w_pre)
+    println("pre-merge weight log std: ", std_logw_pre)
     println("weight ratio: ", r_w)
     println("weight std: ", std_w)
     println("weight log std: ", std_logw)
     println("f_tail($(tail_vel_1)): $(w_tail_pre_1) -> $(w_tail_post_1)")
     println("f_tail($(tail_vel_2)): $(w_tail_pre_2) -> $(w_tail_post_2)")
     println()
+
+    write(io_handle, "Npost = $n_post\n")
+    write(io_handle, "pre-merge weight ratio: $(r_w_pre)\n")
+    write(io_handle, "pre-merge weight std: $(std_w_pre)\n")
+    write(io_handle, "pre-merge weight log std: $(std_logw_pre)\n")
+    write(io_handle, "weight ratio: $(r_w)\n")
+    write(io_handle, "weight std: $(std_w)\n")
+    write(io_handle, "weight log std: $(std_logw)\n")
+    write(io_handle, "f_tail($(tail_vel_1)): $(w_tail_pre_1) -> $(w_tail_post_1)\n")
+    write(io_handle, "f_tail($(tail_vel_2)): $(w_tail_pre_2) -> $(w_tail_post_2)\n\n")
 end
 
 # n_t is the number of samples for each run
@@ -187,15 +214,23 @@ n_t = 10000
 params = [[4, 36]]
 
 #  # uncomment lines below to run over the parameter sets used for "Moment-preserving particle merging via non-negative least squares"
-# params = [[4, 36], [5, 55], [6, 85], [7, 120], [8, 164], [9, 220]]
-# n_t = 100000  # number of samples for each run
+params = [[4, 36], [5, 55], [6, 85]]
+n_t = 100000  # number of samples for each run
 
-for paramset in params
-    for sm in [:equal_weight, :weighted_samples]
+pref = "scratch/data"
+
+for (sm, fname) in zip([:equal_weight, :weighted_samples], ["equalweight", "weighted"])
+    io_nnls = open("$(pref)/nnls_$(fname).log", "w")
+    io_octree = open("$(pref)/octree_$(fname).log", "w")
+
+    for paramset in params
         println("NNLS merging: $paramset; sampling method: $(sm)")
-        run(1, :nnls, paramset[1], n_t; sampling_method=sm)
+        run(1, :nnls, paramset[1], n_t, io_nnls; sampling_method=sm)
 
         println("Octree merging: $paramset; sampling method: $(sm)")
-        run(1, :octree, paramset[2], n_t; sampling_method=sm)
+        run(1, :octree, paramset[2], n_t, io_octree; sampling_method=sm)
     end
+
+    close(io_nnls)
+    close(io_octree)
 end
