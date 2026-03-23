@@ -281,17 +281,17 @@ paramset = [5, 69, 58]
 external_E_field_Tn = 400.0
 
 # path to IST-Lisbon cross-section data
-ist_lisbon_filepath = "../../Data/cross_sections/Ar_IST_Lisbon.xml"
+cs_n_e_filepath = "../../Data/cross_sections/Ar_IST_Lisbon.xml"
 
 # set this to a smaller value (i.e. 10000) if you just want to check that the file runs
 n_t = 500000
 for do_event_splitting in [false, true]  # try out different collision schemes
     run(1234, external_E_field_Tn, n_t, paramset[1], paramset[2], paramset[3],
-        ist_lisbon_filepath; adds=0, rate_preserving=:off, do_es=do_event_splitting)
+        cs_n_e_filepath; adds=0, rate_preserving=:off, do_es=do_event_splitting)
     run(1234, external_E_field_Tn, n_t, paramset[1], paramset[2], paramset[3],
-        ist_lisbon_filepath; adds=0, rate_preserving=:approximate, do_es=do_event_splitting)
+        cs_n_e_filepath; adds=0, rate_preserving=:approximate, do_es=do_event_splitting)
     run(1234, external_E_field_Tn, n_t, paramset[1], paramset[2], paramset[3],
-        ist_lisbon_filepath; adds=0, rate_preserving=:exact, do_es=do_event_splitting)
+        cs_n_e_filepath; adds=0, rate_preserving=:exact, do_es=do_event_splitting)
 end
 
 #  # Uncomment set-up below to run over the parameter sets used for "Moment-preserving particle merging via non-negative least squares"
@@ -308,21 +308,21 @@ end
 #     for paramset in params
 #         for sadd in 0:paramset[4]-1
 #             run(1234, external_E_field_Tn, n_t,
-#                 paramset[1], paramset[2], paramset[3], adds=sadd, rate_preserving=:off, do_es=true)
+#                 paramset[1], paramset[2], paramset[3], cs_n_e_filepath; adds=sadd, rate_preserving=:off, do_es=true)
 #         end
 #     end
 
 #     for paramset in params
 #         for sadd in 0:paramset[4]-1
 #             run(1234, external_E_field_Tn, n_t,
-#                 paramset[1], paramset[2], paramset[3], adds=sadd, rate_preserving=:approximate, do_es=true)
+#                 paramset[1], paramset[2], paramset[3], cs_n_e_filepath; adds=sadd, rate_preserving=:approximate, do_es=true)
 #         end
 #     end
 
 #     for paramset in params
 #         for sadd in 0:paramset[4]-1
 #             run(1234, external_E_field_Tn, n_t,
-#                 paramset[1], paramset[2], paramset[3], adds=sadd, rate_preserving=:exact, do_es=true)
+#                 paramset[1], paramset[2], paramset[3], cs_n_e_filepath; adds=sadd, rate_preserving=:exact, do_es=true)
 #         end
 #     end
 # end

@@ -212,10 +212,10 @@ external_E_field_Tn = 400.0
 n_t = 500000
 
 # path to IST-Lisbon cross-section data
-ist_lisbon_filepath = "../../Data/cross_sections/Ar_IST_Lisbon.xml"
+cs_n_e_filepath = "../../Data/cross_sections/Ar_IST_Lisbon.xml"
 
 for do_event_splitting in [false, true]  # try out different collision schemes
-    run(1234, external_E_field_Tn, n_t, paramset[1], paramset[2], ist_lisbon_filepath; merging_bin_split=OctreeBinMidSplit, adds=0, do_es=do_event_splitting)
+    run(1234, external_E_field_Tn, n_t, paramset[1], paramset[2], cs_n_e_filepath; merging_bin_split=OctreeBinMidSplit, adds=0, do_es=do_event_splitting)
 end
 
 
@@ -231,21 +231,21 @@ end
 #     for paramset in params
 #         for sadd in 0:params[3]-1
 #             run(1234, external_E_field_Tn, n_t,
-#                 paramset[1], paramset[2], ist_lisbon_filepath; merging_bin_split=OctreeBinMidSplit, adds=sadd, do_es=true)
+#                 paramset[1], paramset[2], cs_n_e_filepath; merging_bin_split=OctreeBinMidSplit, adds=sadd, do_es=true)
 #         end
 #     end
 
 #     for paramset in params
 #         for sadd in 0:params[3]-1
 #             run(1234, external_E_field_Tn, n_t,
-#                 paramset[1], paramset[2], ist_lisbon_filepath; merging_bin_split=OctreeBinMidSplit, adds=sadd, do_es=true)
+#                 paramset[1], paramset[2], cs_n_e_filepath; merging_bin_split=OctreeBinMidSplit, adds=sadd, do_es=true)
 #         end
 #     end
 
 #     for paramset in params
 #         for sadd in 0:params[3]-1
 #             run(1234, external_E_field_Tn, n_t,
-#                 paramset[1], paramset[2], ist_lisbon_filepath; merging_bin_split=OctreeBinMidSplit, adds=sadd, do_es=true)
+#                 paramset[1], paramset[2], cs_n_e_filepath; merging_bin_split=OctreeBinMidSplit, adds=sadd, do_es=true)
 #         end
 #     end
 # end
