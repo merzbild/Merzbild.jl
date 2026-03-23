@@ -3,8 +3,9 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from netCDF4 import Dataset
 
-savefigs = False
-# savefigs = True  # - uncomment to save plots
+# uncomment savefigs = False to turn off saving of figures
+savefigs = True
+# savefigs = False
 
 dt = 5e-14
 

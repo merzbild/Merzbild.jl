@@ -3,8 +3,9 @@ from netCDF4 import Dataset
 from matplotlib import pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
 
-savefigs = False
-# savefigs = True  # - uncomment to save plots
+# uncomment savefigs = False to turn off saving of figures
+savefigs = True
+# savefigs = False
 
 # this is the timestep after which the averaging of results was turned on in the simulation
 # assumes filenames end with "_after{avg_start}.nc"

@@ -1,8 +1,9 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-savefigs = False
+# uncomment savefigs = False to turn off saving of figures
 savefigs = True
+# savefigs = False
 
 # directory where data is located
 # files assumed to be named {pref}octree_{stype} and {pref}nnls_{stype}

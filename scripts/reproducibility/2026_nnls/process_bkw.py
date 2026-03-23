@@ -4,8 +4,9 @@ from matplotlib import pyplot as plt
 from scipy import constants
 from scipy.special import gamma
 
-savefigs = False
-# savefigs = True  # - uncomment to save plots
+# uncomment savefigs = False to turn off saving of figures
+savefigs = True
+# savefigs = False
 
 # number of timesteps (including the 0th timestep) and timestep size in each simulation
 n_t = 601
