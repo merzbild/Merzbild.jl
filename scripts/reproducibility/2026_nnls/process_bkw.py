@@ -11,15 +11,18 @@ savefigs = False
 n_t = 601
 dt = 0.025
 
+# path to directory with simulation results
+pref = "scratch/data/"
+
 # the octree merging simulations' parameters ([threshold, Ntarget]) and number of seeds for each set of parameters
 octree_mid_runs = [[42, 36], [66, 55], [100, 85], [142, 120], [200, 164], [264, 220]]
 octree_mid_seeds = [10800,    4800,     2160,      1040,       560,        400]
-# code assumes files have names scratch/data/bkw_octree_mid_{threshold}_{Ntarget}_{seed}.nc
+# code assumes files have names {pref}bkw_octree_mid_{threshold}_{Ntarget}_{seed}.nc
 
 # the NNLS merging simulations' parameters ([n_full_up_to_total, threshold, ntarget_octree]) and number of seeds for each set of parameters
 nnls_runs = [[4, 42, 36], [5, 66, 55], [6, 100, 85], [7, 142, 120], [8, 200, 164], [9, 264, 220]] #,
 nnls_seeds = [10800,       4800,        2160,         1040,          560,           400]
-# code assumes files have names scratch/data/bkw_nnls_$(n_full_up_to_total)full_$(threshold)_$(seed).nc
+# code assumes files have names {pref}bkw_nnls_$(n_full_up_to_total)full_$(threshold)_$(seed).nc
 
 # plotting parameters
 label_size = 24
@@ -69,7 +72,7 @@ for octree_mid_seed_n, run in zip(octree_mid_seeds, octree_mid_runs):
         threshold = run[0]
         Ntarget = run[1]
         
-        ds = Dataset(f"scratch/data/bkw_octree_mid_{threshold}_{Ntarget}_{seed}.nc")
+        ds = Dataset(f"{pref}bkw_octree_mid_{threshold}_{Ntarget}_{seed}.nc")
         
         octree_mid_data[threshold]["t"] = np.asarray(ds.variables["timestep"][:].data)
         np_arr[seed-1, :] = np.asarray(ds.variables["np"][:].data[1:, 0, 0])
@@ -108,7 +111,7 @@ for (nnls_seed_n, run) in zip(nnls_seeds, nnls_runs):
     for seed in range(1,nnls_seed_n+1):
         threshold = run[0]
         
-        ds = Dataset(f"scratch/data/bkw_nnls_{run[0]}full_{run[1]}_{seed}.nc")
+        ds = Dataset(f"{pref}bkw_nnls_{run[0]}full_{run[1]}_{seed}.nc")
         
         nnls_data[threshold]["t"] = np.asarray(ds.variables["timestep"][:].data)
         np_arr[seed-1, :] = np.asarray(ds.variables["np"][:].data[1:, 0, 0])

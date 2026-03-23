@@ -8,7 +8,7 @@ savefigs = False
 
 dt = 5e-14
 
-path_to_dir = "scratch/data/"
+pref = "scratch/data/"
 
 # assumed to be equal across all runs
 n_seeds_for_run = [63, 63, 63, 15, 15, 15]
@@ -100,7 +100,7 @@ for field_Tn in [100, 400]:
     octree_data[field_Tn] = {x[0]: {} for x in octree_runs}
     for ns, run in zip(n_seeds_for_run, octree_runs):
         print("Octree: ", run)
-        filename = f"{path_to_dir}ionization_Ar_{field_Tn}Tn_octree_mid_{run[0]}_to_{run[1]}_es"
+        filename = f"{pref}ionization_Ar_{field_Tn}Tn_octree_mid_{run[0]}_to_{run[1]}_es"
         avg_of_bias, bias_of_avg, mk, nk, npm, Te, nTe = get_bias_mean_noise_np_from_rate_file(ref_val_mean,
                                                                                                ts_min, ts_max,
                                                                                                filename,
@@ -111,7 +111,7 @@ for field_Tn in [100, 400]:
     nnls_data[field_Tn] = {x[0]: {} for x in nnls_runs}
     for ns, run in zip(n_seeds_for_run, nnls_runs):
         print("NNLS :", run)
-        filename = f"{path_to_dir}ionization_Ar_{field_Tn}Tn_NNLS_{run[0]}full_{run[1]}_es"
+        filename = f"{pref}ionization_Ar_{field_Tn}Tn_NNLS_{run[0]}full_{run[1]}_es"
         avg_of_bias, bias_of_avg, mk, nk, npm, Te, nTe = get_bias_mean_noise_np_from_rate_file(ref_val_mean,
                                                                                                ts_min, ts_max, 
                                                                                                filename,
@@ -122,7 +122,7 @@ for field_Tn in [100, 400]:
     nnls_rp_data[field_Tn] = {x[0]: {} for x in nnls_rp_runs}
     for ns, run in zip(n_seeds_for_run, nnls_rp_runs):
         print("NNLS (ARP): ", run)
-        filename = f"{path_to_dir}ionization_Ar_{field_Tn}Tn_NNLSrate_approx_{run[0]}full_{run[1]}_es"
+        filename = f"{pref}ionization_Ar_{field_Tn}Tn_NNLSrate_approx_{run[0]}full_{run[1]}_es"
         avg_of_bias, bias_of_avg, mk, nk, npm, Te, nTe = get_bias_mean_noise_np_from_rate_file(ref_val_mean,
                                                                                                ts_min, ts_max, 
                                                                                                filename,
@@ -133,7 +133,7 @@ for field_Tn in [100, 400]:
     nnls_erp_data[field_Tn] = {x[0]: {} for x in nnls_erp_runs}
     for ns, run in zip(n_seeds_for_run, nnls_erp_runs):
         print("NNLS (RP): ", run)
-        filename = f"{path_to_dir}ionization_Ar_{field_Tn}Tn_NNLSrate_exact_{run[0]}full_{run[1]}_es"
+        filename = f"{pref}ionization_Ar_{field_Tn}Tn_NNLSrate_exact_{run[0]}full_{run[1]}_es"
         avg_of_bias, bias_of_avg, mk, nk, npm, Te, nTe = get_bias_mean_noise_np_from_rate_file(ref_val_mean,
                                                                                                ts_min, ts_max, 
                                                                                                filename,
@@ -378,7 +378,7 @@ for field_Tn in [100, 400]:
 
     for ns, run in zip(n_seeds_for_run, octree_runs):
         print("Octree: ", run)
-        filename = f"{path_to_dir}ionization_Ar_{field_Tn}Tn_octree_mid_{run[0]}_to_{run[1]}_es"
+        filename = f"{pref}ionization_Ar_{field_Tn}Tn_octree_mid_{run[0]}_to_{run[1]}_es"
         bias_k_w, bias_T_w, n_merge_avg, n_between = get_bias_post_merge(ref_val_mean, ref_T_val * 11605.0,
                                                                          ts_min, ts_max, 
                                                                          filename,
@@ -389,7 +389,7 @@ for field_Tn in [100, 400]:
 
     for ns, run in zip(n_seeds_for_run, nnls_runs):
         print("NNLS: ", run)
-        filename = f"{path_to_dir}ionization_Ar_{field_Tn}Tn_NNLS_{run[0]}full_{run[1]}_es"
+        filename = f"{pref}ionization_Ar_{field_Tn}Tn_NNLS_{run[0]}full_{run[1]}_es"
         bias_k_w, bias_T_w, n_merge_avg, n_between = get_bias_post_merge(ref_val_mean, ref_T_val * 11605.0,
                                                                          ts_min, ts_max, 
                                                                          filename,
@@ -400,7 +400,7 @@ for field_Tn in [100, 400]:
 
     for ns, run in zip(n_seeds_for_run, nnls_rp_runs):
         print("NNLS ARP: ", run)
-        filename = f"{path_to_dir}ionization_Ar_{field_Tn}Tn_NNLSrate_approx_{run[0]}full_{run[1]}_es"
+        filename = f"{pref}ionization_Ar_{field_Tn}Tn_NNLSrate_approx_{run[0]}full_{run[1]}_es"
         bias_k_w, bias_T_w, n_merge_avg, n_between = get_bias_post_merge(ref_val_mean, ref_T_val * 11605.0,
                                                                          ts_min, ts_max, 
                                                                          filename,
@@ -411,7 +411,7 @@ for field_Tn in [100, 400]:
 
     for ns, run in zip(n_seeds_for_run, nnls_erp_runs):
         print("NNLS RP: ", run)
-        filename = f"{path_to_dir}ionization_Ar_{field_Tn}Tn_NNLSrate_exact_{run[0]}full_{run[1]}_es"
+        filename = f"{pref}ionization_Ar_{field_Tn}Tn_NNLSrate_exact_{run[0]}full_{run[1]}_es"
         bias_k_w, bias_T_w, n_merge_avg, n_between = get_bias_post_merge(ref_val_mean, ref_T_val * 11605.0,
                                                                          ts_min, ts_max, 
                                                                          filename,

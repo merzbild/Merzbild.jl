@@ -4,23 +4,24 @@ from netCDF4 import Dataset
 # convert ionization results to a set of files containing instantaneous values of
 # 1) ionization rate coefficients (multiplied by 1e15) 2) electron temperature 3) number of electron particles
 # that can then be used in post-processing/plotting scripts
-# files are assumed to be named as {path_to_dir}/{fname}_seed{seed}.nc (if seed > 1)
-# or {path_to_dir}/{fname}.nc (if seed == 0)
+# files are assumed to be named as {pref}/{fname}_seed{seed}.nc (if seed > 1)
+# or {pref}/{fname}.nc (if seed == 0)
 # first, a run_names list is constructed (one run_name per parameter set), and then iterated over
 # a second list (n_seeds_for_run) contains the number of different starting random seeds for each corresponding
 # run (if seeds = 0,...,N were used, n_seeds_for_run should be [N-1])
 # these are used to construct run_names_and_seeds, where each element is a tuple with a specific file prefix and the number of seeds
-# output is written to {path_to_dir}/{fname}_seed{seed}_rate_data_only.nc
+# output is written to {pref}/{fname}_seed{seed}_rate_data_only.nc
 
 field_Tn = 400
 dt = 5e-14
 
-path_to_dir = "scratch/data/"
+# path to directory with simulation results
+pref = "scratch/data/"
 
 # octree simulation parameters, uncomment these and comment out the NNLS run_names to use the former
 # octree_runs = [[41, 38], [62, 58], [95, 88], [131, 122], [178, 166], [236, 220]]
 # n_seeds_for_run = [63, 63, 63, 15, 15, 15]
-# run_names_and_seeds = [(f"{path_to_dir}ionization_Ar_{field_Tn}Tn_octree_mid_{run[0]}_to_{run[1]}_es", ns)
+# run_names_and_seeds = [(f"{pref}ionization_Ar_{field_Tn}Tn_octree_mid_{run[0]}_to_{run[1]}_es", ns)
 #                        for run, ns in zip(octree_runs, n_seeds_for_run)]
 # print(run_names_and_seeds)
 
@@ -29,7 +30,7 @@ path_to_dir = "scratch/data/"
 nnls_runs = [[4, 41, 38], [5, 62, 58], [6, 95, 88], [7, 131, 122], [8, 178, 166], [9, 236, 220]] 
 n_seeds_for_run = [63, 63, 63, 15, 15, 15]
 nnlstypes = ["", "rate_exact", "rate_approx"]
-run_names_and_seeds = [(f"{path_to_dir}ionization_Ar_{field_Tn}Tn_NNLS{rp}_{run[0]}full_{run[1]}_es", ns)
+run_names_and_seeds = [(f"{pref}ionization_Ar_{field_Tn}Tn_NNLS{rp}_{run[0]}full_{run[1]}_es", ns)
                        for run, ns in zip(nnls_runs, n_seeds_for_run) for rp in nnlstypes]
 
 print(run_names_and_seeds)
