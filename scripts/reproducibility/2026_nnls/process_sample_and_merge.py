@@ -98,7 +98,7 @@ for stype in ["equalweight", "weighted"]:
     ax2.set_ylabel(r"$F(750)$", fontsize=label_size)
 
     if savefigs:
-        fig.savefig(f"functionals_{stype}.pdf", bbox_inches="tight")
+        fig.savefig(f"tail_functions_{stype}.pdf", bbox_inches="tight")
 
     # plot weight deviations
     fig = plt.figure(figsize=(18, 6))
