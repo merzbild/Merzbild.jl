@@ -1,8 +1,8 @@
 
 
-include("../../../src/Merzbild.jl")
+# include("../../../src/Merzbild.jl")
 
-using ..Merzbild
+using Merzbild
 using Random
 using TimerOutputs
 

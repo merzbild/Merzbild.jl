@@ -4,10 +4,10 @@
 # Electrons and neutrals are merged using octree merging
 # Requires external data (not included in the repository), available from LXCat!
 
-include("../../../src/Merzbild.jl")
+# include("../../../src/Merzbild.jl")
 
 
-using ..Merzbild
+using Merzbild
 using Random
 using TimerOutputs
 

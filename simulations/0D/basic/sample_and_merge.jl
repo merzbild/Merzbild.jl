@@ -1,6 +1,6 @@
-include("../../../src/Merzbild.jl")
+# include("../../../src/Merzbild.jl")
 
-using ..Merzbild
+using Merzbild
 using Random
 
 """
@@ -180,7 +180,7 @@ function run(seed, merge_method, merge_parameter, Nsamples; sampling_method=:equ
 end
 
 # n_t is the number of samples for each run
-n_t = 10000  
+n_t = 10000
 
 # first element in a list in params is the maximum total order of moments conserved when using NNLS merging
 # second element is the target number of particles for when octree merging is used
