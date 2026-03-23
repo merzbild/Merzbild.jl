@@ -178,16 +178,16 @@ function run(seed, merge_method, merge_parameter, Nsamples, io_handle; sampling_
         end
     end
 
-    r_w_pre /= Nsamples_end
-    std_w_pre /= Nsamples_end
-    std_logw_pre /= Nsamples_end
+    r_w_pre /= Nsamples
+    std_w_pre /= Nsamples
+    std_logw_pre /= Nsamples
 
     r_w /= Nsamples_end
     std_w /= Nsamples_end
     std_logw /= Nsamples_end
 
-    w_tail_pre_1 /= Nsamples_end
-    w_tail_pre_2 /= Nsamples_end
+    w_tail_pre_1 /= Nsamples
+    w_tail_pre_2 /= Nsamples
     w_tail_post_1 /= Nsamples_end
     w_tail_post_2 /= Nsamples_end
 
@@ -221,6 +221,18 @@ n_t = 10000
 # first element in a list in params is the maximum total order of moments conserved when using NNLS merging
 # second element is the target number of particles for when octree merging is used
 params = [[4, 36]]
+
+pref = "scratch/data"
+
+for (sm, fname) in zip([:equal_weight, :weighted_samples], ["equalweight", "weighted"])
+    io_tmp = open("$(pref)/nnls_$(fname).log", "w")
+    run(1, :nnls, params[1][1], n_t, io_tmp; sampling_method=sm)
+    close(io_tmp)
+
+    io_tmp = open("$(pref)/octree_$(fname).log", "w")
+    run(1, :octree, params[1][2], n_t, io_tmp; sampling_method=sm)
+    close(io_tmp)
+end
 
 #  # uncomment lines below to run over the parameter sets used for "Moment-preserving particle merging via non-negative least squares"
 # params = [[4, 36], [5, 55], [6, 85], [7, 120], [8, 164], [9, 220]]
