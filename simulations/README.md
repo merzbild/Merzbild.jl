@@ -125,9 +125,10 @@ the specific version of `Merzbild.jl` used to perform the simulations.
 For the paper ["Moment-preserving particle merging via non-negative least squares"](TODO: link) by G. Oblapenko and M. Torrilhon,
 the following simulation files were used. `Merzbild.jl` version `0.7.8`, Julia version `1.12`. The simulation files are kept up-to-date
 and whilst the results are subject to change between `Merzbild.jl` and Julia versions (changes in random number generators,
-order of operations affecting round-off errors, etc.), they should be runnable for each release.
+order of operations affecting round-off errors, etc.), they should be runnable for each release. By default all of the simulations
+write data to `scratch/data`, therefore the directory should be created before running the scripts.
 Python scripts to postprocess results to produce plots
-are available in `scripts/reproducibility/2026_nnls`: `process_bkw.py`, `convert_ionization_data.py`,
+are available in `scripts/reproducibility/2026_nnls`: `process_sample_and_merge.py`, `process_bkw.py`, `convert_ionization_data.py`,
 `process_ionization.py`, `process_fourier.py`.
 Details on executing the scripts can be found at the start of the script files and in the `scripts/reproducibility/2026_nnls/README.md`
 file.
