@@ -1,10 +1,24 @@
 # Scripts for post-processing of data for the paper "Moment-preserving particle merging via non-negative least squares" (2026)
 The scripts in this directory are
 for post-processing the numerical results for the paper ["Moment-preserving particle merging via non-negative least squares"](TODO: link)
-by G. Oblapenko and M. Torrilhon.
+by G. Oblapenko and M. Torrilhon. The scripts require data produced by the simulations (see the "Paper reproducibility" section in `simulations/README.md`).
+By default it is assumed that the outputs of the simulations are located in `scratch/data`, this can be adjusted by changing the value of the `pref` variable
+at the start of the scripts. Change `savefigs` to `False` to turn off saving figure as PDFs.
 
 The results were computed using `Merzbild.jl` version `0.7.8`, Julia version `1.12`. The Python
 scripts require `numpy`, `scipy`, `matplotlib`, `netCDF4`.
+
+## Post-processing of sample-and-merge results
+
+The numerical results produced by `sample_and_merge.jl` can be post-processed
+with the `process_sample_and_merge.py` script.
+The script loads the files automatically: output files are assumed to be located in
+`scratch/data`, octree results are assumed to be named `octree_equalweight.log` and `octree_weighted.log`;
+NNLS results are assumed to be named `nnls_equalweight.log` and `octree_weighted.log`.
+
+The plotting parameters (font sizes, font families) are set at the top of the script after the imports.
+
+The file produces 6 plots.
 
 ## Post-processing of BKW results
 The numerical results produced by `bkw_varweight_octree.jl` and `bkw_varweight_nnls.jl` can be post-processed
