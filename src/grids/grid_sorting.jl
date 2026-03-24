@@ -59,7 +59,7 @@ function sort_particles!(gridsort::GridSortInPlace, grid, particles, pia, specie
         resize!(gridsort.sorted_indices, n_tot + DELTA_PARTICLES)
     end
 
-    gridsort.cell_counts[:] .= 0
+    fill!(gridsort.cell_counts, 0)
 
     @inbounds if !pia.contiguous[species]
         squash_pia!(particles, pia, species)

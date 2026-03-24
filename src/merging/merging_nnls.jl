@@ -512,7 +512,7 @@ function compute_lhs_and_rhs!(nnls_merging, lhs_matrix, vel_pos_matrix,
     nnls_merging.Epx = 0.0
     nnls_merging.Epy = 0.0
     nnls_merging.Epz = 0.0
-    nnls_merging.rhs_vector .= 0.0
+    fill!(nnls_merging.rhs_vector, 0.0)
 
     compute_w_total_v0!(nnls_merging, particles, pia, cell, species)
 

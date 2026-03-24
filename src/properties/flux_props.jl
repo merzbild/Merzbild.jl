@@ -131,9 +131,9 @@ and averaging over a new set of timesteps needs to be started.
 * `flux_props`: the `FluxProps` instance to be cleared
 """
 function clear_props!(flux_props::FluxProps)
-    flux_props.kinetic_energy_flux[:,:,:] .= 0.0
-    flux_props.diagonal_momentum_flux[:,:,:] .= 0.0
-    flux_props.off_diagonal_momentum_flux[:,:,:] .= 0.0
+    fill!(flux_props.kinetic_energy_flux, 0.0)
+    fill!(flux_props.diagonal_momentum_flux, 0.0)
+    fill!(flux_props.off_diagonal_momentum_flux, 0.0)
 end
 
 """
