@@ -24,11 +24,11 @@
     Fnum_Ar = 5e11
     Fnum_He = 5e12
 
-    n_particles_Ar = round(Int32, n_Ar / Fnum_Ar)
-    n_particles_He = round(Int32, n_He / Fnum_He)
+    n_particles_Ar = round(Int64, n_Ar / Fnum_Ar)
+    n_particles_He = round(Int64, n_He / Fnum_He)
 
-    threshold_Ar = round(Int32, n_particles_Ar * 1.2)
-    threshold_He = round(Int32, n_particles_He * 1.2)
+    threshold_Ar = round(Int64, n_particles_Ar * 1.2)
+    threshold_He = round(Int64, n_particles_He * 1.2)
 
     T_eq = (n_Ar * T0_Ar + n_He * T0_He) / (n_Ar + n_He)
 

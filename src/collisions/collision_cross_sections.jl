@@ -26,7 +26,7 @@ Structure for storing tabulated cross-section data as a function of relative col
 * `ΔE`: how much energy is lost (gained) in the collision in case it is inelastic
 """
 struct TabulatedCSData
-    n_vals::Int32
+    n_vals::Int64
     E::Vector{Float64}
     sigma::Vector{Float64}
     ΔE::Float64  # how much energy is lost / threshold energy, eV
@@ -101,7 +101,7 @@ Structure to hold data on electron-impact electronic excitation cross-sections f
 * `scattering`: the `ScatteringLaw` model for the scattering of the particles
 """
 struct ExcitationSink
-    n_reactions::Int32
+    n_reactions::Int64
     data::Vector{TabulatedCSData}
     scattering::ScatteringLaw
 end
@@ -129,9 +129,9 @@ and `neutral_indexer[2] = 1`, `neutral_indexer[5] = 2`.
     holding the cross-section data on electron-impact electronic excitation for each neutral species
 """
 struct ElectronNeutralInteractions
-   n_neutrals::Int32
+   n_neutrals::Int64
    mass_ratios::Vector{Float64}
-   neutral_indexer::Vector{Int32}  # neutral_indexer[species_index] = index of the species in the sub-list of neutral species
+   neutral_indexer::Vector{Int64}  # neutral_indexer[species_index] = index of the species in the sub-list of neutral species
    elastic::Vector{ElasticScattering}
    ionization::Vector{Ionization}
    excitation_sink::Vector{ExcitationSink}
@@ -155,7 +155,7 @@ Structure to hold data on computed cross-sections of electron-neutral interactio
     `cfd_prob_vec[1] = 0.0`, `cfd_prob_vec[n] = cfd_prob_vec[n-1] + prob_vec[n-1], n>1`
 """
 mutable struct ComputedCrossSections
-    n_excitations::Int32
+    n_excitations::Int64
     cs_total::Float64
     cs_elastic::Float64
     cs_ionization::Float64
@@ -438,7 +438,7 @@ of the cross-section database in the XML file to use for the species
 `DataMissingException` if data not found or not all required data present.
 """
 function load_electron_neutral_interactions(species_data, filename, databases, scattering_laws, energy_splits)
-    neutral_indexer::Vector{Int32} = []
+    neutral_indexer::Vector{Int64} = []
     mass_ratios::Vector{Float64} = []
     elastic_cs_vector::Vector{ElasticScattering} = []
     ionization_cs_vector::Vector{Ionization} = []

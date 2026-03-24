@@ -19,8 +19,8 @@ include("io.jl")
 include("convection/convection.jl")
 include("parallel.jl")
 
-const OCTREE_DEFAULT_BUFFER_SIZE::Int32 = 8192
-const DELTA_PARTICLES::Int32 = 256
+const OCTREE_DEFAULT_BUFFER_SIZE::Int64 = 8192
+const DELTA_PARTICLES::Int64 = 256
 
 export sample_maxwellian_on_grid!, sample_on_grid!, bkw, maxwellian
 export load_species_data, Particle, sample_particles_equal_weight!

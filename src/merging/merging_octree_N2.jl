@@ -54,7 +54,7 @@ mutable struct OctreeCell
     v_min::SVector{3,Float64}
     v_max::SVector{3,Float64}
 
-    depth::Int32
+    depth::Int64
     can_be_refined::Bool
 end
 
@@ -129,8 +129,8 @@ Struct for N:2 Octree merging.
 * `total_post_merge_np`: used to keep track of number of post-merge particles
 """
 mutable struct OctreeN2Merge
-    max_Nbins::Int32
-    Nbins::Int32  # actual bins computed
+    max_Nbins::Int64
+    Nbins::Int64  # actual bins computed
     bins::Vector{OctreeCell}
     full_bins::Vector{OctreeFullCell}
     n_particles::Int64  # particles being sorted
@@ -174,7 +174,7 @@ mutable struct OctreeN2Merge
 
     init_bin_bounds::OctreeInitBin
 
-    max_depth::Int32
+    max_depth::Int64
     total_post_merge_np::Int64 # used to keep track of number of post-merge particles
 end
 

@@ -19,7 +19,7 @@ they have been added to the end of the particle array.
 * `indexer`: array of `ParticleIndexer` instances of shape `(n_chunks, n_cells)`
 """
 mutable struct ChunkExchanger
-    n_chunks::Int32
+    n_chunks::Int64
     n_cells::Int64
     indexer::Array{ParticleIndexer, 2}  # n_chunks x n_cells
 end
