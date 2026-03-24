@@ -225,10 +225,12 @@ params = [[4, 36]]
 pref = "scratch/data"
 
 for (sm, fname) in zip([:equal_weight, :weighted_samples], ["equalweight", "weighted"])
+    println("NNLS, $sm")
     io_tmp = open("$(pref)/nnls_$(fname).log", "w")
     run(1, :nnls, params[1][1], n_t, io_tmp; sampling_method=sm)
     close(io_tmp)
 
+    println("Octree N:2, $sm")
     io_tmp = open("$(pref)/octree_$(fname).log", "w")
     run(1, :octree, params[1][2], n_t, io_tmp; sampling_method=sm)
     close(io_tmp)

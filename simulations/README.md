@@ -159,41 +159,54 @@ contains all the different target and threshold particle numbers used in the sim
 ### Reference values
 Reference values that can be expected to be produced by some of the simulations are provided below. `Merzbild.jl` version `0.7.8`, Julia version `1.12`.
 
-Running `0D/basic/sample_and_merge.jl` with `n_t = 10000` and `params = [[4, 36]]` produces the following output (rounded to third decimal place):
+Running `0D/basic/sample_and_merge.jl` with `n_t = 10000` and `params = [[4, 36]]` produces the following output (rounded to third decimal place); the output is also written to files (by default `scratch/data/nnls_{sm}.log` and `scratch/data/octree_{sm}.log`,
+where `sm` is either `equal_weight` or `weighted_samples`):
 ```bash
-NNLS merging: [4, 36]; sampling method: equal_weight
+NNLS, equal_weight
 10000/10000
 Npost = 35.0
+pre-merge weight ratio: 1.0
+pre-merge weight std: 1.301e-18
+pre-merge weight log std: 5.151e-14
 weight ratio: 2591.674
-weight std: 0.0309
+weight std: 0.031
 weight log std: 1.427
 f_tail(500.0): 0.261 -> 0.251
 f_tail(750.0): 0.029 -> 0.030
 
-Octree merging: [4, 36]; sampling method: equal_weight
+Octree N:2, equal_weight
 10000/10000
-Npost = 26.856
+Npost = 26.8555
+pre-merge weight ratio: 1.0
+pre-merge weight std: 1.301e-18
+pre-merge weight log std: 5.151e-14
 weight ratio: 40.835
 weight std: 0.028
 weight log std: 1.225
 f_tail(500.0): 0.261 -> 0.292
 f_tail(750.0): 0.029 -> 0.003
 
-NNLS merging: [4, 36]; sampling method: weighted_samples
+NNLS, weighted_samples
 10000/10000
 Npost = 35.0
+pre-merge weight ratio: 7.533e18
+pre-merge weight std: 0.011
+pre-merge weight log std: 8.25
 weight ratio: 79954.614
 weight std: 0.041
 weight log std: 2.424
 f_tail(500.0): 0.276 -> 0.249
 f_tail(750.0): 0.031 -> 0.021
 
-Octree merging: [4, 36]; sampling method: weighted_samples
+Octree N:2, weighted_samples
 10000/10000
-Npost = 29.9759
+Npost = 29.976
+pre-merge weight ratio: 7.468e18
+pre-merge weight std: 0.011
+pre-merge weight log std: 8.248
 weight ratio: 1.015e15
 weight std: 0.043
-weight log std: 6.320
+weight log std: 6.32
 f_tail(500.0): 0.276 -> 0.272
 f_tail(750.0): 0.031 -> 0.018
 ```
