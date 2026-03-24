@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.7.9
+* Minor optimizations in octree merging
+
 ## v0.7.8
 * Fixed ionization simulations without event splitting
 * Tests for simulations with elastic and ionizing electron-neutral collisions (without event splitting)

@@ -126,7 +126,7 @@
 
     @test ndens_conservation == true
     @test maximum(abs.(ref_sol["ndens"][:, 1, 1:tmax_test] .- sol["ndens"][:, 1, 1:tmax_test])) < 2 * eps()
-    @test maximum(abs.(ref_sol["T"][:, 1, 1:tmax_test] .- sol["T"][:, 1, 1:tmax_test])) < 2.4e-13
+    @test maximum(abs.(ref_sol["T"][:, 1, 1:tmax_test] .- sol["T"][:, 1, 1:tmax_test])) < 2.95e-13
     # this is # of physical particles, should not change
     @test abs(sum(ref_sol["ndens"][:, 1, 1:tmax_test]) - sum(sol["ndens"][:, 1, 1:tmax_test]))/sum(sol["ndens"][:, 1, 1:tmax_test]) <= eps()
 

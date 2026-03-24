@@ -204,7 +204,8 @@
 
     # test compared to ref solution
     @test maximum(abs.(ref_sol["ndens"][1, :, 1:n_t] .- sol["ndens"][1, :, 1:n_t])) < 4 * eps()
-    @test maximum(abs.(ref_sol["T"][1, :, 1:n_t] .- sol["T"][1, :, 1:n_t])) < 4 * eps()
+    @test maximum(abs.(ref_sol["T"][1, :, 1:n_t] .- sol["T"][1, :, 1:n_t])) < 7.5e-12  # not zero
+    # because in v0.7.9 some octree merging computations replaced 1/w with 1 * inv_w
 
     close(sol)
     rm(sol_path)

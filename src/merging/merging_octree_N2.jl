@@ -501,13 +501,19 @@ Also sets the velocity bounds of the new bins.
 * `particles`: the `ParticleVector` instance of the particles to be merged
 """
 function split_bin!(octree, bin_id, particles)
-    octree.particle_in_bin_counter .= 0 # reset counter
-    octree.ndens_counter .= 0.0
-    octree.nonempty_bins .= 0
-    octree.nonempty_counter .= 0
-    @inbounds current_depth = octree.bins[bin_id].depth
-
     n_nonempty_bins = 0
+    
+    particle_in_bin_counter = octree.particle_in_bin_counter
+    ndens_counter = octree.ndens_counter
+    nonempty_bins = octree.nonempty_bins
+    nonempty_counter = octree.nonempty_counter
+
+    fill!(particle_in_bin_counter, 0)
+    fill!(ndens_counter, 0.0)
+    fill!(nonempty_bins, 0)
+    fill!(nonempty_counter, 0)
+    
+    @inbounds current_depth = octree.bins[bin_id].depth
     @inbounds bs = octree.bin_start[bin_id]
     @inbounds be = octree.bin_end[bin_id]
 
@@ -529,32 +535,32 @@ function split_bin!(octree, bin_id, particles)
     @inbounds for i in bs:be
         pin = octree.particle_indexes_sorted[i]
         oct = compute_octant(particles[pin].v, octree.vel_middle)
-        octree.particle_in_bin_counter[oct] += 1
+        particle_in_bin_counter[oct] += 1
         octree.particle_octants[i-bs+1] = oct
-        octree.ndens_counter[oct] += particles[pin].w
+        ndens_counter[oct] += particles[pin].w
     end
 
     n_eb = 0
-    @inbounds if (octree.particle_in_bin_counter[1] > 0)
+    @inbounds if (particle_in_bin_counter[1] > 0)
         n_nonempty_bins += 1
         n_eb += 1
-        @inbounds octree.nonempty_counter[n_eb] = octree.particle_in_bin_counter[1]
-        @inbounds octree.nonempty_bins[n_eb] = 1
+        @inbounds nonempty_counter[n_eb] = particle_in_bin_counter[1]
+        @inbounds nonempty_bins[n_eb] = 1
     end
 
     @inbounds for i in 2:8
-        if (octree.particle_in_bin_counter[i] > 0)
+        if (particle_in_bin_counter[i] > 0)
             n_nonempty_bins += 1
             n_eb += 1
-            octree.nonempty_counter[n_eb] = octree.particle_in_bin_counter[i]
-            octree.nonempty_bins[n_eb] = i
+            nonempty_counter[n_eb] = particle_in_bin_counter[i]
+            nonempty_bins[n_eb] = i
         end
 
-        octree.particle_in_bin_counter[i] += octree.particle_in_bin_counter[i-1]
+        particle_in_bin_counter[i] += particle_in_bin_counter[i-1]
     end
 
     # first bin - we change nothing for the start
-    @inbounds octree.bin_end[bin_id] = octree.bin_start[bin_id] + octree.nonempty_counter[1] - 1
+    @inbounds octree.bin_end[bin_id] = octree.bin_start[bin_id] + nonempty_counter[1] - 1
     
     # new bins will point to the sorted particles, but are not contiguous
     # first bin is in the old place and the new ones are tacked on
@@ -562,7 +568,7 @@ function split_bin!(octree, bin_id, particles)
         bi = get_new_bin_id(i, bin_id, octree.Nbins)
         bim1 = get_new_bin_id(i-1, bin_id, octree.Nbins)
         octree.bin_start[bi] = octree.bin_end[bim1] + 1
-        octree.bin_end[bi] = octree.bin_start[bi] + octree.nonempty_counter[i] - 1
+        octree.bin_end[bi] = octree.bin_start[bi] + nonempty_counter[i] - 1
     end
 
     # we had a bin that would've produced 2 particles
@@ -577,9 +583,9 @@ function split_bin!(octree, bin_id, particles)
             bi = get_new_bin_id(i, bin_id, octree.Nbins)
             bin_bounds_inherit!(octree, bi,
                                 octree.v_min_parent, octree.v_max_parent,
-                                octree.vel_middle, octree.nonempty_bins[i])
-            octree.bins[bi].np = octree.nonempty_counter[i]
-            octree.bins[bi].w = octree.ndens_counter[octree.nonempty_bins[i]]
+                                octree.vel_middle, nonempty_bins[i])
+            octree.bins[bi].np = nonempty_counter[i]
+            octree.bins[bi].w = ndens_counter[nonempty_bins[i]]
             octree.bins[bi].depth = current_depth + 1
 
             octree.total_post_merge_np += get_bin_post_merge_np(octree, bi)
@@ -595,8 +601,8 @@ function split_bin!(octree, bin_id, particles)
         # will recompute bin bounds if we do next round of refinement
         @inbounds for i in 1:n_nonempty_bins
             bi = get_new_bin_id(i, bin_id, octree.Nbins)
-            octree.bins[bi].np = octree.nonempty_counter[i]
-            octree.bins[bi].w = octree.ndens_counter[octree.nonempty_bins[i]]
+            octree.bins[bi].np = nonempty_counter[i]
+            octree.bins[bi].w = ndens_counter[nonempty_bins[i]]
             octree.bins[bi].depth = current_depth + 1
 
             # we had a bin that would've produced 2 particles
@@ -613,13 +619,13 @@ function split_bin!(octree, bin_id, particles)
     @inbounds for i in bs:be
         pin = octree.particle_indexes_sorted[i]
         j = octree.particle_octants[i - bs + 1]
-        octree.particles_sort_output[octree.particle_in_bin_counter[j]] = pin
-        octree.particle_in_bin_counter[j] -= 1
+        octree.particles_sort_output[particle_in_bin_counter[j]] = pin
+        particle_in_bin_counter[j] -= 1
     end
 
     # write sorted indices
     # octree.particle_indexes_sorted[bs:be] = octree.particles_sort_output[1:be-bs+1]
-    @inbounds for i in bs:be
+    @inbounds @simd for i in bs:be
         octree.particle_indexes_sorted[i] = octree.particles_sort_output[i-bs+1]
     end
 
@@ -647,12 +653,6 @@ function compute_bin_props!(octree, bin_id, particles)
         return 
     end
 
-    @inbounds octree.full_bins[bin_id].v_mean = SVector{3, Float64}(0.0, 0.0, 0.0)
-    @inbounds octree.full_bins[bin_id].v_std_sq = SVector{3, Float64}(0.0, 0.0, 0.0)
-
-    @inbounds octree.full_bins[bin_id].x_mean = SVector{3, Float64}(0.0, 0.0, 0.0)
-    @inbounds octree.full_bins[bin_id].x_std_sq = SVector{3, Float64}(0.0, 0.0, 0.0)
-
     # store indices of the first 1/2 particles in octree bin so that we
     # have somewhere to write post-merge data
     # but also so that we don't do unnecessary merging (2:2, 1:2)
@@ -668,23 +668,35 @@ function compute_bin_props!(octree, bin_id, particles)
         return
     end
 
-    @inbounds for i in bs:be
-        pin = octree.particle_indexes_sorted[i]
-        octree.full_bins[bin_id].v_mean = octree.full_bins[bin_id].v_mean + particles[pin].w * particles[pin].v
-        octree.full_bins[bin_id].x_mean = octree.full_bins[bin_id].x_mean + particles[pin].w * particles[pin].x
-    end
-    @inbounds octree.full_bins[bin_id].v_mean = octree.full_bins[bin_id].v_mean / octree.bins[bin_id].w
-    @inbounds octree.full_bins[bin_id].x_mean = octree.full_bins[bin_id].x_mean / octree.bins[bin_id].w
+    v_mean = SVector{3, Float64}(0.0, 0.0, 0.0)
+    v_std_sq = SVector{3, Float64}(0.0, 0.0, 0.0)
+
+    x_mean = SVector{3, Float64}(0.0, 0.0, 0.0)
+    x_std_sq = SVector{3, Float64}(0.0, 0.0, 0.0)
+
+    inv_w = 1.0 / octree.bins[bin_id].w
 
     @inbounds for i in bs:be
         pin = octree.particle_indexes_sorted[i]
-        octree.full_bins[bin_id].v_std_sq = octree.full_bins[bin_id].v_std_sq +
-                                            particles[pin].w * (particles[pin].v - octree.full_bins[bin_id].v_mean).^2
-        octree.full_bins[bin_id].x_std_sq = octree.full_bins[bin_id].x_std_sq +
-                                            particles[pin].w * (particles[pin].x - octree.full_bins[bin_id].x_mean).^2
+        v_mean = v_mean + particles[pin].w * particles[pin].v
+        x_mean = x_mean + particles[pin].w * particles[pin].x
     end
-    @inbounds octree.full_bins[bin_id].v_std_sq = octree.full_bins[bin_id].v_std_sq / octree.bins[bin_id].w
-    @inbounds octree.full_bins[bin_id].x_std_sq = octree.full_bins[bin_id].x_std_sq / octree.bins[bin_id].w
+    @inbounds v_mean = v_mean * inv_w
+    @inbounds x_mean = x_mean * inv_w
+
+    @inbounds for i in bs:be
+        pin = octree.particle_indexes_sorted[i]
+        v_std_sq = v_std_sq + particles[pin].w * (particles[pin].v - v_mean).^2
+        x_std_sq = x_std_sq + particles[pin].w * (particles[pin].x - x_mean).^2
+    end
+    @inbounds v_std_sq = v_std_sq * inv_w
+    @inbounds x_std_sq = x_std_sq * inv_w
+
+    @inbounds octree.full_bins[bin_id].v_mean = v_mean
+    @inbounds octree.full_bins[bin_id].v_std_sq = v_std_sq
+
+    @inbounds octree.full_bins[bin_id].x_mean = x_mean
+    @inbounds octree.full_bins[bin_id].x_std_sq = x_std_sq
 end
 
 """
@@ -857,7 +869,7 @@ function compute_new_particles!(rng, octree::OctreeN2Merge, particles, pia, cell
     curr_particle_index = 0
     @inbounds for bin_id in 1:octree.Nbins
         loc_np = octree.bins[bin_id].np
-        if (loc_np >= 2)
+        if (loc_np > 2)
             i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
             curr_particle_index += 1
             particles[i].w = octree.full_bins[bin_id].w1
@@ -883,6 +895,19 @@ function compute_new_particles!(rng, octree::OctreeN2Merge, particles, pia, cell
             else
                 particles[i].x = octree.full_bins[bin_id].x2
             end
+        elseif (loc_np == 2)
+            # we had 2 pre-merge particles, we don't need to check their positions
+            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
+            curr_particle_index += 1
+            particles[i].w = octree.full_bins[bin_id].w1
+            particles[i].v = octree.full_bins[bin_id].v1
+            particles[i].x = octree.full_bins[bin_id].x1
+
+            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
+            curr_particle_index += 1
+            particles[i].w = octree.full_bins[bin_id].w2
+            particles[i].v = octree.full_bins[bin_id].v2
+            particles[i].x = octree.full_bins[bin_id].x2
         elseif (loc_np == 1)
             i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
             curr_particle_index += 1
