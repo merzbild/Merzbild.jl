@@ -108,6 +108,10 @@
 
     close_netcdf(ds)
     close_netcdf(ds_surf)
+    
+    @test check_pia_is_correct(pia, 1) == (true, 0)
+    @test check_unique_index(particles[1], pia, 1) == (true, 0)
+    @test check_unique_buffer(particles[1]) == (true, 0)
 
     ref_sol_path = joinpath(@__DIR__, "data", "couette_0.0005_50_500.0_300.0_1000_vw200to150_swpm.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
