@@ -154,28 +154,32 @@ mutable struct NNLSMerge
 
         matrices_preallocated = Vector{Matrix{Float64}}([])
         column_norms = Vector{Vector{Float64}}([])
+        nnls_ws_preallocated = Vector{NNLSWorkspace}([])
+        vel_pos_matrices = Vector{Matrix{Float64}}([])
         if matrix_ncol_nprealloc > 0
             for i in init_np:init_np+matrix_ncol_nprealloc
                 push!(matrices_preallocated, zeros(n_total_conserved, i))
                 push!(column_norms, ones(i))
-            end
-        end
-
-        nnls_ws_preallocated = Vector{NNLSWorkspace}([])
-        if matrix_ncol_nprealloc > 0
-            for i in init_np:init_np+matrix_ncol_nprealloc+1
                 push!(nnls_ws_preallocated, NNLSWorkspace(zeros(n_total_conserved, i), zeros(n_total_conserved)))
+                push!(vel_pos_matrices, zeros(6, i))
             end
+
+            # one extra workspace
+            push!(nnls_ws_preallocated, NNLSWorkspace(zeros(n_total_conserved,
+                  init_np+matrix_ncol_nprealloc+1), zeros(n_total_conserved)))
         else
             push!(nnls_ws_preallocated, NNLSWorkspace(zeros(n_total_conserved, init_np), zeros(n_total_conserved)))
         end
 
-        vel_pos_matrices = Vector{Matrix{Float64}}([])
-        if matrix_ncol_nprealloc > 0
-            for i in init_np:init_np+matrix_ncol_nprealloc
-                push!(vel_pos_matrices, zeros(6, i))
-            end
-        end
+        # if matrix_ncol_nprealloc > 0
+        #     for i in init_np:init_np+matrix_ncol_nprealloc+1
+        #     end)
+        # end
+
+        # if matrix_ncol_nprealloc > 0
+        #     for i in init_np:init_np+matrix_ncol_nprealloc
+        #     end
+        # end
         
         return new(SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0),
                    1.0, 1.0, # vref, inv_vref
