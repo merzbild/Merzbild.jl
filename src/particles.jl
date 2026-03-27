@@ -131,9 +131,9 @@ mutable struct ParticleIndexerArray
     function ParticleIndexerArray(n_cells::Integer, n_species::Integer)  # most generic version
         pia_indexer = Array{ParticleIndexer, 2}(undef, (n_cells, n_species))
 
-        for j in 1:n_species
+        @inbounds for j in 1:n_species
             for i in 1:n_cells
-                @inbounds pia_indexer[i, j] = ParticleIndexer()
+                pia_indexer[i, j] = ParticleIndexer()
             end
         end
         return new(pia_indexer, [0 for i in 1:n_species], [true for i in 1:n_species])
@@ -279,14 +279,21 @@ function Base.resize!(pv::ParticleVector, n::Integer)
     end
 
     # fill with new indices
-    @inbounds pv.index[old_len + 1:n] = old_len + 1:n
+    # @inbounds pv.index[old_len + 1:n] = old_len + 1:n
+    @inbounds @simd for i in old_len + 1:n
+        pv.index[i] = i
+    end
 
     # [1,2,3,(4,5,6,7)] -> [4,5,6,7,(1,2,3)]
     # move older particles to tail of buffer so that they get used up first
+    # need slice with copy here to avoid copying overwritten data
     @inbounds pv.buffer[n_diff + 1:n] .= pv.buffer[1:old_len]
 
     # write new indices to buffer in reverse order (first particles in the array to be used up first)
-    @inbounds pv.buffer[1:n_diff] = n:-1:old_len+1
+    # @inbounds pv.buffer[1:n_diff] = n:-1:old_len+1
+    @inbounds @simd for i in 1:n_diff
+        pv.buffer[i] = n + 1 - i
+    end
     @inbounds pv.nbuffer += n_diff
 end
 
