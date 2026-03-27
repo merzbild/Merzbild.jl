@@ -196,6 +196,54 @@ function compute_n_coll_two_species(rng, collision_factors, np1, np2, Δt, V)
     return Δt * np1 * np2 * collision_factors.sigma_g_w_max / V + rand(rng, Float64)
 end
 
+@inline function collide_2particles_vhs!(rng, collision_data, collision_factors, interaction_l, pa_i, pa_k,
+                                 particles_1, particles_2, pia, cell, species1, species2)
+    sigma = sigma_vhs(interaction_l, collision_data.g)
+    sigma_g_w_max = sigma * collision_data.g * max(pa_i.w, pa_k.w)
+
+    # update (σ g w)_max if needed
+    collision_factors.sigma_g_w_max = max(sigma_g_w_max, collision_factors.sigma_g_w_max)
+    
+    @inbounds if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
+        collision_factors.n_coll_performed += 1
+        compute_com!(collision_data, interaction_l, pa_i, pa_k)
+        # do collision
+        if (pa_i.w == pa_k.w)
+            collision_factors.n_eq_w_coll_performed += 1
+        elseif (pa_i.w > pa_k.w)
+            # we split particle i, update velocity of i and k (split part remains unchanged)
+
+            # first need to grow particle array
+            if (length(particles_1) <= pia.n_total[species1])
+                resize!(particles_1, length(particles_1)+DELTA_PARTICLES)
+            end
+
+            # first need to update the particle indexer struct
+            update_buffer_index_new_particle!(particles_1, pia, cell, species1)
+
+            Δw = pa_i.w - pa_k.w
+            pa_i.w = pa_k.w
+
+            particles_1[pia.n_total[species1]].w = Δw
+            particles_1[pia.n_total[species1]].v = pa_i.v
+            particles_1[pia.n_total[species1]].x = pa_i.x
+        else  # (particles[k].w > particles[i].w)
+            if (length(particles_2) <= pia.n_total[species2])
+                resize!(particles_2, length(particles_2)+DELTA_PARTICLES)
+            end
+
+            update_buffer_index_new_particle!(particles_2, pia, cell, species2)
+
+            Δw = pa_k.w - pa_i.w
+            pa_k.w = pa_i.w
+
+            particles_2[pia.n_total[species2]].w = Δw
+            particles_2[pia.n_total[species2]].v = pa_k.v
+            particles_2[pia.n_total[species2]].x = pa_k.x
+        end
+        scatter_vhs!(rng, collision_data, interaction_l, pa_i, pa_k)
+    end
+end
 
 """
     ntc!(rng, collision_factors, collision_data, interaction, particles, pia,
@@ -237,6 +285,8 @@ function ntc!(rng, collision_factors, collision_data, interaction, particles, pi
     collision_factors.n_coll_performed = 0
     collision_factors.n_eq_w_coll_performed = 0
 
+    @inbounds interaction_l = interaction[species, species]
+
     @inbounds for _ in 1:n_coll_int
         i = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species].n_local)
         k = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species].n_local)
@@ -251,56 +301,14 @@ function ntc!(rng, collision_factors, collision_data, interaction, particles, pi
         # i = 4,5,6 - [7,9]
         i = map_cont_index(pia.indexer[cell, species], i)
         k = map_cont_index(pia.indexer[cell, species], k)
+        pa_i = particles[i]
+        pa_k = particles[k]
         
-        compute_g!(collision_data, particles[i], particles[k])
+        compute_g!(collision_data, pa_i, pa_k)
         # println("NTC: ", particle_indexer.n_total, ", ", length(particles))
         if (collision_data.g > eps())
-
-            sigma = sigma_vhs(interaction[species, species], collision_data.g)
-            sigma_g_w_max = sigma * collision_data.g * max(particles[i].w, particles[k].w)
-
-            # update (σ g w)_max if needed
-            collision_factors.sigma_g_w_max = max(sigma_g_w_max, collision_factors.sigma_g_w_max)
-            
-            if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
-                collision_factors.n_coll_performed += 1
-                compute_com!(collision_data, interaction[species, species], particles[i], particles[k])
-                # do collision
-                if (particles[i].w == particles[k].w)
-                    collision_factors.n_eq_w_coll_performed += 1
-                elseif (particles[i].w > particles[k].w)
-                    # we split particle i, update velocity of i and k (split part remains unchanged)
-
-                    # first need to grow particle array
-                    if (length(particles) <= pia.n_total[species])
-                        resize!(particles, length(particles)+DELTA_PARTICLES)
-                    end
-
-                    # first need to update the particle indexer struct
-                    update_buffer_index_new_particle!(particles, pia, cell, species)
-
-                    Δw = particles[i].w - particles[k].w
-                    particles[i].w = particles[k].w
-
-                    particles[pia.n_total[species]].w = Δw
-                    particles[pia.n_total[species]].v = particles[i].v
-                    particles[pia.n_total[species]].x = particles[i].x
-                else  # (particles[k].w > particles[i].w)
-                    if (length(particles) <= pia.n_total[species])
-                        resize!(particles, length(particles)+DELTA_PARTICLES)
-                    end
-
-                    update_buffer_index_new_particle!(particles, pia, cell, species)
-
-                    Δw = particles[k].w - particles[i].w
-                    particles[k].w = particles[i].w
-
-                    particles[pia.n_total[species]].w = Δw
-                    particles[pia.n_total[species]].v = particles[k].v
-                    particles[pia.n_total[species]].x = particles[k].x
-                end
-                scatter_vhs!(rng, collision_data, interaction[species, species], particles[i], particles[k])
-            end
+            collide_2particles_vhs!(rng, collision_data, collision_factors, interaction_l, pa_i, pa_k,
+                                 particles, particles, pia, cell, species, species)
         end
     end
 end
@@ -349,6 +357,8 @@ function ntc!(rng, collision_factors, collision_data, interaction,
     collision_factors.n_coll_performed = 0
     collision_factors.n_eq_w_coll_performed = 0
 
+    @inbounds interaction_l = interaction[species1, species2]
+
     @inbounds for _ in 1:n_coll_int
         i = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species1].n_local)
         k = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species2].n_local)
@@ -359,52 +369,15 @@ function ntc!(rng, collision_factors, collision_data, interaction,
         # i = 4,5,6 - [7,9]
         i = map_cont_index(pia.indexer[cell, species1], i)
         k = map_cont_index(pia.indexer[cell, species2], k)
+
+        pa_i = particles_1[i]
+        pa_k = particles_2[k]
         
         compute_g!(collision_data, particles_1[i], particles_2[k])
 
         if (collision_data.g > eps())
-
-            sigma = sigma_vhs(interaction[species1, species2], collision_data.g)
-            sigma_g_w_max = sigma * collision_data.g * max(particles_1[i].w, particles_2[k].w)
-
-            # update (σ g w)_max if needed
-            collision_factors.sigma_g_w_max = max(sigma_g_w_max, collision_factors.sigma_g_w_max)
-
-            if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
-                collision_factors.n_coll_performed += 1
-                compute_com!(collision_data, interaction[species1, species2], particles_1[i], particles_2[k])
-                # do collision
-                if (particles_1[i].w == particles_2[k].w)
-                    collision_factors.n_eq_w_coll_performed += 1
-                elseif (particles_1[i].w > particles_2[k].w)
-                    # we split particle i, update velocity of i and k (split part remains unchanged)
-                    if (length(particles_1) <= pia.n_total[species1])
-                        resize!(particles_1, length(particles_1)+DELTA_PARTICLES)
-                    end
-                    # first need to update the particle indexer struct
-                    update_buffer_index_new_particle!(particles_1, pia, cell, species1)
-
-                    Δw = particles_1[i].w - particles_2[k].w
-                    particles_1[i].w = particles_2[k].w
-
-                    particles_1[pia.n_total[species1]].w = Δw
-                    particles_1[pia.n_total[species1]].v = particles_1[i].v
-                    particles_1[pia.n_total[species1]].x = particles_1[i].x
-                else  # (particles[k].w > particles[i].w)
-                    if (length(particles_2) <= pia.n_total[species2])
-                        resize!(particles_2, length(particles_2)+DELTA_PARTICLES)
-                    end
-                    update_buffer_index_new_particle!(particles_2, pia, cell, species2)
-
-                    Δw = particles_2[k].w - particles_1[i].w
-                    particles_2[k].w = particles_1[i].w
-
-                    particles_2[pia.n_total[species2]].w = Δw
-                    particles_2[pia.n_total[species2]].v = particles_2[k].v
-                    particles_2[pia.n_total[species2]].x = particles_2[k].x
-                end
-                scatter_vhs!(rng, collision_data, interaction[species1, species2], particles_1[i], particles_2[k])
-            end
+            collide_2particles_vhs!(rng, collision_data, collision_factors, interaction_l, pa_i, pa_k,
+                                    particles_1, particles_2, pia, cell, species1, species2)
         end
     end
 end
