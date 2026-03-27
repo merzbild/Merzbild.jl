@@ -313,7 +313,7 @@ function exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell
     # assigned to chunk j
     s_ij = 0
     s_ci_ij = 0 # index of the cell
-    for cj in cell_chunks[j]
+    @inbounds for cj in cell_chunks[j]
         if pia_chunks[i].indexer[cj, species].start1 > 0
             s_ij = pia_chunks[i].indexer[cj, species].start1
             s_ci_ij = cj
@@ -326,7 +326,7 @@ function exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell
     l_cj = length(cell_chunks[j])
     e_ij = -1
     e_ci_ij = 0 # index of the cell
-    for cji in l_cj:-1:1
+    @inbounds for cji in l_cj:-1:1
         cj = cell_chunks[j][cji]
         if pia_chunks[i].indexer[cj, species].end1 > 0
             e_ij = pia_chunks[i].indexer[cj, species].end1
@@ -341,7 +341,7 @@ function exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell
     # that should be transferred to chunk i
     s_ji = 0
     s_ci_ji = 0 # index of the cell
-    for ci in cell_chunks[i]
+    @inbounds for ci in cell_chunks[i]
         if pia_chunks[j].indexer[ci, species].start1 > 0
             s_ji = pia_chunks[j].indexer[ci, species].start1
             s_ci_ji = ci
@@ -352,7 +352,7 @@ function exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell
     l_ci = length(cell_chunks[i])
     e_ji = -1
     e_ci_ji = 0 # index of the cell
-    for cij in l_ci:-1:1
+    @inbounds for cij in l_ci:-1:1
         ci = cell_chunks[i][cij]
         if pia_chunks[j].indexer[ci, species].end1 > 0
             e_ji = pia_chunks[j].indexer[ci, species].end1
@@ -409,7 +409,7 @@ function exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell
     # println("n_swap = $n_swap")
     # now update chunk_exchanger indexing
     if n_swap > 0
-        for nsw in 1:n_swap
+        @inbounds for nsw in 1:n_swap
             swap_particles!(particles_chunks[i][species], particles_chunks[j][species],
                             s_ij+nsw-1, s_ji+nsw-1)
             # println("Swapping $(s_ij+nsw-1) from $i with $(s_ji+nsw-1) from $j")
