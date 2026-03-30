@@ -130,6 +130,9 @@ Detailed benchmarks can be found in [`BENCHMARKS.md`](BENCHMARKS.md).
 For a serial 1-D Couette flow simulation, Merzbild.jl is up to 30% faster
 than SPARTA.
 
+## Research reproducibility
+Details on reproducing results obtained with `Merzbild.jl` can be found in [`PAPER_REPRODUCIBILITY.md`](PAPER_REPRODUCIBILITY.md)
+
 ## Citing
 For now, the repository can be cited as
 ```bibtex
