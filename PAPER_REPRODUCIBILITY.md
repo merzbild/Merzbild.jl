@@ -8,7 +8,7 @@ For the paper ["Moment-preserving particle merging via non-negative least square
 the following setup was used: `Merzbild.jl` version `0.7.8`, Julia version `1.12`.
 First, one should produce the data by running the various simulation files located in the `simulations` directory,
 then the output data can be processed via use of scripts in the `scripts/reproducibility/2026_nnls` directory.
-The data produced by `Merzbild.jl` can also be downloaded from Zenodo: TODO (note that the ionization data
+The data produced by `Merzbild.jl` can also be downloaded from Zenodo: [10.5281/zenodo.19352779](https://doi.org/10.5281/zenodo.19352779) (note that the ionization data
 is already post-processed to save space).
 
 ### Producing results from Merzbild.jl
