@@ -30,3 +30,6 @@ Example usage:
 ```bash
 python scripts/plot_1D.py --file scratch/data/couette_0.0005_50_500.0_300.0_1000.nc --propname T --startt 1 --plotname plots/couette_T.png --labels "Couette"
 ```
+
+## Paper reproducibility scripts
+Scripts to post-process simulation results for various papers can be found in the `reproducibility` subdirectory.

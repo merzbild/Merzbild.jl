@@ -1451,8 +1451,8 @@ the number of non-zero (or smaller than `w_threshold`) elements in the solution 
 `-1` is returned to signify a failure of the merging algorithm.
 
 # References
-* G. Oblapenko, A Non-Negative Least Squares-based Approach for Moment-Preserving Particle Merging.
-    [arXiv preprint, 2025](https://doi.org/10.48550/arXiv.2412.12354).
+* G. Oblapenko, M. Torrilhon, Moment-preserving particle merging via non-negative least squares.
+    [arXiv preprint, 2026](https://doi.org/10.48550/arXiv.2604.00668).
 """
 function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species;
                            vref=1.0, scaling=:variance,
@@ -1576,8 +1576,8 @@ the number of non-zero (or smaller than `w_threshold`) elements in the solution 
 `-1` is returned to signify a failure of the merging algorithm.
 
 # References
-* G. Oblapenko, A Non-Negative Least Squares-based Approach for Moment-Preserving Particle Merging.
-    [arXiv preprint, 2025](https://doi.org/10.48550/arXiv.2412.12354).
+* G. Oblapenko, M. Torrilhon, Moment-preserving particle merging via non-negative least squares.
+    [arXiv preprint, 2026](https://doi.org/10.48550/arXiv.2604.00668).
 """
 function merge_nnls_based_rate_preserving!(rng, nnls_merging,
                                            interaction, electron_neutral_interactions, computed_cs,
@@ -1708,8 +1708,8 @@ the number of non-zero (or smaller than `w_threshold`) elements in the solution 
 `-1` is returned to signify a failure of the merging algorithm.
 
 # References
-* G. Oblapenko, A Non-Negative Least Squares-based Approach for Moment-Preserving Particle Merging.
-    [arXiv preprint, 2025](https://doi.org/10.48550/arXiv.2412.12354).
+* G. Oblapenko, M. Torrilhon, Moment-preserving particle merging via non-negative least squares.
+    [arXiv preprint, 2026](https://doi.org/10.48550/arXiv.2604.00668).
 """
 function merge_nnls_based_rate_preserving!(rng, nnls_merging,
                                            interaction, electron_neutral_interactions, computed_cs,

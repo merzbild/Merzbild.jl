@@ -35,9 +35,6 @@ run_names_and_seeds = [(f"{pref}ionization_Ar_{field_Tn}Tn_NNLS{rp}_{run[0]}full
 
 print(run_names_and_seeds)
 
-# for ns, run in zip(n_seeds_for_run, octree_runs):
-#     post_process(f"/home/georgii/Data/Sciebo/PIC_DSMC/NNLS_Paper/ionization/Ar_{field_Tn}Tn_octree_mid_{run[0]}_to_{run[1]}", nseeds=ns)
-
 # compute rate given an array of densities of shape [n_time, n_species, 1], the indices of the species, and array
 # of time values
 def get_rate(n, species_n, species_i, species_e, time):
