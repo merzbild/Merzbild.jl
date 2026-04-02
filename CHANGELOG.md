@@ -2,6 +2,9 @@
 
 ## v0.7.9
 * Minor optimizations in octree merging
+* Simplified elastic VHS collision code via a unified `collide_2particles_vhs!` function, minor speed-ups
+* New keyword parameter `dw_tol` in collision routines that sets tolerance in weight difference under which particle
+collisions are treated as equal weight collisions and no additional particle splitting is performed
 
 ## v0.7.8
 * Fixed ionization simulations without event splitting

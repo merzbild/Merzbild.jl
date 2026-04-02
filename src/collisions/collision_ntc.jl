@@ -196,9 +196,33 @@ function compute_n_coll_two_species(rng, collision_factors, np1, np2, Δt, V)
     return Δt * np1 * np2 * collision_factors.sigma_g_w_max / V + rand(rng, Float64)
 end
 
-@inline function collide_2particles_vhs!(rng, collision_data, collision_factors, interaction_l, pa_i, pa_k,
-                                 particles_1, particles_2, pia, cell, species1, species2)
-    sigma = sigma_vhs(interaction_l, collision_data.g)
+"""
+    collide_2particles_vhs!(rng, collision_data, collision_factors, interaction_l, pa_i, pa_k,
+                            particles_1, particles_2, pia, cell, species1, species2; dw_tol=1e-16)
+
+Collide two particles elastically using the VHS model. Particles can be of same or different species.
+If particles' weights differ by less than `dw_tol`, an equal-weight collision is performed and no particles are split.
+
+# Positional arguments
+* `rng`: the random number generator
+* `collision_data`: `CollisionData` instance used for storing collisional quantities
+* `collision_factors`: the `CollisionFactors` holding the estimate of ``(\\sigma g w)_{max}``
+    for the species in question in the cell
+* `interaction`: the `Interaction` instance for the colliding species
+* `particles_1`: `ParticleVector` of the particles of the first species being collided
+* `particles_2`: `ParticleVector` of the particles of the second species being collided
+* `pia`: the `ParticleIndexerArray`
+* `cell`: the index of the cell in which collisions are performed
+* `species1`: the index of the first species for which collisions are performed
+* `species2`: the index of the second species for which collisions are performed
+
+# Keyword arguments
+* `dw_tol`: if weights of particles differ by less than this amount, an equal-weight collision is assumed
+and no particle splitting is performed
+"""
+@inline function collide_2particles_vhs!(rng, collision_data, collision_factors, interaction, pa_i, pa_k,
+                                         particles_1, particles_2, pia, cell, species1, species2; dw_tol=1e-16)
+    sigma = sigma_vhs(interaction, collision_data.g)
     sigma_g_w_max = sigma * collision_data.g * max(pa_i.w, pa_k.w)
 
     # update (σ g w)_max if needed
@@ -206,9 +230,9 @@ end
     
     @inbounds if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
         collision_factors.n_coll_performed += 1
-        compute_com!(collision_data, interaction_l, pa_i, pa_k)
+        compute_com!(collision_data, interaction, pa_i, pa_k)
         # do collision
-        if (pa_i.w == pa_k.w)
+        if (abs(pa_i.w - pa_k.w) < dw_tol)
             collision_factors.n_eq_w_coll_performed += 1
         elseif (pa_i.w > pa_k.w)
             # we split particle i, update velocity of i and k (split part remains unchanged)
@@ -241,13 +265,13 @@ end
             particles_2[pia.n_total[species2]].v = pa_k.v
             particles_2[pia.n_total[species2]].x = pa_k.x
         end
-        scatter_vhs!(rng, collision_data, interaction_l, pa_i, pa_k)
+        scatter_vhs!(rng, collision_data, interaction, pa_i, pa_k)
     end
 end
 
 """
     ntc!(rng, collision_factors, collision_data, interaction, particles, pia,
-         cell, species, Δt, V)
+         cell, species, Δt, V; dw_tol=1e-16)
 
 Perform elastic collisions between particles of same species using the NTC algorithm
 and the VHS cross-section model.
@@ -264,12 +288,16 @@ and the VHS cross-section model.
 * `Δt`: timestep
 * `V`: cell volume
 
+# Keyword arguments
+* `dw_tol`: if weights of particles differ by less than this amount, an equal-weight collision is assumed
+and no particle splitting is performed
+
 # References
 * D.P. Schmidt, C.J. Rutland, A New Droplet Collision Algorithm.
     [J. Comput. Phys, 2000](https://doi.org/10.1006/jcph.2000.6568).
 """
 function ntc!(rng, collision_factors, collision_data, interaction, particles, pia,
-              cell, species, Δt, V)
+              cell, species, Δt, V; dw_tol=1e-16)
     # single-species ntc
     # compute ncoll
     # loop over particles
@@ -305,10 +333,9 @@ function ntc!(rng, collision_factors, collision_data, interaction, particles, pi
         pa_k = particles[k]
         
         compute_g!(collision_data, pa_i, pa_k)
-        # println("NTC: ", particle_indexer.n_total, ", ", length(particles))
         if (collision_data.g > eps())
             collide_2particles_vhs!(rng, collision_data, collision_factors, interaction_l, pa_i, pa_k,
-                                 particles, particles, pia, cell, species, species)
+                                 particles, particles, pia, cell, species, species; dw_tol=dw_tol)
         end
     end
 end
@@ -316,7 +343,7 @@ end
 """
     ntc!(rng, collision_factors, collision_data, interaction,
          particles_1, particles_2, pia,
-         cell, species1, species2, Δt, V)
+         cell, species1, species2, Δt, V; dw_tol=1e-16)
 
 Perform elastic collisions between particles of different species using the NTC algorithm
 and the VHS cross-section model.
@@ -331,9 +358,13 @@ and the VHS cross-section model.
 * `pia`: the `ParticleIndexerArray`
 * `cell`: the index of the cell in which collisions are performed
 * `species1`: the index of the first species for which collisions are performed
-* `species1`: the index of the second species for which collisions are performed
+* `species2`: the index of the second species for which collisions are performed
 * `Δt`: timestep
 * `V`: cell volume
+
+# Keyword arguments
+* `dw_tol`: if weights of particles differ by less than this amount, an equal-weight collision is assumed
+and no particle splitting is performed
 
 # References
 * D.P. Schmidt, C.J. Rutland, A New Droplet Collision Algorithm.
@@ -341,7 +372,7 @@ and the VHS cross-section model.
 """
 function ntc!(rng, collision_factors, collision_data, interaction,
               particles_1, particles_2, pia,
-              cell, species1, species2, Δt, V)
+              cell, species1, species2, Δt, V; dw_tol=1e-16)
     # compute ncoll
     # loop over particles
     # update sigma_g_w_max
@@ -377,7 +408,7 @@ function ntc!(rng, collision_factors, collision_data, interaction,
 
         if (collision_data.g > eps())
             collide_2particles_vhs!(rng, collision_data, collision_factors, interaction_l, pa_i, pa_k,
-                                    particles_1, particles_2, pia, cell, species1, species2)
+                                    particles_1, particles_2, pia, cell, species1, species2; dw_tol=dw_tol)
         end
     end
 end
@@ -469,7 +500,7 @@ end
 """
     ntc_n_e!(rng, collision_factors, collision_data, interaction,
              n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion,
-             pia, cell, species_n, species_e, species_ion, Δt, V; extend::CSExtend=CSExtendConstant)
+             pia, cell, species_n, species_e, species_ion, Δt, V; extend::CSExtend=CSExtendConstant, dw_tol=1e-16)
 
 Perform electron-neutral elastic scattering and electron-impact ionization collisions.
 
@@ -493,6 +524,8 @@ Perform electron-neutral elastic scattering and electron-impact ionization colli
 
 # Keyword arguments
 * `extend`: enum of `CSExtend` type that sets how out-of-range energy values are treated when computing cross-sections
+* `dw_tol`: if weights of particles differ by less than this amount, an equal-weight collision is assumed
+and no particle splitting is performed
 
 # References
 * D.P. Schmidt, C.J. Rutland, A New Droplet Collision Algorithm.
@@ -500,7 +533,7 @@ Perform electron-neutral elastic scattering and electron-impact ionization colli
 """
 function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                   n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion,
-                  pia, cell, species_n, species_e, species_ion, Δt, V; extend::CSExtend=CSExtendConstant)
+                  pia, cell, species_n, species_e, species_ion, Δt, V; extend::CSExtend=CSExtendConstant, dw_tol=1e-16)
     # no event splitting
     # compute ncoll
     # loop over particles
@@ -564,7 +597,7 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                     particles_n[pia.n_total[species_n]].w = Δw
                     particles_n[pia.n_total[species_n]].v = particles_n[i].v
                     particles_n[pia.n_total[species_n]].x = particles_n[i].x
-                elseif (particles_n[i].w == particles_e[k].w)
+                elseif (abs(particles_n[i].w - particles_e[k].w) < dw_tol)
                     collision_factors.n_eq_w_coll_performed += 1
                 else  # (particles[k].w > particles[i].w)
                     if (length(particles_e) <= pia.n_total[species_e])
@@ -624,7 +657,7 @@ end
 """
     ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
              n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion,
-             pia, cell, species_n, species_e, species_ion, Δt, V; extend::CSExtend=CSExtendConstant)
+             pia, cell, species_n, species_e, species_ion, Δt, V; extend::CSExtend=CSExtendConstant, dw_tol=1e-16)
 
 Perform electron-neutral elastic scattering and electron-impact ionization collisions
 using the event splitting method.
@@ -649,6 +682,8 @@ using the event splitting method.
 
 # Keyword arguments
 * `extend`: enum of `CSExtend` type that sets how out-of-range energy values are treated when computing cross-sections
+* `dw_tol`: if weights of particles differ by less than this amount, an equal-weight collision is assumed
+and no particle splitting is performed
 
 # References
 * G. Oblapenko, D. Goldstein, P. Varghese, C. Moore, Hedging direct simulation Monte Carlo bets via event splitting.
@@ -658,7 +693,7 @@ using the event splitting method.
 """
 function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
     n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion, 
-    pia, cell, species_n, species_e, species_ion, Δt, V; extend::CSExtend=CSExtendConstant)
+    pia, cell, species_n, species_e, species_ion, Δt, V; extend::CSExtend=CSExtendConstant, dw_tol=1e-16)
     # event splitting
     # compute ncoll
     # loop over particles
@@ -722,7 +757,7 @@ function ntc_n_e_es!(rng, collision_factors, collision_data, interaction,
                     particles_n[pia.n_total[species_n]].w = Δw
                     particles_n[pia.n_total[species_n]].v = particles_n[i].v
                     particles_n[pia.n_total[species_n]].x = particles_n[i].x
-                elseif (particles_n[i].w == particles_e[k].w)
+                elseif (abs(particles_n[i].w - particles_e[k].w) < dw_tol)
                     collision_factors.n_eq_w_coll_performed += 1
                 else  # (particles[k].w > particles[i].w)
                     if (length(particles_e) <= pia.n_total[species_e])
