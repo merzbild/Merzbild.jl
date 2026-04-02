@@ -1,8 +1,8 @@
 # Test that sampling from a Maxwellian and computing physical properties gives reasonable results
 
-include("../../../src/Merzbild.jl")
+# include("../../../src/Merzbild.jl")
 
-using ..Merzbild
+using Merzbild
 using Random
 
 function run(seed)
@@ -29,4 +29,5 @@ function run(seed)
     close_netcdf(ds)
 end
 
+const n_t = 10
 run(1234)

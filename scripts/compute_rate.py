@@ -3,8 +3,8 @@ from netCDF4 import Dataset
 import numpy as np
 
 parser = argparse.ArgumentParser(description='Compute ionization rate and electron temperature' \
-                                             'of species nid colliding with electrons with index eid' \
-                                             'in a 0D simulation')
+                                             ' of species nid colliding with electrons with index eid' \
+                                             ' in a 0D simulation; averaging over timesteps from tstart to tend')
 parser.add_argument("--filename", required=True)
 parser.add_argument("--tstart", required=True)
 parser.add_argument("--tend", required=True)

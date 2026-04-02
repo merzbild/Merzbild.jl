@@ -1,6 +1,6 @@
-include("../../src/Merzbild.jl")
+# include("../../src/Merzbild.jl")
 
-using ..Merzbild
+using Merzbild
 using Random
 using TimerOutputs
 
@@ -59,7 +59,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
                                    species_data, surf_props_avg)
 
     # create and estimate collision factors
-    collision_factors = create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum)
+    Fnum_post = grid.cells[1].V * ndens / (merge_target)
 
     oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
@@ -69,6 +69,8 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
         end
     end
     @timeit "squash (t=0)" squash_pia!(particles, pia)
+    
+    collision_factors = create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum_post)
 
     # compute and write data at t=0
     compute_props!(particles, pia, species_data, phys_props)
@@ -134,6 +136,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     print_timer()
 end
 
+const n_t = 50000
 # run(1234, 300.0, 500.0, 5e-4, 5e22, 1000, 250, 150, 100, 2.59e-9, 1000, 5000, 14000)
-run(1234, 300.0, 500.0, 5e-4, 5e22, 50, 250, 150, 100, 2.59e-9, 1000, 50000, 14000)
+run(1234, 300.0, 500.0, 5e-4, 5e22, 50, 250, 150, 80, 2.59e-9, 1000, n_t, 14000)
 # run(1234, 300.0, 500.0, 5e-4, 5e22, 8, 200, 20, 16, 1e-1, 1000, 1, 14000)

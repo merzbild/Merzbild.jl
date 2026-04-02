@@ -12,3 +12,4 @@ coverage_report/
 simulations/1D/multithread_debugging.jl
 out.log
 error.log
+/*.pdf

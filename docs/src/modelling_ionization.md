@@ -114,7 +114,7 @@ To avoid this, it is suggested to use [`estimate_sigma_g_w_max_ntc_n_e!`](@ref),
 samples multiple collision pairs (without performing the collisions)
 and updates the collision factors based on the actual computed cross-section values.
 It samples ``N_{coll} + min_{coll}`` pairs, where ``N_{coll}`` is the number of pairs computed using the standard
-formulas for the NTC routine, and ``min_{coll}}`` is the minimum number of pairs to sample (default values of 15).
+formulas for the NTC routine, and ``min_{coll}`` is the minimum number of pairs to sample (default values of 15).
 The whole process (compute ``N_{coll}`` and sample, updating collision factors) is repeated `n_loops` times
 (default value of 6).
 

@@ -641,7 +641,7 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
                                               get_ionization_threshold(n_e_interactions, species_n), get_electron_energy_split(n_e_interactions, species_n))
 
                     scatter_ionization_electrons_and_ion!(rng, collision_data, particles_e, particles_ion,
-                                                          k1, k2, pia.n_total[species_ion], mass_ratio)
+                                                          k, pia.n_total[species_e], pia.n_total[species_ion], mass_ratio)
                 end
             end
         end

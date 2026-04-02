@@ -1,6 +1,6 @@
-include("../../src/Merzbild.jl")
+# include("../../src/Merzbild.jl")
 
-using ..Merzbild
+using Merzbild
 using Random
 using TimerOutputs
 
@@ -51,7 +51,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
     # compute and write data at t=0
     compute_props!(particles, pia, species_data, phys_props)
     write_netcdf(ds, phys_props, 0)
-    write_grid("couette_$(L)_$(nx)_grid.nc", grid)
+    write_grid("scratch/data/couette_$(L)_$(nx)_grid.nc", grid)
 
     n_avg = n_timesteps - avg_start + 1
 
@@ -96,6 +96,6 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
     print_timer()
 end
 
-N_steps = 50000
+const n_t = 50000
 
-run(1234, 300.0, 500.0, 5e-4, 5e22, 50, 1000, 2.59e-9, 1000, N_steps, 14000)
+run(1234, 300.0, 500.0, 5e-4, 5e22, 50, 1000, 2.59e-9, 1000, n_t, 14000)

@@ -275,6 +275,171 @@ function update_swap_indexing!(chunk_exchanger, pia_chunks, species, i, j, s_ci_
     return s_ci_ij2, offset_ij
 end
 
+
+"""
+    exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, species, i, j)
+
+Redistribute particles between chunks `i` and `j` based on their spatial cell ownership.
+
+This function ensures each particle resides in the chunk responsible for its current cell.
+It performs symmetric swaps when possible, and pushes remaining particles if needed.
+The indexing metadata (`chunk_exchanger` and `pia_chunks`) is updated accordingly,
+and particles pushed to another chunk (not swapped) are added to the buffer for future re-use.
+The particles before the start of the re-distribution need to be sorted,
+so that no particles are indexed by the `start2:end2` part of a `ParticleIndexer`. 
+After the operation, the `n_total[species]` value of `pia_chunks[chunk_id]`
+will not include particles that were pushed to another chunk (the appropriate
+`n_group1`, `start1`, `end1` values will be set to 0, 0, -1). However
+indexing should not be relied on until particles are re-sorted, see (`sort_particles_after_exchange!`)[@ref].
+
+# Positional arguments
+* `chunk_exchanger`: the `ChunkExchanger` instance to track post-swap and post-push indices
+* `particles_chunks`: Vector of Vector of `ParticleVector` (per chunk and per species, i.e.
+    `particles_chunks[chunk_id][species]` is the correct order of access)
+* `pia_chunks`: Vector of `ParticleIndexerArray` instances for each chunk
+* `cell_chunks`: cell ownership list for each chunk, i.e. `cell_chunks[chunk_id]` is a list
+    of cells belonging to chunk `chunk_id`; the cells within `cell_chunks[chunk_id]` should
+    be ordered in increasing order and be continuous:
+    i.e. `cell_chunks[chunk_id][i] == cell_chunks[chunk_id][i-1] + 1`
+* `species`: the particle species being redistributed
+* `i`: index of first chunk
+* `j`: index of second chunk
+"""
+function exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, species, i, j)
+    n_chunks = length(cell_chunks)
+
+    # find how many particles need to be transferred from i to j
+    # we find first index of particles in chunk i that belong to a cell
+    # assigned to chunk j
+    s_ij = 0
+    s_ci_ij = 0 # index of the cell
+    for cj in cell_chunks[j]
+        if pia_chunks[i].indexer[cj, species].start1 > 0
+            s_ij = pia_chunks[i].indexer[cj, species].start1
+            s_ci_ij = cj
+            break
+        end
+    end
+
+    # we find last index of particles in chunk i that belong to a cell
+    # assigned to chunk j
+    l_cj = length(cell_chunks[j])
+    e_ij = -1
+    e_ci_ij = 0 # index of the cell
+    for cji in l_cj:-1:1
+        cj = cell_chunks[j][cji]
+        if pia_chunks[i].indexer[cj, species].end1 > 0
+            e_ij = pia_chunks[i].indexer[cj, species].end1
+            e_ci_ij = cj
+            break
+        end
+    end
+
+    np_from_i_to_j = e_ij - s_ij + 1
+
+    # now we do the same, but for particles in chunk j
+    # that should be transferred to chunk i
+    s_ji = 0
+    s_ci_ji = 0 # index of the cell
+    for ci in cell_chunks[i]
+        if pia_chunks[j].indexer[ci, species].start1 > 0
+            s_ji = pia_chunks[j].indexer[ci, species].start1
+            s_ci_ji = ci
+            break
+        end
+    end
+
+    l_ci = length(cell_chunks[i])
+    e_ji = -1
+    e_ci_ji = 0 # index of the cell
+    for cij in l_ci:-1:1
+        ci = cell_chunks[i][cij]
+        if pia_chunks[j].indexer[ci, species].end1 > 0
+            e_ji = pia_chunks[j].indexer[ci, species].end1
+            e_ci_ji = ci
+            break
+        end
+    end
+
+    np_from_j_to_i = e_ji - s_ji + 1
+
+    # compute whether we need to increase sizes of the particle vectors
+    # how many particles does chunk i receive
+    chunk_i_increase = np_from_j_to_i > 0 ? np_from_j_to_i : 0
+    # how many particles does chunk i send away
+    chunk_i_increase = np_from_i_to_j > 0 ? chunk_i_increase - np_from_i_to_j : chunk_i_increase
+
+    # how many particles does chunk j receive
+    chunk_j_increase = np_from_i_to_j > 0 ? np_from_i_to_j : 0
+    # how many particles does chunk j send away
+    chunk_j_increase = np_from_j_to_i > 0 ? chunk_j_increase - np_from_j_to_i : chunk_j_increase
+
+    # println("$i -> $j ", s_ij, " ", e_ij)
+    # println("$j -> $i ", s_ji, " ", e_ji)
+
+    # println("$i -> $j #: $(np_from_i_to_j)")
+    # println("$j -> $i #: $(np_from_j_to_i)")
+
+    # println("$i ++: $(chunk_i_increase)")
+    # println("$j ++: $(chunk_j_increase)")
+
+    # println("$i ntot: $(pia_chunks[i].n_total[species])")
+    # println("$j ntot: $(pia_chunks[j].n_total[species])")
+    # println(chunk_i_increase)
+
+    if (length(particles_chunks[i][species]) < pia_chunks[i].n_total[species]+chunk_i_increase)
+        resize!(particles_chunks[i][species],
+                length(particles_chunks[i][species])+chunk_i_increase+DELTA_PARTICLES)
+    end
+
+    if (length(particles_chunks[j][species]) < pia_chunks[j].n_total[species]+chunk_j_increase)
+        resize!(particles_chunks[j][species],
+                length(particles_chunks[j][species])+chunk_j_increase+DELTA_PARTICLES)
+    end
+
+    # swap particles that can be swapped
+    n_swap = min(np_from_i_to_j, np_from_j_to_i)
+
+    offset_ij = 0
+    offset_ji = 0
+
+    s_ci_ij2 = s_ci_ij
+    s_ci_ji2 = s_ci_ji
+
+    # println("n_swap = $n_swap")
+    # now update chunk_exchanger indexing
+    if n_swap > 0
+        for nsw in 1:n_swap
+            swap_particles!(particles_chunks[i][species], particles_chunks[j][species],
+                            s_ij+nsw-1, s_ji+nsw-1)
+            # println("Swapping $(s_ij+nsw-1) from $i with $(s_ji+nsw-1) from $j")
+        end
+
+        # update for particles sent from i to j
+        s_ci_ij2, offset_ij = update_swap_indexing!(chunk_exchanger, pia_chunks, species,
+                                                    i, j, s_ci_ij, e_ci_ij, s_ji, n_swap)
+        # update for particles sent from j to i 
+        s_ci_ji2, offset_ji = update_swap_indexing!(chunk_exchanger, pia_chunks, species,
+                                                    j, i, s_ci_ji, e_ci_ji, s_ij, n_swap)
+
+        np_from_i_to_j -= n_swap
+        np_from_j_to_i -= n_swap
+    end
+
+    # move remaining particles that did not fit into the swap
+    # only one case is possible, because n_swap = min(np_from_i_to_j, np_from_j_to_i)
+    # so one of those will be 0
+    if np_from_i_to_j > 0
+        # println("pushing from $i to $j: $np_from_i_to_j to push")
+        # push remaining particles from i to end of j
+        push_particles!(chunk_exchanger, particles_chunks, pia_chunks, species, i, j, offset_ij, s_ci_ij2, e_ci_ij)
+    elseif np_from_j_to_i > 0
+        # println("pushing from $j to $i: $np_from_j_to_i to push")
+        # push remaining particles from j to end of i
+        push_particles!(chunk_exchanger, particles_chunks, pia_chunks, species, j, i, offset_ji, s_ci_ji2, e_ci_ji)
+    end
+end
+
 """
     exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, species)
 
@@ -306,136 +471,7 @@ function exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell
     n_chunks = length(cell_chunks)
     @inbounds for i in 1:n_chunks-1
         for j in i+1:n_chunks
-            # find how many particles need to be transferred from i to j
-            # we find first index of particles in chunk i that belong to a cell
-            # assigned to chunk j
-            s_ij = 0
-            s_ci_ij = 0 # index of the cell
-            for cj in cell_chunks[j]
-                if pia_chunks[i].indexer[cj, species].start1 > 0
-                    s_ij = pia_chunks[i].indexer[cj, species].start1
-                    s_ci_ij = cj
-                    break
-                end
-            end
-
-            # we find last index of particles in chunk i that belong to a cell
-            # assigned to chunk j
-            l_cj = length(cell_chunks[j])
-            e_ij = -1
-            e_ci_ij = 0 # index of the cell
-            for cji in l_cj:-1:1
-                cj = cell_chunks[j][cji]
-                if pia_chunks[i].indexer[cj, species].end1 > 0
-                    e_ij = pia_chunks[i].indexer[cj, species].end1
-                    e_ci_ij = cj
-                    break
-                end
-            end
-
-            np_from_i_to_j = e_ij - s_ij + 1
-
-            # now we do the same, but for particles in chunk j
-            # that should be transferred to chunk i
-            s_ji = 0
-            s_ci_ji = 0 # index of the cell
-            for ci in cell_chunks[i]
-                if pia_chunks[j].indexer[ci, species].start1 > 0
-                    s_ji = pia_chunks[j].indexer[ci, species].start1
-                    s_ci_ji = ci
-                    break
-                end
-            end
-
-            l_ci = length(cell_chunks[i])
-            e_ji = -1
-            e_ci_ji = 0 # index of the cell
-            for cij in l_ci:-1:1
-                ci = cell_chunks[i][cij]
-                if pia_chunks[j].indexer[ci, species].end1 > 0
-                    e_ji = pia_chunks[j].indexer[ci, species].end1
-                    e_ci_ji = ci
-                    break
-                end
-            end
-
-            np_from_j_to_i = e_ji - s_ji + 1
-
-            # compute whether we need to increase sizes of the particle vectors
-            # how many particles does chunk i receive
-            chunk_i_increase = np_from_j_to_i > 0 ? np_from_j_to_i : 0
-            # how many particles does chunk i send away
-            chunk_i_increase = np_from_i_to_j > 0 ? chunk_i_increase - np_from_i_to_j : chunk_i_increase
-
-            # how many particles does chunk j receive
-            chunk_j_increase = np_from_i_to_j > 0 ? np_from_i_to_j : 0
-            # how many particles does chunk j send away
-            chunk_j_increase = np_from_j_to_i > 0 ? chunk_j_increase - np_from_j_to_i : chunk_j_increase
-
-            # println("$i -> $j ", s_ij, " ", e_ij)
-            # println("$j -> $i ", s_ji, " ", e_ji)
-
-            # println("$i -> $j #: $(np_from_i_to_j)")
-            # println("$j -> $i #: $(np_from_j_to_i)")
-
-            # println("$i ++: $(chunk_i_increase)")
-            # println("$j ++: $(chunk_j_increase)")
-
-            # println("$i ntot: $(pia_chunks[i].n_total[species])")
-            # println("$j ntot: $(pia_chunks[j].n_total[species])")
-            # println(chunk_i_increase)
-
-            if (length(particles_chunks[i][species]) < pia_chunks[i].n_total[species]+chunk_i_increase)
-                resize!(particles_chunks[i][species],
-                        length(particles_chunks[i][species])+chunk_i_increase+DELTA_PARTICLES)
-            end
-
-            if (length(particles_chunks[j][species]) < pia_chunks[j].n_total[species]+chunk_j_increase)
-                resize!(particles_chunks[j][species],
-                        length(particles_chunks[j][species])+chunk_j_increase+DELTA_PARTICLES)
-            end
-
-            # swap particles that can be swapped
-            n_swap = min(np_from_i_to_j, np_from_j_to_i)
-
-            offset_ij = 0
-            offset_ji = 0
-
-            s_ci_ij2 = s_ci_ij
-            s_ci_ji2 = s_ci_ji
-
-            # println("n_swap = $n_swap")
-            # now update chunk_exchanger indexing
-            if n_swap > 0
-                for nsw in 1:n_swap
-                    swap_particles!(particles_chunks[i][species], particles_chunks[j][species],
-                                    s_ij+nsw-1, s_ji+nsw-1)
-                    # println("Swapping $(s_ij+nsw-1) from $i with $(s_ji+nsw-1) from $j")
-                end
-
-                # update for particles sent from i to j
-                s_ci_ij2, offset_ij = update_swap_indexing!(chunk_exchanger, pia_chunks, species,
-                                                            i, j, s_ci_ij, e_ci_ij, s_ji, n_swap)
-                # update for particles sent from j to i 
-                s_ci_ji2, offset_ji = update_swap_indexing!(chunk_exchanger, pia_chunks, species,
-                                                            j, i, s_ci_ji, e_ci_ji, s_ij, n_swap)
-
-                np_from_i_to_j -= n_swap
-                np_from_j_to_i -= n_swap
-            end
-
-            # move remaining particles that did not fit into the swap
-            # only one case is possible, because n_swap = min(np_from_i_to_j, np_from_j_to_i)
-            # so one of those will be 0
-            if np_from_i_to_j > 0
-                # println("pushing from $i to $j: $np_from_i_to_j to push")
-                # push remaining particles from i to end of j
-                push_particles!(chunk_exchanger, particles_chunks, pia_chunks, species, i, j, offset_ij, s_ci_ij2, e_ci_ij)
-            elseif np_from_j_to_i > 0
-                # println("pushing from $j to $i: $np_from_j_to_i to push")
-                # push remaining particles from j to end of i
-                push_particles!(chunk_exchanger, particles_chunks, pia_chunks, species, j, i, offset_ji, s_ci_ji2, e_ci_ji)
-            end
+            exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, species, i, j)
         end
     end
 end
@@ -520,4 +556,53 @@ function sort_particles_after_exchange!(chunk_exchanger, gridsort, particles, pi
     @inbounds for i in 1:n_tot
         particles.index[i] = gridsort.sorted_indices[i]
     end
+end
+
+"""
+    generate_1_factorization(N_chunks)
+
+Construct a `Vector{Vector{Tuple{Int64,Int64}}}` with the following properties:
+* tuple elements `i` and `j` range from `1` to `N_chunks`
+* tuples `(i,j)` and `(j,i)` are considered equivalent
+* each tuple `(i,j)` (up to equivalency) appears in the result exactly once
+* in each `Vector` of tuples all numbers are unique
+* tuples `(i,i)` do not appear
+* the `Vector`s of tuples are as long as possible.
+
+This corresponds to a 1-factorization of a complete graph; the resulting
+`Vector` of `Vector`s of `Tuple`s can be iterated over, and particle exchange
+can be performed between chunks listed in the `Tuple`s in a given `Vector`
+using multi-threaded, since each chunk appears at most once in a given vector.
+This allows to multi-thread the particle exchange step.
+
+
+# Positional arguments
+* `N_chunks`: number of chunks
+
+# Returns
+A `Vector` of `Vector`s of `Tuple`s corresponding to the 1-factorization of a complete
+graph with `N_chunks` vertices.
+"""
+function generate_1_factorization(N_chunks)
+    pairs = [(i, j) for i in 1:N_chunks for j in i+1:N_chunks]
+
+    list_of_lists::Vector{Vector{Tuple{Int64,Int64}}} = []
+
+    for (i, j) in pairs
+        assigned = false
+        for inner_list in list_of_lists
+            used_i = any(p -> i in p, inner_list)
+            used_j = any(p -> j in p, inner_list)
+            if !(used_i || used_j)
+                push!(inner_list, (i, j))
+                assigned = true
+                break
+            end
+        end
+        if !assigned
+            push!(list_of_lists, [(i, j)])
+        end
+    end
+
+    return list_of_lists
 end

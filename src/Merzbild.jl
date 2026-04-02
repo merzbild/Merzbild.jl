@@ -24,6 +24,7 @@ const DELTA_PARTICLES::Int32 = 256
 
 export sample_maxwellian_on_grid!, sample_on_grid!, bkw, maxwellian
 export load_species_data, Particle, sample_particles_equal_weight!
+export sample_particles_phase_box_weighted!
 export Species, Interaction
 export compute_props!, compute_props_sorted!, compute_props_with_total_moments!
 export clear_props!, avg_props!
@@ -66,5 +67,6 @@ export ChunkExchanger, exchange_particles!, reset!, sort_particles_after_exchang
 export count_disordered_particles, check_pia_is_correct, check_unique_index, check_unique_buffer
 export FluxProps, compute_flux_props!, compute_flux_props_sorted!
 export mean_free_path, mean_collision_frequency
+export generate_1_factorization
 
 end # module merzbild

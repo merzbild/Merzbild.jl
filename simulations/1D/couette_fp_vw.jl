@@ -4,7 +4,7 @@ using Merzbild
 using Random
 using TimerOutputs
 
-function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timesteps, avg_start; do_benchmark=true)
+function run(seed, T_wall, v_wall, L, ndens, nx, ppc, merge_threshold, merge_target, Δt, output_freq, n_timesteps, avg_start)
     reset_timer!()
 
     Random.seed!(seed)
@@ -22,7 +22,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
 
     # init particle vector, particle indexer, grid particle sorter
     n_particles = ppc * nx
-    particles = [ParticleVector(n_particles)]
+    particles = particles = [ParticleVector(n_particles)]
     pia = ParticleIndexerArray(grid.n_cells, 1)
     gridsorter = GridSortInPlace(grid, n_particles)
 
@@ -33,7 +33,10 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
                                                       species_data, ndens, T_wall, Fnum)
 
     # create collision structs
-    collision_data = CollisionData()
+    collision_data_fp = CollisionDataFP(ppc * 2)
+
+    # merging
+    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
     
     # create struct for computation of physical properties
     phys_props = PhysProps(pia)
@@ -41,25 +44,22 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
     # create second struct for averaging of physical properties
     phys_props_avg = PhysProps(pia)
 
-    # create struct for computation of surface properties
-    surf_props = SurfProps(pia, grid)
-
-    # create second struct for averaging of physical properties
-    surf_props_avg = SurfProps(pia, grid)
-
     # create struct for netCDF output
-    ds = NCDataHolder("scratch/data/couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc).nc", species_data, phys_props)
+    ds = NCDataHolder("scratch/data/couette_FP_vw_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc).nc", species_data, phys_props)
 
     # create struct for second netCDF, this one is for time-averaged 
-    ds_avg = NCDataHolder("scratch/data/avg_couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc)_after$(avg_start).nc",
+    ds_avg = NCDataHolder("scratch/data/avg_couette_FP_vw_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc)_after$(avg_start).nc",
                           species_data, phys_props)
 
-    # create struct for time-averaged surface properties I/O
-    ds_surf_avg = NCDataHolderSurf("scratch/data/avg_couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc)_surf_after$(avg_start).nc",
-                                   species_data, surf_props_avg)
-
-    # create and estimatee collision factors
-    collision_factors = create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum)
+    
+    for cell in 1:grid.n_cells
+        if pia.indexer[cell,1].n_local > merge_threshold
+            @timeit "merge (t=0)" merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+            println("Post (t=0): $(cell) $(pia.indexer[cell,1].n_local) $merge_threshold $merge_target")
+            println("t=0: $(pia.n_total[1]/nx) avg")
+            @timeit "squash (t=0)" squash_pia!(particles, pia)
+        end
+    end
 
     # compute and write data at t=0
     compute_props!(particles, pia, species_data, phys_props)
@@ -75,51 +75,48 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
 
         # collide particles
         for cell in 1:grid.n_cells
-            @timeit "collide" ntc!(rng, collision_factors[1, 1, cell],
-                                   collision_data, interaction_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
+            @timeit "collide" fp_linear!(rng, collision_data_fp, interaction_data[1, 1], species_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
+
+            if pia.indexer[cell,1].n_local > merge_threshold
+                println("$(cell) $(pia.indexer[cell,1].n_local) $merge_threshold $merge_target")
+                @timeit "merge" merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+                @timeit "squash" squash_pia!(particles, pia)
+                println("Post: $(cell) $(pia.indexer[cell,1].n_local) $merge_threshold $merge_target")
+                println("$(pia.n_total[1]/nx) avg")
+            end
         end
 
         # convect particles
-        if (t < avg_start)
-            @timeit "convect" convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, Δt)
-        else
-            @timeit "convect + surface compute" convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, surf_props, Δt)
-            @timeit "avg surfprops" avg_props!(surf_props_avg, surf_props, n_avg)
-        end
+        @timeit "convect" convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, Δt)
 
         # sort particles
         @timeit "sort" sort_particles!(gridsorter, grid, particles[1], pia, 1)
-
-        # count % of particles where indexing is disordered
-        if !(do_benchmark)
-            if t % 100 == 0
-                println(count_disordered_particles(particles[1], pia, 1) / pia.n_total[1] * 100.0, " ",
-                        count_disordered_particles(particles[1], pia, 1; use_offset=false) / pia.n_total[1] * 100.0)
-            end
-        end
 
         # compute props and do I/O
 
         if (t < avg_start)
             if (t % output_freq == 0)
                 @timeit "props compute" compute_props_sorted!(particles, pia, species_data, phys_props)
-                @timeit "I/O" write_netcdf(ds, phys_props, t)
             end
         else
             @timeit "props compute" compute_props_sorted!(particles, pia, species_data, phys_props)
-            @timeit "avg physprops" avg_props!(phys_props_avg, phys_props, n_avg)
+            avg_props!(phys_props_avg, phys_props, n_avg)
+        end
+
+
+        if (t % output_freq == 0)
+            @timeit "I/O" write_netcdf(ds, phys_props, t)
         end
     end
 
     @timeit "I/O" write_netcdf(ds_avg, phys_props_avg, n_timesteps)
-    @timeit "I/O" write_netcdf(ds_surf_avg, surf_props_avg, n_timesteps)
 
     close_netcdf(ds)
     close_netcdf(ds_avg)
-    close_netcdf(ds_surf_avg)
 
     print_timer()
 end
 
 const n_t = 50000
-run(1234, 300.0, 500.0, 5e-4, 5e22, 2000, 250, 2.59e-9, 1000, n_t, 14000; do_benchmark=true)
+
+run(1234, 300.0, 500.0, 5e-4, 5e22, 50, 500, 230, 200, 2.59e-9, 1000, n_t, 14000)

@@ -18,10 +18,10 @@ The approach is relatively straightforward:
 4. After particles have been sorted, some might need to be moved between chunks,
     if they ended up in cells assigned to another chunk.
     This is done in two steps: first, one calls [`exchange_particles!`](@ref) to move the particle
-    data between chunks. This is done in serial mode to avoid race conditions.
-    Then, [`sort_particles_after_exchange!`](@ref) is called to reset indexing without having to
+    data between chunks. This is can be done either in serial mode or in threaded mode, see below for details.
+5. Then, [`sort_particles_after_exchange!`](@ref) is called to reset indexing without having to
     completely resort all the new particles. This can be done using multithreading.
-5. Physical grid properties are computed using multithreading, as they can easily be computed
+6. Physical grid properties are computed using multithreading, as they can easily be computed
     only for cells assigned to the chunk, thus avoiding any race conditions.
     In case surface properties were computed during particle movement, a
     reduce operation is needed to sum the per-chunk values. This is done by
@@ -35,6 +35,35 @@ is required. A special struct [`ChunkExchanger`](@ref) is used to facilitate exc
 
 However, the code logic is more straightforward, as most of the data is independent and no race conditions
 can occur. Some of this functionality will be re-used to make MPI simulations possible.
+
+## Serial vs parallel particle exchange
+Particle exchange needs to be done carefully to avoid race conditions.
+For the serial version, the call looks like this:
+
+```julia
+exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, 1)
+```
+The function [`exchange_particles!`](@ref) contains two loops over the chunks: one outer loop `for i in 1:n_chunks`
+and one inner loop `for j in i+1:n_chunks`.
+
+The equivalent threaded version looks like this:
+```julia
+for exchange_partial in exchange_list
+    @threads for exchange_pair in exchange_partial
+        exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, 
+                            1, exchange_pair[1], exchange_pair[2])
+    end
+end
+```
+Here `exchange_list` is a fixed list of chunk pairs that allows for thread-safe particle exchange; it is pre-computed
+by calling [`generate_1_factorization`](@ref)
+before the start of the collision loop: `exchange_list = generate_1_factorization(n_chunks)`. The version of
+the `exchange_particles!` called here exchanges particles only between two specific chunks: `exchange_pair[1]` and `exchange_pair[2]`.
+In fact, the serial version of the function simply calls this exchange-between-two-chunks function for every `(i,j)` pair inside the
+double loop described above.
+It should be noted that threaded particle exchange is not necessarily faster than the serial exchange, due to the overhead
+of threading. Example multi-threaded simulations in the `simulations` directory have an optional parameter `parallel_exchange`
+that can be used to toggle serial and parallel particle exchange to see which is faster for a given problem.
 
 ## Example: multithreaded Couette flow simulation
 
@@ -56,7 +85,10 @@ The physical properties are also computed in multithreaded mode.
 
 Inside the time loop, collisions, convection, and sorting are performed inside a `@threads` block. The `chunk_exchanger` data
 is also cleared in this multithreaded loop to prepare it for the movement of particles between chunks.
-Once the block finishes, the particles are moved between chunks via a serial call to [`sort_particles_after_exchange!`](@ref).
+Once the block finishes, the particles are moved between chunks.
+Here, a serial call to [`exchange_particles!`](@ref) is used.
+
+After the particles have been exchanged, they are sorted via a threaded call to [`sort_particles_after_exchange!`](@ref).
 Finally, the indexing is reset, and physical grid properties are computed, again inside a `@threads` block.
 The reduction operation for the surface properties, as well as averaging of grid and surface properties, is performed serially
 at the end of the timestep.

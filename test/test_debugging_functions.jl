@@ -140,9 +140,6 @@
 
     pv = ParticleVector(20)
 
-    println(pv.nbuffer)
-    println(pv.buffer)
-
     @test check_unique_buffer(pv) == (true, 0)
 
     pv.buffer[2] = pv.buffer[4]

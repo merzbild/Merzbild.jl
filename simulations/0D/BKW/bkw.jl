@@ -4,9 +4,7 @@
 # 50k particles, no print julia --project=. simulations/basic/bkw.jl  5.54s user 1.65s system 134% cpu 5.357 total
 # 200k particles, 10 moments, no print julia --project=. simulations/basic/bkw.jl  13.29s user 1.78s system 114% cpu 13.211 total
 
-include("../../../src/Merzbild.jl")
-
-using ..Merzbild
+using Merzbild
 using Random
 
 function run(seed)
@@ -67,7 +65,7 @@ function run(seed)
     println(phys_props.v)
     println(phys_props.T)
 
-    ds = NCDataHolder("bkw.nc", species_data, phys_props)
+    ds = NCDataHolder("scratch/data/bkw.nc", species_data, phys_props)
     write_netcdf(ds, phys_props, 0)
 
     collision_factors::CollisionFactors = CollisionFactors()
@@ -79,7 +77,7 @@ function run(seed)
     V::Float64 = 1.0
     
     @time for ts in 1:n_t
-        ntc!(rng, collision_factors, collision_data, interaction_data[1,1], particles[1],
+        ntc!(rng, collision_factors, collision_data, interaction_data, particles[1],
              pia, 1, 1, Δt, V)
         
         compute_props!(particles, pia, species_data, phys_props)

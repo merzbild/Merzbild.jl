@@ -19,9 +19,9 @@
 #     C = 1. - 0.4 * np.exp(-time * magic_factor / 6)
 #     kk = N // 2
 #     return C**(kk - 1) * (kk - (kk - 1) * C)
-include("../../../src/Merzbild.jl")
+# include("../../../src/Merzbild.jl")
 
-using ..Merzbild
+using Merzbild
 using Random
 using InteractiveUtils
 
@@ -67,8 +67,12 @@ function run(seed::Int64, threshold::Int64, Ntarget::Int64, G)
     phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
     compute_props_with_total_moments!(particles, pia, species_data, phys_props)
 
-    ds = NCDataHolder("scratch/data/octree_swpm_mean_$(threshold)_$(Ntarget)_$(seed).nc", species_data, phys_props)
+    ds = NCDataHolder("scratch/data/bkw_octree_swpm_mean_$(threshold)_$(Ntarget)_$(seed).nc", species_data, phys_props)
     write_netcdf(ds, phys_props, 0)
+
+    if phys_props.np[1,1] > threshold
+        merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
+    end
 
     collision_factors = CollisionFactorsSWPM()
     collision_data = CollisionData()

@@ -1,6 +1,6 @@
-include("../../src/Merzbild.jl")
+# include("../../src/Merzbild.jl")
 
-using ..Merzbild
+using Merzbild
 using Random
 using TimerOutputs
 
@@ -62,10 +62,6 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     ds_surf_avg = NCDataHolderSurf("scratch/data/avg_couette_nnls_$(domain_params_str)_$(merge_params_str)_surf_after$(avg_start).nc",
                                    species_data, surf_props_avg)
 
-    # create and estimate collision factors
-    collision_factors = create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum)
-
-
     mim = []
     n_moms = n_vel_up_total
     for i in 1:n_moms
@@ -80,7 +76,6 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
 
     # the main NNLS
     @timeit "NNLSinit" mnnls = NNLSMerge(mim, init_np; multi_index_moments_pos=pos_moments, matrix_ncol_nprealloc=matrix_ncol_nprealloc)
-
 
     mim_backup = []
     n_moms_backup = n_vel_up_total_backup
@@ -111,6 +106,10 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
         end
     end
     @timeit "squash (t=0)" squash_pia!(particles, pia)
+
+    Fnum_post = Fnum * ppc_sampled / pia.indexer[1,1].n_local
+    # create and estimate collision factors
+    collision_factors = create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum_post)
 
     # compute and write data at t=0
     compute_props!(particles, pia, species_data, phys_props)
@@ -180,5 +179,6 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     print_timer()
 end
 
+const n_t = 50000
 # preserve all velocity moments up to order 5, fall back to 4 moments if required
-run(1234, 300.0, 500.0, 5e-4, 5e22, 50, 250, 80, 60, 5, 4, 2.59e-9, 1000, 50000, 14000)
+run(1234, 300.0, 500.0, 5e-4, 5e22, 50, 250, 80, 60, 5, 4, 2.59e-9, 1000, n_t, 14000)

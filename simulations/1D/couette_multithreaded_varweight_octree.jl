@@ -1,13 +1,13 @@
-include("../../src/Merzbild.jl")
+# include("../../src/Merzbild.jl")
 
-using ..Merzbild
+using Merzbild
 using Random
 using TimerOutputs
 using Base.Threads
 using ChunkSplitters
 
-function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, merge_target, Δt, output_freq, n_timesteps, avg_start; chunk_count_multiplier=1,
-             preallocation_margin_multiplier=1.0)
+function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, merge_target, Δt, output_freq, n_timesteps, avg_start;
+    chunk_count_multiplier=1, preallocation_margin_multiplier=1.0, parallel_exchange=true)
     reset_timer!()
 
     n_threads = Threads.nthreads()
@@ -80,10 +80,6 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     ds_surf_avg = NCDataHolderSurf("scratch/data/avg_mt$(n_threads)_$(n_chunks)ch_couette_$(L)_$(nx)_$(v_wall)_$(T_wall)_$(ppc_sampled)_$(merge_threshold)_$(merge_target)_octree_surf_after$(avg_start).nc",
                                    species_data, surf_props_avg)
 
-    # create and estimate collision factors
-    collision_factors = [create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum)
-                         for pia in pia_chunks]
-
     # create merging structs
     oc_chunks = [OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000) for cell_chunks in cell_chunks]
 
@@ -96,12 +92,20 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
         compute_props_sorted!(particles_chunks[chunk_id], pia_chunks[chunk_id], species_data, phys_props, cell_chunks[chunk_id])
     end
 
+    # create and estimate collision factors
+    # we correct Fnum estimate since we performed merging
+    collision_factors = [create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum * ppc_sampled / merge_target)
+                         for pia in pia_chunks]
+
     # compute data at t=0
     @timeit "props compute" @threads for (chunk_id, cell_chunk) in enumerate(cell_chunks)
         compute_props_sorted!(particles_chunks[chunk_id], pia_chunks[chunk_id], species_data, phys_props, cell_chunk)
     end
 
     n_avg = n_timesteps - avg_start + 1
+
+    exchange_list = generate_1_factorization(n_chunks)
+    println("exchange_list = $(exchange_list)")
 
     for t in 1:n_timesteps
         if t % 1000 == 0
@@ -149,7 +153,16 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
         end
 
         # move particles between chunks
-        @timeit "exchange" exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, 1)
+        if parallel_exchange
+            @timeit "exchange" for exchange_partial in exchange_list
+                @threads for exchange_pair in exchange_partial
+                    exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, 
+                                        1, exchange_pair[1], exchange_pair[2])
+                end
+            end
+        else
+            @timeit "exchange" exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, 1)
+        end
 
         # reset indexing, compute physical properties if needed
         @timeit "re-sort + compute props" @threads for chunk_id in 1:n_chunks
@@ -188,4 +201,6 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     print_timer()
 end
 
-run(1234, 300.0, 500.0, 5e-4, 5e22, 500, 500, 130, 100, 2.59e-9, 1000, 50000, 14000; chunk_count_multiplier=1, preallocation_margin_multiplier=1.5)
+const n_t = 50000
+run(1234, 300.0, 500.0, 5e-4, 5e22, 500, 500, 130, 100, 2.59e-9, 1000, n_t, 14000;
+    chunk_count_multiplier=1, preallocation_margin_multiplier=1.5, parallel_exchange=true)

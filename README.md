@@ -17,24 +17,22 @@ Currently the code supports serial and multithreaded operation.
 For now, **Merzbild.jl** needs to be cloned to be run. Once cloned, navigate to the directory, run `julia --project=.`, and in the
 Julia interpreter run `using Pkg; Pkg.resolve(); Pkg.instantiate()` to install the required packages.
 Running `Pkg.test()` afterwards will install the test environment dependencies and run the tests.
-The package has been tested with the latest stable version of Julia 1.* (currently `1.11`), as well as the latest
+The package has been tested with the latest stable version of Julia 1.* (currently `1.12`), as well as the latest
 Julia LTS version (currently `1.10`).
 
 ## Usage
 Currently, the way to use the code is to 1) clone it 2) create a new file in the `simulations` directory
-3) add `include("path/to/src/merzbild.jl")` and `using ..Merzbild` to the file.
+3) `adding Merzbild` to the start of the file.
 A simulation file can be run by calling `julia --project=. simulations/path/to/simulation_file.jl` from the project
-root directory.
+root directory, or by running `julia --project=.` followed by `include("simulations/path/to/simulation_file.jl")`.
 
 Some usage examples can be found in the `simulations` directory.
 A detailed overview of the structures required can be found in [the documentation](https://merzbild.github.io/Merzbild.jl/dev/),
 but a short code snippet is given below. It simulates the relaxation of two gases initialized at different temperatures
-to equilibrium.
+to equilibrium. It can be executed by calling `julia --project=.` in the root directory and copy-pasting the code below.
 
 ```julia
-# assuming the simulation file is directly in the simulations directory
-include("../src/Merzbild.jl")
-using ..Merzbild
+using Merzbild
 using Random
 
 function run(seed)
@@ -131,6 +129,9 @@ The tests try to cover most of the functionality implemented in the code. They c
 Detailed benchmarks can be found in [`BENCHMARKS.md`](BENCHMARKS.md).
 For a serial 1-D Couette flow simulation, Merzbild.jl is up to 30% faster
 than SPARTA.
+
+## Research reproducibility
+Details on reproducing results obtained with `Merzbild.jl` can be found in [`PAPER_REPRODUCIBILITY.md`](PAPER_REPRODUCIBILITY.md)
 
 ## Citing
 For now, the repository can be cited as

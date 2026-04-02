@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.7.8
+* Fixed ionization simulations without event splitting
+* Tests for simulations with elastic and ionizing electron-neutral collisions (without event splitting)
+* Threaded swap of particles for multi-threaded simulations now possible
+* New `sample_particles_phase_box_weighted!` sampling function added for variable-weight particle sampling
+from an equilibrium distribution
+* Variable-weight simulation examples now perform merging before the time loop is started, and
+collision factor estimates use mean post-merge particle weight
+* `run_examples.py` now runs each example only for 10 timesteps
+* Documentation of simulation files in `simulations` directory added (`simulations/README.md`)
+* Exact rate-conserving version of NNLS added
+* Simulation examples added for Fourier flow
+* Simulation example added that simply samples and merges particles and computes various statistics
+* Reproducibility setups added for "Moment-preserving particle merging via non-negative least squares" (simulation parameters and
+post-processing scripts)
+
 ## v0.7.7
 * Improved scattering modelling for ionization reactions based on Nanbu's paper
 * Added tests for ionization reaction scattering

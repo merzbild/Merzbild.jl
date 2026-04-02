@@ -16,6 +16,7 @@ include("test_computes.jl")  # we test functions that compute physical propertie
 include("test_io.jl")  # we test various I/O routines
 include("test_sampling.jl")  # then we test sampling functions
 include("test_grid_sampling.jl")  # then we test grid sampling functions
+include("test_phase_box_sampling.jl")  # then we test phase box sampling
 include("test_collision_utils.jl")  # then we test some collision utilities
 include("test_bkw.jl")  # then we test the BKW relaxation case against reference solutions
 include("test_2species.jl")  # then we test 2-species elastic collisions
@@ -34,9 +35,11 @@ include("test_nnls_merging.jl")  # test NNLS-based merging
 include("test_nnls_merging_buffer_sorting.jl")  # then we test that particles are freed correctly in NNLS-based merging
 include("test_bkw_varweight_nnls.jl")  # test NNLS-based merging
 include("test_electron_neutral_data.jl")  # test loading of XML LXCat-like data
-include("test_nnls_ratepreserving_merging.jl")  # test NNLS merging with rate preservation
+include("test_nnls_ratepreserving_merging.jl")  # test NNLS merging with approximate rate preservation
+include("test_nnls_exact_ratepreserving_merging.jl")  # test NNLS merging with exact rate preservation 
 include("test_acceleration.jl")  # test acceleration of charged particles
 include("test_collision_ionizing.jl")  # test ionizing collisions
+include("test_ionization_sim.jl")  # test 0D ionization simulation without event splitting
 include("test_indexing_particlevector.jl")  # test particle vector and multi-cell indexing
 include("test_indexing_particlebuffer.jl")  # test buffer in ParticleVector
 include("test_pia_contiguous.jl")  # test squash_pia
@@ -62,6 +65,7 @@ include("test_1D_couette_fp.jl")  # test  1-D Couette flow, particle Fokker-Plan
 include("test_chunking.jl")  # test chunking, chunk-based computes, surface reduce, sampling on 1-D grid chunks
 include("test_particle_exchange.jl")  # test swapping and pushing of particles in chunked simulations
 include("test_particle_resort_after_exchange.jl")  # test re-sorting of particles after swap/push in chunked simulations
+include("test_1_factorization.jl")
 include("test_couette_varweight_octree_chunking.jl")  # test serial but chunked variable-weight simulation
 include("test_roulette_merging.jl")  # roulette merge
 include("test_collision_utils_swpm.jl")  # SWPM collision factors estimation

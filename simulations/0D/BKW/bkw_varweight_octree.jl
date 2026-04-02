@@ -19,13 +19,23 @@
 #     C = 1. - 0.4 * np.exp(-time * magic_factor / 6)
 #     kk = N // 2
 #     return C**(kk - 1) * (kk - (kk - 1) * C)
-include("../../../src/Merzbild.jl")
+# include("../../../src/Merzbild.jl")
 
-using ..Merzbild
+using Merzbild
 using Random
 using InteractiveUtils
 
-function run(seed::Int64, threshold::Int64, Ntarget::Int64)
+"""
+    run(seed::Int64, threshold::Int64, ntarget::Int64)
+
+Run the BKW simulation with Octree merging.
+
+Positional arguments:
+* `seed`: random seed value
+* `threshold`: threshold number of particles after which they are merged
+* `ntarget`: target number of particles to merge down to
+"""
+function run(seed::Int64, threshold::Int64, ntarget::Int64)
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)
 
@@ -33,17 +43,12 @@ function run(seed::Int64, threshold::Int64, Ntarget::Int64)
     interaction_data::Array{Interaction, 2} = load_interaction_data("data/pseudo_maxwell.toml", species_data)
 
     dt_scaled = 0.025
-    n_t = 500
+    n_t = 600
 
-    nv = 40
+    nv = 32
     np_base = 40^3  # some initial guess on # of particle in simulation
 
-    # threshold = 10000
-    # Ntarget = 8000
-
-    # oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
-    # oc = OctreeN2Merge(OctreeBinMeanSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
-    oc = OctreeN2Merge(OctreeBinMedianSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
     T0::Float64 = 273.0
     sigma_ref = π * (interaction_data[1,1].vhs_d^2)
@@ -67,13 +72,17 @@ function run(seed::Int64, threshold::Int64, Ntarget::Int64)
     phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
     compute_props_with_total_moments!(particles, pia, species_data, phys_props)
 
-    ds = NCDataHolder("scratch/data/octree_mean_$(threshold)_$(Ntarget)_$(seed).nc", species_data, phys_props)
+    ds = NCDataHolder("scratch/data/bkw_octree_mid_$(threshold)_$(ntarget)_$(seed).nc", species_data, phys_props)
     write_netcdf(ds, phys_props, 0)
+
+    if phys_props.np[1,1] > threshold
+        merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, ntarget)
+    end
 
     collision_factors::CollisionFactors = CollisionFactors()
     collision_data::CollisionData = CollisionData()
 
-    Fnum = n_dens/n_sampled
+    Fnum = n_dens/pia.indexer[1,1].n_local
     collision_factors.sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1], species_data[1], T0, Fnum)
     Δt::Float64 = dt_scaled * tref
     V::Float64 = 1.0
@@ -81,25 +90,34 @@ function run(seed::Int64, threshold::Int64, Ntarget::Int64)
     for ts in 1:n_t
         ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
 
-        if phys_props.np[1,1] > threshold
-            merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
+        if pia.indexer[1,1].n_local > threshold
+            merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, ntarget)
         end
-        if ts % 100 == 0
-            println(ts)
-        end
-        
+        squash_pia!(particles, pia, 1)
         compute_props_with_total_moments!(particles, pia, species_data, phys_props)
         write_netcdf(ds, phys_props, ts)
     end
     close_netcdf(ds)
 end
 
-run(1, 8000, 6000)
+# run BKW test case with merging called if particle count exceeds 150 and merged down to 100 particles
+run(1, 150, 100)
 
-# multiple runs with ensembling if needed
-# const thr_nn =  [[50, 30], [75, 50], [100, 70], [150, 100], [300, 200], [500, 300]]
-# for (thr, nn) in thr_nn
-#     for seed in 1:400
-#         run(seed, thr, nn)
+
+#  # Uncomment set-up below to run over the parameter sets used for "Moment-preserving particle merging via non-negative least squares"
+#  # each element of params is a 4-element vector:
+#  # first is the threshold number of particles
+#  # second is the target number of particles for the merging
+#  # third is the number of ensembles that are run with different random seeds 
+
+# const params = [[42, 36, 10800], [66, 55, 4800], [100, 85, 2160], [142, 120, 1040], [200, 164, 560], [264, 220, 400]]
+
+# for paramset in params
+#     println("$paramset with $(paramset[3]) seeds")
+#     for seed in 1:paramset[3]
+#         if seed % 100 == 0
+#             println(seed, ", ", paramset)
+#         end
+#         run(seed, paramset[1], paramset[2])
 #     end
 # end
