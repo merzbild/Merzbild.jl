@@ -4,11 +4,11 @@ Instruction on reproducing results from specific papers that made use of `Merzbi
 the specific version of `Merzbild.jl` used to perform the simulations.
 
 ## "Moment-preserving particle merging via non-negative least squares" (2026)
-For the paper ["Moment-preserving particle merging via non-negative least squares"](TODO: link) by G. Oblapenko and M. Torrilhon,
+For the paper ["Moment-preserving particle merging via non-negative least squares"](https://doi.org/10.48550/arXiv.2604.00668) by G. Oblapenko and M. Torrilhon,
 the following setup was used: `Merzbild.jl` version `0.7.8`, Julia version `1.12`.
 First, one should produce the data by running the various simulation files located in the `simulations` directory,
 then the output data can be processed via use of scripts in the `scripts/reproducibility/2026_nnls` directory.
-The data produced by `Merzbild.jl` can also be downloaded from Zenodo: [10.5281/zenodo.19352779](https://doi.org/10.5281/zenodo.19352779) (note that the ionization data
+The data produced by `Merzbild.jl` can also be downloaded [from Zenodo](https://doi.org/10.5281/zenodo.19352778) (note that the ionization data
 is already post-processed to save space).
 
 ### Producing results from Merzbild.jl

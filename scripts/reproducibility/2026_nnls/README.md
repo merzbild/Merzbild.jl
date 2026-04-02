@@ -1,6 +1,6 @@
 # Scripts for post-processing of data for the paper "Moment-preserving particle merging via non-negative least squares" (2026)
 The scripts in this directory are
-for post-processing the numerical results for the paper ["Moment-preserving particle merging via non-negative least squares"](TODO: link)
+for post-processing the numerical results for the paper ["Moment-preserving particle merging via non-negative least squares"](https://doi.org/10.48550/arXiv.2604.00668)
 by G. Oblapenko and M. Torrilhon. The scripts require data produced by the simulations (see the [Paper reproducibility](../../../PAPER_REPRODUCIBILITY.md)).
 By default it is assumed that the outputs of the simulations are located in `scratch/data`, this can be adjusted by changing the value of the `pref` variable
 at the start of the scripts. Change `savefigs` to `False` to turn off saving figures as PDFs.
