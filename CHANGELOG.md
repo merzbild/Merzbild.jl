@@ -5,6 +5,8 @@
 * Simplified elastic VHS collision code via a unified `collide_2particles_vhs!` function, minor speed-ups
 * New keyword parameter `dw_tol` in collision routines that sets tolerance in weight difference under which particle
 collisions are treated as equal weight collisions and no additional particle splitting is performed
+* Minor improvements in readability and speed of electron-neutral collision routines
+* `@inbounds` added to acceleration routine
 
 ## v0.7.8
 * Fixed ionization simulations without event splitting
