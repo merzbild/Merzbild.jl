@@ -200,6 +200,9 @@
         end
     end
 
+    # test that we actually get ionization
+    @test sol["ndens"][1, 2, n_t] > n_dens_ions
+
     @test charge_neutrality == true
 
     # test compared to ref solution
