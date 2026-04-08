@@ -1020,3 +1020,67 @@ function check_unique_buffer(pv)
     
     return true, 0
 end
+
+"""
+    restore_particle_ordering!(pv::ParticleVector, used_indices::BitVector)
+
+Restore the ordering of particles in a ParticleVector so that pv.index[i] == i.
+This function ensures that:
+1. The index array is restored to identity mapping (pv.index[i] == i)
+2. The buffer contains only unused particle indices in descending order
+3. Used particles are placed in the first (length(pv.index) - pv.nbuffer) positions
+
+# Positional arguments
+* `pv`: ParticleVector instance to restore ordering for
+* `used_indices`: BitVector to store which indices are used and which not
+"""
+function restore_particle_ordering!(pv::ParticleVector, used_indices::BitVector)
+    n_total = length(pv.index)
+    n_used = n_total - pv.nbuffer
+
+    if length(used_indices) < n_total
+        resize!(used_indices, n_total)
+    end
+    
+    fill!(used_indices, true)
+    for i in 1:pv.nbuffer
+        used_indices[pv.buffer[i]] = false
+    end
+    
+    next_used_pos = 1
+    
+    # Iterate through all particles
+    @inbounds for i in 1:n_total
+        if used_indices[i]
+            # If this particle is used but not in its correct position, swap it
+            if i != next_used_pos
+                # Swap particles data
+                tmp_w = pv.particles[i].w
+                tmp_v = pv.particles[i].v
+                tmp_x = pv.particles[i].x
+                
+                pv.particles[i].w = pv.particles[next_used_pos].w
+                pv.particles[i].v = pv.particles[next_used_pos].v
+                pv.particles[i].x = pv.particles[next_used_pos].x
+                
+                pv.particles[next_used_pos].w = tmp_w
+                pv.particles[next_used_pos].v = tmp_v
+                pv.particles[next_used_pos].x = tmp_x
+                
+                # Swap cell indices
+                tmp_cell = pv.cell[i]
+                pv.cell[i] = pv.cell[next_used_pos]
+                pv.cell[next_used_pos] = tmp_cell
+            end
+            next_used_pos += 1
+        end
+    end
+    
+    @inbounds @simd for i in 1:n_total
+        pv.index[i] = i
+    end
+    
+    @inbounds @simd for i in 1:pv.nbuffer
+        pv.buffer[i] = n_total + 1 - i
+    end
+end
