@@ -41,7 +41,7 @@ export load_interaction_data, load_interaction_data_with_dummy, load_species_and
 export create_collision_factors_array
 export create_collision_factors_swpm_array
 export estimate_sigma_g_w_max, estimate_sigma_g_w_max!, estimate_sigma_g_max!
-export ntc!, fp_linear!, swpm!
+export ntc!, fp_linear!, swpm!, ntc_equal_weight!
 export k_B
 export GridN2Merge, merge_grid_based!
 export OctreeN2Merge, OctreeBinMidSplit, OctreeBinMeanSplit, OctreeBinMedianSplit
