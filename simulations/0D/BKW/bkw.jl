@@ -76,7 +76,7 @@ function run(seed)
     V::Float64 = 1.0
     
     @time for ts in 1:n_t
-        ntc!(rng, collision_factors, collision_data, interaction_data, particles[1],
+        ntc_equal_weight!(rng, collision_factors, collision_data, interaction_data, particles[1],
              pia, 1, 1, Δt, V)
         
         compute_props!(particles, pia, species_data, phys_props)

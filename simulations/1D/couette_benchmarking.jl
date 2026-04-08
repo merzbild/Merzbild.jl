@@ -60,7 +60,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
 
         # collide particles
         for cell in 1:grid.n_cells
-            @timeit "collide" @inbounds ntc!(rng, collision_factors[1, 1, cell],
+            @timeit "collide" @inbounds ntc_equal_weight!(rng, collision_factors[1, 1, cell],
                                    collision_data, interaction_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
         end
 
