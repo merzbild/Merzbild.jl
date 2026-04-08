@@ -78,20 +78,22 @@ function sort_particles!(gridsort::GridSortInPlace, grid, particles, pia, specie
         cell_np = gridsort.cell_counts[cell+1] - gridsort.cell_counts[cell]
         cell_end = gridsort.cell_counts[cell+1]
 
-        pia.indexer[cell,species].start2 = 0
-        pia.indexer[cell,species].end2 = -1
-        pia.indexer[cell,species].n_group2 = 0
+        indexer = pia.indexer[cell,species]
+
+        indexer.start2 = 0
+        indexer.end2 = -1
+        indexer.n_group2 = 0
 
         if cell_np > 0
-            pia.indexer[cell,species].start1 = cell_start
-            pia.indexer[cell,species].end1 = cell_end
+            indexer.start1 = cell_start
+            indexer.end1 = cell_end
         else
             # this is done so that we can safely write for i in e1:s1 without worrying about accessing particles at index 0
-            pia.indexer[cell,species].start1 = 0
-            pia.indexer[cell,species].end1 = -1
+            indexer.start1 = 0
+            indexer.end1 = -1
         end
-        pia.indexer[cell,species].n_group1 = cell_np
-        pia.indexer[cell,species].n_local = cell_np
+        indexer.n_group1 = cell_np
+        indexer.n_local = cell_np
     end
 
     @inbounds for i in n_tot:-1:1
