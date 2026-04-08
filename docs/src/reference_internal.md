@@ -40,6 +40,7 @@ Merzbild.sample_maxwellian!
 Merzbild.compute_n_coll_single_species
 Merzbild.compute_n_coll_two_species
 Merzbild.collide_2particles_vhs!
+Merzbild.collide_2particles_vhs_equal_weight!
 Merzbild.compute_vhs_factor
 Merzbild.compute_com!
 Merzbild.compute_g!

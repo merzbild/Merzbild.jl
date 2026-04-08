@@ -97,6 +97,7 @@ estimate_sigma_g_w_max!
 estimate_sigma_g_w_max_ntc_n_e!
 estimate_sigma_g_max!
 ntc!
+ntc_equal_weight!
 ntc_n_e!
 ntc_n_e_es!
 swpm!

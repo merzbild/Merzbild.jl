@@ -71,10 +71,14 @@ pia = ParticleIndexerArray(n_sampled)
 ```
 
 ## Colliding variable-weight particles
-As mentioned above, the existing DSMC routines take care of the required particle splitting, so no specific adaptation is required
-for the variable-weight case. However, one needs to estimate ``(\sigma g w)_{max}``. The simplest approach is to
+As mentioned above, the existing DSMC routines, unless they have `equal_weight` explicitly in their name,
+take care of the required particle splitting. For variable-weight NTC simulations, one needs to estimate ``(\sigma g w)_{max}``.
+The simplest approach is to
 use `estimate_sigma_g_w_max` function, but it requires a (fixed) value of `Fnum` - so one can simply compute it as
-`ndens/n_sampled` (i.e. the number density divided by the total number of sampled particles).
+`ndens/n_sampled` (i.e. the number density divided by the total number of sampled particles). If we merge after sampling,
+an effective `Fnum` is then computed as `ndens/n_post_merge` (i.e. number density divided by the total number of post-merge particles).
+The [`ntc`](@ref) function has a keyword parameter `dw_tol` that governs when particle collisions are treated as equal-weight so that small
+discrepancies in particle weights do not cause unnecessary splitting.
 
 ## Merging variable-weight particles
 In order to merge variable-weight particles, one needs to set up a merging algorithm and the associated
