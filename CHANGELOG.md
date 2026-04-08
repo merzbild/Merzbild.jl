@@ -7,6 +7,8 @@
 collisions are treated as equal weight collisions and no additional particle splitting is performed
 * Minor improvements in readability and speed of electron-neutral collision routines
 * `@inbounds` added to acceleration routine
+* `ntc_equal_weight` added for slightly faster collisions in equal-weight simulations
+* Documentation improvements
 
 ## v0.7.8
 * Fixed ionization simulations without event splitting
