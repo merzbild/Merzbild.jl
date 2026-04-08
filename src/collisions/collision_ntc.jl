@@ -269,6 +269,45 @@ and no particle splitting is performed
     end
 end
 
+
+
+"""
+    collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction_l, pa_i, pa_k,
+                                         particles_1, particles_2, pia, cell, species1, species2)
+
+Collide two particles elastically using the VHS model, assuming equal weights - no particle splitting is performed even
+if weights are unequal. Particles can be of same or different species.
+
+# Positional arguments
+* `rng`: the random number generator
+* `collision_data`: `CollisionData` instance used for storing collisional quantities
+* `collision_factors`: the `CollisionFactors` holding the estimate of ``(\\sigma g w)_{max}``
+    for the species in question in the cell
+* `interaction`: the `Interaction` instance for the colliding species
+* `particles_1`: `ParticleVector` of the particles of the first species being collided
+* `particles_2`: `ParticleVector` of the particles of the second species being collided
+* `pia`: the `ParticleIndexerArray`
+* `cell`: the index of the cell in which collisions are performed
+* `species1`: the index of the first species for which collisions are performed
+* `species2`: the index of the second species for which collisions are performed
+"""
+@inline function collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction, pa_i, pa_k,
+                                                      particles_1, particles_2, pia, cell, species1, species2)
+    sigma = sigma_vhs(interaction, collision_data.g)
+    sigma_g_w_max = sigma * collision_data.g * max(pa_i.w, pa_k.w)
+
+    # update (σ g w)_max if needed
+    collision_factors.sigma_g_w_max = max(sigma_g_w_max, collision_factors.sigma_g_w_max)
+
+    @inbounds if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
+        collision_factors.n_coll_performed += 1
+        collision_factors.n_eq_w_coll_performed += 1
+        compute_com!(collision_data, interaction, pa_i, pa_k)
+        # do collision
+        scatter_vhs!(rng, collision_data, interaction, pa_i, pa_k)
+    end
+end
+
 """
     ntc!(rng, collision_factors, collision_data, interaction, particles, pia,
          cell, species, Δt, V; dw_tol=1e-16)
@@ -409,6 +448,148 @@ function ntc!(rng, collision_factors, collision_data, interaction,
         if (collision_data.g > eps())
             collide_2particles_vhs!(rng, collision_data, collision_factors, interaction_l, pa_i, pa_k,
                                     particles_1, particles_2, pia, cell, species1, species2; dw_tol=dw_tol)
+        end
+    end
+end
+
+"""
+    ntc_equal_weight!(rng, collision_factors, collision_data, interaction, particles, pia,
+                      cell, species, Δt, V)
+
+Perform elastic collisions between particles of same species using the NTC algorithm
+and the VHS cross-section model. Particle weights are assumed to be equal,
+and no weight checks/splitting is performed.
+
+# Positional arguments
+* `rng`: the random number generator
+* `collision_factors`: the `CollisionFactors` for the species in question in the cell
+* `collision_data`: `CollisionData` instance used for storing collisional quantities
+* `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
+* `particles`: `ParticleVector` of the particles being collided
+* `pia`: the `ParticleIndexerArray`
+* `cell`: the index of the cell in which collisions are performed
+* `species`: the index of the species for which collisions are performed
+* `Δt`: timestep
+* `V`: cell volume
+
+# References
+* G.A. Bird, Molecular gas dynamics and the direct simulation of gas flows,
+    [Clarendon Press, Oxford, 1994](https://doi.org/10.1093/oso/9780198561958.001.0001).
+"""
+function ntc_equal_weight!(rng, collision_factors, collision_data, interaction, particles, pia,
+                           cell, species, Δt, V)
+    # single-species ntc
+    # compute ncoll
+    # loop over particles
+    # update sigma_g_w_max
+    # collide
+    @inbounds collision_factors.n1 = pia.indexer[cell, species].n_local
+    @inbounds collision_factors.n2 = pia.indexer[cell, species].n_local
+    @inbounds n_coll_float = compute_n_coll_single_species(rng, collision_factors, pia.indexer[cell, species].n_local, Δt, V)
+    n_coll_int = floor(Int64, n_coll_float)
+    # println(n_coll_float, ", ", n_coll_int)
+
+    collision_factors.n_coll = n_coll_int
+    collision_factors.n_coll_performed = 0
+    collision_factors.n_eq_w_coll_performed = 0
+
+    @inbounds interaction_l = interaction[species, species]
+
+    @inbounds for _ in 1:n_coll_int
+        i = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species].n_local)
+        k = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species].n_local)
+
+        while (i == k)
+            k = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species].n_local)
+        end
+
+        # example: bounds from [1,4], [7,9]; n_total = 7
+        # n_group1 = 4, n_group2 = 3
+        # i = 0,1,2,3 - [1,4]
+        # i = 4,5,6 - [7,9]
+        i = map_cont_index(pia.indexer[cell, species], i)
+        k = map_cont_index(pia.indexer[cell, species], k)
+        pa_i = particles[i]
+        pa_k = particles[k]
+        
+        compute_g!(collision_data, pa_i, pa_k)
+        if (collision_data.g > eps())
+            collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction_l, pa_i, pa_k,
+                                                 particles, particles, pia, cell, species, species)
+        end
+    end
+end
+
+"""
+    ntc_equal_weight!(rng, collision_factors, collision_data, interaction,
+                      particles_1, particles_2, pia,
+                      cell, species1, species2, Δt, V)
+
+Perform elastic collisions between particles of different species using the NTC algorithm
+and the VHS cross-section model. Particle weights are assumed to be equal,
+and no weight checks/splitting is performed.
+
+# Positional arguments
+* `rng`: the random number generator
+* `collision_factors`: the `CollisionFactors` for the species in question in the cell
+* `collision_data`: `CollisionData` instance used for storing collisional quantities
+* `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
+* `particles_1`: `ParticleVector` of the particles of the first species being collided
+* `particles_2`: `ParticleVector` of the particles of the second species being collided
+* `pia`: the `ParticleIndexerArray`
+* `cell`: the index of the cell in which collisions are performed
+* `species1`: the index of the first species for which collisions are performed
+* `species2`: the index of the second species for which collisions are performed
+* `Δt`: timestep
+* `V`: cell volume
+
+# Keyword arguments
+* `dw_tol`: if weights of particles differ by less than this amount, an equal-weight collision is assumed
+and no particle splitting is performed
+
+# References
+* G.A. Bird, Molecular gas dynamics and the direct simulation of gas flows,
+    [Clarendon Press, Oxford, 1994](https://doi.org/10.1093/oso/9780198561958.001.0001).
+"""
+function ntc_equal_weight!(rng, collision_factors, collision_data, interaction,
+                           particles_1, particles_2, pia,
+                           cell, species1, species2, Δt, V)
+    # compute ncoll
+    # loop over particles
+    # update sigma_g_w_max
+    # collide
+    @inbounds collision_factors.n1 = pia.indexer[cell, species1].n_local
+    @inbounds collision_factors.n2 = pia.indexer[cell, species2].n_local
+    @inbounds n_coll_float = compute_n_coll_two_species(rng, collision_factors,
+                                              pia.indexer[cell, species1].n_local, pia.indexer[cell, species2].n_local, Δt, V)
+    n_coll_int = floor(Int64, n_coll_float)
+    # println(n_coll_float, ", ", n_coll_int)
+
+    collision_factors.n_coll = n_coll_int
+    collision_factors.n_coll_performed = 0
+    collision_factors.n_eq_w_coll_performed = 0
+
+    @inbounds interaction_l = interaction[species1, species2]
+
+    @inbounds for _ in 1:n_coll_int
+        i = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species1].n_local)
+        k = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species2].n_local)
+
+        # example: bounds from [1,4], [7,9]; n_total = 7
+        # n_group1 = 4, n_group2 = 3
+        # i = 0,1,2,3 - [1,4]
+        # i = 4,5,6 - [7,9]
+        i = map_cont_index(pia.indexer[cell, species1], i)
+        k = map_cont_index(pia.indexer[cell, species2], k)
+
+        pa_i = particles_1[i]
+        pa_k = particles_2[k]
+        
+        compute_g!(collision_data, particles_1[i], particles_2[k])
+
+        if (collision_data.g > eps())
+            collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction_l, pa_i, pa_k,
+                                                 particles_1, particles_2, pia, cell, species1, species2)
         end
     end
 end
