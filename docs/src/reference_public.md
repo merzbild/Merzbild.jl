@@ -23,6 +23,7 @@ ParticleIndexerArray(n_particles::Integer)
 ParticleIndexerArray(n_particles::T) where T<:AbstractVector
 ParticleIndexerArray(grid, species_data::Array{Species}) 
 squash_pia!
+restore_particle_ordering!
 count_disordered_particles
 check_unique_index
 check_pia_is_correct

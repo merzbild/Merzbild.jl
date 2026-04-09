@@ -68,5 +68,6 @@ export count_disordered_particles, check_pia_is_correct, check_unique_index, che
 export FluxProps, compute_flux_props!, compute_flux_props_sorted!
 export mean_free_path, mean_collision_frequency
 export generate_1_factorization
+export restore_particle_ordering!
 
 end # module merzbild
