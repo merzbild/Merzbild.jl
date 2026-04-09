@@ -67,33 +67,6 @@ function reset!(chunk_exchanger, chunk_id)
 end
 
 """
-    swap_particles!(pv1, pv2, i, j)
-
-Swap particles `pv1[i]` and `pv2[j]` in two `ParticleVector` instances. This does not update any
-associated indices or buffers.
-
-# Positional arguments
-* `pv1`: the first `ParticleVector`
-* `pv2`: the second `ParticleVector`
-* `i`: index of the particle in `pv1`
-* `j`: index of the particle in `pv2`
-"""
-function swap_particles!(pv1, pv2, i, j)
-    # TODO: check if inlining speeds things up or slows them down, doesn't seem to have an impact
-    @inbounds tmp_w = pv1[i].w
-    @inbounds tmp_v = pv1[i].v
-    @inbounds tmp_x = pv1[i].x
-
-    @inbounds pv1[i].w = pv2[j].w
-    @inbounds pv1[i].v = pv2[j].v
-    @inbounds pv1[i].x = pv2[j].x
-
-    @inbounds pv2[j].w = tmp_w
-    @inbounds pv2[j].v = tmp_v
-    @inbounds pv2[j].x = tmp_x
-end
-
-"""
     push_particles!(chunk_exchanger, particles_chunks, pia_chunks, species, i, j, offset_ij, s_ci_ij2, e_ci_ij)
 
 Pushes particles of the specified `species` from chunk `i` to the end of chunk `j`,

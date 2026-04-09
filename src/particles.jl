@@ -1022,7 +1022,53 @@ function check_unique_buffer(pv)
 end
 
 """
-    restore_particle_ordering!(pv::ParticleVector, used_indices::BitVector)
+    swap_particles_true_index!(pv1, pv2, i, j)
+
+Swap particles `pv1.particles[i]` and `pv2.particles[j]` in two `ParticleVector` instances. This does not update any
+associated indices or buffers. This uses the underlying ("true") indices of the particles.
+
+# Positional arguments
+* `pv1`: the first `ParticleVector`
+* `pv2`: the second `ParticleVector`
+* `i`: the underlying index of the particle in `pv1`
+* `j`: the underlying index of the particle in `pv2`
+"""
+@inline function swap_particles_true_index!(pv1, pv2, i, j)
+    # TODO: check if inlining speeds things up or slows them down, doesn't seem to have an impact
+    @inbounds tmp_w = pv1.particles[i].w
+    @inbounds tmp_v = pv1.particles[i].v
+    @inbounds tmp_x = pv1.particles[i].x
+
+    @inbounds pv1.particles[i].w = pv2.particles[j].w
+    @inbounds pv1.particles[i].v = pv2.particles[j].v
+    @inbounds pv1.particles[i].x = pv2.particles[j].x
+
+    @inbounds pv2.particles[j].w = tmp_w
+    @inbounds pv2.particles[j].v = tmp_v
+    @inbounds pv2.particles[j].x = tmp_x
+end
+
+"""
+    swap_particles!(pv1, pv2, i, j)
+
+Swap particles `pv1[i]` and `pv2[j]` in two `ParticleVector` instances. This does not update any
+associated indices or buffers.
+
+# Positional arguments
+* `pv1`: the first `ParticleVector`
+* `pv2`: the second `ParticleVector`
+* `i`: index of the particle in `pv1`
+* `j`: index of the particle in `pv2`
+"""
+function swap_particles!(pv1, pv2, i, j)
+    # TODO: check if inlining speeds things up or slows them down, doesn't seem to have an impact
+    @inbounds p_i = pv1.index[i]
+    @inbounds p_j = pv2.index[j]
+    swap_particles_true_index!(pv1, pv2, p_i, p_j)
+end
+
+"""
+    restore_particle_ordering!(pv::ParticleVector, inv_map::Vector{Int64})
 
 Restore the ordering of particles in a ParticleVector so that pv.index[i] == i.
 This function ensures that:
@@ -1032,55 +1078,50 @@ This function ensures that:
 
 # Positional arguments
 * `pv`: ParticleVector instance to restore ordering for
-* `used_indices`: BitVector to store which indices are used and which not
+* `inv_map`: Vector of integers to inverse map (`inv_map[pv.index[i]] == i`)
 """
-function restore_particle_ordering!(pv::ParticleVector, used_indices::BitVector)
+function restore_particle_ordering!(pv::ParticleVector, inv_map::Vector{Int64})
     n_total = length(pv.index)
     n_used = n_total - pv.nbuffer
 
-    if length(used_indices) < n_total
-        resize!(used_indices, n_total)
+    if length(inv_map) < n_total
+        resize!(inv_map, n_total)
     end
-    
-    fill!(used_indices, true)
-    for i in 1:pv.nbuffer
-        used_indices[pv.buffer[i]] = false
+
+    # 1. Build an inverse map: which logical particle is in which physical slot?
+    # inv_map[physical_slot] = logical_id
+    for i in 1:n_total
+        inv_map[pv.index[i]] = i
     end
-    
-    next_used_pos = 1
-    
-    # Iterate through all particles
-    @inbounds for i in 1:n_total
-        if used_indices[i]
-            # If this particle is used but not in its correct position, swap it
-            if i != next_used_pos
-                # Swap particles data
-                tmp_w = pv.particles[i].w
-                tmp_v = pv.particles[i].v
-                tmp_x = pv.particles[i].x
-                
-                pv.particles[i].w = pv.particles[next_used_pos].w
-                pv.particles[i].v = pv.particles[next_used_pos].v
-                pv.particles[i].x = pv.particles[next_used_pos].x
-                
-                pv.particles[next_used_pos].w = tmp_w
-                pv.particles[next_used_pos].v = tmp_v
-                pv.particles[next_used_pos].x = tmp_x
-                
-                # Swap cell indices
-                tmp_cell = pv.cell[i]
-                pv.cell[i] = pv.cell[next_used_pos]
-                pv.cell[next_used_pos] = tmp_cell
-            end
-            next_used_pos += 1
+
+    for i in 1:n_used
+        current_phys_pos = pv.index[i]  # actual position of particle
+        
+        if current_phys_pos != i
+            # Identify which logical particle is currently occupying Physical Slot 'i'
+            displaced_logical_id = inv_map[i]
+            
+            # Swap the particle data
+            swap_particles_true_index!(pv, pv, i, current_phys_pos)
+
+            # Update the mappings to reflect the swap
+            # Logical 'i' is now at Physical 'i'
+            pv.index[i] = i
+            inv_map[i] = i
+            
+            # The logical particle we kicked out is now at current_phys_pos
+            pv.index[displaced_logical_id] = current_phys_pos
+            inv_map[current_phys_pos] = displaced_logical_id
         end
     end
-    
-    @inbounds @simd for i in 1:n_total
+
+    # 3. Finalize the index array for unused slots
+    for i in (n_used + 1):n_total
         pv.index[i] = i
     end
-    
-    @inbounds @simd for i in 1:pv.nbuffer
-        pv.buffer[i] = n_total + 1 - i
+
+    # 4. Restore the buffer to descending order of unused slots
+    for i in 1:pv.nbuffer
+        pv.buffer[i] = n_total - i + 1
     end
 end
