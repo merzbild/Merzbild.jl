@@ -67,7 +67,17 @@ sort_particles!(gridsorter, grid, particles[species_id], pia, species_id)
 Since sorting indices only can lead to increase fragmentation of the particle layout in memory,
 a function [`count_disordered_particles`](@ref) is available that counts the number of 
 non-continuously laid out particles; this can serve as a metric as to whether the underlying
-particles (and not just their indices) need to be re-sorted (currently not implemented).
+particles (and not just their indices) need to be re-sorted.
+The fragmentation of particles indices can be fixed by calling [`restore_particle_ordering!`](@ref) after the sorting routine;
+calling it every 10 timesteps or so gives a good balance between cost of re-indexing and speed-up due to improved memory access.
+
+The re-indexing can be called as follows:
+```julia
+restore_particle_ordering!(particles[species_id], index_inv_map)
+```
+
+Here `index_inv_map` is a pre-allocated array of integers of length equal to the number of particles in the simulation (if it is smaller,
+it will be resized in by the `restore_particle_ordering!` function).
 
 ## Creating boundary conditions
 Next, we need to create boundary conditions for the left and right walls.
@@ -169,6 +179,7 @@ n_particles = ppc * nx
 particles = [ParticleVector(n_particles)]
 pia = ParticleIndexerArray(grid.n_cells, 1)
 gridsorter = GridSortInPlace(grid, n_particles)
+index_inv_map = zeros(Int64, n_particles)
 
 # sample particles
 # Fnum * ppc = Np in cell = ndens * V_cell
@@ -226,6 +237,11 @@ for t in 1:n_timesteps
 
     # sort particles
     sort_particles!(gridsorter, grid, particles[1], pia, 1)
+
+    # restore indexing/ordering every 10 timesteps
+    if t%10 == 0
+        restore_particle_ordering!(particles[1], index_inv_map)
+    end
 
     # compute props and do averaging
     if (t >= avg_start)

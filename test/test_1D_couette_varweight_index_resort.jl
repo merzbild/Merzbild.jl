@@ -1,22 +1,20 @@
 
-@testset "couette test variable weight with SWPM" begin
+@testset "couette test variable weight with index re-sorting" begin
 
     T_wall = 300.0
     v_wall = 500.0
     L = 5e-4
     ndens = 5e22
     nx = 50
-    ppc = 1000
+    ppc = 500
     Δt = 2.59e-9
     output_freq = 1000
-    n_timesteps = 4000
-    merge_threshold = 200
-    merge_target = 150
+    n_timesteps = 3000
+    merge_threshold = 150
+    merge_target = 100
 
     seed = 1234
     rng = StableRNG(seed)
-
-    G = 1.5
 
     # load particle and interaction data
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
@@ -34,6 +32,8 @@
     pia = ParticleIndexerArray(grid.n_cells, 1)
     gridsorter = GridSortInPlace(grid, n_particles)
 
+    index_inv_map = zeros(Int64, n_particles)
+
     # sample particles
     # Fnum * ppc = Np in cell = ndens * V_cell
     Fnum = grid.cells[1].V * ndens / ppc
@@ -49,17 +49,14 @@
 
 
     # create struct for netCDF output
-    sol_path = joinpath(@__DIR__, "data", "tmp_couette_swpm.nc")
+    sol_path = joinpath(@__DIR__, "data", "tmp_couette.nc")
     ds = NCDataHolder(sol_path, species_data, phys_props)
 
     # create struct for computation of surface properties
     surf_props = SurfProps(pia, grid)
 
-    sol_path_surf = joinpath(@__DIR__, "data", "tmp_couette_swpm_surf.nc")
+    sol_path_surf = joinpath(@__DIR__, "data", "tmp_couette_surf.nc")
     ds_surf = NCDataHolderSurf(sol_path_surf, species_data, surf_props)
-
-    # init collision factors
-    collision_factors = create_collision_factors_swpm_array(pia, interaction_data, species_data, T_wall)
 
 
     oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
@@ -71,6 +68,10 @@
     end
     squash_pia!(particles, pia)
 
+
+    # init collision factors
+    collision_factors = create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum * ppc / merge_target)
+
     # compute and write data at t=0
     compute_props!(particles, pia, species_data, phys_props)
     write_netcdf(ds, phys_props, 0)
@@ -80,8 +81,8 @@
     for t in 1:n_timesteps
         # collide particles
         for cell in 1:grid.n_cells
-            swpm!(rng, collision_factors[1, 1, cell],
-                  collision_data, interaction_data, particles[1], pia, cell, 1, G, Δt, grid.cells[cell].V)
+            ntc!(rng, collision_factors[1, 1, cell],
+                 collision_data, interaction_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
         
             if pia.indexer[cell,1].n_local > merge_threshold
                 merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
@@ -95,6 +96,12 @@
         # sort particles
         sort_particles!(gridsorter, grid, particles[1], pia, 1)
 
+        if (t%500 == 0)
+            restore_particle_ordering!(particles[1], index_inv_map)
+            @test check_unique_index(particles[1], pia, 1) == (true, 0)
+            @test check_unique_buffer(particles[1]) == (true, 0)
+        end
+
         # if (t < avg_start)
         if (t % output_freq == 0)
             compute_props_sorted!(particles, pia, species_data, phys_props)
@@ -106,53 +113,50 @@
         end
     end
 
+    # write_netcdf(ds_avg, phys_props_avg, n_timesteps)
+
     close_netcdf(ds)
     close_netcdf(ds_surf)
-    
+    # close_netcdf(ds_avg)
+
     @test check_pia_is_correct(pia, 1) == (true, 0)
     @test check_unique_index(particles[1], pia, 1) == (true, 0)
     @test check_unique_buffer(particles[1]) == (true, 0)
 
-    ref_sol_path = joinpath(@__DIR__, "data", "couette_0.0005_50_500.0_300.0_1000_vw200to150_swpm.nc")
+    ref_sol_path = joinpath(@__DIR__, "data", "couette_0.0005_50_500.0_300.0_500_vw150to100_resort.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
     sol = NCDataset(sol_path, "r")
  
     ndens_conservation = true
     ref_ndens = 2.5e19
 
-    tmax_test = 4
-
-    for t in 1:tmax_test
+    for t in 1:3
         if abs(sum(sol["ndens"][:, 1, t]) - ref_ndens) / ref_ndens > 2*eps()
             ndens_conservation = false
         end
     end
 
     @test ndens_conservation == true
-    @test maximum(abs.(ref_sol["ndens"][:, 1, 1:tmax_test] .- sol["ndens"][:, 1, 1:tmax_test])) < 2 * eps()
-    @test maximum(abs.(ref_sol["T"][:, 1, 1:tmax_test] .- sol["T"][:, 1, 1:tmax_test])) < 2.95e-13
+    @test maximum(abs.(ref_sol["ndens"][:, 1, 1:3] .- sol["ndens"][:, 1, 1:3])) < 2 * eps()
+    @test maximum(abs.(ref_sol["T"][:, 1, 1:3] .- sol["T"][:, 1, 1:3])) < 2.4e-13
     # this is # of physical particles, should not change
-    @test abs(sum(ref_sol["ndens"][:, 1, 1:tmax_test]) - sum(sol["ndens"][:, 1, 1:tmax_test]))/sum(sol["ndens"][:, 1, 1:tmax_test]) <= eps()
+    @test abs(sum(ref_sol["ndens"][:, 1, 1:3]) - sum(sol["ndens"][:, 1, 1:3]))/sum(sol["ndens"][:, 1, 1:3]) <= eps()
 
     close(sol)
     rm(sol_path)
 
 
-    ref_sol_path = joinpath(@__DIR__, "data", "couette_0.0005_50_500.0_300.0_1000_vw200to150_swpm_surf.nc")
+    ref_sol_path = joinpath(@__DIR__, "data", "couette_0.0005_50_500.0_300.0_500_vw150to100_resort_surf.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
     sol = NCDataset(sol_path_surf, "r")
  
-    @test maximum(abs.(ref_sol["np"][:, 1, 1:tmax_test] .- sol["np"][:, 1, 1:tmax_test])) < 2 * eps()
-    @test maximum(abs.(ref_sol["kinetic_energy_flux"][:, 1, 1:tmax_test] .- sol["kinetic_energy_flux"][:, 1, 1:tmax_test])) < 6.0e-11
+    @test maximum(abs.(ref_sol["np"][:, 1, 1:3] .- sol["np"][:, 1, 1:3])) < 2 * eps()
+    @test maximum(abs.(ref_sol["kinetic_energy_flux"][:, 1, 1:3] .- sol["kinetic_energy_flux"][:, 1, 1:3])) < 6.0e-11
 
-    @test maximum(abs.(sol["flux_incident"][:, 1, 1:tmax_test] - ref_sol["flux_incident"][:, 1, 1:tmax_test])) < 2 * eps()
+    @test maximum(abs.(sol["flux_incident"][:, 1, 1:3] - ref_sol["flux_incident"][:, 1, 1:3])) < 2 * eps()
 
-    @test maximum(abs.(sol["flux_incident"][:, 1, 1:tmax_test] + sol["flux_reflected"][:, 1, 1:tmax_test])) < 2 * eps()
+    @test maximum(abs.(sol["flux_incident"][:, 1, 1:3] + sol["flux_reflected"][:, 1, 1:3])) < 2 * eps()
 
     close(sol)
     rm(sol_path_surf)
-
-    # the reference solution was also time averaged betwen t=14001 and t=50000 and compared to a SPARTA solution
-    # SPARTA version from 7 March 2024
-    # see test/data/external
 end

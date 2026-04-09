@@ -169,13 +169,21 @@ and averaging over a new set of timesteps needs to be started.
 * `surf_props`: the `SurfProps` instance to be cleared
 """
 function clear_props!(surf_props::SurfProps)
-    surf_props.np[:,:] .= 0
-    surf_props.flux_incident[:,:] .= 0.0
-    surf_props.flux_reflected[:,:] .= 0.0
-    surf_props.force[:,:,:] .= 0.0
-    surf_props.normal_pressure[:,:] .= 0.0
-    surf_props.shear_pressure[:,:,:] .= 0.0
-    surf_props.kinetic_energy_flux[:,:] .= 0.0
+    fill!(surf_props.np, 0)
+    fill!(surf_props.flux_incident, 0.0)
+    fill!(surf_props.flux_reflected, 0.0)
+    fill!(surf_props.force, 0.0)
+    fill!(surf_props.normal_pressure, 0.0)
+    fill!(surf_props.shear_pressure, 0.0)
+    fill!(surf_props.kinetic_energy_flux, 0.0)
+
+    # surf_props.np[:,:] .= 0
+    # surf_props.flux_incident[:,:] .= 0.0
+    # surf_props.flux_reflected[:,:] .= 0.0
+    # surf_props.force[:,:,:] .= 0.0
+    # surf_props.normal_pressure[:,:] .= 0.0
+    # surf_props.shear_pressure[:,:,:] .= 0.0
+    # surf_props.kinetic_energy_flux[:,:] .= 0.0
 end
 
 """

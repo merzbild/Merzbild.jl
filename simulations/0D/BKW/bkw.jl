@@ -3,7 +3,6 @@
 # 20k particles, julia --project=. simulations/basic/bkw.jl  4.73s user 1.75s system 133% cpu 4.874 total
 # 50k particles, no print julia --project=. simulations/basic/bkw.jl  5.54s user 1.65s system 134% cpu 5.357 total
 # 200k particles, 10 moments, no print julia --project=. simulations/basic/bkw.jl  13.29s user 1.78s system 114% cpu 13.211 total
-
 using Merzbild
 using Random
 
@@ -77,7 +76,7 @@ function run(seed)
     V::Float64 = 1.0
     
     @time for ts in 1:n_t
-        ntc!(rng, collision_factors, collision_data, interaction_data, particles[1],
+        ntc_equal_weight!(rng, collision_factors, collision_data, interaction_data, particles[1],
              pia, 1, 1, Δt, V)
         
         compute_props!(particles, pia, species_data, phys_props)

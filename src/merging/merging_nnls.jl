@@ -74,21 +74,21 @@ mutable struct NNLSMerge
     scaley::Float64
     scalez::Float64
 
-    n_total_conserved::Int32
-    n_moments_vel::Int32
+    n_total_conserved::Int64
+    n_moments_vel::Int64
     rhs_vector::Vector{Float64}
-    mim::Vector{Vector{Int32}}  # mult-index moments
-    tot_order::Vector{Int32}
-    n_moments_pos::Int32
-    mim_pos::Vector{Vector{Int32}}  # mult-index moments
-    tot_order_pos::Vector{Int32}
-    pos_i_x::Int32
-    pos_i_y::Int32
-    pos_i_z::Int32
+    mim::Vector{Vector{Int64}}  # mult-index moments
+    tot_order::Vector{Int64}
+    n_moments_pos::Int64
+    mim_pos::Vector{Vector{Int64}}  # mult-index moments
+    tot_order_pos::Vector{Int64}
+    pos_i_x::Int64
+    pos_i_y::Int64
+    pos_i_z::Int64
 
     lhs_matrices::Vector{Matrix{Float64}}
-    lhs_matrix_ncols_start::Int32
-    lhs_matrix_ncols_end::Int32
+    lhs_matrix_ncols_start::Int64
+    lhs_matrix_ncols_end::Int64
     column_norms::Vector{Vector{Float64}}
     vel_pos_matrices::Vector{Matrix{Float64}}
 
@@ -154,28 +154,32 @@ mutable struct NNLSMerge
 
         matrices_preallocated = Vector{Matrix{Float64}}([])
         column_norms = Vector{Vector{Float64}}([])
+        nnls_ws_preallocated = Vector{NNLSWorkspace}([])
+        vel_pos_matrices = Vector{Matrix{Float64}}([])
         if matrix_ncol_nprealloc > 0
             for i in init_np:init_np+matrix_ncol_nprealloc
                 push!(matrices_preallocated, zeros(n_total_conserved, i))
                 push!(column_norms, ones(i))
-            end
-        end
-
-        nnls_ws_preallocated = Vector{NNLSWorkspace}([])
-        if matrix_ncol_nprealloc > 0
-            for i in init_np:init_np+matrix_ncol_nprealloc+1
                 push!(nnls_ws_preallocated, NNLSWorkspace(zeros(n_total_conserved, i), zeros(n_total_conserved)))
+                push!(vel_pos_matrices, zeros(6, i))
             end
+
+            # one extra workspace
+            push!(nnls_ws_preallocated, NNLSWorkspace(zeros(n_total_conserved,
+                  init_np+matrix_ncol_nprealloc+1), zeros(n_total_conserved)))
         else
             push!(nnls_ws_preallocated, NNLSWorkspace(zeros(n_total_conserved, init_np), zeros(n_total_conserved)))
         end
 
-        vel_pos_matrices = Vector{Matrix{Float64}}([])
-        if matrix_ncol_nprealloc > 0
-            for i in init_np:init_np+matrix_ncol_nprealloc
-                push!(vel_pos_matrices, zeros(6, i))
-            end
-        end
+        # if matrix_ncol_nprealloc > 0
+        #     for i in init_np:init_np+matrix_ncol_nprealloc+1
+        #     end)
+        # end
+
+        # if matrix_ncol_nprealloc > 0
+        #     for i in init_np:init_np+matrix_ncol_nprealloc
+        #     end
+        # end
         
         return new(SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0),
                    1.0, 1.0, # vref, inv_vref
@@ -512,7 +516,7 @@ function compute_lhs_and_rhs!(nnls_merging, lhs_matrix, vel_pos_matrix,
     nnls_merging.Epx = 0.0
     nnls_merging.Epy = 0.0
     nnls_merging.Epz = 0.0
-    nnls_merging.rhs_vector .= 0.0
+    fill!(nnls_merging.rhs_vector, 0.0)
 
     compute_w_total_v0!(nnls_merging, particles, pia, cell, species)
 

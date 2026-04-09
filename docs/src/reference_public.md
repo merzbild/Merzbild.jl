@@ -23,6 +23,7 @@ ParticleIndexerArray(n_particles::Integer)
 ParticleIndexerArray(n_particles::T) where T<:AbstractVector
 ParticleIndexerArray(grid, species_data::Array{Species}) 
 squash_pia!
+restore_particle_ordering!
 count_disordered_particles
 check_unique_index
 check_pia_is_correct
@@ -97,6 +98,7 @@ estimate_sigma_g_w_max!
 estimate_sigma_g_w_max_ntc_n_e!
 estimate_sigma_g_max!
 ntc!
+ntc_equal_weight!
 ntc_n_e!
 ntc_n_e_es!
 swpm!

@@ -39,6 +39,8 @@ Merzbild.sample_maxwellian!
 ```@docs
 Merzbild.compute_n_coll_single_species
 Merzbild.compute_n_coll_two_species
+Merzbild.collide_2particles_vhs!
+Merzbild.collide_2particles_vhs_equal_weight!
 Merzbild.compute_vhs_factor
 Merzbild.compute_com!
 Merzbild.compute_g!
@@ -149,6 +151,7 @@ Merzbild.AbstractNCDataHolder
 
 ## Parallel computations
 ```@docs
+Merzbild.swap_particles_true_index!
 Merzbild.swap_particles!
 Merzbild.update_swap_indexing!
 Merzbild.push_particles!

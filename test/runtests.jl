@@ -18,8 +18,12 @@ include("test_sampling.jl")  # then we test sampling functions
 include("test_grid_sampling.jl")  # then we test grid sampling functions
 include("test_phase_box_sampling.jl")  # then we test phase box sampling
 include("test_collision_utils.jl")  # then we test some collision utilities
+include("test_collision_vhs.jl")  # then we test VHS collisions
 include("test_bkw.jl")  # then we test the BKW relaxation case against reference solutions
+include("test_collision_vhs_equal_weight.jl")  # then we test VHS collisions for equal-weight particles
+include("test_bkw_equal_weight.jl")  # then we test the BKW relaxation case for equal-weight particles against reference solutions
 include("test_2species.jl")  # then we test 2-species elastic collisions
+include("test_2species_equal_weight.jl")  # then we test 2-species elastic collisions for equal-weight particles
 include("test_merging_grid_indexing.jl")  # then we test basic indexing in grid-based merging
 include("test_merging_grid_merging.jl")  # then we test grid-based merging in 0D
 include("test_merging_grid_buffer_sorting.jl")  # then we test that particles are freed correctly in NNLS-based merging
@@ -65,8 +69,10 @@ include("test_1D_couette_fp.jl")  # test  1-D Couette flow, particle Fokker-Plan
 include("test_chunking.jl")  # test chunking, chunk-based computes, surface reduce, sampling on 1-D grid chunks
 include("test_particle_exchange.jl")  # test swapping and pushing of particles in chunked simulations
 include("test_particle_resort_after_exchange.jl")  # test re-sorting of particles after swap/push in chunked simulations
-include("test_1_factorization.jl")
+include("test_particle_index_sorting.jl")  # test re-sorting of particle indices
+include("test_1_factorization.jl")  # test thread-safe 1-factorization of list of chunk pairs
 include("test_couette_varweight_octree_chunking.jl")  # test serial but chunked variable-weight simulation
+include("test_1D_couette_varweight_index_resort.jl")  # test 1-D Couette flow, variable-weight DSMC, index re-sorting
 include("test_roulette_merging.jl")  # roulette merge
 include("test_collision_utils_swpm.jl")  # SWPM collision factors estimation
 include("test_bkw_varweight_octree_swpm.jl")  # SWPM for BKW test case

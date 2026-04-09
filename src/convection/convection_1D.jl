@@ -19,26 +19,26 @@ Convect a singe particle on a 1-D uniform grid.
     @inbounds x_old = particle.x[1]
     @inbounds x_new = particle.x[1] + particle.v[1] * Δt
 
-    while (x_new >= grid.L) || (x_new <= 0.0)
+    @inbounds while (x_new >= grid.L) || (x_new <= 0.0)
         
         if (x_new >= grid.L)
-            @inbounds t_rest -= abs((grid.L - x_old) / particle.v[1])
+            t_rest -= abs((grid.L - x_old) / particle.v[1])
             bc_id = 2
             wall_normal = -1.0
             x_old = grid.L
         else
-            @inbounds t_rest -= abs(x_old / particle.v[1])
+            t_rest -= abs(x_old / particle.v[1])
             bc_id = 1
             wall_normal = 1.0
             x_old = 0.0
         end
 
-        @inbounds reflect_particle_x!(rng, particle, boundaries.reflection_velocities_sq[bc_id, species],
+        reflect_particle_x!(rng, particle, boundaries.reflection_velocities_sq[bc_id, species],
                                                 wall_normal,
                                                 boundaries.boundaries[bc_id].v,
                                                 boundaries.boundaries[bc_id].accommodation)
 
-        @inbounds x_new = x_old + particle.v[1] * t_rest
+        x_new = x_old + particle.v[1] * t_rest
     end
 
     # if a particle is too near a wall, we offset it a bit to avoid particles

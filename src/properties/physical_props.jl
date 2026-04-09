@@ -254,11 +254,11 @@ and averaging over a new set of timesteps needs to be started.
 * `phys_props`: the `PhysProps` instance to be cleared
 """
 function clear_props!(phys_props::PhysProps)
-    phys_props.lpa[:] .= 0
-    phys_props.np[:,:] .= 0
-    phys_props.n[:,:] .= 0.0
-    phys_props.v[:,:,:] .= 0.0
-    phys_props.T[:,:] .= 0.0
+    fill!(phys_props.lpa, 0)
+    fill!(phys_props.np, 0)
+    fill!(phys_props.n, 0.0)
+    fill!(phys_props.v, 0.0)
+    fill!(phys_props.T, 0.0)
 end
 
 """

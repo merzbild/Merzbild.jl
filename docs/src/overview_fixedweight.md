@@ -33,11 +33,11 @@ passed to the collision routine, which will use it as required.
 
 ## NTC-specific data: CollisionFactors
 The No-Time Counter (NTC) collision algorithm requires an estimate of ``(\sigma g w)_{max}`` for each species pair
-for each cell in the flow. The `CollisionFactors` data structure stores the values of this factor, as well as 
+for each cell in the flow. The [`CollisionFactors`](@ref) data structure stores the values of this factor, as well as 
 other NTC-related parameters (number of collisions performed, number of collision partners).
 One needs to initialize a 3-dimensional array of `CollisionFactors` of shape 
 `n_species x n_species x n_cells` in order to store the required factors for each species' pair for all cells in the flow;
-this is done by calling `create_collision_factors_array(n_species, n_cells)`.
+this is done by calling [`create_collision_factors_array(n_species, n_cells)`](@ref).
 Some initial estimate for the values of ``(\sigma g w)_{max}``; the simplest way to do so for a fixed-weight DSMC simulation
 is to call the `estimate_sigma_g_w_max!(collision_factors, interactions, species_data, T_list, Fnum; mult_factor=1.0)`
 function.
@@ -61,8 +61,11 @@ Now that the interaction data has been loaded, the `CollisionData` instance to s
 has been instantiated, the 3-dimensional array of `CollisionFactors` has been created, and the ``(\sigma g w)_{max}``
 values precomputed, one can perform collisions.
 
-Single-species elastic VHS collisions can be performed by calling
-`ntc!(rng, collision_factors, collision_data, interaction, particles, pia, cell, species, Δt, V)`.
+Single-species elastic VHS collisions for fixed-weight particles can be performed by calling
+[`ntc_equal_weight!`](@ref).
+A more generic function [`ntc!`](@ref)
+is available, which checks whether particles have equal or non-equal weights (see [Variable-weight DSMC simulations](@ref)); for
+purely equal-weight simulations it is however somewhat slower, thus it is recommended to use [`ntc_equal_weight!`](@ref).
 Here `collision_factors` is the specific instance of `CollisionFactors`, i.e. a specific element of the
 3-dimensional array of `CollisionFactors`. `Δt` is the timestep, and `V` is the volume of the physical cell
 (for spatially homogeneous simulations this can be set to 1.0).
@@ -145,11 +148,11 @@ for ts in 1:n_t  # loop over time
         for s1 in s2:n_species  # loop over second species
             if (s1 == s2)
                 # collisions between particles of same species
-                ntc!(rng, collision_factors[s1,s1,1], collision_data,
+                ntc_equal_weight!(rng, collision_factors[s1,s1,1], collision_data,
                      interaction_data, particles[s1], pia, 1, s1, Δt, V)
             else
                 # collisions between particles of different species
-                ntc!(rng, collision_factors[s1,s2,1], collision_data,
+                ntc_equal_weight!(rng, collision_factors[s1,s2,1], collision_data,
                      interaction_data, particles[s1], particles[s2],
                      pia, 1, s1, s2, Δt, V)
             end

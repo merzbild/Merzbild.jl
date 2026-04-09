@@ -20,9 +20,9 @@ Stores information about a uniform discrete 3-dimensional velocity grid with ext
 * `vz_grid`: `Vector` of grid nodes in z direction
 """
 struct UnitDVGrid
-    nx::Int16
-    ny::Int16
-    nz::Int16
+    nx::Int64
+    ny::Int64
+    nz::Int64
     dx::Float64
     dy::Float64
     dz::Float64
@@ -74,9 +74,9 @@ Stores the values of a function evaluated on 3-dimensional velocity grid.
 * `w`: the 3-dimensional array of values
 """
 mutable struct VDF
-    const nx::Int16
-    const ny::Int16
-    const nz::Int16
+    const nx::Int64
+    const ny::Int64
+    const nz::Int64
     w::Array{Float64,3}
 end
 

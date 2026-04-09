@@ -19,7 +19,7 @@ they have been added to the end of the particle array.
 * `indexer`: array of `ParticleIndexer` instances of shape `(n_chunks, n_cells)`
 """
 mutable struct ChunkExchanger
-    n_chunks::Int32
+    n_chunks::Int64
     n_cells::Int64
     indexer::Array{ParticleIndexer, 2}  # n_chunks x n_cells
 end
@@ -64,33 +64,6 @@ function reset!(chunk_exchanger, chunk_id)
         @inbounds chunk_exchanger.indexer[chunk_id, i].start2 = 0
         @inbounds chunk_exchanger.indexer[chunk_id, i].end2 = -1
     end
-end
-
-"""
-    swap_particles!(pv1, pv2, i, j)
-
-Swap particles `pv1[i]` and `pv2[j]` in two `ParticleVector` instances. This does not update any
-associated indices or buffers.
-
-# Positional arguments
-* `pv1`: the first `ParticleVector`
-* `pv2`: the second `ParticleVector`
-* `i`: index of the particle in `pv1`
-* `j`: index of the particle in `pv2`
-"""
-function swap_particles!(pv1, pv2, i, j)
-    # TODO: check if inlining speeds things up or slows them down, doesn't seem to have an impact
-    @inbounds tmp_w = pv1[i].w
-    @inbounds tmp_v = pv1[i].v
-    @inbounds tmp_x = pv1[i].x
-
-    @inbounds pv1[i].w = pv2[j].w
-    @inbounds pv1[i].v = pv2[j].v
-    @inbounds pv1[i].x = pv2[j].x
-
-    @inbounds pv2[j].w = tmp_w
-    @inbounds pv2[j].v = tmp_v
-    @inbounds pv2[j].x = tmp_x
 end
 
 """
@@ -313,7 +286,7 @@ function exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell
     # assigned to chunk j
     s_ij = 0
     s_ci_ij = 0 # index of the cell
-    for cj in cell_chunks[j]
+    @inbounds for cj in cell_chunks[j]
         if pia_chunks[i].indexer[cj, species].start1 > 0
             s_ij = pia_chunks[i].indexer[cj, species].start1
             s_ci_ij = cj
@@ -326,7 +299,7 @@ function exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell
     l_cj = length(cell_chunks[j])
     e_ij = -1
     e_ci_ij = 0 # index of the cell
-    for cji in l_cj:-1:1
+    @inbounds for cji in l_cj:-1:1
         cj = cell_chunks[j][cji]
         if pia_chunks[i].indexer[cj, species].end1 > 0
             e_ij = pia_chunks[i].indexer[cj, species].end1
@@ -341,7 +314,7 @@ function exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell
     # that should be transferred to chunk i
     s_ji = 0
     s_ci_ji = 0 # index of the cell
-    for ci in cell_chunks[i]
+    @inbounds for ci in cell_chunks[i]
         if pia_chunks[j].indexer[ci, species].start1 > 0
             s_ji = pia_chunks[j].indexer[ci, species].start1
             s_ci_ji = ci
@@ -352,7 +325,7 @@ function exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell
     l_ci = length(cell_chunks[i])
     e_ji = -1
     e_ci_ji = 0 # index of the cell
-    for cij in l_ci:-1:1
+    @inbounds for cij in l_ci:-1:1
         ci = cell_chunks[i][cij]
         if pia_chunks[j].indexer[ci, species].end1 > 0
             e_ji = pia_chunks[j].indexer[ci, species].end1
@@ -409,7 +382,7 @@ function exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell
     # println("n_swap = $n_swap")
     # now update chunk_exchanger indexing
     if n_swap > 0
-        for nsw in 1:n_swap
+        @inbounds for nsw in 1:n_swap
             swap_particles!(particles_chunks[i][species], particles_chunks[j][species],
                             s_ij+nsw-1, s_ji+nsw-1)
             # println("Swapping $(s_ij+nsw-1) from $i with $(s_ji+nsw-1) from $j")

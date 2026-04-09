@@ -1,4 +1,4 @@
-@testset "bkw variable weight + octree N:2 merging" begin
+@testset "bkw equal-weight collisions" begin
 
 
     # Important!
@@ -39,14 +39,7 @@
 
     dt_scaled = 0.025
     n_t = 500
-
-    nv = 40
-    np_base = 40^3  # some initial guess on # of particle in simulation
-
-    threshold = 10000
-    Ntarget = 8000
-
-    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    n_particles = 20000
 
     T0::Float64 = 273.0
     sigma_ref = π * (interaction_data[1,1].vhs_d^2)
@@ -61,77 +54,70 @@
     ttt_bkw = 1 / (4 * π * n_dens * kappa_mult)
     magic_factor = tref / ttt_bkw / (4 * π)
 
-    # particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, np_base)]
-    particles = [ParticleVector(np_base)]
+    Fnum::Float64 = n_dens / n_particles
 
-    vdf0 = (vx, vy, vz) -> bkw(vx, vy, vz, species_data[1].mass, T0, 0.0)
+    particles::Vector{ParticleVector} = [ParticleVector(n_particles)]
 
-    n_sampled = sample_on_grid!(rng, vdf0, particles[1], nv, species_data[1].mass, T0, n_dens,
-                                0.0, 1.0, 0.0, 1.0, 0.0, 1.0;
-                                v_mult=3.5, cutoff_mult=3.5, noise=0.0, v_offset=[0.0, 0.0, 0.0])
+    pia = ParticleIndexerArray(0)
 
-    pia = ParticleIndexerArray(n_sampled)
+    sample_particles_equal_weight!(rng, particles[1], pia, 1, 1, n_particles,
+                                   species_data[1].mass, T0, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0;
+                                   distribution=:BKW)
+
 
     phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
     compute_props_with_total_moments!(particles, pia, species_data, phys_props)
 
-    sol_path = joinpath(@__DIR__, "data", "tmp_bkw_octree.nc")
+    sol_path = joinpath(@__DIR__, "data", "tmp_bkw.nc")
     ds = NCDataHolder(sol_path, species_data, phys_props)
     write_netcdf(ds, phys_props, 0)
 
     collision_factors::CollisionFactors = CollisionFactors()
     collision_data::CollisionData = CollisionData()
 
-    Fnum = n_dens/n_sampled
     collision_factors.sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1], species_data[1], T0, Fnum)
 
     Δt::Float64 = dt_scaled * tref
     V::Float64 = 1.0
 
     for ts in 1:n_t
-        ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
-
-        if phys_props.np[1,1] > threshold
-            merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
-            # println(oc.Nbins)
-        end
+        ntc_equal_weight!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
         
         compute_props_with_total_moments!(particles, pia, species_data, phys_props)
         write_netcdf(ds, phys_props, ts)
     end
     close_netcdf(ds)
 
-    @test abs(phys_props.T[1,1] - T0) < 5e-4
-    @test abs(phys_props.n[1,1] / n_dens - 1.0) < 1e-11
-    @test phys_props.np[1,1] < threshold
-
-    ref_sol_path = joinpath(@__DIR__, "data", "bkw_vw_octree_seed1234.nc")
+    ref_sol_path = joinpath(@__DIR__, "data", "bkw_20k_seed1234.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
     sol = NCDataset(sol_path, "r")
 
     @test length(sol["timestep"]) == n_t + 1
+
+    @test maximum(sol["np"]) == n_particles
+    @test minimum(sol["np"]) == n_particles
 
     ref_mom = ref_sol["moments"]
     sol_mom = sol["moments"]
 
     for mom_no in 1:length(moments_list)
         diff = abs.(ref_mom[mom_no, 1, 1, :] - sol_mom[mom_no, 1, 1, :])
-        @test maximum(diff) <= 1.25e-15
+        @test maximum(diff) <= 3 * eps()
     end
 
     close(ref_sol)
 
     analytic_4 = analytic(sol["timestep"] * dt_scaled, magic_factor, 4)
     diff = abs.(analytic_4 .- sol_mom[1, 1, 1, :]) ./ analytic_4
-    @test maximum(diff) < 0.025
+    @test maximum(diff) < 0.05
 
     analytic_6 = analytic(sol["timestep"] * dt_scaled, magic_factor, 6)
     diff = abs.(analytic_6 .- sol_mom[2, 1, 1, :]) ./ analytic_6
-    @test maximum(diff) < 0.078
+    @test maximum(diff) < 0.055
 
     analytic_8 = analytic(sol["timestep"] * dt_scaled, magic_factor, 8)
     diff = abs.(analytic_8 .- sol_mom[3, 1, 1, :]) ./ analytic_8
-    @test maximum(diff) < 0.21
+    @test maximum(diff) < 0.15
 
     close(sol)
     rm(sol_path)

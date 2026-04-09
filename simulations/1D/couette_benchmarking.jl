@@ -53,6 +53,8 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
 
     n_avg = n_timesteps - avg_start + 1
 
+    index_inv_map = zeros(Int64, n_particles)
+
     for t in 1:n_timesteps
         if t % 1000 == 0
             println(t)
@@ -60,7 +62,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
 
         # collide particles
         for cell in 1:grid.n_cells
-            @timeit "collide" @inbounds ntc!(rng, collision_factors[1, 1, cell],
+            @timeit "collide" @inbounds ntc_equal_weight!(rng, collision_factors[1, 1, cell],
                                    collision_data, interaction_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
         end
 
@@ -71,6 +73,10 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
         @timeit "sort" @inbounds sort_particles!(gridsorter, grid, particles[1], pia, 1)
 
         # compute props and do I/O
+
+        if t%10 == 0
+            @timeit "restore ordering" restore_particle_ordering!(particles[1], index_inv_map)
+        end
 
         if (t >= avg_start)
             @timeit "props compute" compute_props_sorted!(particles, pia, species_data, phys_props)

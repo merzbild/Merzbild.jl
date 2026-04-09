@@ -60,9 +60,9 @@ function run(seed)
         for s2 in 1:n_species
             for s1 in s2:n_species
                 if (s1 == s2)
-                    ntc!(rng, collision_factors[s1,s1,1], collision_data, interaction_data, particles[s1], pia, 1, s1, Δt, V)
+                    ntc_equal_weight!(rng, collision_factors[s1,s1,1], collision_data, interaction_data, particles[s1], pia, 1, s1, Δt, V)
                 else
-                    ntc!(rng, collision_factors[s1,s2,1], collision_data, interaction_data, particles[s1], particles[s2],
+                    ntc_equal_weight!(rng, collision_factors[s1,s2,1], collision_data, interaction_data, particles[s1], particles[s2],
                          pia, 1, s1, s2, Δt, V)
                 end
             end

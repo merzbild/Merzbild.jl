@@ -19,8 +19,8 @@ include("io.jl")
 include("convection/convection.jl")
 include("parallel.jl")
 
-const OCTREE_DEFAULT_BUFFER_SIZE::Int32 = 8192
-const DELTA_PARTICLES::Int32 = 256
+const OCTREE_DEFAULT_BUFFER_SIZE::Int64 = 8192
+const DELTA_PARTICLES::Int64 = 256
 
 export sample_maxwellian_on_grid!, sample_on_grid!, bkw, maxwellian
 export load_species_data, Particle, sample_particles_equal_weight!
@@ -41,7 +41,7 @@ export load_interaction_data, load_interaction_data_with_dummy, load_species_and
 export create_collision_factors_array
 export create_collision_factors_swpm_array
 export estimate_sigma_g_w_max, estimate_sigma_g_w_max!, estimate_sigma_g_max!
-export ntc!, fp_linear!, swpm!
+export ntc!, fp_linear!, swpm!, ntc_equal_weight!
 export k_B
 export GridN2Merge, merge_grid_based!
 export OctreeN2Merge, OctreeBinMidSplit, OctreeBinMeanSplit, OctreeBinMedianSplit
@@ -68,5 +68,6 @@ export count_disordered_particles, check_pia_is_correct, check_unique_index, che
 export FluxProps, compute_flux_props!, compute_flux_props_sorted!
 export mean_free_path, mean_collision_frequency
 export generate_1_factorization
+export restore_particle_ordering!
 
 end # module merzbild
