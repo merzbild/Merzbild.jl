@@ -79,6 +79,8 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
 
     n_avg = n_timesteps - avg_start + 1
 
+    index_inv_map = zeros(Int64, n_particles)
+
     for t in 1:n_timesteps
         if t % 1000 == 0
             println(t)
@@ -107,7 +109,11 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
 
         # count % of particles where indexing is disordered
         if t % 1000 == 0
-            println(count_disordered_particles(particles[1], pia, 1) / pia.n_total[1] * 100.0)
+            @timeit "disordered count" println(count_disordered_particles(particles[1], pia, 1) / pia.n_total[1] * 100.0)
+        end
+
+        if t%10 == 0
+            @timeit "restore ordering" restore_particle_ordering!(particles[1], index_inv_map)
         end
 
         # compute props and do I/O
