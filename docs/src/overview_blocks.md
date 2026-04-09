@@ -113,7 +113,7 @@ by directly accessing them as `pv[i]`; the `index` and `cell` fields need to be 
 new sorting routines.
 
 **Important**: over the course of a simulation, as particles get re-sorted, deleted, created, or merged,
-indexing may become sub-optimal; and particle access becomes cache-inefficient. This can be fixed by calling [`restore_particle_indexing!`](@ref),
+indexing may become sub-optimal; and particle access becomes cache-inefficient. This can be fixed by calling [`restore_particle_ordering!`](@ref),
 it is up to the user to decide how frequently this should be done to balance the cost of re-indexing and particle access in other routines.
 Example of such usage can be found in 1D simulations in `simulations/1D` (for example, in `simulations/1D/couette_varweight_octree.jl`).
 Re-ordering indexing every 10 timesteps seems to be a good starting point.

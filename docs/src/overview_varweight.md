@@ -77,7 +77,7 @@ The simplest approach is to
 use `estimate_sigma_g_w_max` function, but it requires a (fixed) value of `Fnum` - so one can simply compute it as
 `ndens/n_sampled` (i.e. the number density divided by the total number of sampled particles). If we merge after sampling,
 an effective `Fnum` is then computed as `ndens/n_post_merge` (i.e. number density divided by the total number of post-merge particles).
-The [`ntc`](@ref) function has a keyword parameter `dw_tol` that governs when particle collisions are treated as equal-weight so that small
+The [`ntc!`](@ref) function has a keyword parameter `dw_tol` that governs when particle collisions are treated as equal-weight so that small
 discrepancies in particle weights do not cause unnecessary splitting.
 
 ## Merging variable-weight particles
