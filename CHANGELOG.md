@@ -1,6 +1,7 @@
 # Changelog
 
 ## v0.7.9
+* `restore_particle_ordering!` added, this restores optimal indexing of particles and can lead to simulation speed-ups due to improved cache usage
 * Minor optimizations in octree merging
 * Simplified elastic VHS collision code via a unified `collide_2particles_vhs!` function, minor speed-ups
 * New keyword parameter `dw_tol` in collision routines that sets tolerance in weight difference under which particle
@@ -9,6 +10,7 @@ collisions are treated as equal weight collisions and no additional particle spl
 * `@inbounds` added to acceleration routine
 * `ntc_equal_weight` added for slightly faster collisions in equal-weight simulations
 * Documentation improvements
+* Improved test coverage
 
 ## v0.7.8
 * Fixed ionization simulations without event splitting

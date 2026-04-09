@@ -106,6 +106,11 @@ the value of `pia.contiguous` and does nothing if that value is set to `true`.
 **Summary**: one needs to restore continuity of particle indexing if particles are deleted and created in a simulation, otherwise this
 might lead to erroneous results.
 
+## Optimal particle indexing
+Over time, particle indexing becomes quite fragmented, leading to poor cache performance. Especially in non-0D simulations this affects the performance
+of sorting and convection routines. This can be fixed by calling [`restore_particle_indexing!`](@ref) **after** the particles have been sorted.
+Restoring particle indexing every 10 timesteps seems to be a good balance between the cost of the re-indexing operation and the performance gain.
+
 ## Debugging
 Several utility functions are available to verify/help debug simulations.
 
