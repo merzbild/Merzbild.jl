@@ -72,6 +72,7 @@ include("test_particle_resort_after_exchange.jl")  # test re-sorting of particle
 include("test_particle_index_sorting.jl")  # test re-sorting of particle indices
 include("test_1_factorization.jl")  # test thread-safe 1-factorization of list of chunk pairs
 include("test_couette_varweight_octree_chunking.jl")  # test serial but chunked variable-weight simulation
+include("test_1D_couette_varweight_index_resort.jl")  # test 1-D Couette flow, variable-weight DSMC, index re-sorting
 include("test_roulette_merging.jl")  # roulette merge
 include("test_collision_utils_swpm.jl")  # SWPM collision factors estimation
 include("test_bkw_varweight_octree_swpm.jl")  # SWPM for BKW test case
