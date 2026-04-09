@@ -69,8 +69,8 @@ include("test_1D_couette_fp.jl")  # test  1-D Couette flow, particle Fokker-Plan
 include("test_chunking.jl")  # test chunking, chunk-based computes, surface reduce, sampling on 1-D grid chunks
 include("test_particle_exchange.jl")  # test swapping and pushing of particles in chunked simulations
 include("test_particle_resort_after_exchange.jl")  # test re-sorting of particles after swap/push in chunked simulations
-include("test_particle_index_sorting.jl")
-include("test_1_factorization.jl")
+include("test_particle_index_sorting.jl")  # test re-sorting of particle indices
+include("test_1_factorization.jl")  # test thread-safe 1-factorization of list of chunk pairs
 include("test_couette_varweight_octree_chunking.jl")  # test serial but chunked variable-weight simulation
 include("test_roulette_merging.jl")  # roulette merge
 include("test_collision_utils_swpm.jl")  # SWPM collision factors estimation
