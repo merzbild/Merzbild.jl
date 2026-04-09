@@ -1078,7 +1078,7 @@ This function ensures that:
 
 # Positional arguments
 * `pv`: ParticleVector instance to restore ordering for
-* `inv_map`: Vector of integers to inverse map (`inv_map[pv.index[i]] == i`)
+* `inv_map`: Vector of integers to store inverse map (`inv_map[pv.index[i]] == i`)
 """
 function restore_particle_ordering!(pv::ParticleVector, inv_map::Vector{Int64})
     n_total = length(pv.index)
@@ -1088,15 +1088,16 @@ function restore_particle_ordering!(pv::ParticleVector, inv_map::Vector{Int64})
         resize!(inv_map, n_total)
     end
 
+    fill!(inv_map, 0)
+
     # 1. Build an inverse map: which logical particle is in which physical slot?
     # inv_map[physical_slot] = logical_id
-    for i in 1:n_total
+    @inbounds for i in 1:n_used
         inv_map[pv.index[i]] = i
     end
 
-    for i in 1:n_used
+    @inbounds for i in 1:n_used
         current_phys_pos = pv.index[i]  # actual position of particle
-        
         if current_phys_pos != i
             # Identify which logical particle is currently occupying Physical Slot 'i'
             displaced_logical_id = inv_map[i]
@@ -1109,19 +1110,25 @@ function restore_particle_ordering!(pv::ParticleVector, inv_map::Vector{Int64})
             pv.index[i] = i
             inv_map[i] = i
             
-            # The logical particle we kicked out is now at current_phys_pos
-            pv.index[displaced_logical_id] = current_phys_pos
-            inv_map[current_phys_pos] = displaced_logical_id
+            if displaced_logical_id > 0
+                # We kicked out a 'real' particle, tell it where it now lives
+                pv.index[displaced_logical_id] = current_phys_pos
+                inv_map[current_phys_pos] = displaced_logical_id
+            else
+                # We kicked out garbage. 
+                # Just mark the old physical spot as containing garbage.
+                inv_map[current_phys_pos] = 0
+            end
         end
     end
 
     # 3. Finalize the index array for unused slots
-    for i in (n_used + 1):n_total
+    @inbounds @simd for i in (n_used + 1):n_total
         pv.index[i] = i
     end
 
     # 4. Restore the buffer to descending order of unused slots
-    for i in 1:pv.nbuffer
+    @inbounds @simd for i in 1:pv.nbuffer
         pv.buffer[i] = n_total - i + 1
     end
 end
