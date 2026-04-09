@@ -54,6 +54,8 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
     write_grid("scratch/data/couette_$(L)_$(nx)_grid.nc", grid)
 
     n_avg = n_timesteps - avg_start + 1
+    
+    index_inv_map = zeros(Int64, n_particles)
 
     for t in 1:n_timesteps
         if t % 1000 == 0
@@ -70,6 +72,10 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
 
         # sort particles
         @timeit "sort" sort_particles!(gridsorter, grid, particles[1], pia, 1)
+
+        if t%10 == 0
+            @timeit "restore ordering" restore_particle_ordering!(particles[1], index_inv_map)
+        end
 
         # compute props and do I/O
 

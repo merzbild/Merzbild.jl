@@ -34,12 +34,15 @@ simulation)
 * `n_timesteps`: total number of timesteps to run for
 * `avg_start`: timestep after which averaging begins
 * `name`: name to append to start of output files
+
+Keyword arguments:
+* `reorder_freq`: how frequently the ordering of particle indices is restored
 """
 function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
              ppc_sampled, merge_threshold, merge_target, n_vel_up_total,
              n_moms_pos,
              Δt, n_timesteps, avg_start,
-             name)
+             name; reorder_freq = 10)
     reset_timer!()
 
     Random.seed!(seed)
@@ -72,6 +75,7 @@ function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
     particles = [ParticleVector(n_particles)]
     pia = ParticleIndexerArray(grid.n_cells, 1)
     gridsorter = GridSortInPlace(grid, n_particles)
+    index_inv_map = zeros(Int64, n_particles)
 
     # sample particles
     # Fnum * ppc_sampled = Np in cell = ndens * V_cell
@@ -216,6 +220,10 @@ function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
         # sort particles
         @timeit "sort" sort_particles!(gridsorter, grid, particles[1], pia, 1)
 
+        if t%reorder_freq == 0
+            @timeit "restore ordering" restore_particle_ordering!(particles[1], index_inv_map)
+        end
+
         if (t >= avg_start)
             @timeit "props compute" compute_props_sorted!(particles, pia, species_data, phys_props)
             @timeit "flux props compute" compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props, grid)
@@ -247,8 +255,13 @@ const x_moms = 2  # spatial moments of up to this order are conserved
 
 const n_t = 3500000
 
+const restore_particle_ordering_freq = 10
+# const restore_particle_ordering_freq = 1_000_000_000
+#  # uncomment line above to reproduce reference solution for "Moment-preserving particle merging via non-negative least squares",
+#  # as it did not restore optimal indexing order
+
 for param in params
     println(x_moms, ", ", param)
     run(1234, 350.0, 300.0, 600.0, 0.0, 5e-3, 1.5e-3 * 101325.0, 1000, 500,
-        param[2], param[3], param[1], x_moms, 4e-10, n_t, 500_000, "Fourier_NNLS")
+        param[2], param[3], param[1], x_moms, 4e-10, n_t, 500_000, "Fourier_NNLS"; reorder_freq=restore_particle_ordering_freq)
 end
