@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.7.10
+* Documentation improvements
+
 ## v0.7.9
 * `restore_particle_ordering!` added, this restores optimal indexing of particles and can lead to simulation speed-ups due to improved cache usage
 * Minor optimizations in octree merging
