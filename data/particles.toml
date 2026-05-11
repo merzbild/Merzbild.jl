@@ -17,3 +17,11 @@ charge = 1.0
 ["e-"]
 mass = 9.109383632e-31
 charge = -1.0
+
+["Xe"]
+mass = 2.181e-25
+charge = 0.0
+
+["Xe+"]
+mass = 2.181e-25
+charge = 1.0
