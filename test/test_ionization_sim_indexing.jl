@@ -55,9 +55,16 @@
     @test n_e_interactions.neutral_indexer[1] == 1
     @test n_e_interactions.neutral_indexer[4] == 2
 
+    @test length(n_e_interactions.mass_ratios) == 2
+    @test n_e_interactions.mass_ratios[1] > n_e_interactions.mass_ratios[2]  # m_Ar < m_Xe
+
     for i in [2,3,5]
         @test n_e_interactions.neutral_indexer[i] == -1
     end
+
+    @test length(n_e_interactions.ionization) == 2
+    @test maximum(n_e_interactions.ionization[1].data.sigma) > 0.0
+    @test maximum(n_e_interactions.ionization[2].data.sigma) == 0.0
 
     nv_heavy = 15  # init neutrals and ions on a coarser grid
     nv_electrons = 20
@@ -103,8 +110,8 @@
         merge_grid_based!(rng, mg_ions, particles[3], pia, 1, 3, species_data, phys_props)
     end
 
-    if pia.n_total[4] > threshold_ion
-        merge_grid_based!(rng, mg_ions, particles[4], pia, 1, 4, species_data, phys_props)
+    if pia.n_total[4] > threshold_neutrals
+        merge_octree_N2_based!(rng, oc, particles[4], pia, 1, 4, np_target_neutrals)
     end
 
     if pia.n_total[5] > threshold_electrons
@@ -135,4 +142,54 @@
                                         particles[s1], particles[5], pia, 1, s1, 5, Δt, V, min_coll=15, n_loops=5)
         @test collision_factors[s1,5,1].sigma_g_w_max > cf_e_n
     end
+
+
+    for ts in 1:n_t
+
+        for (neu_species, ion_species) in zip([1, 4], [2, 3])
+            ntc_n_e!(rng, collision_factors[neu_species,5,1], collision_data, interaction_data,
+                    n_e_interactions, n_e_cs,
+                    particles[neu_species], particles[5], particles[ion_species], pia, 1, neu_species, 5, ion_species, Δt, V)
+        end
+
+
+        if pia.n_total[1] > threshold_neutrals
+            merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
+        end
+
+        if pia.n_total[2] > threshold_ion
+            merge_grid_based!(rng, mg_ions, particles[2], pia, 1, 2, species_data, phys_props)
+        end
+
+        if pia.n_total[3] > threshold_ion
+            merge_grid_based!(rng, mg_ions, particles[3], pia, 1, 3, species_data, phys_props)
+        end
+
+        if pia.n_total[4] > threshold_neutrals
+            merge_octree_N2_based!(rng, oc, particles[4], pia, 1, 4, np_target_neutrals)
+        end
+
+        if pia.n_total[5] > threshold_electrons
+            merge_octree_N2_based!(rng, oc_electrons, particles[5], pia, 1, 5, np_target_electrons)
+        end
+
+        accelerate_constant_field_x!(particles[5],
+                                     pia, 1, 5, species_data,
+                                     E_field, Δt)
+        
+        compute_props!(particles, pia, species_data, phys_props)
+    end
+
+
+    # argon gets ionized
+    @test phys_props.n[1, 5] > n_dens_e
+    @test phys_props.n[1, 1] < n_dens_neutrals
+    @test phys_props.n[1, 2] > n_dens_ions
+
+    # nothing happens to Xenon due to 0 cross-section
+    @test abs(phys_props.n[1, 4] - n_dens_neutrals) / n_dens_neutrals < 6e-15
+    @test abs(phys_props.n[1, 3] - n_dens_ions) / n_dens_ions < 1.5e-14
+
+    # charge neutrality
+    @test abs(phys_props.n[1, 2] - phys_props.n[1, 5]) / phys_props.n[1, 5] < 6e-15
 end

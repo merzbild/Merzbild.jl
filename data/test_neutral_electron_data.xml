@@ -273,11 +273,11 @@
                     </Updated>
                     
                     <DataX type="Energy" units="eV" size="3">
-                    1.576e+1 3.0e+1 1.0e+2
+                    1.212984e+1 3.0e+1 1.0e+2
                     </DataX>
                     
                     <DataY type="Cross section" units="m2" size="3">
-                    0.000000e+0 2.0e-20 2.0e-20
+                    0.000000e+0 0.0e-20 0.0e-20
                     </DataY>
                     </Process>
                 </Processes>
