@@ -205,4 +205,105 @@ function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D
     surface_props_scale!(species, surf_props, species_data, Δt)
 end
 
+
+"""
+    convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particles, pia, species, species_data, Δt)
+
+Convect particles on a 1-D uniform grid and write post-convection cell index to `particles.cell`.
+
+# Positional arguments
+* `rng`: the random number generator
+* `grid`: the grid on which the convection is performed
+* `boundaries`: the `MaxwellWalls1D` struct describing the boundaries (it is assumed that the wall with index 1 is the left wall and
+    the wall with index 2 is the right wall)
+* `particles`: the `ParticleVector` of particles to be convected
+* `pia`: the `ParticleIndexerArray` instance
+* `species`: the index of the species being convected
+* `species_data`: the vector of `Species` data
+* `Δt`: the convection timestep
+"""
+function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particles, pia, species, species_data, Δt)
+    # @inbounds @simd for i in 1:pia.n_total[species]
+    
+    @inbounds if pia.contiguous[species]
+        @inbounds n_tot = pia.n_total[species]
+        @inbounds @simd for i in 1:n_tot
+            convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt)
+            particles.cell[i] = get_cell(grid, particles[i].x)
+        end
+    else
+        for cell in 1:grid.n_cells
+            @inbounds s = pia.indexer[cell, species].start1
+            @inbounds e = pia.indexer[cell, species].end1
+            
+            @inbounds @simd for i in s:e
+                convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt)
+                particles.cell[i] = get_cell(grid, particles[i].x)
+            end
+
+            @inbounds if pia.indexer[cell, species].n_group2 > 0
+                @inbounds s = pia.indexer[cell, species].start2
+                @inbounds e = pia.indexer[cell, species].end2
+            
+                @inbounds @simd for i in s:e
+                    convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt)
+                    particles.cell[i] = get_cell(grid, particles[i].x)
+                end
+            end
+        end
+    end
+end
+
+"""
+    convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, surf_props::SurfProps, particles, pia, species, species_data, Δt)
+
+Convect particles on a 1-D uniform grid and write post-convection cell index to `particles.cell`, computing surface properties if particles hit a surface.
+
+# Positional arguments
+* `rng`: the random number generator
+* `grid`: the grid on which the convection is performed
+* `boundaries`: the `MaxwellWalls1D` struct describing the boundaries (it is assumed that the wall with index 1 is the left wall and
+    the wall with index 2 is the right wall)
+* `particles`: the `ParticleVector` of particles to be convected
+* `pia`: the `ParticleIndexerArray` instance
+* `species`: the index of the species being convected
+* `species_data`: the vector of `Species` data
+* `surf_props`: the `SurfProps` struct where the computed surface properties will be stored
+* `Δt`: the convection timestep
+"""
+function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particles, pia, species, species_data, surf_props::SurfProps, Δt)
+    # @inbounds @simd for i in 1:pia.n_total[species]
+    
+    clear_props!(surf_props)
+    @inbounds if pia.contiguous[species]
+        @inbounds n_tot = pia.n_total[species]
+        @inbounds @simd for i in 1:n_tot
+            convect_single_particle!(rng, grid, boundaries, particles[i], species, surf_props, species_data[species].mass, Δt)
+            particles.cell[i] = get_cell(grid, particles[i].x)
+        end
+    else
+        for cell in 1:grid.n_cells
+            @inbounds s = pia.indexer[cell, species].start1
+            @inbounds e = pia.indexer[cell, species].end1
+            
+            @inbounds @simd for i in s:e
+                convect_single_particle!(rng, grid, boundaries, particles[i], species, surf_props, species_data[species].mass, Δt)
+                particles.cell[i] = get_cell(grid, particles[i].x)
+            end
+
+            @inbounds if pia.indexer[cell, species].n_group2 > 0
+                @inbounds s = pia.indexer[cell, species].start2
+                @inbounds e = pia.indexer[cell, species].end2
+            
+                @inbounds @simd for i in s:e
+                    convect_single_particle!(rng, grid, boundaries, particles[i], species, surf_props, species_data[species].mass, Δt) 
+                    particles.cell[i] = get_cell(grid, particles[i].x)
+                end
+            end
+        end
+    end
+
+    surface_props_scale!(species, surf_props, species_data, Δt)
+end
+
 end

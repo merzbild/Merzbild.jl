@@ -61,7 +61,7 @@ export estimate_sigma_g_w_max_ntc_n_e!, ntc_n_e!, ntc_n_e_es!
 export ParticleVector
 export AbstractGrid, Grid1DUniform, write_grid
 export GridSortInPlace, sort_particles!
-export MaxwellWallBC, MaxwellWalls1D, convect_particles!
+export MaxwellWallBC, MaxwellWalls1D, convect_particles!, convect_particles_and_compute_cell!
 export pretty_print_pia
 export ChunkExchanger, exchange_particles!, reset!, sort_particles_after_exchange!
 export count_disordered_particles, check_pia_is_correct, check_unique_index, check_unique_buffer

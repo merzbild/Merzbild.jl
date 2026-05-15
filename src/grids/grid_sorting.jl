@@ -125,7 +125,7 @@ assumes that at the start of the sorting, it is **known** in which cell each par
 * `pia`: the `ParticleIndexerArray` instance
 * `species`: the index of the species being sorted
 """
-function sort_particles!(gridsort::GridSortInPlace, grid, grid2, particles, pia, species)
+function sort_particles!(gridsort::GridSortInPlace, particles, pia, species)
     @inbounds n_cells = size(pia.indexer)[1]
     @inbounds n_tot = pia.n_total[species] 
     @inbounds if n_tot > length(gridsort.sorted_indices)
@@ -139,12 +139,10 @@ function sort_particles!(gridsort::GridSortInPlace, grid, grid2, particles, pia,
     end
 
     @inbounds @simd for i in 1:n_tot
-        newcell = get_cell(grid, particles[i].x)
-        particles.cell[i] = newcell
         gridsort.cell_counts[particles.cell[i]+1] += 1
     end
 
-    @inbounds for cell in n_cells
+    @inbounds for cell in 1:n_cells
         gridsort.cell_counts[cell+1] = gridsort.cell_counts[cell+1] + gridsort.cell_counts[cell]
 
         cell_start = gridsort.cell_counts[cell] + 1
