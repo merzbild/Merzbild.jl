@@ -44,7 +44,9 @@ GridSortInPlace(grid::G, n_particles::Integer) where {G<:AbstractGrid} = GridSor
     sort_particles!(gridsort::GridSortInPlace, grid, particles, pia, species)
 
 Sort particles on a grid using an in-place sorting algorithm. The `pia` instance is allowed to
-have non-contiguous indices (arising for example from merging).
+have non-contiguous indices (arising for example from merging). This function
+assumes that at the start of the sorting, it is **not known** in which cell each particle is located,
+and therefore the cell for each particle has to be determined (by calling `get_cell`).
 
 # Positional arguments
 * `gridsort`: the `GridSortInPlace` structure
@@ -72,6 +74,77 @@ function sort_particles!(gridsort::GridSortInPlace, grid, particles, pia, specie
     end
 
     @inbounds for cell in 1:grid.n_cells
+        gridsort.cell_counts[cell+1] = gridsort.cell_counts[cell+1] + gridsort.cell_counts[cell]
+
+        cell_start = gridsort.cell_counts[cell] + 1
+        cell_np = gridsort.cell_counts[cell+1] - gridsort.cell_counts[cell]
+        cell_end = gridsort.cell_counts[cell+1]
+
+        indexer = pia.indexer[cell,species]
+
+        indexer.start2 = 0
+        indexer.end2 = -1
+        indexer.n_group2 = 0
+
+        if cell_np > 0
+            indexer.start1 = cell_start
+            indexer.end1 = cell_end
+        else
+            # this is done so that we can safely write for i in e1:s1 without worrying about accessing particles at index 0
+            indexer.start1 = 0
+            indexer.end1 = -1
+        end
+        indexer.n_group1 = cell_np
+        indexer.n_local = cell_np
+    end
+
+    @inbounds for i in n_tot:-1:1
+        curr_cell = particles.cell[i]
+        gridsort.sorted_indices[gridsort.cell_counts[curr_cell+1]] = particles.index[i]
+
+        gridsort.cell_counts[curr_cell+1] -= 1
+    end
+
+    @inbounds @simd for i in 1:n_tot
+        @inbounds particles.index[i] = gridsort.sorted_indices[i]
+    end
+
+    @inbounds pia.contiguous[species] = true
+end
+
+"""
+    sort_particles!(gridsort::GridSortInPlace, particles, pia, species)
+
+Sort particles on a grid using an in-place sorting algorithm. The `pia` instance is allowed to
+have non-contiguous indices (arising for example from merging). This function
+assumes that at the start of the sorting, it is **known** in which cell each particle is located.
+
+# Positional arguments
+* `gridsort`: the `GridSortInPlace` structure
+* `particles`: the `ParticleVector` of particles to be sorted
+* `pia`: the `ParticleIndexerArray` instance
+* `species`: the index of the species being sorted
+"""
+function sort_particles!(gridsort::GridSortInPlace, grid, grid2, particles, pia, species)
+    @inbounds n_cells = size(pia.indexer)[1]
+    @inbounds n_tot = pia.n_total[species] 
+    @inbounds if n_tot > length(gridsort.sorted_indices)
+        resize!(gridsort.sorted_indices, n_tot + DELTA_PARTICLES)
+    end
+
+    fill!(gridsort.cell_counts, 0)
+
+    @inbounds if !pia.contiguous[species]
+        squash_pia!(particles, pia, species)
+    end
+
+    @inbounds @simd for i in 1:n_tot
+        newcell = get_cell(grid, particles[i].x)
+        particles.cell[i] = newcell
+        gridsort.cell_counts[particles.cell[i]+1] += 1
+    end
+
+    @inbounds for cell in n_cells
         gridsort.cell_counts[cell+1] = gridsort.cell_counts[cell+1] + gridsort.cell_counts[cell]
 
         cell_start = gridsort.cell_counts[cell] + 1
