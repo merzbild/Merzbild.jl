@@ -319,4 +319,62 @@
     @test maximum(abs.(particles[1][4].x - [29.0, 6.0, -3.0])) < 2 * eps()
     @test particles[1][4].v == [-11.0, -3.0, 1.0]
     @test particles[1][4].w == 2.0
+
+    # non-contiguous version
+    # we create 30 particles in cell 2, but the pia structure only points to a subset of them
+    # and we test that only those are convected
+    particles = [ParticleVector(30)]
+    pia = ParticleIndexerArray(grid.n_cells, 1)
+
+    for i in 1:10
+        Merzbild.add_particle!(particles[1], i, 1.0, [1.0, 0.0, 0.0], [0.75, 0.0, 0.0])
+    end
+    for i in 11:25
+        Merzbild.add_particle!(particles[1], i, 10000.0, [-1000.0, 0.0, 0.0], [0.75, 0.0, 0.0])
+    end
+    for i in 26:30
+        Merzbild.add_particle!(particles[1], i, 1.0, [1.0, 0.0, 0.0], [0.75, 0.0, 0.0])
+    end
+
+    pia.n_total[1] = 15
+    pia.indexer[2,1].n_local = 15
+    pia.indexer[2,1].n_group1 = 10
+    pia.indexer[2,1].start1 = 1
+    pia.indexer[2,1].end1 = 10
+    pia.indexer[2,1].n_group2 = 5
+    pia.indexer[2,1].start2 = 26
+    pia.indexer[2,1].end2 = 30
+    pia.contiguous[1] = false
+
+    compute_props!(particles, pia, species_data, phys_props)
+    @test abs(phys_props.n[2, 1] - 1.0 * 15) < eps()
+    flag = true
+    for i in 1:100
+        if i != 2
+            if abs(phys_props.n[i, 1] - 0) > eps()
+                flag = false
+            end
+        end
+    end
+    @test flag == true
+    @test abs(phys_props.v[1, 2, 1] - 1.0) < eps()
+
+    convect_particles_and_compute_cell!(rng, grid, boundaries, particles[1], pia, 1, species_data, 1.0)
+    sort_particles!(gridsorter, particles[1], pia, 1)
+
+    # all particles that are actually tracked are in cell 4
+    compute_props!(particles, pia, species_data, phys_props)
+    @test abs(phys_props.n[4, 1] - 1.0 * 15) < eps()
+
+    flag = true
+    for i in 1:100
+        if i != 4
+            if abs(phys_props.n[i, 1] - 0) > eps()
+                flag = false
+            end
+        end
+    end
+    @test flag == true
+
+    @test abs(phys_props.v[1, 4, 1] - 1.0) < eps()
 end
