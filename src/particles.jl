@@ -740,7 +740,7 @@ end
 
 
 """
-    pretty_print_pia(pia)
+    pretty_print_pia(pia, species)
 
 Display a `ParticleIndexerArray` instance by showing the starting/ending indices of the groups over all cells
 for a specific species.
