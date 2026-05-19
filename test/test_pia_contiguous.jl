@@ -35,6 +35,7 @@
 
     @test pia.contiguous[1] == true
 
+    particles[1].cell[1:10] = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
     Merzbild.delete_particle_end_group1!(particles[1], pia, 1, 1)
     pia.contiguous[1] = false
 
@@ -49,6 +50,8 @@
     @test pia.indexer[1,1].end1 == 9 
 
     @test pia.indexer[1,1].n_group2 == 0
+
+    @test particles[1].cell[1:9] == [11, 12, 13, 14, 15, 16, 17, 18, 19]
 
     n_dens = 45.0
     compute_props!(particles, pia, species_data, phys_props)
@@ -84,6 +87,8 @@
 
     @test pia.contiguous[1] == true
 
+    particles[1].cell[1:10] = [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+
     Merzbild.delete_particle_end_group1!(particles[1], pia, 1, 1)
     Merzbild.delete_particle_end_group2!(particles[1], pia, 1, 1)
     pia.contiguous[1] = false
@@ -94,6 +99,9 @@
     bufferindex2 = particles[1].buffer[2]
 
     squash_pia!(particles, pia)
+
+    @test particles[1].cell[1:8] == [11, 12, 13, 14, 16, 17, 18, 19]
+
     @test pia.contiguous[1] = true
     
     @test pia.indexer[1,1].n_group1 == 4

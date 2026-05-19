@@ -637,6 +637,7 @@ function squash_pia!(pv, pia, species)
                     @inbounds e2 = pia.indexer[1, species].end2
                     @inbounds for j in s2:e2
                         pv.index[j] = pv.index[j+offset]
+                        pv.cell[j] = pv.cell[j+offset]
                     end
                 end
             end
@@ -652,6 +653,7 @@ function squash_pia!(pv, pia, species)
                     @inbounds e1 = pia.indexer[i+1, species].end1
                     @inbounds for j in s1:e1
                         pv.index[j] = pv.index[j+offset]
+                        pv.cell[j] = pv.cell[j+offset]
                     end
                 end
                 @inbounds last_end = pia.indexer[i+1, species].end1 > 0 ? pia.indexer[i+1, species].end1 : last_end
@@ -668,6 +670,7 @@ function squash_pia!(pv, pia, species)
                         @inbounds e2 = pia.indexer[i, species].end2
                         @inbounds for j in s2:e2
                             pv.index[j] = pv.index[j+offset]
+                            pv.cell[j] = pv.cell[j+offset]
                         end
                     end
                     @inbounds last_end = pia.indexer[i, species].end2 > 0 ? pia.indexer[i, species].end2 : last_end
