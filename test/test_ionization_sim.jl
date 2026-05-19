@@ -327,16 +327,179 @@
     # test charge neutrality
     charge_neutrality = true
 
+    mass_conservation = true
+
     for t in 1:n_t
         if abs(sol["ndens"][1, 2, t] - sol["ndens"][1, 3, t]) / sol["ndens"][1, 3, t] > 1.5e-14
             charge_neutrality = false
+        end
+
+        # densitiy of ions + neutrals should stay constant
+        if abs(sol["ndens"][1, 1, t] + sol["ndens"][1, 2, t]
+                - (n_dens_ions + n_dens_neutrals)) / (n_dens_ions + n_dens_neutrals) > 1.5e-14
+            mass_conservation = false
+        end
+    end
+
+    @test charge_neutrality == true
+    @test mass_conservation == true
+
+    # test compared to ref solution
+    ref_sol_path = joinpath(@__DIR__, "data", "ionization_Ar_no_es_v2.nc")
+    ref_sol = NCDataset(ref_sol_path, "r")
+
+    @test maximum(abs.(ref_sol["ndens"][1, :, 1:n_t] .- sol["ndens"][1, :, 1:n_t])) < 4 * eps()
+    @test maximum(abs.(ref_sol["T"][1, :, 1:n_t] .- sol["T"][1, :, 1:n_t])) < 7.5e-14
+
+    close(sol)
+    rm(sol_path)
+
+
+
+    # now we test with higher T0_e and E_tn and should get ionization
+    # and have inverse ratio of densities to check splitting
+    E_Tn = 500
+    T0_e = Merzbild.eV * 10.0  # T_e(t=0) = 4.5eV
+
+    n_dens_e = 1e23
+    n_dens_ions = n_dens_e
+    n_dens_neutrals = 1e-3 * n_dens_e
+    Δt = 2e-13
+
+    particles = [ParticleVector(np_base_heavy),
+                 ParticleVector(np_base_heavy),
+                 ParticleVector(np_base_electrons)]
+    n_sampled = [0, 0, 0]
+
+    for (index, (n_dens, T0, nv)) in enumerate(zip([n_dens_neutrals, n_dens_ions, n_dens_e],
+                                                   [T0, T0, T0_e],
+                                                   [nv_heavy, nv_heavy, nv_electrons]))
+        n_sampled[index] = sample_maxwellian_on_grid!(rng, particles[index], nv, species_data[index].mass, T0, n_dens,
+                                                      0.0, 1.0, 0.0, 1.0, 0.0, 1.0;
+                                                      v_mult=4.5, cutoff_mult=8.0, noise=0.0, v_offset=[0.0, 0.0, 0.0])
+    end
+
+    pia = ParticleIndexerArray(n_sampled)
+
+
+    sol_path = joinpath(@__DIR__, "data", "tmp_ion_no_es_with_ion_inv_ratio.nc")
+    # exclude v and moments
+    ds = NCDataHolder(sol_path, ["v", "moments"], species_data, phys_props)
+
+    compute_props!(particles, pia, species_data, phys_props)
+    write_netcdf(ds, phys_props, 0)
+
+    collision_factors = create_collision_factors_array(3)
+    collision_data = CollisionData()
+
+    if pia.n_total[1] > threshold_neutrals
+        merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
+    end
+
+    if pia.n_total[2] > threshold_ion
+        merge_grid_based!(rng, mg_ions, particles[2], pia, 1, 2, species_data, phys_props)
+    end
+
+    if pia.n_total[3] > threshold_electrons
+        merge_octree_N2_based!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
+    end
+
+    # neutral-neutral
+    Fnum_neutral_mean = n_dens_neutrals / np_target_neutrals
+    collision_factors[1,1,1].sigma_g_w_max = estimate_sigma_g_w_max(interaction_data[1,1],
+                                                                  species_data[1], T0,
+                                                                  Fnum_neutral_mean)
+                             
+    s1 = index_neutral
+    s2 = index_electron
+    s3 = index_ion
+    # neutral-electron
+
+    @test collision_factors[s1,s2,1].sigma_g_w_max == 0
+    
+    estimate_sigma_g_w_max_ntc_n_e!(rng, collision_factors[s1,s2,1], collision_data, interaction_data,
+                                    n_e_interactions, n_e_cs,
+                                    particles[s1], particles[s2], pia, 1, s1, s2, Δt, V, min_coll=2, n_loops=1)
+
+    cf_e_n = collision_factors[s1,s2,1].sigma_g_w_max
+    @test cf_e_n > 0
+
+    # test that more samples lead to larger estimate
+    estimate_sigma_g_w_max_ntc_n_e!(rng, collision_factors[s1,s2,1], collision_data, interaction_data,
+                                    n_e_interactions, n_e_cs,
+                                    particles[s1], particles[s2], pia, 1, s1, s2, Δt, V, min_coll=15, n_loops=5)
+    @test collision_factors[s1,s2,1].sigma_g_w_max > cf_e_n
+
+    for ts in 1:n_t
+        # collide neutrals and neutrals
+        ntc!(rng, collision_factors[s1,s1,1], collision_data, interaction_data, particles[s1], pia, 1, s1, Δt, V)
+
+        ntc_n_e!(rng, collision_factors[s1,s2,1], collision_data, interaction_data,
+                 n_e_interactions, n_e_cs,
+                 particles[s1], particles[s2], particles[s3], pia, 1, s1, s2, s3, Δt, V)
+
+        if pia.n_total[1] > threshold_neutrals
+            merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
+        end
+
+        if pia.n_total[2] > threshold_ion
+            merge_grid_based!(rng, mg_ions, particles[2], pia, 1, 2, species_data, phys_props)
+        end
+
+        if pia.n_total[3] > threshold_electrons
+            merge_octree_N2_based!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
+        end
+
+        accelerate_constant_field_x!(particles[index_electron],
+                                     pia, 1, index_electron, species_data,
+                                     E_field, Δt)
+        
+        compute_props!(particles, pia, species_data, phys_props)
+        write_netcdf(ds, phys_props, ts, sync_freq=1000)
+    end
+    close_netcdf(ds)
+
+    sol = NCDataset(sol_path, "r")
+ 
+    ndens_tot = n_dens_e + n_dens_ions + n_dens_neutrals
+
+    # test overall number density conservation, we don't have it due to ionization
+    ndens_conservation = true
+
+    for t in 1:n_t
+        if abs(sum(sol["ndens"][1, :, t]) - ndens_tot) / ndens_tot > 1.5e-14
+            ndens_conservation = false
+        end
+    end
+
+    @test ndens_conservation == false
+
+    # test that we actually get ionization by looking at ion density at end of simulation
+    @test sol["ndens"][1, 2, n_t] > n_dens_ions
+
+    # test charge neutrality
+    charge_neutrality = true
+
+    mass_conservation = true
+
+    for t in 1:n_t
+        if abs(sol["ndens"][1, 2, t] - sol["ndens"][1, 3, t]) / sol["ndens"][1, 3, t] > 2.0e-14
+            charge_neutrality = false
+        end
+
+                # densitiy of ions + neutrals should stay constant
+        if abs(sol["ndens"][1, 1, t] + sol["ndens"][1, 2, t]
+                - (n_dens_ions + n_dens_neutrals)) / (n_dens_ions + n_dens_neutrals) > 1.5e-14
+            mass_conservation = false
         end
     end
 
     @test charge_neutrality == true
 
+    @test mass_conservation == true
+
     # test compared to ref solution
-    ref_sol_path = joinpath(@__DIR__, "data", "ionization_Ar_no_es_v2.nc")
+    ref_sol_path = joinpath(@__DIR__, "data", "ionization_Ar_no_es_v2_invratio.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
 
     @test maximum(abs.(ref_sol["ndens"][1, :, 1:n_t] .- sol["ndens"][1, :, 1:n_t])) < 4 * eps()

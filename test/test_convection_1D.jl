@@ -1,4 +1,4 @@
-@testset "convection 1D" begin
+@testset "convection 1D and boundaries" begin
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
     species_data = load_species_data(particles_data_path, "Ar")
 
@@ -53,6 +53,7 @@
     @test maximum(abs.(particles[1][4].x - [29.0, 6.0, -3.0])) < 2 * eps()
     @test particles[1][4].v == [-11.0, -3.0, 1.0]
     @test particles[1][4].w == 2.0
+
     phys_props = PhysProps(grid.n_cells, 1, [], Tref=1)
     compute_props!(particles, pia, species_data, phys_props)
 
@@ -267,4 +268,113 @@
 
     @test abs(phys_props.v[1, 4, 1] - 1.0) < eps()
 
+    # finally, test convection where particles cells are computed within the convection routine
+    pia = ParticleIndexerArray(grid.n_cells, 1)
+    pia.n_total[1] = 4
+    pia.indexer[1,1].n_local = 4
+    pia.indexer[1,1].n_group1 = 4
+    pia.indexer[1,1].start1 = 1
+    pia.indexer[1,1].end1 = 4
+
+    particles = [ParticleVector(4)]
+
+    # will just move: new x_coord = 20.5
+    particles[1][1] = Particle(1.0, [-1.25, -1.5, 4.0], [23.0, -8.0, 7.5])
+
+    # will reflect from right wall: new x_cord = 50.0 - (10.0 + 11.0) = 29.0
+    particles[1][2] = Particle(2.0, [11.0, -3.0, 1.0], [49.0, 6.0, -3.0])
+
+    # will reflect from left wall: new x_cord = 3.0 + 20.0 = 23.0
+    particles[1][3] = Particle(3.0, [-20.0, 0.0, 2.0], [17.0, 1.0, 3.0])
+
+    # will reflect from left wall and from right wall: new x_coord = 3.55
+    particles[1][4] = Particle(4.0, [-49.0, -20.0, 13.0], [1.55, -1.0, 9.0])
+
+    particles[1].cell[1:4] = [1,1,1,1]
+
+    # 1D specularly reflecting boundaries
+    boundaries = MaxwellWalls1D(species_data, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0)
+
+    convect_particles_and_compute_cell!(rng, grid, boundaries, particles[1], pia, 1, species_data, 2.0)
+
+    # cells computed correctly in routine
+    @test particles[1].cell[1:4] == [42, 59, 47, 8]
+
+    sort_particles!(gridsorter, particles[1], pia, 1)
+
+    @test particles[1].index == [4, 1, 3, 2]
+
+    @test maximum(abs.(particles[1][1].x - [3.55, -1.0, 9.0])) < 3.65e-15 # * eps()
+    @test particles[1][1].v == [-49.0, -20.0, 13.0]
+    @test particles[1][1].w == 4.0
+
+    @test maximum(abs.(particles[1][2].x - [20.5, -8.0, 7.5])) < 2 * eps()
+    @test particles[1][2].v == [-1.25, -1.5, 4.0]
+    @test particles[1][2].w == 1.0
+
+    @test maximum(abs.(particles[1][3].x - [23.0, 1.0, 3.0])) < 2 * eps()
+    @test particles[1][3].v == [20.0, 0.0, 2.0]
+    @test particles[1][3].w == 3.0
+
+    @test maximum(abs.(particles[1][4].x - [29.0, 6.0, -3.0])) < 2 * eps()
+    @test particles[1][4].v == [-11.0, -3.0, 1.0]
+    @test particles[1][4].w == 2.0
+
+    # non-contiguous version
+    # we create 30 particles in cell 2, but the pia structure only points to a subset of them
+    # and we test that only those are convected
+    particles = [ParticleVector(30)]
+    pia = ParticleIndexerArray(grid.n_cells, 1)
+
+    for i in 1:10
+        Merzbild.add_particle!(particles[1], i, 1.0, [1.0, 0.0, 0.0], [0.75, 0.0, 0.0])
+    end
+    for i in 11:25
+        Merzbild.add_particle!(particles[1], i, 10000.0, [-1000.0, 0.0, 0.0], [0.75, 0.0, 0.0])
+    end
+    for i in 26:30
+        Merzbild.add_particle!(particles[1], i, 1.0, [1.0, 0.0, 0.0], [0.75, 0.0, 0.0])
+    end
+
+    pia.n_total[1] = 15
+    pia.indexer[2,1].n_local = 15
+    pia.indexer[2,1].n_group1 = 10
+    pia.indexer[2,1].start1 = 1
+    pia.indexer[2,1].end1 = 10
+    pia.indexer[2,1].n_group2 = 5
+    pia.indexer[2,1].start2 = 26
+    pia.indexer[2,1].end2 = 30
+    pia.contiguous[1] = false
+
+    compute_props!(particles, pia, species_data, phys_props)
+    @test abs(phys_props.n[2, 1] - 1.0 * 15) < eps()
+    flag = true
+    for i in 1:100
+        if i != 2
+            if abs(phys_props.n[i, 1] - 0) > eps()
+                flag = false
+            end
+        end
+    end
+    @test flag == true
+    @test abs(phys_props.v[1, 2, 1] - 1.0) < eps()
+
+    convect_particles_and_compute_cell!(rng, grid, boundaries, particles[1], pia, 1, species_data, 1.0)
+    sort_particles!(gridsorter, particles[1], pia, 1)
+
+    # all particles that are actually tracked are in cell 4
+    compute_props!(particles, pia, species_data, phys_props)
+    @test abs(phys_props.n[4, 1] - 1.0 * 15) < eps()
+
+    flag = true
+    for i in 1:100
+        if i != 4
+            if abs(phys_props.n[i, 1] - 0) > eps()
+                flag = false
+            end
+        end
+    end
+    @test flag == true
+
+    @test abs(phys_props.v[1, 4, 1] - 1.0) < eps()
 end

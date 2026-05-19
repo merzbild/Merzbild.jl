@@ -16,7 +16,12 @@ Examples of synthetic data used for testing can be found in `data/test_neutral_e
 
 In general, the XML file has to have the following structure
 ```xml
+<?xml version="1.0" encoding="UTF-8"?>
 <lxcat version="" created="" message="example structure">
+    <References>
+        <Source>source. Generated on ---. All rights reserved.</Source>
+        <Reference>- ??? database, www.lxcat.net, retrieved on ---</Reference>
+    </References>
     <Database name="Linear dependence of cross-section on energy, He" id="LinearDB">
         <Groups>
             <Group id="He">
@@ -96,8 +101,8 @@ pair; each one is species-specific, therefore a vector for all the neutral speci
 [`create_computed_crosssections`](@ref) and passing an [`ElectronNeutralInteractions`](@ref) instance.
 
 ## Performing ionizing collisions
-Electron-neutral collisions with elastic scattering and ionization reactions are modelled by the [`ntc_n_e!`] and
-[`ntc_n_e_es!`] functions. The latter implements the Event Splitting
+Electron-neutral collisions with elastic scattering and ionization reactions are modelled by the [`ntc_n_e!`](@ref) and
+[`ntc_n_e_es!`](@ref) functions. The latter implements the Event Splitting
 of [Oblapenko et al. (2022)](https://doi.org/10.1016/j.jcp.2022.111390) and reduces the level of stochastic noise,
 but is suitable only for variable-weight simulations with particle merging.
 The function implements the collision mechanics as described in [Nanbu (2000)](https://doi.org/10.1109/27.887765);

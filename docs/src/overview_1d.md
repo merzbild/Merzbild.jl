@@ -122,7 +122,7 @@ end
 
 ## Performing convection
 Having set up the grid and boundary conditions, we can convect particles.
-This is done by calling the `convect_particles!` function.
+This is done by calling the [`convect_particles!`](@ref) function.
 The convection should be followed by particle sorting before any computations of physical properties are done.
 
 ```julia
@@ -133,6 +133,20 @@ The function `convect_particles` as called above will **not** compute surface pr
 a `SurfProps` instance needs to be passed:
 ```julia
 convect_particles!(rng, grid, boundaries, particles[species_id], pia, species_id, species_data, surf_props, Δt)
+```
+
+## Convection and sorting with precomputed particle/cell indices
+The approach described above assumes that during the convection process, the indices of the cells the particles find themselves in
+are not computed; therefore the call to `sort_particles!` requires passing in the `grid` instance, and the `sort_particles!`
+calls a `get_cell` function internally. For 1-D uniform grids, this is an efficient operation, but for other grid types,
+the computation of the cell index given only the particle position can be more expensive than keeping track of the cell index inside the convection routine.
+
+To this purpose, one can call [`convect_particles_and_compute_cell!`](@ref), which will also set the values of the `cell` array of the `ParticleVector`
+instance. One can then call another version of `sort_particles!` that does **not** take the grid as a parameter and instead uses the pre-computed `cell` values
+to sort the particles:
+
+```
+sort_particles!(gridsorter, particles[species_id], pia, species_id)
 ```
 
 ## Bringing it all together

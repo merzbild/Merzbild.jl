@@ -32,7 +32,7 @@ For the BKW test case (see the commented-out part on "multiple runs with ensembl
 * `simulations/0D/BKW/bkw_varweight_nnls.jl` - for the variable-weight simulations using NNLS merging
 
 For the ionization test case (**when run over all ensembles, these produce VERY LARGE amounts of data, 100s of GBs**);
-external data from [LXCat](https://us.lxcat.net/home/) is required for the cross-sections (IST-Lisbon database) (see notes above on exact XML format required):
+external data from [LXCat](https://us.lxcat.net/home/) is required for the cross-sections (IST-Lisbon database) (see notes below on exact XML format required):
 * `simulations/0D/ionization/0D_ionization_1neutralspecies_es.jl` - for the variable-weight simulations using octree N:2 merging
 (uncomment lines below comment "Uncomment set-up below ..." to get the full set-up running over all parameters and ensembles; setting `paramset` to [12000, 6000] will produce results used as reference values)
 * `simulations/0D/ionization/0D_ionization_1neutralspecies_nnls_es.jl` - for the variable-weight simulations using different versions of NNLS merging

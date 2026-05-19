@@ -44,6 +44,7 @@ include("test_nnls_exact_ratepreserving_merging.jl")  # test NNLS merging with e
 include("test_acceleration.jl")  # test acceleration of charged particles
 include("test_collision_ionizing.jl")  # test ionizing collisions
 include("test_ionization_sim.jl")  # test 0D ionization simulation without event splitting
+include("test_ionization_sim_indexing.jl")  # test 0D ionization simulation with multiple neutral/ion species
 include("test_indexing_particlevector.jl")  # test particle vector and multi-cell indexing
 include("test_indexing_particlebuffer.jl")  # test buffer in ParticleVector
 include("test_pia_contiguous.jl")  # test squash_pia

@@ -353,9 +353,67 @@
     @test abs(surf_props.flux_reflected[1,1]/f[1] - -4.0) < 3*eps()
     @test abs(surf_props.flux_reflected[2,1]/f[2] - -3.0) < 3*eps()
     # we test the computation of the quantities before, so this should be sufficient to verify that 
+    clear_props!(surf_props)
 
+    # test same, but with convection that computes particle cell indices as we convect them
+    ppc = 4
+    particles = [ParticleVector(ppc * grid.n_cells)]
+
+    # 4 particles in cell 1, all of them reach the wall
+    for i in 1:4
+        Merzbild.update_particle_buffer_new_particle!(particles[1], i)
+
+        w = 1.0
+        particles[1][i] = Particle(w, [-1.0, 0, 0], [0.1, 0.0, 0.0])
+    end
+
+    # 4 particles in cell 8, only one of them reaches the wall
+    for i in 5:8
+        Merzbild.update_particle_buffer_new_particle!(particles[1], i)
+
+        w = 3.0
+        vx = 0.0
+        if i == 5
+            vx = 1.0
+        end
+        particles[1][i] = Particle(w, [vx, 0, 3.0], [3.9, 0.0, 0.0])
+    end
+
+    pia.n_total[1] = 8
+    pia.indexer[1,1].n_local = 4
+    pia.indexer[1,1].start1 = 1
+    pia.indexer[1,1].end1 = 4
+    pia.indexer[1,1].n_group1 = 4
+
+    pia.indexer[1,1].start2 = -1
+    pia.indexer[1,1].end2 = -1
+    pia.indexer[1,1].n_group2 = 0
+
+    pia.indexer[8,1].n_local = 4
+    pia.indexer[8,1].start1 = 5
+    pia.indexer[8,1].end1 = 8
+    pia.indexer[8,1].n_group1 = 4
+
+    pia.indexer[8,1].start2 = -1
+    pia.indexer[8,1].end2 = -1
+    pia.indexer[8,1].n_group2 = 0
 
     clear_props!(surf_props)
+
+    convect_particles_and_compute_cell!(rng, grid, boundaries, particles[1], pia, 1, species_data, surf_props, 0.2)
+
+    @test surf_props.np == [4.0;1.0;;]
+
+
+    f = species_data[1].mass * surf_props.inv_areas / 0.2
+
+    @test abs(surf_props.flux_incident[1,1]/f[1] - 4.0) < 3*eps()
+    @test abs(surf_props.flux_incident[2,1]/f[2] - 3.0) < 3*eps()
+    @test abs(surf_props.flux_reflected[1,1]/f[1] - -4.0) < 3*eps()
+    @test abs(surf_props.flux_reflected[2,1]/f[2] - -3.0) < 3*eps()
+    # we test the computation of the quantities before, so this should be sufficient to verify that 
+    clear_props!(surf_props)
+
     # test convection, non-contiguous
     particles = [ParticleVector(8)]
 
@@ -404,6 +462,65 @@
     pia.contiguous[1] = false
 
     convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, surf_props, 0.2)
+
+    @test surf_props.np == [2.0;1.0;;]
+
+    f = species_data[1].mass * surf_props.inv_areas / 0.2
+
+    @test abs(surf_props.flux_incident[1,1]/f[1] - 2.0) < 3*eps()
+    @test abs(surf_props.flux_incident[2,1]/f[2] - 3.0) < 3*eps()
+    @test abs(surf_props.flux_reflected[1,1]/f[1] - -2.0) < 3*eps()
+    @test abs(surf_props.flux_reflected[2,1]/f[2] - -3.0) < 3*eps()
+
+    clear_props!(surf_props)
+    # same as above, but we compute particle cell indices as we convect them
+    particles = [ParticleVector(8)]
+
+    # 4 particles in cell 1, all of them reach the wall
+    for i in 1:4
+        Merzbild.update_particle_buffer_new_particle!(particles[1], i)
+
+        w = 1.0
+        particles[1][i] = Particle(w, [-1.0, 0, 0], [0.1, 0.0, 0.0])
+    end
+
+    # 4 particles in cell 8, only one of them reaches the wall
+    for i in 5:8
+        Merzbild.update_particle_buffer_new_particle!(particles[1], i)
+
+        w = 3.0
+        vx = 0.0
+        if i == 5
+            vx = 1.0
+        end
+        particles[1][i] = Particle(w, [vx, 0, 3.0], [3.9, 0.0, 0.0])
+    end
+    
+    
+    pia.n_total[1] = 8
+    pia.indexer[1,1].n_local = 4
+    pia.indexer[1,1].start1 = 1
+    pia.indexer[1,1].end1 = 4
+    pia.indexer[1,1].n_group1 = 4
+
+    pia.indexer[1,1].start2 = -1
+    pia.indexer[1,1].end2 = -1
+    pia.indexer[1,1].n_group2 = 0
+
+    pia.indexer[8,1].n_local = 4
+    pia.indexer[8,1].start1 = 5
+    pia.indexer[8,1].end1 = 6
+    pia.indexer[8,1].n_group1 = 2
+
+    pia.indexer[8,1].start2 = 7
+    pia.indexer[8,1].end2 = 8
+    pia.indexer[8,1].n_group2 = 2
+
+    Merzbild.delete_particle_end!(particles[1], pia, 1, 1)
+    Merzbild.delete_particle_end!(particles[1], pia, 1, 1)
+    pia.contiguous[1] = false
+
+    convect_particles_and_compute_cell!(rng, grid, boundaries, particles[1], pia, 1, species_data, surf_props, 0.2)
 
     @test surf_props.np == [2.0;1.0;;]
 

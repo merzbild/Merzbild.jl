@@ -172,6 +172,7 @@ sort_particles!
 ## Particle movement
 ```@docs
 convect_particles!
+convect_particles_and_compute_cell!
 ```
 
 ## Particle-surface interactions

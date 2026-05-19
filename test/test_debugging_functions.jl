@@ -114,11 +114,13 @@
 
     # n_group1 is not equal to e1 - s1 + 1
     pia = create_pia()
-    pia.indexer[4,1].n_group2 = 2
+    pia.indexer[4,1].n_local += 2 - pia.indexer[4,1].n_group1
+    pia.indexer[4,1].n_group1 = 2
     @test check_pia_is_correct(pia, 1) == (false, 4)
 
     # n_group2 is not equal to e2 - s2 + 1
     pia = create_pia()
+    pia.indexer[3,1].n_local += 2 - pia.indexer[3,1].n_group2
     pia.indexer[3,1].n_group2 = 2
     @test check_pia_is_correct(pia, 1) == (false, 3)
 
