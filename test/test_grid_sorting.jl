@@ -177,7 +177,55 @@
         @test pia_fine.indexer[cell,1].n_local == counts[cell]
     end
 
-    phys_props::PhysProps = PhysProps(grid_fine.n_cells, 1, [], Tref=1)
+    phys_props = PhysProps(grid_fine.n_cells, 1, [], Tref=1)
+    compute_props!(particles, pia_fine, species_data, phys_props)
+    n_per_cell = Fnum * counts
+
+    for i in 1:grid_fine.n_cells
+        @test abs(phys_props.n[i, 1] - n_per_cell[i]) < 2*eps()
+        @test phys_props.np[i, 1] == counts[i]
+    end
+
+    # repeat the test case above
+    # but now we use the sorting routine which assumes particle cells have already been set during convection
+    # so the coordinates of the particles play no role whatsoever
+    # now we split the particles unevenly across 3 cells
+    # [0.0,2.0] - 3 particles (6, 7, 8)
+    # [2.0, 4.0] - 1 particle (5)
+    # [4.0, 6.0] - 0 particles ()
+    # [6.0, 8.0] - 4 particles (1, 2, 3, 4)
+
+    # we reset the index
+    particles[1].index = [1, 2, 3, 4, 5, 6, 7, 8]
+    particles[1].cell = [4, 4, 4, 4, 2, 1, 1, 1]
+
+    for i in 1:4
+        particles[1][i].x = SVector{3,Float64}(0.05, 0.0, 0.0)
+    end
+    for i in 5:5
+        particles[1][i].x = SVector{3,Float64}(0.1, 0.0, 0.0)
+    end
+    for i in 6:8
+        particles[1][i].x = SVector{3,Float64}(0.3, 0.0, 0.0)
+    end
+
+    sort_particles!(gridsorter_fine, particles[1], pia_fine, 1)
+    @test particles[1].index == [6, 7, 8, 5, 1, 2, 3, 4]
+    counts = [3, 1, 0, 4]
+    starts = [1, 4, 0, 5]
+    ends = [3, 4, -1, 8]
+
+    for cell in 1:4
+        @test pia_fine.indexer[cell,1].n_group1 == counts[cell]
+        @test pia_fine.indexer[cell,1].start1 == starts[cell]
+        @test pia_fine.indexer[cell,1].end1 == ends[cell]
+        @test pia_fine.indexer[cell,1].n_group2 == 0
+        @test pia_fine.indexer[cell,1].start2 == 0
+        @test pia_fine.indexer[cell,1].end2 == -1
+        @test pia_fine.indexer[cell,1].n_local == counts[cell]
+    end
+
+    phys_props = PhysProps(grid_fine.n_cells, 1, [], Tref=1)
     compute_props!(particles, pia_fine, species_data, phys_props)
     n_per_cell = Fnum * counts
 
