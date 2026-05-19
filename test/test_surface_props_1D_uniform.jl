@@ -509,12 +509,12 @@
 
     pia.indexer[8,1].n_local = 4
     pia.indexer[8,1].start1 = 5
-    pia.indexer[8,1].end1 = 8
-    pia.indexer[8,1].n_group1 = 4
+    pia.indexer[8,1].end1 = 6
+    pia.indexer[8,1].n_group1 = 2
 
-    pia.indexer[8,1].start2 = -1
-    pia.indexer[8,1].end2 = -1
-    pia.indexer[8,1].n_group2 = 0
+    pia.indexer[8,1].start2 = 7
+    pia.indexer[8,1].end2 = 8
+    pia.indexer[8,1].n_group2 = 2
 
     Merzbild.delete_particle_end!(particles[1], pia, 1, 1)
     Merzbild.delete_particle_end!(particles[1], pia, 1, 1)
