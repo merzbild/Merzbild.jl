@@ -1,4 +1,4 @@
-@testset "convection 1D" begin
+@testset "convection 1D and boundaries" begin
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
     species_data = load_species_data(particles_data_path, "Ar")
 
@@ -53,6 +53,7 @@
     @test maximum(abs.(particles[1][4].x - [29.0, 6.0, -3.0])) < 2 * eps()
     @test particles[1][4].v == [-11.0, -3.0, 1.0]
     @test particles[1][4].w == 2.0
+
     phys_props = PhysProps(grid.n_cells, 1, [], Tref=1)
     compute_props!(particles, pia, species_data, phys_props)
 
@@ -267,4 +268,55 @@
 
     @test abs(phys_props.v[1, 4, 1] - 1.0) < eps()
 
+    # finally, test convection where particles cells are computed within the convection routine
+    pia = ParticleIndexerArray(grid.n_cells, 1)
+    pia.n_total[1] = 4
+    pia.indexer[1,1].n_local = 4
+    pia.indexer[1,1].n_group1 = 4
+    pia.indexer[1,1].start1 = 1
+    pia.indexer[1,1].end1 = 4
+
+    particles = [ParticleVector(4)]
+
+    # will just move: new x_coord = 20.5
+    particles[1][1] = Particle(1.0, [-1.25, -1.5, 4.0], [23.0, -8.0, 7.5])
+
+    # will reflect from right wall: new x_cord = 50.0 - (10.0 + 11.0) = 29.0
+    particles[1][2] = Particle(2.0, [11.0, -3.0, 1.0], [49.0, 6.0, -3.0])
+
+    # will reflect from left wall: new x_cord = 3.0 + 20.0 = 23.0
+    particles[1][3] = Particle(3.0, [-20.0, 0.0, 2.0], [17.0, 1.0, 3.0])
+
+    # will reflect from left wall and from right wall: new x_coord = 3.55
+    particles[1][4] = Particle(4.0, [-49.0, -20.0, 13.0], [1.55, -1.0, 9.0])
+
+    particles[1].cell[1:4] = [1,1,1,1]
+
+    # 1D specularly reflecting boundaries
+    boundaries = MaxwellWalls1D(species_data, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0)
+
+    convect_particles_and_compute_cell!(rng, grid, boundaries, particles[1], pia, 1, species_data, 2.0)
+
+    # cells computed correctly in routine
+    @test particles[1].cell[1:4] == [42, 59, 47, 8]
+
+    sort_particles!(gridsorter, particles[1], pia, 1)
+
+    @test particles[1].index == [4, 1, 3, 2]
+
+    @test maximum(abs.(particles[1][1].x - [3.55, -1.0, 9.0])) < 3.65e-15 # * eps()
+    @test particles[1][1].v == [-49.0, -20.0, 13.0]
+    @test particles[1][1].w == 4.0
+
+    @test maximum(abs.(particles[1][2].x - [20.5, -8.0, 7.5])) < 2 * eps()
+    @test particles[1][2].v == [-1.25, -1.5, 4.0]
+    @test particles[1][2].w == 1.0
+
+    @test maximum(abs.(particles[1][3].x - [23.0, 1.0, 3.0])) < 2 * eps()
+    @test particles[1][3].v == [20.0, 0.0, 2.0]
+    @test particles[1][3].w == 3.0
+
+    @test maximum(abs.(particles[1][4].x - [29.0, 6.0, -3.0])) < 2 * eps()
+    @test particles[1][4].v == [-11.0, -3.0, 1.0]
+    @test particles[1][4].w == 2.0
 end
