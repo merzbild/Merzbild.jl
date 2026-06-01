@@ -4,6 +4,11 @@
 * Usage of `Vector{Particle}` completely deprecated; tests have been updated
 * `Particle` now has a `D` type parameter describing the dimension of the position vector. `D` defaults to 3 unless
 specified.
+* Merging routines now also have a `D` type parameter describing the dimension of the position vector of the particles to merge.
+`D` defaults to 3 unless specified.
+* Added tests that check that for unexpected memory allocations
+* `squash_pia!` can be called less frequently, i.e. only before particle convection, as better tracking of last index
+in particle arrays has been implemented. See documentaton on contiguous indexing.
 
 ## v0.7.10
 * Documentation improvements
