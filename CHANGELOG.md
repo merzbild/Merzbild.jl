@@ -2,7 +2,7 @@
 
 ## v0.8
 * Usage of `Vector{Particle}` completely deprecated; tests have been updated
-* `Particle` now has a `DIM` type parameter describing the dimension of the position vector. `DIM` defaults to 3 unless
+* `Particle` now has a `D` type parameter describing the dimension of the position vector. `D` defaults to 3 unless
 specified.
 
 ## v0.7.10
