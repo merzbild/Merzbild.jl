@@ -106,11 +106,14 @@ detailed explanation, one is referred to [the documentation on contiguous indexi
   storing the `ParticleIndexer` instances
 * `n_total`: vector of length `n_species` storing the total number of particles of each species
 * `contiguous`: vector of length `n_species` storing a boolean flag whether the ParticleIndexer instances for a species are "contiguous"
+* `index_last`: vector of length `n_species` storing the last valid index in the particle array for each species
+  (tracks the highest index used, allowing for non-contiguous indexing when particles are deleted from the middle)
 """
 mutable struct ParticleIndexerArray
     indexer::Array{ParticleIndexer,2}  # cells x species
     n_total::Vector{Int64}  # per-species
     contiguous::Vector{Bool}  # per-species
+    index_last::Vector{Int64}  # per-species
 
     @doc """
         ParticleIndexerArray(indexer_arr::Array{ParticleIndexer,2}, n_total)
@@ -122,7 +125,7 @@ mutable struct ParticleIndexerArray
     * `n_total`: the vector of the total number of particles of each species
     """
     function ParticleIndexerArray(indexer_arr::Array{ParticleIndexer,2}, n_total)
-        return new(indexer_arr, n_total, [true for i in 1:length(n_total)])
+        return new(indexer_arr, n_total, [true for i in 1:length(n_total)], copy(n_total))
     end
 
     @doc """
@@ -142,7 +145,7 @@ mutable struct ParticleIndexerArray
                 pia_indexer[i, j] = ParticleIndexer()
             end
         end
-        return new(pia_indexer, [0 for i in 1:n_species], [true for i in 1:n_species])
+        return new(pia_indexer, [0 for i in 1:n_species], [true for i in 1:n_species], [0 for i in 1:n_species])
     end
 end
 
@@ -425,6 +428,7 @@ This places the particle index in the 2-nd group of particle indices in the `Par
 
     @inbounds pia.indexer[cell, species].start2 = pia.indexer[cell, species].start2 > 0 ? pia.indexer[cell, species].start2 : pia.n_total[species]
     @inbounds pia.indexer[cell, species].end2 = pia.n_total[species]
+    @inbounds pia.index_last[species] = max(pia.index_last[species], pia.n_total[species])
 end
 
 """
@@ -673,6 +677,7 @@ function squash_pia!(pv::ParticleVector{D}, pia, species) where D
             end
         end
         @inbounds pia.contiguous[species] = true
+        @inbounds pia.index_last[species] = pia.n_total[species]
     end
 end
 
@@ -765,7 +770,7 @@ for a specific species.
 """
 function pretty_print_pia(pia, species)
     n_cells = size(pia.indexer)[1]
-    println("Total: $(pia.n_total[species])")
+    println("Total: $(pia.n_total[species]), index_last: $(pia.index_last[species])")
     for cell in 1:n_cells
         out_string = ""
         if pia.indexer[cell,species].n_group1 > 0
@@ -845,6 +850,24 @@ function count_disordered_particles(pv::ParticleVector{D}, pia, species; use_off
     end
 
     return count
+end
+
+"""
+    is_indexing_contiguous(pia, species)
+
+Check if the indexing for a species in a `ParticleIndexerArray` is contiguous.
+Indexing is contiguous when `index_last[species] == n_total[species]`, meaning there are no
+holes in the particle array.
+
+# Positional arguments
+* `pia`: the `ParticleIndexerArray` instance
+* `species`: the index of the species for which to check
+
+# Returns
+`true` if the indexing is contiguous, `false` otherwise.
+"""
+@inline function is_indexing_contiguous(pia, species)
+    @inbounds return pia.index_last[species] == pia.n_total[species]
 end
 
 """
@@ -1145,4 +1168,22 @@ function restore_particle_ordering!(pv::ParticleVector{D}, inv_map::Vector{Int64
     @inbounds @simd for i in 1:pv.nbuffer
         pv.buffer[i] = n_total - i + 1
     end
+end
+
+"""
+    restore_particle_ordering!(pv::ParticleVector, pia, species, inv_map::Vector{Int64})
+
+Restore the ordering of particles in a ParticleVector and update the associated ParticleIndexerArray.
+This function calls [`restore_particle_ordering!`](@ref) to restore the particle ordering and then updates
+`pia.index_last[species]` to reflect the new contiguous indexing.
+
+# Positional arguments
+* `pv`: ParticleVector instance to restore ordering for
+* `pia`: ParticleIndexerArray instance to update
+* `species`: the index of the species for which to update index_last
+* `inv_map`: Vector of integers to store inverse map (`inv_map[pv.index[i]] == i`)
+"""
+function restore_particle_ordering!(pv::ParticleVector{D}, pia, species, inv_map::Vector{Int64}) where D
+    restore_particle_ordering!(pv, inv_map)
+    @inbounds pia.index_last[species] = length(pv.index) - pv.nbuffer
 end

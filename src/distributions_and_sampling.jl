@@ -495,7 +495,7 @@ function sample_particles_equal_weight!(rng, particles::ParticleVector{D}, pia, 
                                         nparticles, m, T, Fnum, xlo, xhi, ylo, yhi, zlo, zhi;
                                         distribution=:Maxwellian, vx0=0.0, vy0=0.0, vz0=0.0) where D
 
-    @inbounds start = pia.n_total[species] + 1                                    
+    @inbounds start = max(pia.index_last[species], pia.n_total[species]) + 1                                    
     @inbounds pia.indexer[cell, species].n_local = nparticles
     @inbounds pia.n_total[species] += nparticles
 
@@ -506,6 +506,8 @@ function sample_particles_equal_weight!(rng, particles::ParticleVector{D}, pia, 
     @inbounds pia.indexer[cell, species].start2 = 0
     @inbounds pia.indexer[cell, species].end2 = -1
     @inbounds pia.indexer[cell, species].n_group2 = 0
+
+    @inbounds pia.index_last[species] = start - 1 + nparticles
 
     offset = start - 1
 
@@ -565,7 +567,7 @@ function sample_particles_phase_box_weighted!(rng, particles::ParticleVector{D},
                            nparticles, m, T, n_total, xlo, xhi, ylo, yhi, zlo, zhi;
                            v_mult=3.5, vx0=0.0, vy0=0.0, vz0=0.0) where D
 
-    @inbounds start = pia.n_total[species] + 1                                    
+    @inbounds start = max(pia.index_last[species], pia.n_total[species]) + 1                                    
     @inbounds pia.indexer[cell, species].n_local = nparticles
     @inbounds pia.n_total[species] += nparticles
 
@@ -576,6 +578,8 @@ function sample_particles_phase_box_weighted!(rng, particles::ParticleVector{D},
     @inbounds pia.indexer[cell, species].start2 = 0
     @inbounds pia.indexer[cell, species].end2 = -1
     @inbounds pia.indexer[cell, species].n_group2 = 0
+
+    @inbounds pia.index_last[species] = start - 1 + nparticles
 
     offset = start - 1
 

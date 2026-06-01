@@ -262,7 +262,7 @@ function swpm!(rng, collision_factors_swpm, collision_data, interaction, particl
                 collision_factors_swpm.n_coll_performed += 1
                 compute_com!(collision_data, interaction[species, species], particles[i], particles[k])
                 # do collision
-                if (length(particles) <= pia.n_total[species])
+                if (length(particles) <= max(pia.n_total[species], pia.index_last[species]))
                     resize!(particles, length(particles)+DELTA_PARTICLES)
                 end
 
