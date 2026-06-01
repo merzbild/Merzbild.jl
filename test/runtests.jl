@@ -79,10 +79,12 @@ using ChunkSplitters
 # include("test_bkw_varweight_octree_swpm.jl")  # SWPM for BKW test case
 # include("test_1D_couette_varweight_swpm.jl")  # SWPM for Couette flow
 # include("test_collisional_props_computes.jl")  # collisional property computes
+include("test_2species_equal_weight0Dparticles.jl")  # test fixed-weight collisions with particles with dim(x)=
 include("test_bkw_varweight_octree_0Dparticle.jl")  # test variable weight BKW + octree merging with 0D particles"
 # include("test_1D_couette_varweight_1DParticle.jl")  # test variable weight Couette + octree merging with 1D particles
 # include("test_1D_couette_varweight_last_index.jl")  # test variable weight Couette with last_index and less squashing
-include("test_malloc_bkw_varweight_octree.jl")
+include("test_malloc_2species_equal_weight.jl")  # malloc with equal weight collisions and props computes
+include("test_malloc_bkw_varweight_octree.jl")  # malloc with merging and variable-weight collisions
 # include("test_aqua.jl")
 
 
