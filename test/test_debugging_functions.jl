@@ -4,6 +4,7 @@
         pia_ = ParticleIndexerArray(4, 1)
 
         pia_.n_total[1] = 9
+        pia_.index_last[1] = 9
 
         pia_.indexer[1,1].n_local = 5
         pia_.indexer[1,1].n_group1 = 3
@@ -134,7 +135,7 @@
 
     redirect_stdout(out)
     @test String(readavailable(stream)) == """
-    Total: 9
+    Total: 9, index_last: 9
     Cell 1: group1: [1, 3] group2: [4, 5]
     Cell 3: group2: [6, 8]
     Cell 4: group1: [9, 9]

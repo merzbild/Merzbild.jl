@@ -853,24 +853,6 @@ function count_disordered_particles(pv::ParticleVector{D}, pia, species; use_off
 end
 
 """
-    is_indexing_contiguous(pia, species)
-
-Check if the indexing for a species in a `ParticleIndexerArray` is contiguous.
-Indexing is contiguous when `index_last[species] == n_total[species]`, meaning there are no
-holes in the particle array.
-
-# Positional arguments
-* `pia`: the `ParticleIndexerArray` instance
-* `species`: the index of the species for which to check
-
-# Returns
-`true` if the indexing is contiguous, `false` otherwise.
-"""
-@inline function is_indexing_contiguous(pia, species)
-    @inbounds return pia.index_last[species] == pia.n_total[species]
-end
-
-"""
     check_pia_is_correct(pia, species)
 
 Check that a `ParticleIndexerArray` instance entries are correct. This means that

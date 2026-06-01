@@ -102,6 +102,7 @@
     particles2 = [ParticleVector(ppc * grid.n_cells)]
 
     pia.n_total[1] = 0
+    pia.index_last[1] = 0
 
     ndens = 1e23
     Fnum = 1e20
