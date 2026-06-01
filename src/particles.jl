@@ -4,17 +4,23 @@ using TOML
 """
     Particle
 
-A structure to store information about a single particle.
+A structure to store information about a single particle with a D-dimensional position vector.
 
 # Fields
 * `w`: the computational weight of the particle
 * `v`: the 3-dimensional velocity vector of the particle
-* `x`: the 3-dimensional position of the particle
+* `x`: the D-dimensional position of the particle
 """
-mutable struct Particle
+mutable struct Particle{D}
     w::Float64
     v::SVector{3,Float64}
-    x::SVector{3,Float64}
+    x::SVector{D,Float64}
+
+    # Backward compatible constructors
+    Particle{D}(w::Float64, v::SVector{3,Float64}, x::SVector{D,Float64}) where D = new{D}(w, v, x)
+    Particle(w::Float64, v::SVector{3,Float64}, x::SVector{3,Float64}) = new{3}(w, v, x)
+    # Constructor for Vector{Float64} - convert to SVector{3,Float64}
+    Particle(w::Float64, v::Vector{Float64}, x::Vector{Float64}) = new{3}(w, SVector{3,Float64}(v), SVector{3,Float64}(x))
 end
 
 """
@@ -191,8 +197,8 @@ Accessing `ParticleVector[i]` will return a `Particle`, with the actual particle
 * `buffer`: a last-in-first-out (LIFO) queue keeping track of pre-allocated but unused particles
 * `nbuffer`: the number of elements in the buffer
 """
-mutable struct ParticleVector
-    particles::Vector{Particle}
+mutable struct ParticleVector{D}
+    particles::Vector{Particle{D}}
     index::Vector{Int64}
     cell::Vector{Int64}
     buffer::Vector{Int64}  # LIFO queue to keep track which particles we can write to
@@ -207,9 +213,16 @@ Create an empty `ParticleVector` instance of length `np` (all vectors will have 
 # Positional arguments
 * `np`: the length of the `ParticleVector` instance to create
 """
-ParticleVector(np) = ParticleVector([Particle(0.0, SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0)) for _ in 1:np],
-                                    Vector{Int64}(1:np), zeros(Int64, np),
-                                    Vector{Int64}(np:-1:1), np)
+function ParticleVector{D}(np::Integer) where D
+    zero_pos = SVector{D,Float64}(ntuple(_ -> 0.0, Val(D)))
+    zero_vel = SVector{3,Float64}(0.0, 0.0, 0.0)
+    return ParticleVector{D}([Particle{D}(0.0, zero_vel, zero_pos) for _ in 1:np],
+                              Vector{Int64}(1:np), zeros(Int64, np),
+                              Vector{Int64}(np:-1:1), np)
+end
+
+# Backward compatible constructor for ParticleVector (defaults to D=3)
+ParticleVector(np::Integer) = ParticleVector{3}(np)
 
 """
     Base.getindex(pv::ParticleVector, i)
@@ -222,7 +235,7 @@ Is usually called as `ParticleVector[i]`.
 * `pv`: `ParticleVector` instance
 * `i`: the index of the particle to be selected
 """
-@inline function Base.getindex(pv::ParticleVector, i)
+@inline function Base.getindex(pv::ParticleVector{D}, i) where D
     @inbounds return pv.particles[pv.index[i]]
 end
 
@@ -238,7 +251,7 @@ Is usually called as `ParticleVector[i] = p`.
 * `p`: the `Particle` instance to write
 * `i`: the index of the particle to be written to
 """
-@inline function Base.setindex!(pv::ParticleVector, p::Particle, i::Integer)
+@inline function Base.setindex!(pv::ParticleVector{D}, p::Particle{D}, i::Integer) where D
     @inbounds pv.particles[pv.index[i]] = p
 end
 
@@ -252,7 +265,7 @@ Is usually called as `length(ParticleVector)`.
 # Positional arguments
 * `pv`: `ParticleVector` instance
 """
-@inline function Base.length(pv::ParticleVector)
+@inline function Base.length(pv::ParticleVector{D}) where D
     return length(pv.particles)
 end
 
@@ -266,7 +279,7 @@ with weight 0, velocity 0, and position 0.
 * `pv`: `ParticleVector` instance
 * `n`: the new length of the `ParticleVector` instance (i.e. the length of all the vector fields of the instance)
 """
-function Base.resize!(pv::ParticleVector, n::Integer)
+function Base.resize!(pv::ParticleVector{D}, n::Integer) where D
     old_len = length(pv.particles)
     resize!(pv.particles, n)
     resize!(pv.index, n)
@@ -274,8 +287,10 @@ function Base.resize!(pv::ParticleVector, n::Integer)
     resize!(pv.buffer, n)
     n_diff = n - old_len
 
+    zero_pos = SVector{D,Float64}(ntuple(_ -> 0.0, Val(D)))
+    zero_vel = SVector{3,Float64}(0.0, 0.0, 0.0)
     @inbounds for i in old_len + 1:n
-        pv.particles[i] = Particle(0.0, SVector{3,Float64}(0.0,0.0,0.0), SVector{3,Float64}(0.0,0.0,0.0))
+        pv.particles[i] = Particle{D}(0.0, zero_vel, zero_pos)
     end
 
     # fill with new indices
@@ -308,7 +323,7 @@ the length of the active part of the buffer by 1.
 * `pv`: `ParticleVector` instance
 * `position`: the position in the `index` vector to which to write the index of the new particle
 """
-@inline function update_particle_buffer_new_particle!(pv::ParticleVector, position)
+@inline function update_particle_buffer_new_particle!(pv::ParticleVector{D}, position) where D
     # position is where we will be writing to
     @inbounds pv.index[position] = pv.buffer[pv.nbuffer]
     pv.nbuffer -= 1
@@ -327,28 +342,8 @@ as the index of the new particle taken from the buffer is written to `pv.index.[
 * `pia`: the `ParticleIndexerArray` instance
 * `species`: the index of the species of which a new particle is created
 """
-@inline function update_particle_buffer_new_particle!(pv::ParticleVector, pia, species)
+@inline function update_particle_buffer_new_particle!(pv::ParticleVector{D}, pia, species) where D
     update_particle_buffer_new_particle!(pv, pia.n_total[species])
-end
-
-"""
-    update_particle_buffer_new_particle!(pv::Vector{Particle}, pia, species)
-
-Dummy function in case `Vector{Particle}` is used and not a `ParticleVector`, just to make the simplest 0-D examples work.
-"""
-@inline function update_particle_buffer_new_particle!(pv::Vector{Particle}, pia, species)
-    # dummy function, might remove it at some point
-    nothing
-end
-
-"""
-    update_particle_buffer_new_particle!(pv::Vector{Particle}, position)
-
-Dummy function in case `Vector{Particle}` is used and not a `ParticleVector`, just to make the simplest 0-D examples work.
-"""
-@inline function update_particle_buffer_new_particle!(pv::Vector{Particle}, position)
-    # dummy function, might remove it at some point
-    nothing
 end
 
 """
@@ -445,7 +440,7 @@ and update the particle indexers and buffers accordingly. This changes the order
 * `species`: the index of the species of which the particle is deleted
 * `i`: the index of the particle to delete
 """
-@inline function delete_particle!(pv::ParticleVector, pia, cell, species, i)
+@inline function delete_particle!(pv::ParticleVector{D}, pia, cell, species, i) where D
     # check in which group we are in
     if (pia.indexer[cell, species].n_group2 > 0) && (i >= pia.indexer[cell, species].start2) && (i <= pia.indexer[cell, species].end2)
         @inbounds last_index_group2 = pv.index[pia.indexer[cell, species].end2]
@@ -475,7 +470,7 @@ If no particles are present in the cell, the function does nothing. This does no
 * `cell`: the index of the cell in which the particle is deleted
 * `species`: the index of the species of which the particle is deleted
 """
-@inline function delete_particle_end!(pv::ParticleVector, pia, cell, species)
+@inline function delete_particle_end!(pv::ParticleVector{D}, pia, cell, species) where D
     @inbounds if pia.indexer[cell, species].n_group2 > 0
         delete_particle_end_group2!(pv, pia, cell, species)
     else
@@ -498,7 +493,7 @@ If no particles are present in the 1st group of particles, the function does not
 * `cell`: the index of the cell in which the particle is deleted
 * `species`: the index of the species of which the particle is deleted
 """
-@inline function delete_particle_end_group1!(pv::ParticleVector, pia, cell, species)
+@inline function delete_particle_end_group1!(pv::ParticleVector{D}, pia, cell, species) where D
     @inbounds if pia.indexer[cell, species].n_group1 == 0
         return
     end
@@ -539,7 +534,7 @@ If no particles are present in the 2nd group of particles, the function does not
 * `cell`: the index of the cell in which the particle is deleted
 * `species`: the index of the species of which the particle is deleted
 """
-@inline function delete_particle_end_group2!(pv::ParticleVector, pia, cell, species)
+@inline function delete_particle_end_group2!(pv::ParticleVector{D}, pia, cell, species) where D
     @inbounds if pia.indexer[cell, species].n_group2 == 0
         return
     end
@@ -619,7 +614,7 @@ If for this species the instance has `contiguous == true`, nothing will be done.
 * `pia`: the `ParticleIndexerArray` instance
 * `species`: the index of the species for which to restore continuity of indices
 """
-function squash_pia!(pv, pia, species)
+function squash_pia!(pv::ParticleVector{D}, pia, species) where D
     if pia.contiguous[species]
         return
     else
@@ -715,7 +710,7 @@ and [`update_particle_buffer_new_particle!`](@ref update_particle_buffer_new_par
 * `cell`: the index of the cell in which the particle is created
 * `species`: the index of the species of which the particle is created
 """
-@inline function update_buffer_index_new_particle!(pv, pia, cell, species)
+@inline function update_buffer_index_new_particle!(pv::ParticleVector{D}, pia, cell, species) where D
     update_particle_indexer_new_particle!(pia, cell, species)
     update_particle_buffer_new_particle!(pv, pia, species)
 end
@@ -736,9 +731,25 @@ in the `ParticleVector` array.
 * `w`: the computational weight of the particle to create
 * `v`: the velocity of the particle to create
 """
-@inline function add_particle!(pv, position, w, v, x)
+@inline function add_particle!(pv::ParticleVector{D}, position, w, v::SVector{3,Float64}, x::SVector{D,Float64}) where D
     update_particle_buffer_new_particle!(pv, position)
-    @inbounds pv[position] = Particle(w, v, x)
+    @inbounds pv[position] = Particle{D}(w, v, x)
+end
+
+"""
+    set_x(x::SVector{D,Float64}, val::Float64) where D
+
+Set the `x` component of a Particle position vector.
+
+# Positional arguments
+* `x`: position vector
+* `val`: value to write in the 1-st component of the position vector
+
+# Returns
+New position vector.
+"""
+@inline function set_x(x::SVector{D,Float64}, val::Float64) where D
+    return Base.setindex(x, val, 1)
 end
 
 
@@ -802,7 +813,7 @@ this provides a more accurate measurement of the degree of fragmentation of the 
 The number of particles where the index to the `index` array and
 the value of the `index` array do not coincide.
 """
-function count_disordered_particles(pv, pia, species; use_offset=true)
+function count_disordered_particles(pv::ParticleVector{D}, pia, species; use_offset=true) where D
     count = 0
 
     if use_offset
@@ -939,7 +950,7 @@ returns `(false, -1)`.
 
 If indexing is correct, returns `(true, 0)`.
 """
-function check_unique_index(pv, pia, species)
+function check_unique_index(pv::ParticleVector{D}, pia, species) where D
     # the code here explicitly does not use @inbounds
     # as we aim for correctness, not efficiency
     n_cells = size(pia.indexer)[1]
@@ -1006,7 +1017,7 @@ the non-unique index is encountered **for the second time**
 
 If buffer is correct, returns `(true, 0)`.
 """
-function check_unique_buffer(pv)
+function check_unique_buffer(pv::ParticleVector{D}) where D
     # the code here explicitly does not use @inbounds
     # as we aim for correctness, not efficiency
     index_counts = Dict{Int64,Int64}()
@@ -1036,7 +1047,7 @@ associated indices or buffers. This uses the underlying ("true") indices of the 
 * `i`: the underlying index of the particle in `pv1`
 * `j`: the underlying index of the particle in `pv2`
 """
-@inline function swap_particles_true_index!(pv1, pv2, i, j)
+@inline function swap_particles_true_index!(pv1::ParticleVector{D}, pv2::ParticleVector{D}, i, j) where D
     # TODO: check if inlining speeds things up or slows them down, doesn't seem to have an impact
     @inbounds tmp_w = pv1.particles[i].w
     @inbounds tmp_v = pv1.particles[i].v
@@ -1063,7 +1074,7 @@ associated indices or buffers.
 * `i`: index of the particle in `pv1`
 * `j`: index of the particle in `pv2`
 """
-function swap_particles!(pv1, pv2, i, j)
+function swap_particles!(pv1::ParticleVector{D}, pv2::ParticleVector{D}, i, j) where D
     # TODO: check if inlining speeds things up or slows them down, doesn't seem to have an impact
     @inbounds p_i = pv1.index[i]
     @inbounds p_j = pv2.index[j]
@@ -1083,7 +1094,7 @@ This function ensures that:
 * `pv`: ParticleVector instance to restore ordering for
 * `inv_map`: Vector of integers to store inverse map (`inv_map[pv.index[i]] == i`)
 """
-function restore_particle_ordering!(pv::ParticleVector, inv_map::Vector{Int64})
+function restore_particle_ordering!(pv::ParticleVector{D}, inv_map::Vector{Int64}) where D
     n_total = length(pv.index)
     n_used = n_total - pv.nbuffer
 

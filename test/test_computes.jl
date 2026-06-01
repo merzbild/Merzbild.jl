@@ -14,7 +14,7 @@
     v0 = [-1.0, 2.0, -4.0]
     x0 = [10.0, 20.0, 30.0]
 
-    particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, n_particles)]
+    particles::Vector{ParticleVector} = [ParticleVector(n_particles)]
 
     for i in 1:n_particles
         particles[1][i] = Particle(Fnum, v0, x0)

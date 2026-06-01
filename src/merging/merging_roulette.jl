@@ -21,7 +21,7 @@ to conserve number density.
     Improvements to Particle Merge Algorithms for Sandia National Laboratories Plasma Physics Modeling
     Code, EMPIRE. [Presentation, 2023](https://www.osti.gov/servlets/purl/2431184).
 """
-function merge_roulette!(rng, particles, pia, cell, species, target_np; conservative=false)
+function merge_roulette!(rng, particles::ParticleVector{D}, pia, cell, species, target_np; conservative=false) where D
     current_count = pia.indexer[cell, species].n_local
 
     n_to_delete = current_count - target_np

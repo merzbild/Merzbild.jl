@@ -364,7 +364,7 @@ set of particles in each velocity direction.
 * `cell`: the index of the grid cell in which particles are being merged
 * `species`: the index of the species being merged
 """
-function compute_w_total_v0!(nnls_merging, particles, pia, cell, species)
+function compute_w_total_v0!(nnls_merging, particles::ParticleVector{D}, pia, cell, species) where D
     nnls_merging.v0 = SVector{3,Float64}(0.0, 0.0, 0.0)
     nnls_merging.w_total = 0.0
 
@@ -947,8 +947,8 @@ additional particles.
 * `v_multipliers`: the multipliers for the velocity variances of the particles to add aditional particles to the system
 """
 function compute_lhs_particles_additional!(rng, col_index, nnls_merging, lhs_matrix, vel_pos_matrix,
-                                           particles, pia, cell, species,
-                                           n_rand_pairs, centered_at_mean, v_multipliers)
+                                           particles::ParticleVector{D}, pia, cell, species,
+                                           n_rand_pairs, centered_at_mean, v_multipliers) where D
     n_moms = nnls_merging.n_moments_vel
 
     if centered_at_mean
@@ -1079,8 +1079,8 @@ additional particles.
 function compute_lhs_particles_additional_rate_preserving!(rng, col_index, nnls_merging, lhs_matrix,
                                            vel_pos_matrix,
                                            interaction, electron_neutral_interactions, computed_cs, 
-                                           particles, pia, cell, species, neutral_species_index,
-                                           n_rand_pairs, centered_at_mean, v_multipliers, extend)
+                                           particles::ParticleVector{D}, pia, cell, species, neutral_species_index,
+                                           n_rand_pairs, centered_at_mean, v_multipliers, extend) where D
     n_moms = nnls_merging.n_moments_vel
 
     if centered_at_mean      
@@ -1331,10 +1331,10 @@ the particles with the post-merge ones and delete any extraneous particles.
 * `work_index`: the index of the `NNLSWorkspace` used to solve the NNLS system
 * `column_norms`: the vector of the column-wise norms of the LHS matrix
 """
-function compute_post_merge_particles_nnls!(nnls_merging::NNLSMerge, x::Vector{Float64}, particles,
+function compute_post_merge_particles_nnls!(nnls_merging::NNLSMerge, x::Vector{Float64}, particles::ParticleVector{D},
                                             pia, cell, species, lhs_ncols,
                                             vel_pos_matrix,
-                                            max_err, w_threshold, work_index, column_norms)
+                                            max_err, w_threshold, work_index, column_norms) where D
     @inbounds if nnls_merging.work[work_index].rnorm > max_err
         return -1
     end
@@ -1454,9 +1454,9 @@ the number of non-zero (or smaller than `w_threshold`) elements in the solution 
 * G. Oblapenko, M. Torrilhon, Moment-preserving particle merging via non-negative least squares.
     [arXiv preprint, 2026](https://doi.org/10.48550/arXiv.2604.00668).
 """
-function merge_nnls_based!(rng, nnls_merging, particles, pia, cell, species;
+function merge_nnls_based!(rng, nnls_merging, particles::ParticleVector{D}, pia, cell, species;
                            vref=1.0, scaling=:variance,
-                           n_rand_pairs=0, max_err=1e-11, centered_at_mean=true, v_multipliers=[0.5, 1.0], iteration_mult=2, w_threshold=0.0)
+                           n_rand_pairs=0, max_err=1e-11, centered_at_mean=true, v_multipliers=[0.5, 1.0], iteration_mult=2, w_threshold=0.0) where D
     # create LHS matrix
     n_add = centered_at_mean ? 1 : 0
     n_add = n_add + 8 * length(v_multipliers)

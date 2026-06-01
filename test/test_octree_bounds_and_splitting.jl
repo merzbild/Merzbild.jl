@@ -33,7 +33,7 @@
         #      11, 3, 12, 15, 2, 14, 13, 7, 8, 10, 4, 9, 1, 6, 5
         mia = [12, 15, 2, 14, 13, 7, 8, 10, 5, 6, 1, 9, 4, 3, 11]
 
-        vp = Vector{Particle}(undef, 15)
+        vp = ParticleVector{3}(15)
         i = 1
         for v_x in [-1.0, -3.0]
             for v_y in [1.0, 3.0]
@@ -59,7 +59,7 @@
     function create_8particles(v0)
         # create 1 particle per octant
 
-        vp = Vector{Particle}(undef, 8)
+        vp = ParticleVector{3}(8)
 
 
         for i in 1:8
@@ -76,7 +76,7 @@
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)
 
-    particles1::Vector{Vector{Particle}} = [create_8particles([1.0, 1.0, 1.0])]
+    particles1 = [create_8particles([1.0, 1.0, 1.0])]
     pia1 = ParticleIndexerArray(8)
     octree1 = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
 
@@ -91,7 +91,7 @@
 
 
     octree2 = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVelSym)
-    particles2::Vector{Vector{Particle}} = [create_15particles_nested()]
+    particles2 = [create_15particles_nested()]
     pia2 = ParticleIndexerArray(15)
     Merzbild.init_octree!(octree2, particles2[1], pia2, 1, 1)
     @test maximum(abs.(octree2.bins[1].v_min + octree2.bins[1].v_max)) < 1e-12  # check that init bin is symmetric
@@ -119,7 +119,7 @@
     Merzbild.compute_v_mean!(octree4, 1, 15, particles2[1])
     @test maximum(abs.(octree4.vel_middle - v_mean)) < 1e-11  # check computation of v_mean
 
-    particles2[1][15].v = SVector{3, Float64}(120_000.0, -440_000.0, 920_000.0)
+    particles2[1][15] = Particle(1.0, SVector{3, Float64}(120_000.0, -440_000.0, 920_000.0), SVector{3, Float64}(0.0, 0.0, 0.0))
 
     vx_previous = octree4.bins[1].v_min[1]
     vy_previous = octree4.bins[1].v_max[2]

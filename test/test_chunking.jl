@@ -10,7 +10,7 @@
 
     cell_positions = [3.0, 3.0, 3.0, 7.0]
     for i in 1:4
-        particles[1].particles[i] = Particle(i, [0.0, 0.0, 0.0], [cell_positions[i], 0.0, 1.0])
+        particles[1].particles[i] = Particle(i*1.0, SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(cell_positions[i], 0.0, 1.0))
     end
 
     particles[1].nbuffer = 0  # set buffer to 0 manually

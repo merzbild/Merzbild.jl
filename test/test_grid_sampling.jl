@@ -18,7 +18,7 @@
     Fnum::Float64 = n_dens / n_particles
 
     for (v0, T0) in zip([[0.0, 0.0, 0.0], [20.0, -10.0, 30.0], [3000.0, 2000.0, -1000.0]], [273.0, 1000.0, 500.0])
-        particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, n_particles)]
+        particles::Vector{ParticleVector} = [ParticleVector(n_particles)]
 
         n_sampled = sample_maxwellian_on_grid!(rng, particles[1], nv, species_data[1].mass, T0, n_dens,
         0.0, 0.5, 0.0, 1.0, 0.0, 2.0; v_mult=3.5, cutoff_mult=8.0, noise=0.0, v_offset=v0)

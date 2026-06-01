@@ -11,7 +11,7 @@
     particles = [ParticleVector(10)]
 
     for i in 1:10
-        particles[1].particles[i] = Particle(i, [0.0, 0.0, 0.0], [10.0, 0.0, 1.0])
+        particles[1].particles[i] = Particle(Float64(i), [0.0, 0.0, 0.0], [10.0, 0.0, 1.0])
     end
     particles[1].nbuffer = 0  # set buffer to 0 manually
 
@@ -64,7 +64,7 @@
 
     # 1-cell 2-group case
     for i in 1:10
-        particles[1].particles[i] = Particle(i, [0.0, 0.0, 0.0], [10.0, 0.0, 1.0])
+        particles[1].particles[i] = Particle(Float64(i), [0.0, 0.0, 0.0], [10.0, 0.0, 1.0])
     end
     particles[1].nbuffer = 0  # set buffer to 0 manually
 
@@ -124,7 +124,7 @@
     # 111 22 33 1 33
     cell_positions = [1.0, 1.0, 1.0, 2.0, 2.0, 3.0, 3.0, 1.0, 3.0, 3.0]
     for i in 1:10
-        particles[1].particles[i] = Particle(i, [0.0, 0.0, 0.0], [cell_positions[i], 0.0, 1.0])
+        particles[1].particles[i] = Particle(Float64(i), [0.0, 0.0, 0.0], [cell_positions[i], 0.0, 1.0])
     end
 
     particles[1].nbuffer = 0  # set buffer to 0 manually
@@ -223,7 +223,7 @@
     particles = [ParticleVector(10)]
     cell_positions = [1.0, 1.0, 1.0, 2.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0]
     for i in 1:10
-        particles[1].particles[i] = Particle(i, [0.0, 0.0, 0.0], [cell_positions[i], 0.0, 1.0])
+        particles[1].particles[i] = Particle(Float64(i), [0.0, 0.0, 0.0], [cell_positions[i], 0.0, 1.0])
     end
 
     particles[1].nbuffer = 0  # set buffer to 0 manually
@@ -444,7 +444,7 @@
     particles = [ParticleVector(10)]
     cell_positions = [1.0, 1.0, 1.0, 2.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0]
     for i in 1:10
-        particles[1].particles[i] = Particle(i, [0.0, 0.0, 0.0], [cell_positions[i], 0.0, 1.0])
+        particles[1].particles[i] = Particle(Float64(i), [0.0, 0.0, 0.0], [cell_positions[i], 0.0, 1.0])
     end
 
     particles[1].nbuffer = 0  # set buffer to 0 manually
@@ -527,7 +527,7 @@
     particles = [ParticleVector(10)]
     cell_positions = [1.0, 1.0, 1.0, 2.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0]
     for i in 1:10
-        particles[1].particles[i] = Particle(i, [0.0, 0.0, 0.0], [cell_positions[i], 0.0, 1.0])
+        particles[1].particles[i] = Particle(Float64(i), [0.0, 0.0, 0.0], [cell_positions[i], 0.0, 1.0])
     end
 
     particles[1].nbuffer = 0  # set buffer to 0 manually

@@ -18,9 +18,9 @@
 
     index = 1
     n_sampled = [0, 0, 0]
-    particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, n_particles),
-                                           Vector{Particle}(undef, n_particles),
-                                           Vector{Particle}(undef, n_particles)]
+    particles::Vector{ParticleVector} = [ParticleVector(n_particles),
+                                         ParticleVector(n_particles),
+                                         ParticleVector(n_particles)]
 
     for (n_dens, v0, T0) in zip(n_dens_arr, v0_arr, T0_arr)
         n_sampled[index] = sample_maxwellian_on_grid!(rng, particles[index], nv, species_data[index].mass, T0, n_dens,

@@ -1,7 +1,24 @@
 using Random
 import Distributions
+using StaticArrays
 
 @muladd begin
+
+# Helper function to create D-dimensional position vectors for particle sampling
+@inline @generated function create_position_vector_D(rng, ::Val{D}, xlo, xhi, ylo, yhi, zlo, zhi) where D
+    if D == 0
+        return :(SVector{0,Float64}())
+    elseif D == 1
+        return :(SVector{1,Float64}(xlo + rand(rng, Float64) * (xhi - xlo)))
+    elseif D == 2
+        return :(SVector{2,Float64}(xlo + rand(rng, Float64) * (xhi - xlo),
+                                    ylo + rand(rng, Float64) * (yhi - ylo)))
+    elseif D == 3
+        return :(SVector{3,Float64}(xlo + rand(rng, Float64) * (xhi - xlo),
+                                    ylo + rand(rng, Float64) * (yhi - ylo),
+                                    zlo + rand(rng, Float64) * (zhi - zlo)))
+    end
+end
 
 """
     UnitDVGrid
@@ -474,9 +491,9 @@ Note: this does not work if applied twice in a row to the same cell.
 * `vy0`: the y-velocity offset to add to the particle velocities
 * `vz0`: the z-velocity offset to add to the particle velocities
 """
-function sample_particles_equal_weight!(rng, particles, pia, cell, species,
+function sample_particles_equal_weight!(rng, particles::ParticleVector{D}, pia, cell, species,
                                         nparticles, m, T, Fnum, xlo, xhi, ylo, yhi, zlo, zhi;
-                                        distribution=:Maxwellian, vx0=0.0, vy0=0.0, vz0=0.0)
+                                        distribution=:Maxwellian, vx0=0.0, vy0=0.0, vz0=0.0) where D
 
     @inbounds start = pia.n_total[species] + 1                                    
     @inbounds pia.indexer[cell, species].n_local = nparticles
@@ -493,14 +510,12 @@ function sample_particles_equal_weight!(rng, particles, pia, cell, species,
     offset = start - 1
 
     @inbounds for i in 1:nparticles
-        add_particle!(particles, i+offset, Fnum,  SVector{3}(0.0, 0.0, 0.0),
-                      SVector{3}(xlo + rand(rng, Float64) * (xhi - xlo),
-                                 ylo + rand(rng, Float64) * (yhi - ylo),
-                                 zlo + rand(rng, Float64) * (zhi - zlo)))
+        x_pos = create_position_vector_D(rng, Val(D), xlo, xhi, ylo, yhi, zlo, zhi)
+        add_particle!(particles, i+offset, Fnum,  SVector{3,Float64}(0.0, 0.0, 0.0), x_pos)
         particles.cell[i+offset] = cell
     end
 
-    v0 = SVector{3}(vx0, vy0, vz0)
+    v0 = SVector{3,Float64}(vx0, vy0, vz0)
     if distribution == :Maxwellian
         sample_maxwellian!(rng, particles, nparticles, offset, m, T, v0)
     elseif distribution == :BKW
@@ -546,9 +561,9 @@ The positions of the particles are assumed to be randomly distributed in a cuboi
 * `vy0`: the y-velocity offset to add to the particle velocities
 * `vz0`: the z-velocity offset to add to the particle velocities
 """
-function sample_particles_phase_box_weighted!(rng, particles, pia, cell, species,
+function sample_particles_phase_box_weighted!(rng, particles::ParticleVector{D}, pia, cell, species,
                            nparticles, m, T, n_total, xlo, xhi, ylo, yhi, zlo, zhi;
-                           v_mult=3.5, vx0=0.0, vy0=0.0, vz0=0.0)
+                           v_mult=3.5, vx0=0.0, vy0=0.0, vz0=0.0) where D
 
     @inbounds start = pia.n_total[species] + 1                                    
     @inbounds pia.indexer[cell, species].n_local = nparticles
@@ -579,10 +594,8 @@ function sample_particles_phase_box_weighted!(rng, particles, pia, cell, species
         w = exp(-v_factor * (v_x^2 + v_y^2 + v_z^2))
         w_tot += w
 
-        add_particle!(particles, i+offset, w,  SVector{3}(v_x + vx0, v_y + vy0, v_z + vz0),
-                      SVector{3}(xlo + rand(rng, Float64) * (xhi - xlo),
-                                 ylo + rand(rng, Float64) * (yhi - ylo),
-                                 zlo + rand(rng, Float64) * (zhi - zlo)))
+        x_pos = create_position_vector_D(rng, Val(D), xlo, xhi, ylo, yhi, zlo, zhi)
+        add_particle!(particles, i+offset, w,  SVector{3,Float64}(v_x + vx0, v_y + vy0, v_z + vz0), x_pos)
         particles.cell[i+offset] = cell
     end
 

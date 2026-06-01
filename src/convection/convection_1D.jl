@@ -1,5 +1,7 @@
 @muladd begin
 
+using StaticArrays
+
 """
     convect_single_particle!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particle, species, Δt)
 
@@ -14,7 +16,7 @@ Convect a singe particle on a 1-D uniform grid.
 * `species`: the index of the species being convected
 * `Δt`: the convection timestep
 """
-@inline function convect_single_particle!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particle, species, Δt)
+@inline function convect_single_particle!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particle::Particle{D}, species, Δt) where D
     t_rest = Δt
     @inbounds x_old = particle.x[1]
     @inbounds x_new = x_old + particle.v[1] * Δt
@@ -42,7 +44,8 @@ Convect a singe particle on a 1-D uniform grid.
 
     # if a particle is too near a wall, we offset it a bit to avoid particles
     # that are exactly at a wall screwing up counters, etc.
-    @inbounds particle.x = SVector{3,Float64}(clamp(x_new, grid.min_x, grid.max_x), particle.x[2], particle.x[3])
+    x_clamped = clamp(x_new, grid.min_x, grid.max_x)
+    @inbounds particle.x = set_x(particle.x, x_clamped)
 end
 
 """
@@ -61,7 +64,7 @@ Convect a singe particle on a 1-D uniform grid, updating surface properties if i
 * `mass`: the molecular mass of the species
 * `Δt`: the convection timestep
 """
-@inline function convect_single_particle!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particle, species, surf_props::SurfProps, mass, Δt)
+@inline function convect_single_particle!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particle::Particle{D}, species, surf_props::SurfProps, mass, Δt) where D
     t_rest = Δt
     @inbounds x_old = particle.x[1]
     @inbounds x_new = x_old + particle.v[1] * Δt
@@ -93,7 +96,8 @@ Convect a singe particle on a 1-D uniform grid, updating surface properties if i
 
     # if a particle is too near a wall, we offset it a bit to avoid particles
     # that are exactly at a wall screwing up counters, etc.
-    @inbounds particle.x = SVector{3,Float64}(clamp(x_new, grid.min_x, grid.max_x), particle.x[2], particle.x[3])
+    x_clamped = clamp(x_new, grid.min_x, grid.max_x)
+    @inbounds particle.x = set_x(particle.x, x_clamped)
 end
 
 """
@@ -112,7 +116,7 @@ Convect particles on a 1-D uniform grid.
 * `species_data`: the vector of `Species` data
 * `Δt`: the convection timestep
 """
-function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particles, pia, species, species_data, Δt)
+function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particles::ParticleVector{D}, pia, species, species_data, Δt) where D
     # @inbounds @simd for i in 1:pia.n_total[species]
     
     @inbounds if pia.contiguous[species]
@@ -158,7 +162,7 @@ Convect particles on a 1-D uniform grid, computing surface properties if particl
 * `surf_props`: the `SurfProps` struct where the computed surface properties will be stored
 * `Δt`: the convection timestep
 """
-function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particles, pia, species, species_data, surf_props::SurfProps, Δt)
+function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particles::ParticleVector{D}, pia, species, species_data, surf_props::SurfProps, Δt) where D
     
     clear_props!(surf_props)
     @inbounds if pia.contiguous[species]
@@ -206,7 +210,7 @@ Convect particles on a 1-D uniform grid and write post-convection cell index to 
 * `species_data`: the vector of `Species` data
 * `Δt`: the convection timestep
 """
-function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particles, pia, species, species_data, Δt)
+function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particles::ParticleVector{D}, pia, species, species_data, Δt) where D
     # @inbounds @simd for i in 1:pia.n_total[species]
     
     @inbounds if pia.contiguous[species]
@@ -255,7 +259,7 @@ Convect particles on a 1-D uniform grid and write post-convection cell index to 
 * `surf_props`: the `SurfProps` struct where the computed surface properties will be stored
 * `Δt`: the convection timestep
 """
-function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particles, pia, species, species_data, surf_props::SurfProps, Δt)
+function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particles::ParticleVector{D}, pia, species, species_data, surf_props::SurfProps, Δt) where D
     # @inbounds @simd for i in 1:pia.n_total[species]
     
     clear_props!(surf_props)

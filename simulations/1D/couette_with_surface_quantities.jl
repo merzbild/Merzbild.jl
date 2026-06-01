@@ -22,7 +22,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
 
     # init particle vector, particle indexer, grid particle sorter
     n_particles = ppc * nx
-    particles = [ParticleVector(n_particles)]
+    particles = [ParticleVector{1}(n_particles)]
     pia = ParticleIndexerArray(grid.n_cells, 1)
     gridsorter = GridSortInPlace(grid, n_particles)
 
@@ -128,4 +128,4 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
 end
 
 const n_t = 50000
-run(1234, 300.0, 500.0, 5e-4, 5e22, 2000, 250, 2.59e-9, 1000, n_t, 14000; do_benchmark=true)
+run(1234, 300.0, 500.0, 5e-4, 5e22, 500, 250, 2.59e-9, 1000, n_t, 14000; do_benchmark=true)

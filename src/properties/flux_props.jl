@@ -74,7 +74,7 @@ In case particles are sorted, `compute_flux_props_sorted!` will be more efficien
 * `flux_props`: the `FluxProps` instance in which the computed fluxes are stored
 * `grid`: the physical grid
 """
-function compute_flux_props!(particles, pia, species_data, phys_props::PhysProps, flux_props::FluxProps, grid::G) where {G<:AbstractGrid}
+function compute_flux_props!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props::PhysProps, flux_props::FluxProps, grid::G) where {G<:AbstractGrid,D}
     c = SVector{3,Float64}(0.0, 0.0, 0.0)
 
     for species in 1:flux_props.n_species
@@ -196,7 +196,7 @@ at the same timestep before calling this function for the same subset of cells.
 * `grid`: the physical grid
 * `cell_chunk`: the list of cell indices or range of cell indices in which to compute the properties
 """
-function compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props, grid::G, cell_chunk) where {G<:AbstractGrid}
+function compute_flux_props_sorted!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props, flux_props, grid::G, cell_chunk) where {G<:AbstractGrid,D}
     for species in 1:phys_props.n_species
         for cell in cell_chunk
 
@@ -243,7 +243,7 @@ at the same timestep before calling this function.
 * `flux_props`: the `FluxProps` instance in which the computed fluxes are stored
 * `grid`: the physical grid
 """
-@inline function compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props, grid::G) where {G<:AbstractGrid}
+@inline function compute_flux_props_sorted!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props, flux_props, grid::G) where {G<:AbstractGrid,D}
     compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props, grid, 1:phys_props.n_cells)
 end
 

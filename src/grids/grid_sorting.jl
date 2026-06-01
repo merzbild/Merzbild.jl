@@ -55,7 +55,7 @@ and therefore the cell for each particle has to be determined (by calling `get_c
 * `pia`: the `ParticleIndexerArray` instance
 * `species`: the index of the species being sorted
 """
-function sort_particles!(gridsort::GridSortInPlace, grid, particles, pia, species)
+function sort_particles!(gridsort::GridSortInPlace, grid, particles::ParticleVector{D}, pia, species) where D
     @inbounds n_tot = pia.n_total[species] 
     @inbounds if n_tot > length(gridsort.sorted_indices)
         resize!(gridsort.sorted_indices, n_tot + DELTA_PARTICLES)

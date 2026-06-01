@@ -19,7 +19,7 @@
             v_y = -v_val
         end
 
-        return Particle(w, [v_x, v_y, v_z], [1.0, -10.0, 3.0])
+        return Particle(Float64(w), [v_x, v_y, v_z], [1.0, -10.0, 3.0])
     end
     
     function create_24_3particles_in_octant(; weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])

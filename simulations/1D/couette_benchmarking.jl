@@ -22,10 +22,11 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
 
     # init particle vector, particle indexer, grid particle sorter
     n_particles = ppc * nx
-    particles = [ParticleVector(n_particles)]
+    particles = [ParticleVector{1}(n_particles)]
     pia = ParticleIndexerArray(grid.n_cells, 1)
     gridsorter = GridSortInPlace(grid, n_particles)
 
+    println(typeof(particles))
     # sample particles
     # Fnum * ppc = Np in cell = ndens * V_cell
     Fnum = grid.cells[1].V * ndens / ppc

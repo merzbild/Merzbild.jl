@@ -92,7 +92,7 @@ This also updates the `buffer` of the source `ParticleVector` as particles are r
     should start in case no swapping was performed
 * `e_ci_ij`: final cell index to transfer from chunk `i` to chunk `j`
 """
-function push_particles!(chunk_exchanger, particles_chunks, pia_chunks, species, i, j, offset_ij, s_ci_ij2, e_ci_ij)
+function push_particles!(chunk_exchanger, particles_chunks::Vector{Vector{ParticleVector{D}}}, pia_chunks, species, i, j, offset_ij, s_ci_ij2, e_ci_ij) where D
     # push remaining particles from chunk i to end of chunk j
     # we take care of s_ci_ij2 separately
     # because we might have stopped the swapping process in the middle of the cell
@@ -278,7 +278,7 @@ indexing should not be relied on until particles are re-sorted, see (`sort_parti
 * `i`: index of first chunk
 * `j`: index of second chunk
 """
-function exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, species, i, j)
+function exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{ParticleVector{D}}}, pia_chunks, cell_chunks, species, i, j) where D
     n_chunks = length(cell_chunks)
 
     # find how many particles need to be transferred from i to j
@@ -440,7 +440,7 @@ indexing should not be relied on until particles are re-sorted, see (`sort_parti
     i.e. `cell_chunks[chunk_id][i] == cell_chunks[chunk_id][i-1] + 1`
 * `species`: the particle species being redistributed
 """
-function exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, species)
+function exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{ParticleVector{D}}}, pia_chunks, cell_chunks, species) where D
     n_chunks = length(cell_chunks)
     @inbounds for i in 1:n_chunks-1
         for j in i+1:n_chunks
@@ -464,7 +464,7 @@ after particles have been swapped and pushed between chunks.
 * `cell_chunk`: list or range of cells belonging to the chunk
 * `species`: the particle species being for which the indexing is being restored
 """
-function sort_particles_after_exchange!(chunk_exchanger, gridsort, particles, pia, cell_chunk, species)
+function sort_particles_after_exchange!(chunk_exchanger, gridsort, particles::ParticleVector{D}, pia, cell_chunk, species) where D
     @inbounds n_tot = pia.n_total[species] 
     @inbounds if n_tot > length(gridsort.sorted_indices)
         resize!(gridsort.sorted_indices, n_tot + DELTA_PARTICLES)

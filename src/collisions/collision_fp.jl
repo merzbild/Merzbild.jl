@@ -21,7 +21,7 @@ Model single-species elastic collisions using a linear Fokker-Planck approximati
 * M.H. Gorji, M. Torrilhon, P. Jenny, Fokker-Planck model for computational studies of monatomic rarefied gas flows.
     [J. Fluid Mech., 2011](https://doi.org/10.1017/jfm.2011.188).
 """
-function fp_linear!(rng, collision_data_fp, interaction, species_data, particles, pia, cell, species, Δt, V)
+function fp_linear!(rng, collision_data_fp, interaction, species_data, particles::ParticleVector{D}, pia, cell, species, Δt, V) where D
     @inbounds indexer = pia.indexer[cell, species]
     n_local = indexer.n_local
     n_begin = indexer.start1

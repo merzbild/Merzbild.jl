@@ -217,13 +217,13 @@
     pia = ParticleIndexerArray(grid.n_cells, 1)
 
     for i in 1:10
-        Merzbild.add_particle!(particles[1], i, 1.0, [1.0, 0.0, 0.0], [0.75, 0.0, 0.0])
+        Merzbild.add_particle!(particles[1], i, 1.0, SVector{3,Float64}(1.0, 0.0, 0.0), SVector{3,Float64}(0.75, 0.0, 0.0))
     end
     for i in 11:25
-        Merzbild.add_particle!(particles[1], i, 10000.0, [-1000.0, 0.0, 0.0], [0.75, 0.0, 0.0])
+        Merzbild.add_particle!(particles[1], i, 10000.0, SVector{3,Float64}(-1000.0, 0.0, 0.0), SVector{3,Float64}(0.75, 0.0, 0.0))
     end
     for i in 26:30
-        Merzbild.add_particle!(particles[1], i, 1.0, [1.0, 0.0, 0.0], [0.75, 0.0, 0.0])
+        Merzbild.add_particle!(particles[1], i, 1.0, SVector{3,Float64}(1.0, 0.0, 0.0), SVector{3,Float64}(0.75, 0.0, 0.0))
     end
 
     pia.n_total[1] = 15
@@ -327,13 +327,13 @@
     pia = ParticleIndexerArray(grid.n_cells, 1)
 
     for i in 1:10
-        Merzbild.add_particle!(particles[1], i, 1.0, [1.0, 0.0, 0.0], [0.75, 0.0, 0.0])
+        Merzbild.add_particle!(particles[1], i, 1.0, SVector{3,Float64}(1.0, 0.0, 0.0), SVector{3,Float64}(0.75, 0.0, 0.0))
     end
     for i in 11:25
-        Merzbild.add_particle!(particles[1], i, 10000.0, [-1000.0, 0.0, 0.0], [0.75, 0.0, 0.0])
+        Merzbild.add_particle!(particles[1], i, 10000.0, SVector{3,Float64}(-1000.0, 0.0, 0.0), SVector{3,Float64}(0.75, 0.0, 0.0))
     end
     for i in 26:30
-        Merzbild.add_particle!(particles[1], i, 1.0, [1.0, 0.0, 0.0], [0.75, 0.0, 0.0])
+        Merzbild.add_particle!(particles[1], i, 1.0, SVector{3,Float64}(1.0, 0.0, 0.0), SVector{3,Float64}(0.75, 0.0, 0.0))
     end
 
     pia.n_total[1] = 15

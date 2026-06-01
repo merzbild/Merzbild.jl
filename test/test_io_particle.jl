@@ -12,13 +12,13 @@
     #    cell 1,   2,   2    3     2
     x_pos1 = [0.0, 1.0, 3.0, 10.0, 4.0]
     for i in 1:5
-        particles[1][i] = Particle(i, [i + 2.0, -i, i*2.0], [x_pos1[i], x_pos1[i] * -1, x_pos1[i] + 3.0])
+        particles[1][i] = Particle(i*1.0, [i + 2.0, -i, i*2.0], [x_pos1[i], x_pos1[i] * -1, x_pos1[i] + 3.0])
     end
 
     #    cell 1,   2,   2    3     2    3
     x_pos2 = [1.0, 2.0, 4.0, 11.0, 3.0, 12.0]
     for i in 1:6
-        particles[2][i] = Particle(3*i+10, [-i - 4.0, i, i*4.0 + 5.0], [x_pos2[i], x_pos2[i] * 2 + 1.0, -x_pos2[i] - 3.0])
+        particles[2][i] = Particle(3*i+10.0, [-i - 4.0, i, i*4.0 + 5.0], [x_pos2[i], x_pos2[i] * 2 + 1.0, -x_pos2[i] - 3.0])
     end
 
     pia.n_total[1] = 5

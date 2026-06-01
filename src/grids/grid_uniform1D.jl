@@ -86,15 +86,15 @@ struct Grid1DUniform <: AbstractGrid
 end
 
 """
-    get_cell(grid1duniform::Grid1DUniform, x_pos)
+    get_cell(grid1duniform::Grid1DUniform, x_pos::SVector{D,Float64}) where D
 
 Find in which cell of a 1-D uniform grid the coordinate is located
 
 # Positional arguments
 * `grid1duniform`: the 1-D uniform grid
-* `x_pos`: the 3-D coordinate vector for the which the cell index is to be determined (only the first component is used)
+* `x_pos`: the D-dimensional coordinate vector for which the cell index is to be determined (only the first component is used)
 """
-@inline function get_cell(grid1duniform::Grid1DUniform, x_pos)
+@inline function get_cell(grid1duniform::Grid1DUniform, x_pos::SVector{D,Float64}) where D
     @inbounds return floor(Int64, x_pos[1] * grid1duniform.inv_Δx) + 1
 end
 

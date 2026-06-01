@@ -91,10 +91,10 @@
 
     @test sum(phys_props_ndens.np) == ppc * grid.n_cells
 
-    @test Merzbild.get_cell(grid, [0.001, 0.0, 0.0]) == 1
-    @test Merzbild.get_cell(grid, [0.4, 0.0, 0.0]) == 1
-    @test Merzbild.get_cell(grid, [0.501, 0.0, 0.0]) == 2
-    @test Merzbild.get_cell(grid, [3.999, 0.0, 0.0]) == 8
+    @test Merzbild.get_cell(grid, SVector{3,Float64}(0.001, 0.0, 0.0)) == 1
+    @test Merzbild.get_cell(grid, SVector{3,Float64}(0.4, 0.0, 0.0)) == 1
+    @test Merzbild.get_cell(grid, SVector{3,Float64}(0.501, 0.0, 0.0)) == 2
+    @test Merzbild.get_cell(grid, SVector{3,Float64}(3.999, 0.0, 0.0)) == 8
 
     # test filling domain with particles
     # based on given ndens

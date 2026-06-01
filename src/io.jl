@@ -839,7 +839,7 @@ is not preserved in case particles are present in the set of indices pointed to 
 # Keyword arguments
 * `global_attributes`: dictionary of any additional attributes to write to the netCDF file as a global attribute
 """
-function write_netcdf(nc_filename, pv::ParticleVector, pia, species, species_data; global_attributes=Dict{Any,Any}())
+function write_netcdf(nc_filename, pv::ParticleVector{D}, pia, species, species_data; global_attributes=Dict{Any,Any}()) where D
     gatts = deepcopy(global_attributes)
 
     np_dim = NcDim("nparticles_$([species_data[species].name])", pia.n_total[species], unlimited=false)
@@ -915,7 +915,7 @@ is not preserved in case particles are present in the set of indices pointed to 
 # Keyword arguments
 * `global_attributes`: dictionary of any additional attributes to write to the netCDF file as a global attribute
 """
-function write_netcdf(nc_filename, particles::Vector{ParticleVector}, pia, species_data; global_attributes=Dict{Any,Any}())
+function write_netcdf(nc_filename, particles::Vector{ParticleVector{D}}, pia, species_data; global_attributes=Dict{Any,Any}()) where D
     gatts = deepcopy(global_attributes)
 
     @inbounds n_cells = size(pia.indexer)[1]

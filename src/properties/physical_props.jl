@@ -390,7 +390,7 @@ compute the length of the particle array.
 * `grid`: the physical grid
 * `cell_chunk`: the list of cell indices or range of cell indices in which to compute the properties
 """
-function compute_props_sorted!(particles, pia, species_data, phys_props, grid::G, cell_chunk) where {G<:AbstractGrid}
+function compute_props_sorted!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props, grid::G, cell_chunk) where {G<:AbstractGrid,D}
     if !phys_props.ndens_not_Np
         compute_props_sorted!(particles, pia, species_data, phys_props)
     else
@@ -449,7 +449,7 @@ compute the length of the particle array.
 * `phys_props`: the `PhysProps` instance in which the computed physical properties are stored
 * `grid`: the physical grid
 """
-@inline function compute_props_sorted!(particles, pia, species_data, phys_props, grid::G) where {G<:AbstractGrid}
+@inline function compute_props_sorted!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props, grid::G) where {G<:AbstractGrid,D}
     compute_props_sorted!(particles, pia, species_data, phys_props, grid, 1:phys_props.n_cells)
 end
 

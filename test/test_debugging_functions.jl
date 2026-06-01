@@ -27,7 +27,7 @@
 
     particles = [ParticleVector(10)]
     for i in 1:8
-        Merzbild.add_particle!(particles[1], i, i*1.0, [2.0, 2.0, 3.0], [11.0, 12.0, 14.0])
+        Merzbild.add_particle!(particles[1], i, i*1.0, SVector{3, Float64}(2.0, 2.0, 3.0), SVector{3, Float64}(11.0, 12.0, 14.0))
     end
 
     pia = ParticleIndexerArray(1, 1)
@@ -63,7 +63,7 @@
     
     particles = [ParticleVector(10)]
     for i in 1:8
-        Merzbild.add_particle!(particles[1], i, i*1.0, [2.0, 2.0, 3.0], [11.0, 12.0, 14.0])
+        Merzbild.add_particle!(particles[1], i, i*1.0, SVector{3, Float64}(2.0, 2.0, 3.0), SVector{3, Float64}(11.0, 12.0, 14.0))
     end
     pia = ParticleIndexerArray(1, 1)
 

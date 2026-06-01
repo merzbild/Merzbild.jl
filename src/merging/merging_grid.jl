@@ -301,7 +301,7 @@ Compute all the required cell properties for a grid-based merge.
 * `cell`: the cell index
 * `species`: the species index
 """
-function compute_grid!(merging_grid::GridN2Merge, particles, pia, cell, species)
+function compute_grid!(merging_grid::GridN2Merge, particles::ParticleVector{D}, pia, cell, species) where D
     clear_merging_grid!(merging_grid)
 
     @inbounds s1 = pia.indexer[cell,species].start1
@@ -390,7 +390,7 @@ So particles may end up outside of the domain.
 * `cell`: the cell index
 * `species`: the species index
 """
-function compute_new_particles!(rng, merging_grid::GridN2Merge, particles, pia, cell, species)
+function compute_new_particles!(rng, merging_grid::GridN2Merge, particles::ParticleVector{D}, pia, cell, species) where D
     # no limits on particle location, i.e. 0-D
 
     Ntot = merging_grid.Ntotal
@@ -481,7 +481,7 @@ Compute new particles based on the grid cell properties; placing out-of-domain p
 * `species`: the species index
 * `grid`: the `Grid1DUniform` grid
 """
-function compute_new_particles!(rng, merging_grid::GridN2Merge, particles, pia, cell, species, grid::Grid1DUniform)
+function compute_new_particles!(rng, merging_grid::GridN2Merge, particles::ParticleVector{D}, pia, cell, species, grid::Grid1DUniform) where D
     Ntot = merging_grid.Ntotal
     @inbounds for index in 1:Ntot
         if (merging_grid.cells[index].np > 2)
@@ -594,7 +594,7 @@ in the physical grid cell being considered, as stored in the `phys_props` parame
     [Comput. Phys. Comm., 2015](https://doi.org/10.1016/j.cpc.2015.01.020).
 * G. Oblapenko, D. Goldstein, P. Varghese, C. Moore, A velocity space hybridization-based Boltzmann equation solver. [J. Comput. Phys, 2020](https://doi.org/10.1016/j.jcp.2020.109302).
 """
-function merge_grid_based!(rng, merging_grid, particles, pia, cell, species, species_data, phys_props::PhysProps)
+function merge_grid_based!(rng, merging_grid, particles::ParticleVector{D}, pia, cell, species, species_data, phys_props::PhysProps) where D
     # 0-D, no grid, particles in single cell
     compute_velocity_extent!(merging_grid, cell, species, species_data, phys_props)
     compute_grid!(merging_grid, particles, pia, cell, species)
@@ -627,7 +627,7 @@ The extent of the grid is specified explicitly.
     [Comput. Phys. Comm., 2015](https://doi.org/10.1016/j.cpc.2015.01.020).
 * G. Oblapenko, D. Goldstein, P. Varghese, C. Moore, A velocity space hybridization-based Boltzmann equation solver. [J. Comput. Phys, 2020](https://doi.org/10.1016/j.jcp.2020.109302).
 """
-function merge_grid_based!(rng, merging_grid, particles, pia, cell, species, species_data, vx_extent, vy_extent, vz_extent)
+function merge_grid_based!(rng, merging_grid, particles::ParticleVector{D}, pia, cell, species, species_data, vx_extent, vy_extent, vz_extent) where D
     # 0-D, no grid, particles in single cell
     compute_velocity_extent!(merging_grid, vx_extent, vy_extent, vz_extent)
     compute_grid!(merging_grid, particles, pia, cell, species)
@@ -660,7 +660,7 @@ If particle positions end up outside of the simulation domain, the particles are
     [Comput. Phys. Comm., 2015](https://doi.org/10.1016/j.cpc.2015.01.020).
 * G. Oblapenko, D. Goldstein, P. Varghese, C. Moore, A velocity space hybridization-based Boltzmann equation solver. [J. Comput. Phys, 2020](https://doi.org/10.1016/j.jcp.2020.109302).
 """
-function merge_grid_based!(rng, merging_grid, particles, pia, cell, species, species_data, phys_props::PhysProps, grid::Grid1DUniform)
+function merge_grid_based!(rng, merging_grid, particles::ParticleVector{D}, pia, cell, species, species_data, phys_props::PhysProps, grid::Grid1DUniform) where D
     # 0-D, no grid, particles in single cell
     compute_velocity_extent!(merging_grid, cell, species, species_data, phys_props)
     compute_grid!(merging_grid, particles, pia, cell, species)
@@ -694,7 +694,7 @@ If particle positions end up outside of the simulation domain, the particles are
     [Comput. Phys. Comm., 2015](https://doi.org/10.1016/j.cpc.2015.01.020).
 * G. Oblapenko, D. Goldstein, P. Varghese, C. Moore, A velocity space hybridization-based Boltzmann equation solver. [J. Comput. Phys, 2020](https://doi.org/10.1016/j.jcp.2020.109302).
 """
-function merge_grid_based!(rng, merging_grid, particles, pia, cell, species, species_data, vx_extent, vy_extent, vz_extent, grid::Grid1DUniform)
+function merge_grid_based!(rng, merging_grid, particles::ParticleVector{D}, pia, cell, species, species_data, vx_extent, vy_extent, vz_extent, grid::Grid1DUniform) where D
     # 0-D, no grid, particles in single cell
     compute_velocity_extent!(merging_grid, vx_extent, vy_extent, vz_extent)
     compute_grid!(merging_grid, particles, pia, cell, species)

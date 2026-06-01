@@ -11,7 +11,7 @@
     @test length(particles[1].particles) == 10
 
     for i in 1:10
-        particles[1].particles[i] = Particle(i, [0.0, 0.0, 0.0], [10.0 - i, 0.0, 1.0])
+        particles[1].particles[i] = Particle(Float64(i), [0.0, 0.0, 0.0], [10.0 - i, 0.0, 1.0])
     end
 
     for i in 1:10
@@ -52,7 +52,7 @@
         @test maximum(abs.(particles[1][i].x)) == 0.0
     end
 
-    Merzbild.add_particle!(particles[1], 1, 20.0, [2.0, 2.0, 3.0], [11.0, 12.0, 14.0])
+    Merzbild.add_particle!(particles[1], 1, 20.0, SVector{3, Float64}(2.0, 2.0, 3.0), SVector{3, Float64}(11.0, 12.0, 14.0))
 
     for i in 2:3
         @test particles[1][i].w == 0.0
@@ -68,7 +68,7 @@
     @test particles[1][1].x[2] == 12.0
     @test particles[1][1].x[3] == 14.0
 
-    Merzbild.add_particle!(particles[1], 2, 40.0, [2.0, 2.0, 3.0], [11.0, 12.0, 14.0])
+    Merzbild.add_particle!(particles[1], 2, 40.0, SVector{3, Float64}(2.0, 2.0, 3.0), SVector{3, Float64}(11.0, 12.0, 14.0))
     for i in 3:3
         @test particles[1][i].w == 0.0
         @test maximum(abs.(particles[1][i].v)) == 0.0
@@ -81,7 +81,7 @@
 
     particles = [ParticleVector(8)]
     for i in 1:4
-        Merzbild.add_particle!(particles[1], i, i*1.0, [2.0, 2.0, 3.0], [11.0, 12.0, 14.0])
+        Merzbild.add_particle!(particles[1], i, i*1.0, SVector{3, Float64}(2.0, 2.0, 3.0), SVector{3, Float64}(11.0, 12.0, 14.0))
     end
 
     pia = ParticleIndexerArray(1, 1)
@@ -111,7 +111,7 @@
 
     particles = [ParticleVector(10)]
     for i in 1:10
-        Merzbild.add_particle!(particles[1], i, i*1.0, [2.0, 2.0, 3.0], [11.0, 12.0, 14.0])
+        Merzbild.add_particle!(particles[1], i, i*1.0, SVector{3, Float64}(2.0, 2.0, 3.0), SVector{3, Float64}(11.0, 12.0, 14.0))
     end
 
 

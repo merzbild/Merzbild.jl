@@ -198,8 +198,8 @@ During a collision of particles with weights ``w_i``, ``w_j``, the weights are d
 * S. Rjasanow, W.Wagner, Stochastic numerics for the Boltzmann equation.
     [Springer Berlin, Heidelberg, 2005](https://doi.org/10.1007/3-540-27689-0).
 """
-function swpm!(rng, collision_factors_swpm, collision_data, interaction, particles, pia,
-               cell, species, G, Δt, V)
+function swpm!(rng, collision_factors_swpm, collision_data, interaction, particles::ParticleVector{D}, pia,
+               cell, species, G, Δt, V) where D
     # single-species swpm
     # find w_max
     w_max = 0.0

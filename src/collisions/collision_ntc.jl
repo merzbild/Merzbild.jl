@@ -220,8 +220,8 @@ If particles' weights differ by less than `dw_tol`, an equal-weight collision is
 * `dw_tol`: if weights of particles differ by less than this amount, an equal-weight collision is assumed
 and no particle splitting is performed
 """
-@inline function collide_2particles_vhs!(rng, collision_data, collision_factors, interaction, pa_i, pa_k,
-                                         particles_1, particles_2, pia, cell, species1, species2; dw_tol=1e-16)
+@inline function collide_2particles_vhs!(rng, collision_data, collision_factors, interaction, pa_i::Particle{D}, pa_k::Particle{D},
+                                         particles_1::ParticleVector{D}, particles_2::ParticleVector{D}, pia, cell, species1, species2; dw_tol=1e-16) where D
     sigma = sigma_vhs(interaction, collision_data.g)
     sigma_g_w_max = sigma * collision_data.g * max(pa_i.w, pa_k.w)
 
@@ -291,8 +291,8 @@ if weights are unequal. Particles can be of same or different species.
 * `species1`: the index of the first species for which collisions are performed
 * `species2`: the index of the second species for which collisions are performed
 """
-@inline function collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction, pa_i, pa_k,
-                                                      particles_1, particles_2, pia, cell, species1, species2)
+@inline function collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction, pa_i::Particle{D}, pa_k::Particle{D},
+                                                      particles_1::ParticleVector{D}, particles_2::ParticleVector{D}, pia, cell, species1, species2) where D
     sigma = sigma_vhs(interaction, collision_data.g)
     sigma_g_w_max = sigma * collision_data.g * max(pa_i.w, pa_k.w)
 
@@ -335,8 +335,8 @@ and no particle splitting is performed
 * D.P. Schmidt, C.J. Rutland, A New Droplet Collision Algorithm.
     [J. Comput. Phys, 2000](https://doi.org/10.1006/jcph.2000.6568).
 """
-function ntc!(rng, collision_factors, collision_data, interaction, particles, pia,
-              cell, species, Δt, V; dw_tol=1e-16)
+function ntc!(rng, collision_factors, collision_data, interaction, particles::ParticleVector{D}, pia,
+              cell, species, Δt, V; dw_tol=1e-16) where D
     # single-species ntc
     # compute ncoll
     # loop over particles
@@ -410,8 +410,8 @@ and no particle splitting is performed
     [J. Comput. Phys, 2000](https://doi.org/10.1006/jcph.2000.6568).
 """
 function ntc!(rng, collision_factors, collision_data, interaction,
-              particles_1, particles_2, pia,
-              cell, species1, species2, Δt, V; dw_tol=1e-16)
+              particles_1::ParticleVector{D}, particles_2::ParticleVector{D}, pia,
+              cell, species1, species2, Δt, V; dw_tol=1e-16) where D
     # compute ncoll
     # loop over particles
     # update sigma_g_w_max
@@ -476,8 +476,8 @@ and no weight checks/splitting is performed.
 * G.A. Bird, Molecular gas dynamics and the direct simulation of gas flows,
     [Clarendon Press, Oxford, 1994](https://doi.org/10.1093/oso/9780198561958.001.0001).
 """
-function ntc_equal_weight!(rng, collision_factors, collision_data, interaction, particles, pia,
-                           cell, species, Δt, V)
+function ntc_equal_weight!(rng, collision_factors, collision_data, interaction, particles::ParticleVector{D}, pia,
+                           cell, species, Δt, V) where D
     # single-species ntc
     # compute ncoll
     # loop over particles

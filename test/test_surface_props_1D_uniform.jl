@@ -37,7 +37,7 @@
         Merzbild.update_particle_buffer_new_particle!(particles[1], i)
 
         w = i + 0.5
-        particles[1][i] = Particle(w, [-i^2, i^2, 0], [0.25, 0.0, 0.0])
+        particles[1][i] = Particle(w, SVector{3,Float64}(-i^2, i^2, 0), SVector{3,Float64}(0.25, 0.0, 0.0))
     end
 
     # 4 particles in cell 8, with velocity 10.0
@@ -45,7 +45,7 @@
         Merzbild.update_particle_buffer_new_particle!(particles[1], i)
 
         w = i + 2.5
-        particles[1][i] = Particle(w, [10.0, 0, 3.0], [3.9, 0.0, 0.0])
+        particles[1][i] = Particle(w, SVector{3,Float64}(10.0, 0, 3.0), SVector{3,Float64}(3.9, 0.0, 0.0))
     end
 
     pia.n_total[1] = 8
@@ -305,7 +305,7 @@
         Merzbild.update_particle_buffer_new_particle!(particles[1], i)
 
         w = 1.0
-        particles[1][i] = Particle(w, [-1.0, 0, 0], [0.1, 0.0, 0.0])
+        particles[1][i] = Particle(w, SVector{3,Float64}(-1.0, 0, 0), SVector{3,Float64}(0.1, 0.0, 0.0))
     end
 
     # 4 particles in cell 8, only one of them reaches the wall
@@ -317,7 +317,7 @@
         if i == 5
             vx = 1.0
         end
-        particles[1][i] = Particle(w, [vx, 0, 3.0], [3.9, 0.0, 0.0])
+        particles[1][i] = Particle(w, SVector{3,Float64}(vx, 0, 3.0), SVector{3,Float64}(3.9, 0.0, 0.0))
     end
 
     pia.n_total[1] = 8
@@ -364,7 +364,7 @@
         Merzbild.update_particle_buffer_new_particle!(particles[1], i)
 
         w = 1.0
-        particles[1][i] = Particle(w, [-1.0, 0, 0], [0.1, 0.0, 0.0])
+        particles[1][i] = Particle(w, SVector{3,Float64}(-1.0, 0, 0), SVector{3,Float64}(0.1, 0.0, 0.0))
     end
 
     # 4 particles in cell 8, only one of them reaches the wall
@@ -376,7 +376,7 @@
         if i == 5
             vx = 1.0
         end
-        particles[1][i] = Particle(w, [vx, 0, 3.0], [3.9, 0.0, 0.0])
+        particles[1][i] = Particle(w, SVector{3,Float64}(vx, 0, 3.0), SVector{3,Float64}(3.9, 0.0, 0.0))
     end
 
     pia.n_total[1] = 8
@@ -422,7 +422,7 @@
         Merzbild.update_particle_buffer_new_particle!(particles[1], i)
 
         w = 1.0
-        particles[1][i] = Particle(w, [-1.0, 0, 0], [0.1, 0.0, 0.0])
+        particles[1][i] = Particle(w, SVector{3,Float64}(-1.0, 0, 0), SVector{3,Float64}(0.1, 0.0, 0.0))
     end
 
     # 4 particles in cell 8, only one of them reaches the wall
@@ -434,7 +434,7 @@
         if i == 5
             vx = 1.0
         end
-        particles[1][i] = Particle(w, [vx, 0, 3.0], [3.9, 0.0, 0.0])
+        particles[1][i] = Particle(w, SVector{3,Float64}(vx, 0, 3.0), SVector{3,Float64}(3.9, 0.0, 0.0))
     end
     
     
@@ -481,7 +481,7 @@
         Merzbild.update_particle_buffer_new_particle!(particles[1], i)
 
         w = 1.0
-        particles[1][i] = Particle(w, [-1.0, 0, 0], [0.1, 0.0, 0.0])
+        particles[1][i] = Particle(w, SVector{3,Float64}(-1.0, 0, 0), SVector{3,Float64}(0.1, 0.0, 0.0))
     end
 
     # 4 particles in cell 8, only one of them reaches the wall
@@ -493,7 +493,7 @@
         if i == 5
             vx = 1.0
         end
-        particles[1][i] = Particle(w, [vx, 0, 3.0], [3.9, 0.0, 0.0])
+        particles[1][i] = Particle(w, SVector{3,Float64}(vx, 0, 3.0), SVector{3,Float64}(3.9, 0.0, 0.0))
     end
     
     
