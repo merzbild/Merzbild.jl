@@ -80,7 +80,6 @@
             if pia.indexer[cell,1].n_local > merge_threshold
                 merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
                 merged = true
-                squash_pia!(particles, pia)
             end
         end
 
