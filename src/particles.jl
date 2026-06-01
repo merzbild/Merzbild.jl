@@ -728,7 +728,8 @@ The `ParticleIndexer`/`ParticleIndexerArray` instances should be updated
 independently. See [`update_particle_buffer_new_particle!`](@ref) for more information
 regarding how the buffer of the `ParticleVector` is updated. This should not be used
 to update an existing particle. Particles at positions before `position` should exist
-in the `ParticleVector` array.
+in the `ParticleVector` array. Any components of `x` that exceed the `x` dimension of `pv`
+are discarded.
 
 # Positional arguments
 * `pv`: `ParticleVector` instance
@@ -736,9 +737,11 @@ in the `ParticleVector` array.
 * `w`: the computational weight of the particle to create
 * `v`: the velocity of the particle to create
 """
-@inline function add_particle!(pv::ParticleVector{D}, position, w, v::SVector{3,Float64}, x::SVector{D,Float64}) where D
+@inline function add_particle!(pv::ParticleVector{D1}, position, w, v::SVector{3,Float64}, x::SVector{D2,Float64}) where {D1,D2}
     update_particle_buffer_new_particle!(pv, position)
-    @inbounds pv[position] = Particle{D}(w, v, x)
+
+    x_trunc = x[SOneTo(D1)]
+    @inbounds pv[position] = Particle{D1}(w, v, x_trunc)
 end
 
 """
