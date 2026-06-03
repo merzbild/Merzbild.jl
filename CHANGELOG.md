@@ -9,6 +9,7 @@ specified.
 * Added tests that check that for unexpected memory allocations
 * `squash_pia!` can be called less frequently, i.e. only before particle convection, as better tracking of last index
 in particle arrays has been implemented. See documentaton on contiguous indexing.
+* Removed unused `update_particle_indexer_new_lower_count!` function
 
 ## v0.7.10
 * Documentation improvements
