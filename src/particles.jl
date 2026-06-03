@@ -346,7 +346,7 @@ as the index of the new particle taken from the buffer is written to `pv.index.[
 * `species`: the index of the species of which a new particle is created
 """
 @inline function update_particle_buffer_new_particle!(pv::ParticleVector{D}, pia, species) where D
-    update_particle_buffer_new_particle!(pv, pia.n_total[species])
+    update_particle_buffer_new_particle!(pv, pia.index_last[species])
 end
 
 """
@@ -391,22 +391,25 @@ Update a `ParticleIndexerArray` instance when the particle count of a given spec
 * `new_lower_count`: the new number of particles of the given species in the given cell
 """
 function update_particle_indexer_new_lower_count!(pia, cell, species, new_lower_count)
-    @inbounds diff = pia.indexer[cell, species].n_local - new_lower_count
-    @inbounds pia.indexer[cell, species].n_local = new_lower_count
+
+    @inbounds indexer = pia.indexer[cell, species]
+
+    diff = indexer.n_local - new_lower_count
+    indexer.n_local = new_lower_count
 
     @inbounds pia.n_total[species] -= diff
 
-    @inbounds if (new_lower_count > pia.indexer[cell, species].n_group1)
-        @inbounds pia.indexer[cell, species].end2 -= diff
-        @inbounds pia.indexer[cell, species].n_group2 -= diff
+    if (new_lower_count > indexer.n_group1)
+        indexer.end2 -= diff
+        indexer.n_group2 -= diff
     else
-        @inbounds diff -= pia.indexer[cell, species].n_group2
-        @inbounds pia.indexer[cell, species].start2 = 0
-        @inbounds pia.indexer[cell, species].end2 = -1
-        @inbounds pia.indexer[cell, species].n_group2 = 0
+        diff -= indexer.n_group2
+        indexer.start2 = 0
+        indexer.end2 = -1
+        indexer.n_group2 = 0
 
-        @inbounds pia.indexer[cell, species].end1 -= diff
-        @inbounds pia.indexer[cell, species].n_group1 -= diff
+        indexer.end1 -= diff
+        indexer.n_group1 -= diff
     end
 end
 
@@ -422,13 +425,16 @@ This places the particle index in the 2-nd group of particle indices in the `Par
 * `species`: the index of the species of which the particle is created
 """
 @inline function update_particle_indexer_new_particle!(pia, cell, species)
+    @inbounds pia.index_last[species] += 1
     @inbounds pia.n_total[species] += 1
-    @inbounds pia.indexer[cell, species].n_local += 1
-    @inbounds pia.indexer[cell, species].n_group2 += 1
 
-    @inbounds pia.indexer[cell, species].start2 = pia.indexer[cell, species].start2 > 0 ? pia.indexer[cell, species].start2 : pia.n_total[species]
-    @inbounds pia.indexer[cell, species].end2 = pia.n_total[species]
-    @inbounds pia.index_last[species] = max(pia.index_last[species], pia.n_total[species])
+    @inbounds indexer = pia.indexer[cell, species]
+
+    indexer.n_local += 1
+    indexer.n_group2 += 1
+
+    @inbounds indexer.start2 = indexer.start2 > 0 ? indexer.start2 : pia.index_last[species]
+    @inbounds indexer.end2 = pia.index_last[species]
 end
 
 """
