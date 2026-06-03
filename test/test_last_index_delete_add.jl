@@ -57,7 +57,6 @@
 
     n_total = pia.n_total[1]
     last_index = pia.index_last[1]
-    # pretty_print_pia(pia, 1)
 
     # start by checking that everything has been initialized correctly
     @test check_pia_is_correct(pia, 1) == (true, 0)
@@ -81,8 +80,6 @@
     @test pia.index_last[1] > pia.n_total[1]
     @test pia.n_total[1] == 35
     @test pia.index_last[1] == 41
-    pretty_print_pia(pia, 1)
-    println(particles.buffer[1:particles.nbuffer])
 
     # create particle in cell 7 in group 2
     # group2 was [38, 41] before
@@ -94,11 +91,29 @@
     @test pia.index_last[1] == 42
     @test pia.n_total[1] == 36
 
-    println(particles.index[42])
-
-    println(particles.buffer[1:particles.nbuffer])
-
     @test check_pia_is_correct(pia, 1) == (true, 0)
     @test check_unique_index(particles, pia, 1) == (true, 0)
     @test check_unique_buffer(particles) == (true, 0)
+
+    pia, particles = generate_pia_and_particles(30, [4, 0, 0], [0, 2, 1])
+
+    @test pia.index_last[1] == 7
+    @test pia.n_total[1] == 7
+
+    Merzbild.delete_particle_end_group2!(particles, pia, 3, 1)
+    @test pia.index_last[1] == 6
+    @test pia.n_total[1] == 6
+
+    pia, particles = generate_pia_and_particles(30, [4, 0, 0], [0, 2, 1])
+
+    @test pia.index_last[1] == 7
+    @test pia.n_total[1] == 7
+
+    Merzbild.delete_particle_end_group2!(particles, pia, 2, 1)
+    Merzbild.delete_particle_end_group2!(particles, pia, 2, 1)
+    @test pia.index_last[1] == 7
+    @test pia.n_total[1] == 5
+    Merzbild.delete_particle_end_group2!(particles, pia, 3, 1)
+    @test pia.index_last[1] == 4
+    @test pia.n_total[1] == 4
 end

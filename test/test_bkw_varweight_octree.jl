@@ -89,10 +89,8 @@
 
     for ts in 1:n_t
         ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
-
         if phys_props.np[1,1] > threshold
             merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
-            # println(oc.Nbins)
         end
         
         compute_props_with_total_moments!(particles, pia, species_data, phys_props)
@@ -100,8 +98,12 @@
     end
     close_netcdf(ds)
 
-    @test abs(phys_props.T[1,1] - T0) < 5e-4
-    @test abs(phys_props.n[1,1] / n_dens - 1.0) < 1e-11
+    @test check_pia_is_correct(pia, 1) == (true, 0)
+    @test check_unique_index(particles[1], pia, 1) == (true, 0)
+    @test check_unique_buffer(particles[1]) == (true, 0)
+
+    @test abs(phys_props.T[1,1] - T0) / T0 < 1e-6
+    @test abs(phys_props.n[1,1] / n_dens - 1.0) < 1e-13
     @test phys_props.np[1,1] < threshold
 
     ref_sol_path = joinpath(@__DIR__, "data", "bkw_vw_octree_seed1234.nc")
