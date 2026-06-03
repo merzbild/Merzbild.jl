@@ -22,6 +22,7 @@
     # Create particle indexer array
     pia = ParticleIndexerArray(1, 1)  # 1 cell, 1 species
     pia.n_total[1] = 2  # Start with 2 particles
+    pia.index_last[1] = 2  # Start with 2 particles
 
     # Initialize particles
     particles = ParticleVector(2)
@@ -68,6 +69,7 @@
         # Check that no particles were split (equal weight)
         @test collision_factors.n_eq_w_coll_performed > 0
         @test pia.n_total[1] == 2  # No new particles created
+        @test pia.index_last[1] == 2  # No new particles created
     end
 
     # Test case 2: Unequal weight particles (additional particle created)
@@ -88,6 +90,7 @@
         # Reset particle indexer array
         pia = ParticleIndexerArray(1, 1)  # 1 cell, 1 species
         pia.n_total[1] = 2  # Start with 2 particles
+        pia.index_last[1] = 2  # Start with 2 particles
 
         # compute relative velocity and center-of-mass velocity
         Merzbild.compute_g!(collision_data, particles[1], particles[2])
@@ -107,6 +110,7 @@
         
         # Check that a new particle was created
         @test pia.n_total[1] == 3
+        @test pia.index_last[1] == 3
         
         # Check that the split particle has correct properties
         @test particles[3].w == 1.0  # Δw = 2.0 - 1.0 = 1.0
@@ -141,6 +145,7 @@
         # Reset particle indexer array
         pia = ParticleIndexerArray(1, 1)  # 1 cell, 1 species
         pia.n_total[1] = 2  # Start with 2 particles
+        pia.index_last[1] = 2  # Start with 2 particles
 
         # compute relative velocity and center-of-mass velocity
         Merzbild.compute_g!(collision_data, particles[1], particles[2])
@@ -160,6 +165,7 @@
         
         # Check that a new particle was created
         @test pia.n_total[1] == 3
+        @test pia.index_last[1] == 3
         
         # Check that the split particle has correct properties
         @test particles[3].w == 1.0  # Δw = 2.0 - 1.0 = 1.0
@@ -192,6 +198,7 @@
         # Reset particle indexer array
         pia = ParticleIndexerArray(1, 1)  # 1 cell, 1 species
         pia.n_total[1] = 2  # Start with 2 particles
+        pia.index_last[1] = 2
 
         # compute relative velocity and center-of-mass velocity
         Merzbild.compute_g!(collision_data, particles[1], particles[2])
@@ -211,6 +218,7 @@
         
         # Check that no particles were split
         @test pia.n_total[1] == 2
+        @test pia.index_last[1] == 2
         
         # Check energy conservation
         ke_final = 0.5 * m * (sum(particles[1].v.^2) + sum(particles[2].v.^2))
@@ -227,6 +235,8 @@
         pia_2 = ParticleIndexerArray(1, 2)
         pia_2.n_total[1] = 1  # Ar particles
         pia_2.n_total[2] = 1  # He particles
+        pia_2.index_last[1] = 1  # Ar particles
+        pia_2.index_last[2] = 1  # He particles
 
         # reset sigma_g_w_max estimate
         collision_factors.sigma_g_w_max = 0.0
