@@ -338,7 +338,7 @@ end
 Update the buffer in a `ParticleVector` instance when a new particle is created at the end of the particle array, and reduces
 the length of the active part of the buffer by 1.
 This assumes that the `pia` structure has already an updated particle count (that accounts for the newly created particle),
-as the index of the new particle taken from the buffer is written to `pv.index.[pia.n_total[species]]`.
+as the index of the new particle taken from the buffer is written to `pv.index.[pia.index_last[species]]`.
 
 # Positional arguments
 * `pv`: `ParticleVector` instance
@@ -380,40 +380,6 @@ for particles of a specific species in a specific cell.
 end
 
 """
-    update_particle_indexer_new_lower_count!(pia, cell, species, new_lower_count)
-
-Update a `ParticleIndexerArray` instance when the particle count of a given species in a given cell is reduced.
-
-# Positional arguments
-* `pia`: the `ParticleIndexerArray` instance
-* `cell`: the index of the cell in which the particles are located
-* `species`: the index of the particles' species
-* `new_lower_count`: the new number of particles of the given species in the given cell
-"""
-function update_particle_indexer_new_lower_count!(pia, cell, species, new_lower_count)
-
-    @inbounds indexer = pia.indexer[cell, species]
-
-    diff = indexer.n_local - new_lower_count
-    indexer.n_local = new_lower_count
-
-    @inbounds pia.n_total[species] -= diff
-
-    if (new_lower_count > indexer.n_group1)
-        indexer.end2 -= diff
-        indexer.n_group2 -= diff
-    else
-        diff -= indexer.n_group2
-        indexer.start2 = 0
-        indexer.end2 = -1
-        indexer.n_group2 = 0
-
-        indexer.end1 -= diff
-        indexer.n_group1 -= diff
-    end
-end
-
-"""
     update_particle_indexer_new_particle!(pia, cell, species)
 
 Update a `ParticleIndexerArray` instance when a particle of a given species in a given cell is created.
@@ -425,10 +391,10 @@ This places the particle index in the 2-nd group of particle indices in the `Par
 * `species`: the index of the species of which the particle is created
 """
 @inline function update_particle_indexer_new_particle!(pia, cell, species)
+    @inbounds indexer = pia.indexer[cell, species]
+
     @inbounds pia.index_last[species] += 1
     @inbounds pia.n_total[species] += 1
-
-    @inbounds indexer = pia.indexer[cell, species]
 
     indexer.n_local += 1
     indexer.n_group2 += 1
@@ -452,14 +418,16 @@ and update the particle indexers and buffers accordingly. This changes the order
 """
 @inline function delete_particle!(pv::ParticleVector{D}, pia, cell, species, i) where D
     # check in which group we are in
-    if (pia.indexer[cell, species].n_group2 > 0) && (i >= pia.indexer[cell, species].start2) && (i <= pia.indexer[cell, species].end2)
-        @inbounds last_index_group2 = pv.index[pia.indexer[cell, species].end2]
-        @inbounds pv.index[pia.indexer[cell, species].end2] = pv.index[i]
+    @inbounds indexer = pia.indexer[cell, species]
+
+    if (indexer.n_group2 > 0) && (i >= indexer.start2) && (i <= indexer.end2)
+        @inbounds last_index_group2 = pv.index[indexer.end2]
+        @inbounds pv.index[indexer.end2] = pv.index[i]
         @inbounds pv.index[i] = last_index_group2
         delete_particle_end_group2!(pv, pia, cell, species)
     else
-        @inbounds last_index_group1 = pv.index[pia.indexer[cell, species].end1]
-        @inbounds pv.index[pia.indexer[cell, species].end1] = pv.index[i]
+        @inbounds last_index_group1 = pv.index[indexer.end1]
+        @inbounds pv.index[indexer.end1] = pv.index[i]
         @inbounds pv.index[i] = last_index_group1
         delete_particle_end_group1!(pv, pia, cell, species)
     end
@@ -504,7 +472,9 @@ If no particles are present in the 1st group of particles, the function does not
 * `species`: the index of the species of which the particle is deleted
 """
 @inline function delete_particle_end_group1!(pv::ParticleVector{D}, pia, cell, species) where D
-    @inbounds if pia.indexer[cell, species].n_group1 == 0
+    @inbounds indexer = pia.indexer[cell, species]
+
+    if indexer.n_group1 == 0
         return
     end
 
@@ -513,15 +483,36 @@ If no particles are present in the 1st group of particles, the function does not
     # set weight to 0
     @inbounds pv[index_of_deleted].w = 0.0
 
-    @inbounds pia.indexer[cell, species].n_local -= 1
-    @inbounds pia.indexer[cell, species].end1 -= 1
-    @inbounds pia.indexer[cell, species].n_group1 -= 1
+    indexer.n_local -= 1
+    indexer.end1 -= 1
+    indexer.n_group1 -= 1
+
+    new_last = false
+    @inbounds if index_of_deleted == pia.index_last[species]
+        new_last = true
+        @inbounds pia.index_last[species] -= 1
+    end
+
     @inbounds pia.n_total[species] -= 1
 
     # deleted last particle from group1
-    @inbounds if pia.indexer[cell, species].end1 < pia.indexer[cell, species].start1
-        @inbounds pia.indexer[cell, species].start1 = 0
-        @inbounds pia.indexer[cell, species].end1 = -1
+    if indexer.end1 < indexer.start1
+        indexer.start1 = 0
+        indexer.end1 = -1
+
+        if new_last
+            # need to find new index_last, iterate only over group1 since we're already in that part
+            found = false
+            if !found
+                for c in cell-1:-1:1
+                    @inbounds if pia.indexer[c, species].n_group1 > 0
+                        @inbounds pia.index_last[species] = pia.indexer[c, species].end1
+                        found = true
+                        break
+                    end
+                end
+            end
+        end
     end
 
     # add the deleted particle to the buffer
@@ -545,24 +536,55 @@ If no particles are present in the 2nd group of particles, the function does not
 * `species`: the index of the species of which the particle is deleted
 """
 @inline function delete_particle_end_group2!(pv::ParticleVector{D}, pia, cell, species) where D
-    @inbounds if pia.indexer[cell, species].n_group2 == 0
+    @inbounds indexer = pia.indexer[cell, species]
+
+    if indexer.n_group2 == 0
         return
     end
 
-    @inbounds index_of_deleted = pia.indexer[cell, species].end2
+    index_of_deleted = indexer.end2
 
     # set weight to 0
     @inbounds pv[index_of_deleted].w = 0.0
 
-    @inbounds pia.indexer[cell, species].n_local -= 1
-    @inbounds pia.indexer[cell, species].end2 -= 1
-    @inbounds pia.indexer[cell, species].n_group2 -= 1
+    indexer.n_local -= 1
+    indexer.end2 -= 1
+    indexer.n_group2 -= 1
+
+    new_last = false
+    @inbounds if index_of_deleted == pia.index_last[species]
+        new_last = true
+        @inbounds pia.index_last[species] -= 1
+    end
+
     @inbounds pia.n_total[species] -= 1
 
     # deleted last particle from group2
-    @inbounds if pia.indexer[cell, species].end2 < pia.indexer[cell, species].start2
-        @inbounds pia.indexer[cell, species].start2 = 0
-        @inbounds pia.indexer[cell, species].end2 = -1
+    if indexer.end2 < indexer.start2
+        indexer.start2 = 0
+        indexer.end2 = -1
+
+        # need to find new index_last
+        if new_last
+            found = false
+            for c in cell-1:-1:1
+                @inbounds if pia.indexer[c, species].n_group2 > 0
+                    @inbounds pia.index_last[species] = pia.indexer[c, species].end2
+                    found = true
+                    break
+                end
+            end
+
+            if !found
+                for c in cell-1:-1:1
+                    @inbounds if pia.indexer[c, species].n_group1 > 0
+                        @inbounds pia.index_last[species] = pia.indexer[c, species].end1
+                        found = true
+                        break
+                    end
+                end
+            end
+        end
     end
 
     # add the deleted particle to the buffer
