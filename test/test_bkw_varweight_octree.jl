@@ -92,6 +92,14 @@
         if phys_props.np[1,1] > threshold
             merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
         end
+
+        @test pia.index_last[1] == pia.n_total[1]
+
+        if pia.indexer[1,1].n_group2 > 0
+            @test pia.index_last[1] == pia.indexer[1,1].end2
+        else
+            @test pia.index_last[1] == pia.indexer[1,1].end1
+        end
         
         compute_props_with_total_moments!(particles, pia, species_data, phys_props)
         write_netcdf(ds, phys_props, ts)
