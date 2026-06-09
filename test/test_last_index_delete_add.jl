@@ -95,6 +95,7 @@
     @test check_unique_index(particles, pia, 1) == (true, 0)
     @test check_unique_buffer(particles) == (true, 0)
 
+    # case
     pia, particles = generate_pia_and_particles(30, [4, 0, 0], [0, 2, 1])
 
     @test pia.index_last[1] == 7
@@ -104,6 +105,11 @@
     @test pia.index_last[1] == 6
     @test pia.n_total[1] == 6
 
+    @test check_pia_is_correct(pia, 1) == (true, 0)
+    @test check_unique_index(particles, pia, 1) == (true, 0)
+    @test check_unique_buffer(particles) == (true, 0)
+
+    # case
     pia, particles = generate_pia_and_particles(30, [4, 0, 0], [0, 2, 1])
 
     @test pia.index_last[1] == 7
@@ -116,4 +122,83 @@
     Merzbild.delete_particle_end_group2!(particles, pia, 3, 1)
     @test pia.index_last[1] == 4
     @test pia.n_total[1] == 4
+
+    @test check_pia_is_correct(pia, 1) == (true, 0)
+    @test check_unique_index(particles, pia, 1) == (true, 0)
+    @test check_unique_buffer(particles) == (true, 0)
+
+    # case
+    pia, particles = generate_pia_and_particles(30, [4, 0, 0], [0, 2, 1])
+
+    @test pia.index_last[1] == 7
+    @test pia.n_total[1] == 7
+
+    Merzbild.delete_particle_end_group1!(particles, pia, 1, 1)
+    Merzbild.delete_particle_end_group1!(particles, pia, 1, 1)
+    @test pia.index_last[1] == 7
+    @test pia.n_total[1] == 5
+    Merzbild.delete_particle_end_group2!(particles, pia, 2, 1)
+    Merzbild.delete_particle_end_group2!(particles, pia, 2, 1)
+    @test pia.index_last[1] == 7
+    @test pia.n_total[1] == 3
+
+    @test check_pia_is_correct(pia, 1) == (true, 0)
+    @test check_unique_index(particles, pia, 1) == (true, 0)
+    @test check_unique_buffer(particles) == (true, 0)
+
+    # case
+    pia, particles = generate_pia_and_particles(30, [3, 2, 1], [1, 2, 3])
+    @test pia.index_last[1] == 12
+    @test pia.n_total[1] == 12
+    
+    Merzbild.delete_particle_end!(particles, pia, 1, 1)
+
+    # [3, 2, 1], [0, 2, 3]
+    @test pia.index_last[1] == 12
+    @test pia.n_total[1] == 11
+
+    Merzbild.delete_particle_end!(particles, pia, 1, 1)
+    Merzbild.delete_particle_end!(particles, pia, 1, 1)
+    Merzbild.delete_particle_end!(particles, pia, 1, 1)
+
+    # [0, 2, 1], [0, 2, 3]
+    @test pia.index_last[1] == 12
+    @test pia.n_total[1] == 8
+
+    @test check_pia_is_correct(pia, 1) == (true, 0)
+    @test check_unique_index(particles, pia, 1) == (true, 0)
+    @test check_unique_buffer(particles) == (true, 0)
+
+    Merzbild.delete_particle_end!(particles, pia, 2, 1)
+    Merzbild.delete_particle_end!(particles, pia, 2, 1)
+    Merzbild.delete_particle_end!(particles, pia, 2, 1)
+
+    # [0, 1, 1], [0, 0, 3]
+    @test pia.index_last[1] == 12
+    @test pia.n_total[1] == 5
+
+    @test check_pia_is_correct(pia, 1) == (true, 0)
+    @test check_unique_index(particles, pia, 1) == (true, 0)
+    @test check_unique_buffer(particles) == (true, 0)
+
+    Merzbild.delete_particle_end!(particles, pia, 3, 1)
+    Merzbild.delete_particle_end!(particles, pia, 3, 1)
+
+    # [0, 1, 1], [0, 0, 1]
+    @test pia.index_last[1] == 10
+    @test pia.n_total[1] == 3
+
+    @test check_pia_is_correct(pia, 1) == (true, 0)
+    @test check_unique_index(particles, pia, 1) == (true, 0)
+    @test check_unique_buffer(particles) == (true, 0)
+
+    # [0, 1, 1], [0, 0, 0]
+    Merzbild.delete_particle_end!(particles, pia, 3, 1)
+    @test pia.index_last[1] == 6
+    @test pia.n_total[1] == 2
+
+    @test check_pia_is_correct(pia, 1) == (true, 0)
+    @test check_unique_index(particles, pia, 1) == (true, 0)
+    @test check_unique_buffer(particles) == (true, 0)
+
 end

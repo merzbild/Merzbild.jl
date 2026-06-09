@@ -575,8 +575,9 @@ If no particles are present in the 2nd group of particles, the function does not
                 end
             end
 
+            # if we start searching for group1, we need to include current cell!
             if !found
-                for c in cell-1:-1:1
+                for c in cell:-1:1
                     @inbounds if pia.indexer[c, species].n_group1 > 0
                         @inbounds pia.index_last[species] = pia.indexer[c, species].end1
                         found = true
