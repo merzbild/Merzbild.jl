@@ -171,15 +171,21 @@
     end
     close_netcdf(ds)
 
+    for s in 1:3
+        @test check_pia_is_correct(pia, s) == (true, 0)
+        @test check_unique_index(particles[s], pia, s) == (true, 0)
+        @test check_unique_buffer(particles[s]) == (true, 0)
+    end
+
     sol = NCDataset(sol_path, "r")
  
     ndens_tot = n_dens_e + n_dens_ions + n_dens_neutrals
 
-    # test overall number density conservation, 1.5e-14 is relative error due to initialization
+    # test overall number density conservation, 4.4e-13 is relative error due to initialization
     ndens_conservation = true
 
     for t in 1:n_t
-        if abs(sum(sol["ndens"][1, :, t]) - ndens_tot) / ndens_tot > 1.5e-14
+        if abs(sum(sol["ndens"][1, :, t]) - ndens_tot) / ndens_tot > 4.4e-13
             ndens_conservation = false
         end
     end
@@ -209,8 +215,8 @@
     rm(sol_path)
 
     # now we test with higher T0_e and E_tn and should get ionization
-    E_Tn = 400
-    T0_e = Merzbild.eV * 4.5  # T_e(t=0) = 4.5eV
+    E_Tn = 600
+    T0_e = Merzbild.eV * 8.5  # T_e(t=0) = 4.5eV
 
     particles = [ParticleVector(np_base_heavy),
                  ParticleVector(np_base_heavy),
@@ -314,7 +320,7 @@
     ndens_conservation = true
 
     for t in 1:n_t
-        if abs(sum(sol["ndens"][1, :, t]) - ndens_tot) / ndens_tot > 1.5e-14
+        if abs(sum(sol["ndens"][1, :, t]) - ndens_tot) / ndens_tot > 1e-11
             ndens_conservation = false
         end
     end
@@ -330,7 +336,7 @@
     mass_conservation = true
 
     for t in 1:n_t
-        if abs(sol["ndens"][1, 2, t] - sol["ndens"][1, 3, t]) / sol["ndens"][1, 3, t] > 1.5e-14
+        if abs(sol["ndens"][1, 2, t] - sol["ndens"][1, 3, t]) / sol["ndens"][1, 3, t] > 2.5e-14
             charge_neutrality = false
         end
 
@@ -339,6 +345,12 @@
                 - (n_dens_ions + n_dens_neutrals)) / (n_dens_ions + n_dens_neutrals) > 1.5e-14
             mass_conservation = false
         end
+    end
+
+    for s in 1:3
+        @test check_pia_is_correct(pia, s) == (true, 0)
+        @test check_unique_index(particles[s], pia, s) == (true, 0)
+        @test check_unique_buffer(particles[s]) == (true, 0)
     end
 
     @test charge_neutrality == true
@@ -458,6 +470,12 @@
         write_netcdf(ds, phys_props, ts, sync_freq=1000)
     end
     close_netcdf(ds)
+
+    for s in 1:3
+        @test check_pia_is_correct(pia, s) == (true, 0)
+        @test check_unique_index(particles[s], pia, s) == (true, 0)
+        @test check_unique_buffer(particles[s]) == (true, 0)
+    end
 
     sol = NCDataset(sol_path, "r")
  

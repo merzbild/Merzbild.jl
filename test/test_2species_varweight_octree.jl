@@ -76,6 +76,16 @@
             merge_octree_N2_based!(rng, oc, particles[2], pia, 1, 2, n_particles_He)
         end
 
+        for s1 in [1,2]
+            @test pia.index_last[s1] == pia.n_total[s1]
+
+            if pia.indexer[1,s1].n_group2 > 0
+                @test pia.index_last[s1] == pia.indexer[1,s1].end2
+            else
+                @test pia.index_last[s1] == pia.indexer[1,s1].end1
+            end
+        end
+
         compute_props!(particles, pia, species_data, phys_props)
         write_netcdf(ds, phys_props, ts)
     end

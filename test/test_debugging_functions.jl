@@ -125,6 +125,16 @@
     pia.indexer[3,1].n_group2 = 2
     @test check_pia_is_correct(pia, 1) == (false, 3)
 
+    # test index_last - smaller than n_total
+    pia = create_pia()
+    pia.index_last[1] = 8
+    @test check_pia_is_correct(pia, 1) == (false, -1)
+
+    # test index_last - inconsistent
+    pia = create_pia()
+    pia.index_last[1] = 10
+    @test check_pia_is_correct(pia, 1) == (false, -2)
+
     # test pretty_print_pia
     pia = create_pia()
 
