@@ -61,6 +61,9 @@
     # our free particle is not pointed to by any indices in use
     @test (bufferindex in particles[1].index[1:9]) == false
 
+    @test pia.n_total[1] == 9
+    @test pia.index_last[1] == pia.n_total[1]
+
 
     # 1-cell 2-group case
     for i in 1:10
@@ -117,6 +120,9 @@
     # our free particles are not pointed to by any indices in use
     @test (bufferindex1 in particles[1].index[1:8]) == false
     @test (bufferindex2 in particles[1].index[1:8]) == false
+
+    @test pia.n_total[1] == 8
+    @test pia.index_last[1] == pia.n_total[1]
 
     # 3-cell case that looks like this
 
@@ -218,6 +224,9 @@
     @test phys_props.n[2,1] == 9.0
     @test phys_props.n[3,1] == 25.0
 
+    @test pia.n_total[1] == 6
+    @test pia.index_last[1] == pia.n_total[1]
+
     # 3-cell case that looks like this
     # 111 2 333 222
     particles = [ParticleVector(10)]
@@ -302,6 +311,9 @@
     @test pia.indexer[3,1].n_group1 == 1
     @test pia.indexer[3,1].n_group2 == 0
 
+    @test pia.n_total[1] == 6
+    @test pia.index_last[1] == pia.n_total[1]
+
     # check that there are no conflicts between particles in the buffer and particles
     # actually being used
     flag = false
@@ -375,6 +387,8 @@
     @test abs(phys_props.T[2,1] - T_computed[2])/T_computed[2] < 1e-14
     @test abs(phys_props.T[3,1] - T_computed[3])/T_computed[3] < 1e-14
 
+    @test pia.index_last[1] == pia.n_total[1]
+
     # check that buffer length is equal to the number of unused particles
     # plus whatever buffer we had at the start
     @test particles[1].nbuffer == Int64(sum(nps) - sum(phys_props.np[:,1])) + extrabuffer_length
@@ -438,6 +452,7 @@
     @test abs(phys_props.T[2,1] - T_computed[2])/T_computed[2] < 1e-14
     @test abs(phys_props.T[3,1] - T_computed[3])/T_computed[3] < 1e-14
 
+    @test pia.index_last[1] == pia.n_total[1]
 
     # 3-cell case that looks like this
     # 111 2 333 222
@@ -520,6 +535,9 @@
     @test pia.indexer[3,1].end1 == 4
     @test pia.indexer[3,1].n_group1 == 3
     @test pia.indexer[3,1].n_group2 == 0
+
+    @test pia.n_total[1] == 7
+    @test pia.index_last[1] == pia.n_total[1]
 
     # more tests
     # 3-cell case that looks like this
@@ -607,6 +625,9 @@
     @test pia.indexer[3,1].end1 == -1
     @test pia.indexer[3,1].n_group1 == 0
     @test pia.indexer[3,1].n_group2 == 0
+
+    @test pia.n_total[1] == 6
+    @test pia.index_last[1] == pia.n_total[1]
 
     # when we iterate over particles we don't
     # accidentally access particles in buffer
