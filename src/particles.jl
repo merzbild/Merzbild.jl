@@ -651,7 +651,46 @@ function squash_pia!(pv::ParticleVector{D}, pia, species) where D
         return
     else
         @inbounds n_cells = size(pia.indexer)[1]
-        if n_cells == 1
+        if n_cells > 1
+            @inbounds last_end = pia.indexer[1, species].end1 > 0 ? pia.indexer[1, species].end1 : 0
+            for i in 1:n_cells-1
+                @inbounds indexer = pia.indexer[i+1, species]
+
+                offset = indexer.start1 - (last_end + 1)
+                if offset > 0
+                    indexer.start1 -= offset
+                    indexer.end1 -= offset
+
+                    s1 = indexer.start1
+                    e1 = indexer.end1
+                    @inbounds for j in s1:e1
+                        pv.index[j] = pv.index[j+offset]
+                        pv.cell[j] = pv.cell[j+offset]
+                    end
+                end
+                last_end = indexer.end1 > 0 ? indexer.end1 : last_end
+            end
+
+            for i in 1:n_cells
+                @inbounds indexer = pia.indexer[i, species]
+
+                if indexer.n_group2 > 0
+                    offset = indexer.start2 - (last_end + 1)
+                    if offset > 0
+                        indexer.start2 -= offset
+                        indexer.end2 -= offset
+                        
+                        s2 = indexer.start2
+                        e2 = indexer.end2
+                        @inbounds for j in s2:e2
+                            pv.index[j] = pv.index[j+offset]
+                            pv.cell[j] = pv.cell[j+offset]
+                        end
+                    end
+                    last_end = indexer.end2 > 0 ? indexer.end2 : last_end
+                end
+            end
+        else
             @inbounds if pia.indexer[1, species].n_group2 > 0
                 @inbounds e1 = pia.indexer[1, species].end1 > 0 ? pia.indexer[1, species].end1 : 0
                 @inbounds offset = pia.indexer[1, species].start2 - (e1 + 1)
@@ -666,41 +705,6 @@ function squash_pia!(pv::ParticleVector{D}, pia, species) where D
                         pv.index[j] = pv.index[j+offset]
                         pv.cell[j] = pv.cell[j+offset]
                     end
-                end
-            end
-        else
-            @inbounds last_end = pia.indexer[1, species].end1 > 0 ? pia.indexer[1, species].end1 : 0
-            for i in 1:n_cells-1
-                @inbounds offset = pia.indexer[i+1, species].start1 - (last_end + 1)
-                if offset > 0
-                    @inbounds pia.indexer[i+1, species].start1 -= offset
-                    @inbounds pia.indexer[i+1, species].end1 -= offset
-
-                    @inbounds s1 = pia.indexer[i+1, species].start1
-                    @inbounds e1 = pia.indexer[i+1, species].end1
-                    @inbounds for j in s1:e1
-                        pv.index[j] = pv.index[j+offset]
-                        pv.cell[j] = pv.cell[j+offset]
-                    end
-                end
-                @inbounds last_end = pia.indexer[i+1, species].end1 > 0 ? pia.indexer[i+1, species].end1 : last_end
-            end
-
-            for i in 1:n_cells
-                @inbounds if pia.indexer[i, species].n_group2 > 0
-                    @inbounds offset = pia.indexer[i, species].start2 - (last_end + 1)
-                    if offset > 0
-                        @inbounds pia.indexer[i, species].start2 -= offset
-                        @inbounds pia.indexer[i, species].end2 -= offset
-                        
-                        @inbounds s2 = pia.indexer[i, species].start2
-                        @inbounds e2 = pia.indexer[i, species].end2
-                        @inbounds for j in s2:e2
-                            pv.index[j] = pv.index[j+offset]
-                            pv.cell[j] = pv.cell[j+offset]
-                        end
-                    end
-                    @inbounds last_end = pia.indexer[i, species].end2 > 0 ? pia.indexer[i, species].end2 : last_end
                 end
             end
         end
