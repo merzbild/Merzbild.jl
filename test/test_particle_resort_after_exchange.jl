@@ -27,6 +27,7 @@
                                    SVector{3, Float64}(positions[chunk_id][np], 0.5, 0.0))
         end
         pia_chunks[chunk_id].n_total[1] = np_actual[chunk_id]
+        pia_chunks[chunk_id].index_last[1] = np_actual[chunk_id]
 
         for cell in 1:n_cells
             pia_chunks[chunk_id].indexer[cell,1].n_local = np_in_cells[chunk_id][cell]
@@ -181,6 +182,7 @@
                                    SVector{3, Float64}(positions[chunk_id][np], 0.5, 0.0))
         end
         pia_chunks[chunk_id].n_total[1] = np_actual[chunk_id]
+        pia_chunks[chunk_id].index_last[1] = np_actual[chunk_id]
 
         for cell in 1:n_cells
             pia_chunks[chunk_id].indexer[cell,1].n_local = np_in_cells[chunk_id][cell]
@@ -316,6 +318,7 @@
                                    SVector{3, Float64}(positions[chunk_id][np], 0.5, 0.0))
         end
         pia_chunks[chunk_id].n_total[1] = np_actual[chunk_id]
+        pia_chunks[chunk_id].index_last[1] = np_actual[chunk_id]
 
         for cell in 1:n_cells
             pia_chunks[chunk_id].indexer[cell,1].n_local = np_in_cells[chunk_id][cell]
@@ -330,6 +333,8 @@
 
     @test pia_chunks[1].n_total[1] == 3
     @test pia_chunks[2].n_total[1] == 4
+    @test pia_chunks[1].index_last[1] == 3
+    @test pia_chunks[2].index_last[1] == 4
 
     exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, 1)
 
@@ -341,6 +346,8 @@
 
     @test pia_chunks[1].n_total[1] == 4
     @test pia_chunks[2].n_total[1] == 3
+    @test pia_chunks[1].index_last[1] == 4
+    @test pia_chunks[2].index_last[1] == 3
 
     # add a new particle to chunk 2
     chunk_id = 2
