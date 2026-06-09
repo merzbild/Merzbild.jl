@@ -894,6 +894,7 @@ for each cell for each species, the following should hold:
     * if `n_group2 > 0`, then `n_group1 == end2 - start2 + 1`
     * if `n_group2 == 0`, then `start2 == 0`, `end2 == -1`
     * `pia.n_total[species] == sum([pia.indexer[cell, species].n_local for cell in 1:n_cells])`
+and `index_last[species]` points to the last index used.
 
 # Positional arguments
 * `pia`: the `ParticleIndexerArray` instance for which to check consistency
@@ -905,6 +906,11 @@ If indexing is incorrect in a cell `i`, returns `(false, i)`.
 If the total number of particles as given by cell-wise particle indices
 is not equal to `pia.n_total[species]`, returns `(false, 0)`.
 
+If `index_last[species] < pia.n_total[species]`, returns `(false, -1)`.
+
+If `index_last[species]` is not the largest value of the indices
+pointed to by the groups, returns `(false, -2)`.
+
 If indexing is correct, returns `(true, 0)`.
 """
 function check_pia_is_correct(pia, species)
@@ -913,6 +919,9 @@ function check_pia_is_correct(pia, species)
     n_cells = size(pia.indexer)[1]
 
     n_tot = 0
+
+    n_last = 0
+
     for i in 1:n_cells
         if pia.indexer[i,species].n_local != pia.indexer[i,species].n_group1 + pia.indexer[i,species].n_group2
             return false, i
@@ -926,6 +935,7 @@ function check_pia_is_correct(pia, species)
             if pia.indexer[i,species].n_group1 != e1 - s1 + 1
                 return false, i
             end
+            n_last = max(n_last, e1)
         else
             if s1 != 0 || e1 != -1
                 return false, i
@@ -939,6 +949,7 @@ function check_pia_is_correct(pia, species)
             if pia.indexer[i,species].n_group2 != e2 - s2 + 1
                 return false, i
             end
+            n_last = max(n_last, e2)
         else
             if s2 != 0 || e2 != -1
                 return false, i
@@ -948,6 +959,16 @@ function check_pia_is_correct(pia, species)
 
     if n_tot != pia.n_total[species]
         return false, 0
+    end
+
+    if pia.index_last[species] < pia.n_total[species]
+        return false, -1
+    end
+
+    if n_last != 0
+        if n_last != pia.index_last[species]
+            return false, -2
+        end
     end
 
     return true, 0
