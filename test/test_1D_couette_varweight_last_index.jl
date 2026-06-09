@@ -8,8 +8,8 @@
     nx = 50
     ppc = 1000
     Δt = 2.59e-9
-    output_freq = 500
-    n_timesteps = 10000
+    output_freq = 100
+    n_timesteps = 2000
     merge_threshold = 165
     merge_target = 150
 
@@ -76,17 +76,20 @@
         for cell in 1:grid.n_cells
             ntc!(rng, collision_factors[1, 1, cell],
                  collision_data, interaction_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
-        
+
             if pia.indexer[cell,1].n_local > merge_threshold
                 merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
                 merged = true
             end
         end
 
+        if t % 10 == 0
+            @test check_pia_is_correct(pia, 1) == (true, 0)
+        end
+
         if merged
             squash_pia!(particles, pia)
         end
-
         # convect particles
         convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, Δt)
 
