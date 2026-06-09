@@ -525,6 +525,7 @@ function sort_particles_after_exchange!(chunk_exchanger, gridsort, particles::Pa
     end
 
     @inbounds pia.n_total[species] = n_tot
+    @inbounds pia.index_last[species] = n_tot
 
     @inbounds for i in 1:n_tot
         particles.index[i] = gridsort.sorted_indices[i]
