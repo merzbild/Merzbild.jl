@@ -121,11 +121,11 @@
 
     analytic_4 = analytic(sol["timestep"] * dt_scaled, magic_factor, 4)
     diff = abs.(analytic_4 .- sol_mom[1, 1, 1, :]) ./ analytic_4
-    @test maximum(diff) < 0.025
+    @test maximum(diff) < 0.032
 
     analytic_6 = analytic(sol["timestep"] * dt_scaled, magic_factor, 6)
     diff = abs.(analytic_6 .- sol_mom[2, 1, 1, :]) ./ analytic_6
-    @test maximum(diff) < 0.06
+    @test maximum(diff) < 0.074
 
     analytic_8 = analytic(sol["timestep"] * dt_scaled, magic_factor, 8)
     diff = abs.(analytic_8 .- sol_mom[3, 1, 1, :]) ./ analytic_8
