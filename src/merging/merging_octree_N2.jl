@@ -802,40 +802,41 @@ function compute_new_particles!(rng, octree::OctreeN2Merge{D}, particles::Partic
             i = full_bin.particle_index1
             full_bin.w1 = particles[i].w
             full_bin.v1 = particles[i].v
-            full_bin.x1 = particles[i].x
+            # full_bin.x1 = particles[i].x
 
             i = full_bin.particle_index2
             full_bin.w2 = particles[i].w
             full_bin.v2 = particles[i].v
-            full_bin.x2 = particles[i].x
+            # full_bin.x2 = particles[i].x
         elseif (loc_np == 1)
             # get the particle indices we saved and just write data based on them
             i = full_bin.particle_index1
             full_bin.w1 = particles[i].w
             full_bin.v1 = particles[i].v
-            full_bin.x1 = particles[i].x
+            # full_bin.x1 = particles[i].x
         end
     end
 
+    @inbounds indexer = pia.indexer[cell,species]
     curr_particle_index = 0
     @inbounds for bin_id in 1:octree.Nbins
         loc_np = octree.bins[bin_id].np
 
         full_bin = octree.full_bins[bin_id]
         if (loc_np >= 2)
-            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
+            i = map_cont_index(indexer, curr_particle_index)
             curr_particle_index += 1
             particles[i].w = full_bin.w1
             particles[i].v = full_bin.v1
             # particles[i].x = full_bin.x1
 
-            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
+            i = map_cont_index(indexer, curr_particle_index)
             curr_particle_index += 1
             particles[i].w = full_bin.w2
             particles[i].v = full_bin.v2
             # particles[i].x = full_bin.x2
         elseif (octree.bins[bin_id].np == 1)
-            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
+            i = map_cont_index(indexer, curr_particle_index)
             curr_particle_index += 1
             particles[i].w = full_bin.w1
             particles[i].v = full_bin.v1
@@ -843,7 +844,7 @@ function compute_new_particles!(rng, octree::OctreeN2Merge{D}, particles::Partic
         end
     end
 
-    @inbounds old_count = pia.indexer[cell,species].n_local
+    @inbounds old_count = indexer.n_local
     n_particles_to_delete = old_count - curr_particle_index
 
     # if we delete from particles in last cell AND we delete less particles than were in group 2
@@ -915,12 +916,13 @@ function compute_new_particles!(rng, octree::OctreeN2Merge{D}, particles::Partic
     end
 
     curr_particle_index = 0
+    @inbounds indexer = pia.indexer[cell,species]
     @inbounds for bin_id in 1:octree.Nbins
         bin = octree.bins[bin_id]
         full_bin = octree.full_bins[bin_id]
         loc_np = bin.np
         if (loc_np > 2)
-            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
+            i = map_cont_index(indexer, curr_particle_index)
             curr_particle_index += 1
 
             particles[i].w = full_bin.w1
@@ -931,7 +933,7 @@ function compute_new_particles!(rng, octree::OctreeN2Merge{D}, particles::Partic
 
             particles[i].x = set_x(val, clamped_x)
 
-            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
+            i = map_cont_index(indexer, curr_particle_index)
             curr_particle_index += 1
             particles[i].w = full_bin.w2
             particles[i].v = full_bin.v2
@@ -942,19 +944,19 @@ function compute_new_particles!(rng, octree::OctreeN2Merge{D}, particles::Partic
             particles[i].x = set_x(val, clamped_x)
         elseif (loc_np == 2)
             # we had 2 pre-merge particles, we don't need to check their positions
-            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
+            i = map_cont_index(indexer, curr_particle_index)
             curr_particle_index += 1
             particles[i].w = full_bin.w1
             particles[i].v = full_bin.v1
             particles[i].x = full_bin.x1
 
-            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
+            i = map_cont_index(indexer, curr_particle_index)
             curr_particle_index += 1
             particles[i].w = full_bin.w2
             particles[i].v = full_bin.v2
             particles[i].x = full_bin.x2
         elseif (loc_np == 1)
-            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
+            i = map_cont_index(indexer, curr_particle_index)
             curr_particle_index += 1
             particles[i].w = full_bin.w1
             particles[i].v = full_bin.v1
@@ -962,13 +964,13 @@ function compute_new_particles!(rng, octree::OctreeN2Merge{D}, particles::Partic
         end
     end
 
-    @inbounds old_count = pia.indexer[cell,species].n_local
+    @inbounds old_count = indexer.n_local
     n_particles_to_delete = old_count - curr_particle_index
 
     # if we delete from particles in last cell AND we delete less particles than were in group 2
     # then continuity is not broken
     # !(A && B) == !A || !B
-    @inbounds if !(cell == size(pia.indexer)[1]) || (n_particles_to_delete > pia.indexer[cell,species].n_group2)
+    @inbounds if !(cell == size(pia.indexer)[1]) || (n_particles_to_delete > indexer.n_group2)
         pia.contiguous[species] = false
     end
 
