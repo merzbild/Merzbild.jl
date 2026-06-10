@@ -23,7 +23,7 @@ Struct for keeping track of merging-related quantities in a velocity grid cell.
 * `x1`: the post-merge position to assign to the first particle in the cell
 * `x2`: the post-merge position to assign to the second particle in the cell
 """
-mutable struct GridCell
+mutable struct GridCell{D}
     np::Int64
     w::Float64
     v_mean::SVector{3,Float64}
@@ -37,8 +37,8 @@ mutable struct GridCell
     w2::Float64
     v1::SVector{3,Float64}  # these are for the post-merge quantities
     v2::SVector{3,Float64}
-    x1::SVector{3,Float64}
-    x2::SVector{3,Float64}
+    x1::SVector{D,Float64}
+    x2::SVector{D,Float64}
 end
 
 """
@@ -69,7 +69,7 @@ and `extent_multiplier` is a user-defined parameter (3.5 is a reasonable choice)
 * `direction_vec`: used to store randomly sampled direction signs
 * `cells`: vector of `GridCell` instances for each grid cell, as well as the external octants
 """
-mutable struct GridN2Merge
+mutable struct GridN2Merge{D}
     Nx::Int8
     Ny::Int8
     Nz::Int8
@@ -83,8 +83,9 @@ mutable struct GridN2Merge
     Δv::SVector{3,Float64}
     Δv_inv::SVector{3,Float64}
     direction_vec::SVector{3,Float64}
+    direction_vecD::SVector{D,Float64}
 
-    cells::Vector{GridCell}
+    cells::Vector{GridCell{D}}
 
     @doc """
         GridN2Merge(Nx::Int, Ny::Int, Nz::Int, extent_multiplier::T) where T <: AbstractArray
@@ -98,17 +99,17 @@ mutable struct GridN2Merge
     * `extent_multiplier`: the vector of factors by which to multiply the thermal velocity to determine the grid bounds
     in each velocity direction
     """
-    function GridN2Merge(Nx::Int, Ny::Int, Nz::Int, extent_multiplier::T) where T <: AbstractArray
+    function GridN2Merge{D}(Nx::Int, Ny::Int, Nz::Int, extent_multiplier::T) where {D, T <: AbstractArray}
         Ntotal = Nx * Ny * Nz + 8
-        cells = Vector{GridCell}(undef, Nx * Ny * Nz + 8)
+        cells = Vector{GridCell{D}}(undef, Nx * Ny * Nz + 8)
 
         for i in 1:Ntotal
-            cells[i] = GridCell(0, 0.0, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0, 0,
-                                0.0, 0.0, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0])
+            cells[i] = GridCell{D}(0, 0.0, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0, 0,
+                                0.0, 0.0, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], zero(SVector{D,Float64}), zero(SVector{D,Float64}))
         end
 
         return new(Nx, Ny, Nz, Ny*Nz, Ntotal, extent_multiplier, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0],
-                   [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], cells)
+                   [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], zero(SVector{D,Float64}), cells)
     end
 end
 
@@ -122,7 +123,7 @@ Create velocity grid-based merging with equal number of cells in each direction.
 * `extent_multiplier`: the vector of factors by which to multiply the thermal velocity to determine the grid bounds
 in each velocity direction
 """
-GridN2Merge(N::Int, extent_multiplier::T) where T <: AbstractArray = GridN2Merge(N, N, N, extent_multiplier)
+GridN2Merge{D}(N::Int, extent_multiplier::T) where {D, T <: AbstractArray} = GridN2Merge{D}(N, N, N, extent_multiplier)
 
 """
     GridN2Merge(Nx::Int, Ny::Int, Nz::Int, extent_multiplier::Float64)
@@ -136,7 +137,70 @@ Create velocity grid-based merging with equal multipliers in each direction.
 * `extent_multiplier`: the factor by which to multiply the thermal velocity to determine the grid bounds
 in each velocity direction
 """
-GridN2Merge(Nx::Int, Ny::Int, Nz::Int, extent_multiplier::Float64) = GridN2Merge(Nx, Ny, Nz, [extent_multiplier, extent_multiplier, extent_multiplier])
+GridN2Merge{D}(Nx::Int, Ny::Int, Nz::Int, extent_multiplier::Float64) where D = GridN2Merge{D}(Nx, Ny, Nz, [extent_multiplier, extent_multiplier, extent_multiplier])
+
+"""
+    GridN2Merge(Nx::Int, Ny::Int, Nz::Int,
+                extent_multiplier_x::Float64,
+                extent_multiplier_y::Float64,
+                extent_multiplier_z::Float64) 
+
+Create velocity grid-based merging
+* `Nx`: number of cells in vx direction
+* `Ny`: number of cells in vy direction
+* `Nz`: number of cells in vz direction
+* `extent_multiplier_x`: the factor by which to multiply the thermal velocity to determine the grid bounds
+in the x-velocity direction
+* `extent_multiplier_y`: the factor by which to multiply the thermal velocity to determine the grid bounds
+in the y-velocity direction
+* `extent_multiplier_z`: the factor by which to multiply the thermal velocity to determine the grid bounds
+in the z-velocity direction
+"""
+GridN2Merge{D}(Nx::Int, Ny::Int, Nz::Int,
+            extent_multiplier_x::Float64,
+            extent_multiplier_y::Float64,
+            extent_multiplier_z::Float64) where D = GridN2Merge{D}(Nx, Ny, Nz, [extent_multiplier_x,
+                                                                     extent_multiplier_y,
+                                                                     extent_multiplier_z])
+
+"""
+    GridN2Merge(N::Int, extent_multiplier::Float64)
+
+Create velocity grid-based merging with equal number of cells in each direction and equal multipliers
+in each direction.
+
+# Positional arguments
+* `N`: number of cells in each velocity direction
+* `extent_multiplier`: the factor by which to multiply the thermal velocity to determine the grid bounds
+in each velocity direction
+"""
+GridN2Merge{D}(N::Int, extent_multiplier::Float64) where D = GridN2Merge{D}(N, N, N, extent_multiplier)
+
+"""
+    GridN2Merge(N::Int, extent_multiplier::T) where T <: AbstractArray 
+
+Create velocity grid-based merging with equal number of cells in each direction.
+
+# Positional arguments
+* `N`: number of cells in each velocity direction
+* `extent_multiplier`: the vector of factors by which to multiply the thermal velocity to determine the grid bounds
+in each velocity direction
+"""
+GridN2Merge(N::Int, extent_multiplier::T) where T <: AbstractArray = GridN2Merge{3}(N, N, N, extent_multiplier)
+
+"""
+    GridN2Merge(Nx::Int, Ny::Int, Nz::Int, extent_multiplier::Float64)
+
+Create velocity grid-based merging with equal multipliers in each direction.
+
+# Positional arguments
+* `Nx`: number of cells in vx direction
+* `Ny`: number of cells in vy direction
+* `Nz`: number of cells in vz direction
+* `extent_multiplier`: the factor by which to multiply the thermal velocity to determine the grid bounds
+in each velocity direction
+"""
+GridN2Merge(Nx::Int, Ny::Int, Nz::Int, extent_multiplier::Float64) = GridN2Merge{3}(Nx, Ny, Nz, [extent_multiplier, extent_multiplier, extent_multiplier])
 
 """
     GridN2Merge(Nx::Int, Ny::Int, Nz::Int,
@@ -158,7 +222,7 @@ in the z-velocity direction
 GridN2Merge(Nx::Int, Ny::Int, Nz::Int,
             extent_multiplier_x::Float64,
             extent_multiplier_y::Float64,
-            extent_multiplier_z::Float64) = GridN2Merge(Nx, Ny, Nz, [extent_multiplier_x,
+            extent_multiplier_z::Float64) = GridN2Merge{3}(Nx, Ny, Nz, [extent_multiplier_x,
                                                                      extent_multiplier_y,
                                                                      extent_multiplier_z])
 
@@ -173,7 +237,7 @@ in each direction.
 * `extent_multiplier`: the factor by which to multiply the thermal velocity to determine the grid bounds
 in each velocity direction
 """
-GridN2Merge(N::Int, extent_multiplier::Float64) = GridN2Merge(N, N, N, extent_multiplier)
+GridN2Merge(N::Int, extent_multiplier::Float64) = GridN2Merge{3}(N, N, N, extent_multiplier)
 
 """
     compute_velocity_extent!(merging_grid, cell, species, species_data, phys_props::PhysProps)
@@ -278,14 +342,15 @@ Resets all data for a merging grid instance.
 function clear_merging_grid!(merging_grid)
     Ntot = merging_grid.Ntotal
     @inbounds for index in 1:Ntot
-        merging_grid.cells[index].w = 0.0
-        merging_grid.cells[index].v_mean = SVector{3,Float64}(0.0, 0.0, 0.0)
-        merging_grid.cells[index].v_std_sq = SVector{3,Float64}(0.0, 0.0, 0.0)
-        merging_grid.cells[index].x_mean = SVector{3,Float64}(0.0, 0.0, 0.0)
-        merging_grid.cells[index].x_std_sq = SVector{3,Float64}(0.0, 0.0, 0.0)
-        merging_grid.cells[index].np = 0
-        merging_grid.cells[index].particle_index1 = 0
-        merging_grid.cells[index].particle_index2 = 0
+        mcell = merging_grid.cells[index]
+        mcell.w = 0.0
+        mcell.v_mean = SVector{3,Float64}(0.0, 0.0, 0.0)
+        mcell.v_std_sq = SVector{3,Float64}(0.0, 0.0, 0.0)
+        mcell.x_mean = SVector{3,Float64}(0.0, 0.0, 0.0)
+        mcell.x_std_sq = SVector{3,Float64}(0.0, 0.0, 0.0)
+        mcell.np = 0
+        mcell.particle_index1 = 0
+        mcell.particle_index2 = 0
     end
 end
 
@@ -342,11 +407,12 @@ function compute_grid!(merging_grid::GridN2Merge, particles::ParticleVector{D}, 
 
     Ntot = merging_grid.Ntotal
     @inbounds for index in 1:Ntot
-        if (merging_grid.cells[index].w > 0.0)
-            merging_grid.cells[index].v_mean = merging_grid.cells[index].v_mean / merging_grid.cells[index].w
-            merging_grid.cells[index].x_mean = merging_grid.cells[index].x_mean / merging_grid.cells[index].w
+        mcell = merging_grid.cells[index]
+        if (mcell.w > 0.0)
+            mcell.v_mean = mcell.v_mean / mcell.w
+            mcell.x_mean = mcell.x_mean / mcell.w
         else
-            merging_grid.cells[index].np = 0  # set to 0 and skip this cell            
+            mcell.np = 0  # set to 0 and skip this cell            
         end
     end
 
@@ -369,9 +435,10 @@ function compute_grid!(merging_grid::GridN2Merge, particles::ParticleVector{D}, 
     end
 
     @inbounds for index in 1:Ntot
-        if (merging_grid.cells[index].w > 0.0)
-            merging_grid.cells[index].v_std_sq = merging_grid.cells[index].v_std_sq / merging_grid.cells[index].w
-            merging_grid.cells[index].x_std_sq = merging_grid.cells[index].x_std_sq / merging_grid.cells[index].w
+        mcell = merging_grid.cells[index]
+        if (mcell.w > 0.0)
+            mcell.v_std_sq = mcell.v_std_sq / mcell.w
+            mcell.x_std_sq = mcell.x_std_sq / mcell.w
         end
     end
 end
@@ -392,73 +459,73 @@ So particles may end up outside of the domain.
 """
 function compute_new_particles!(rng, merging_grid::GridN2Merge, particles::ParticleVector{D}, pia, cell, species) where D
     # no limits on particle location, i.e. 0-D
-
     Ntot = merging_grid.Ntotal
     @inbounds for index in 1:Ntot
-        if (merging_grid.cells[index].np > 2)
-            merging_grid.cells[index].w1 = 0.5 * merging_grid.cells[index].w
-            merging_grid.cells[index].w2 = merging_grid.cells[index].w1
+        mcell = merging_grid.cells[index]
 
-            merging_grid.cells[index].v_std_sq = sqrt.(merging_grid.cells[index].v_std_sq)
-            merging_grid.cells[index].x_std_sq = sqrt.(merging_grid.cells[index].x_std_sq)
+        if (mcell.np > 2)
+            mcell.w1 = 0.5 * mcell.w
+            mcell.w2 = mcell.w1
+
+            mcell.v_std_sq = sqrt.(mcell.v_std_sq)
+            mcell.x_std_sq = sqrt.(mcell.x_std_sq)
             
             merging_grid.direction_vec = @SVector rand(rng, direction_signs, 3)
-            merging_grid.cells[index].v1 = merging_grid.cells[index].v_mean + merging_grid.direction_vec .* merging_grid.cells[index].v_std_sq
-            merging_grid.cells[index].v2 = merging_grid.cells[index].v_mean - merging_grid.direction_vec .* merging_grid.cells[index].v_std_sq
-
-            merging_grid.direction_vec = @SVector rand(rng, direction_signs, 3)
-            merging_grid.cells[index].x1 = merging_grid.cells[index].x_mean + merging_grid.direction_vec .* merging_grid.cells[index].x_std_sq
-            merging_grid.cells[index].x2 = merging_grid.cells[index].x_mean - merging_grid.direction_vec .* merging_grid.cells[index].x_std_sq
-        elseif (merging_grid.cells[index].np == 2)
+            mcell.v1 = mcell.v_mean + merging_grid.direction_vec .* mcell.v_std_sq
+            mcell.v2 = mcell.v_mean - merging_grid.direction_vec .* mcell.v_std_sq
+        elseif (mcell.np == 2)
             # get the particle indices we saved and just write data based on them
-            i = merging_grid.cells[index].particle_index1
-            merging_grid.cells[index].w1 = particles[i].w
-            merging_grid.cells[index].v1 = particles[i].v
-            merging_grid.cells[index].x1 = particles[i].x
+            i = mcell.particle_index1
+            mcell.w1 = particles[i].w
+            mcell.v1 = particles[i].v
+            # mcell.x1 = particles[i].x
 
-            i = merging_grid.cells[index].particle_index2
-            merging_grid.cells[index].w2 = particles[i].w
-            merging_grid.cells[index].v2 = particles[i].v
-            merging_grid.cells[index].x2 = particles[i].x
-        elseif (merging_grid.cells[index].np == 1)
+            i = mcell.particle_index2
+            mcell.w2 = particles[i].w
+            mcell.v2 = particles[i].v
+            # mcell.x2 = particles[i].x
+        elseif (mcell.np == 1)
             # get the particle indices we saved and just write data based on them
-            i = merging_grid.cells[index].particle_index1
-            merging_grid.cells[index].w1 = particles[i].w
-            merging_grid.cells[index].v1 = particles[i].v
-            merging_grid.cells[index].x1 = particles[i].x
+            i = mcell.particle_index1
+            mcell.w1 = particles[i].w
+            mcell.v1 = particles[i].v
+            # mcell.x1 = particles[i].x
         end
     end
 
+    @inbounds indexer = pia.indexer[cell,species]
     curr_particle_index = 0
     @inbounds for index in 1:Ntot
-        if (merging_grid.cells[index].np >= 2)
-            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
-            curr_particle_index += 1
-            particles[i].w = merging_grid.cells[index].w1
-            particles[i].v = merging_grid.cells[index].v1
-            particles[i].x = merging_grid.cells[index].x1
+        mcell = merging_grid.cells[index]
 
-            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
+        if (mcell.np >= 2)
+            i = map_cont_index(indexer, curr_particle_index)
             curr_particle_index += 1
-            particles[i].w = merging_grid.cells[index].w2
-            particles[i].v = merging_grid.cells[index].v2
-            particles[i].x = merging_grid.cells[index].x2
-        elseif (merging_grid.cells[index].np == 1)
-            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
+            particles[i].w = mcell.w1
+            particles[i].v = mcell.v1
+            # particles[i].x = merging_grid.cells[index].x1
+
+            i = map_cont_index(indexer, curr_particle_index)
             curr_particle_index += 1
-            particles[i].w = merging_grid.cells[index].w1
-            particles[i].v = merging_grid.cells[index].v1
-            particles[i].x = merging_grid.cells[index].x1
+            particles[i].w = mcell.w2
+            particles[i].v = mcell.v2
+            # particles[i].x = merging_grid.cells[index].x2
+        elseif (mcell.np == 1)
+            i = map_cont_index(indexer, curr_particle_index)
+            curr_particle_index += 1
+            particles[i].w = mcell.w1
+            particles[i].v = mcell.v1
+            # particles[i].x = merging_grid.cells[index].x1
         end
     end
 
-    @inbounds old_count = pia.indexer[cell,species].n_local
+    @inbounds old_count = indexer.n_local
     n_particles_to_delete = old_count - curr_particle_index
 
     # if we delete from particles in last cell AND we delete less particles than were in group 2
     # then continuity is not broken
     # !(A && B) == !A || !B
-    @inbounds if !(cell == size(pia.indexer)[1]) || (n_particles_to_delete > pia.indexer[cell,species].n_group2)
+    @inbounds if !(cell == size(pia.indexer)[1]) || (n_particles_to_delete > indexer.n_group2)
         pia.contiguous[species] = false
     end
 
@@ -484,84 +551,81 @@ Compute new particles based on the grid cell properties; placing out-of-domain p
 function compute_new_particles!(rng, merging_grid::GridN2Merge, particles::ParticleVector{D}, pia, cell, species, grid::Grid1DUniform) where D
     Ntot = merging_grid.Ntotal
     @inbounds for index in 1:Ntot
-        if (merging_grid.cells[index].np > 2)
-            merging_grid.cells[index].w1 = 0.5 * merging_grid.cells[index].w
-            merging_grid.cells[index].w2 = merging_grid.cells[index].w1
+        mcell = merging_grid.cells[index]
 
-            merging_grid.cells[index].v_std_sq = sqrt.(merging_grid.cells[index].v_std_sq)
-            merging_grid.cells[index].x_std_sq = sqrt.(merging_grid.cells[index].x_std_sq)
+        if (mcell.np > 2)
+            mcell.w1 = 0.5 * mcell.w
+            mcell.w2 = mcell.w1
+
+            mcell.v_std_sq = sqrt.(mcell.v_std_sq)
+            mcell.x_std_sq = sqrt.(mcell.x_std_sq)
             
             merging_grid.direction_vec = @SVector rand(rng, direction_signs, 3)
-            merging_grid.cells[index].v1 = merging_grid.cells[index].v_mean + merging_grid.direction_vec .* merging_grid.cells[index].v_std_sq
-            merging_grid.cells[index].v2 = merging_grid.cells[index].v_mean - merging_grid.direction_vec .* merging_grid.cells[index].v_std_sq
+            mcell.v1 = mcell.v_mean + merging_grid.direction_vec .* mcell.v_std_sq
+            mcell.v2 = mcell.v_mean - merging_grid.direction_vec .* mcell.v_std_sq
 
-            merging_grid.direction_vec = @SVector rand(rng, direction_signs, 3)
-            merging_grid.cells[index].x1 = merging_grid.cells[index].x_mean + merging_grid.direction_vec .* merging_grid.cells[index].x_std_sq
-            merging_grid.cells[index].x2 = merging_grid.cells[index].x_mean - merging_grid.direction_vec .* merging_grid.cells[index].x_std_sq
-        elseif (merging_grid.cells[index].np == 2)
+            merging_grid.direction_vecD = @SVector rand(rng, direction_signs, D)
+            mcell.x1 = mcell.x_mean + merging_grid.direction_vec .* mcell.x_std_sq
+            mcell.x2 = mcell.x_mean - merging_grid.direction_vec .* mcell.x_std_sq
+        elseif (mcell.np == 2)
             # get the particle indices we saved and just write data based on them
-            i = merging_grid.cells[index].particle_index1
-            merging_grid.cells[index].w1 = particles[i].w
-            merging_grid.cells[index].v1 = particles[i].v
-            merging_grid.cells[index].x1 = particles[i].x
+            i = mcell.particle_index1
+            mcell.w1 = particles[i].w
+            mcell.v1 = particles[i].v
+            mcell.x1 = particles[i].x
 
-            i = merging_grid.cells[index].particle_index2
-            merging_grid.cells[index].w2 = particles[i].w
-            merging_grid.cells[index].v2 = particles[i].v
-            merging_grid.cells[index].x2 = particles[i].x
-        elseif (merging_grid.cells[index].np == 1)
+            i = mcell.particle_index2
+            mcell.w2 = particles[i].w
+            mcell.v2 = particles[i].v
+            mcell.x2 = particles[i].x
+        elseif (mcell.np == 1)
             # get the particle indices we saved and just write data based on them
-            i = merging_grid.cells[index].particle_index1
-            merging_grid.cells[index].w1 = particles[i].w
-            merging_grid.cells[index].v1 = particles[i].v
-            merging_grid.cells[index].x1 = particles[i].x
+            i = mcell.particle_index1
+            mcell.w1 = particles[i].w
+            mcell.v1 = particles[i].v
+            mcell.x1 = particles[i].x
         end
     end
 
+    @inbounds indexer = pia.indexer[cell,species]
     curr_particle_index = 0
     @inbounds for index in 1:Ntot
-        if (merging_grid.cells[index].np >= 2)
-            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
-            curr_particle_index += 1
-            particles[i].w = merging_grid.cells[index].w1
-            particles[i].v = merging_grid.cells[index].v1
+        mcell = merging_grid.cells[index]
 
-            if (merging_grid.cells[index].x1[1] < grid.min_x)
-                particles[i].x = SVector{3,Float64}(grid.min_x, merging_grid.cells[index].x1[2], merging_grid.cells[index].x1[3])
-            elseif (merging_grid.cells[index].x1[1] > grid.max_x)
-                particles[i].x = SVector{3,Float64}(grid.max_x, merging_grid.cells[index].x1[2], merging_grid.cells[index].x1[3])
-            else
-                particles[i].x = merging_grid.cells[index].x1
-            end
-
-            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
+        if (mcell.np >= 2)
+            i = map_cont_index(indexer, curr_particle_index)
             curr_particle_index += 1
-            particles[i].w = merging_grid.cells[index].w2
-            particles[i].v = merging_grid.cells[index].v2
+            particles[i].w = mcell.w1
+            particles[i].v = mcell.v1
 
-            if (merging_grid.cells[index].x2[1] < grid.min_x)
-                particles[i].x = SVector{3,Float64}(grid.min_x, merging_grid.cells[index].x2[2], merging_grid.cells[index].x2[3])
-            elseif (merging_grid.cells[index].x2[1] > grid.max_x)
-                particles[i].x = SVector{3,Float64}(grid.max_x, merging_grid.cells[index].x2[2], merging_grid.cells[index].x2[3])
-            else
-                particles[i].x = merging_grid.cells[index].x2
-            end
-        elseif (merging_grid.cells[index].np == 1)
-            i = map_cont_index(pia.indexer[cell,species], curr_particle_index)
+            val = mcell.x1
+            clamped_x = clamp(val[1], grid.min_x, grid.max_x)
+            particles[i].x = set_x(val, clamped_x)
+
+            i = map_cont_index(indexer, curr_particle_index)
             curr_particle_index += 1
-            particles[i].w = merging_grid.cells[index].w1
-            particles[i].v = merging_grid.cells[index].v1
-            particles[i].x = merging_grid.cells[index].x1
+            particles[i].w = mcell.w2
+            particles[i].v = mcell.v2
+
+            val = mcell.x2
+            clamped_x = clamp(val[1], grid.min_x, grid.max_x)
+            particles[i].x = set_x(val, clamped_x)
+        elseif (mcell.np == 1)
+            i = map_cont_index(indexer, curr_particle_index)
+            curr_particle_index += 1
+            particles[i].w = mcell.w1
+            particles[i].v = mcell.v1
+            particles[i].x = mcell.x1
         end
     end
 
-    @inbounds old_count = pia.indexer[cell,species].n_local
+    @inbounds old_count = indexer.n_local
     n_particles_to_delete = old_count - curr_particle_index
 
     # if we delete from particles in last cell AND we delete less particles than were in group 2
     # then continuity is not broken
     # !(A && B) == !A || !B
-    @inbounds if !(cell == size(pia.indexer)[1]) || (n_particles_to_delete > pia.indexer[cell,species].n_group2)
+    @inbounds if !(cell == size(pia.indexer)[1]) || (n_particles_to_delete > indexer.n_group2)
         pia.contiguous[species] = false
     end
 
