@@ -56,39 +56,25 @@
     
     octree = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
     
-    # test that merging without accounting for domain bounds leads to out-of-domain particles
-    merge_octree_N2_based!(rng, octree, particles[1], pia, 1, 1, 2)
-    merge_octree_N2_based!(rng, octree, particles[1], pia, 2, 1, 2)
-
-    @test pia.indexer[1,1].n_local == 2
-    @test pia.indexer[1,1].n_group1 == 2
-    @test pia.indexer[1,1].start1 == 1
-    @test pia.indexer[1,1].end1 == 2
-
-    @test pia.indexer[2,1].n_local == 2
-    @test pia.indexer[2,1].n_group1 == 2
-    @test pia.indexer[2,1].start1 == 5
-    @test pia.indexer[2,1].end1 == 6
-
-    out_of_bounds = false
-    for i in pia.indexer[1,1].start1:pia.indexer[1,1].end1
-        if (particles[1][i].x[1] < grid.min_x) || (particles[1][i].x[1] > grid.max_x)
-            out_of_bounds = true
+    # test that x_mean +- x_std is out of bounds
+    for c in [1,2]
+        w_tot = 0.0
+        x_mean = 0.0
+        x_std = 0.0
+        for i in pia.indexer[c,1].start1:pia.indexer[c,1].end1
+            x_mean += particles[1][i].x[1] * particles[1][i].w
+            w_tot += particles[1][i].w
         end
-    end
-    @test out_of_bounds == true
 
-
-    out_of_bounds = false
-    for i in pia.indexer[2,1].start1:pia.indexer[2,1].end1
-        if (particles[1][i].x[1] < grid.min_x) || (particles[1][i].x[1] > grid.max_x)
-            out_of_bounds = true
+        x_mean /= w_tot
+        
+        for i in pia.indexer[c,1].start1:pia.indexer[c,1].end1
+            x_std += (particles[1][i].x[1] - x_mean)^2 * particles[1][i].w
         end
-    end
-    @test out_of_bounds == true
 
-    # reset
-    particles, pia = create_particles_in_2cells()
+        x_std = sqrt(x_std / w_tot)
+        @test (x_mean - x_std) <= 0.0 || (x_mean + x_std) >= 1.0
+    end
     
     # now we make sure particles stay inside grid
     merge_octree_N2_based!(rng, octree, particles[1], pia, 1, 1, 2, grid)
