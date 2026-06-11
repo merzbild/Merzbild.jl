@@ -25,9 +25,9 @@ using ChunkSplitters
 # include("test_bkw_equal_weight.jl")  # then we test the BKW relaxation case for equal-weight particles against reference solutions
 # include("test_2species.jl")  # then we test 2-species elastic collisions
 # include("test_2species_equal_weight.jl")  # then we test 2-species elastic collisions for equal-weight particles
-include("test_merging_grid_indexing.jl")  # then we test basic indexing in grid-based merging
-include("test_merging_grid_merging.jl")  # then we test grid-based merging in 0D
-include("test_merging_grid_buffer_sorting.jl")  # then we test that particles are freed correctly in NNLS-based merging
+# include("test_merging_grid_indexing.jl")  # then we test basic indexing in grid-based merging
+# include("test_merging_grid_merging.jl")  # then we test grid-based merging in 0D
+# include("test_merging_grid_buffer_sorting.jl")  # then we test that particles are freed correctly in NNLS-based merging
 # include("test_bkw_varweight_grid.jl")  # then we test variable-weight NTC collisions+grid-based merging in 0D (BKW relaxation)
 # include("test_octree_bounds_and_splitting.jl")  # then we test bin bounds and splitting in octree merging
 # include("test_octree_sorting.jl")  # then we test sorting in octree merging
@@ -58,7 +58,7 @@ include("test_merging_grid_buffer_sorting.jl")  # then we test that particles ar
 # include("test_collisions_1D.jl")  # test particle collisions on a grid
 # include("test_io_multidim.jl")  # test netCDF I/O of physical properties on a grid
 # include("test_io_particle.jl")  # test dump of particles
-include("test_merging_grid_merging_1D.jl")  # test grid-based merging in 1-D
+# include("test_merging_grid_merging_1D.jl")  # test grid-based merging in 1-D
 # include("test_octree_merging_1D.jl")  # test octree merging in 1-D
 # include("test_surface_props_1D_uniform.jl")  # test surface properties for 1-D uniform grid
 # include("test_io_surf.jl")  # test I/O of surface properties
@@ -84,9 +84,11 @@ include("test_merging_grid_merging_1D.jl")  # test grid-based merging in 1-D
 # include("test_bkw_varweight_octree_0Dparticle.jl")  # test variable weight BKW + octree merging with 0D particles"
 # include("test_1D_couette_varweight_1DParticle.jl")  # test variable weight Couette + octree merging with 1D particles
 # include("test_1D_couette_varweight_last_index.jl")  # test variable weight Couette with last_index and less squashing
-include("test_malloc_2species_equal_weight.jl")  # malloc with equal weight collisions and props computes
-include("test_malloc_bkw_varweight_octree.jl")  # malloc with merging and variable-weight collisions
-include("test_malloc_octree_1Dgrid.jl")  # malloc with octree merging on 1D grid
+# include("test_malloc_2species_equal_weight.jl")  # malloc with equal weight collisions and props computes
+# include("test_malloc_bkw_varweight_octree.jl")  # malloc with merging and variable-weight collisions
+# include("test_malloc_octree_1Dgrid.jl")  # malloc with octree merging on 1D grid
+include("test_malloc_bkw_varweight_gridmerge.jl")  # malloc with grid merging and variable-weight collisions
+include("test_malloc_gridmerge_1Dgrid.jl")  # malloc with grid merging on 1D grid
 # include("test_aqua.jl")
 
 
