@@ -1,5 +1,6 @@
 @muladd begin
 
+
 """
     GridCell
 
@@ -251,13 +252,15 @@ Compute extent of velocity grid based on temperature in the cell.
 * `species_data`: the array of `Species` data
 * `phys_props`: the `PhysProps` instance containing the computed temperature
 """
-function compute_velocity_extent!(merging_grid, cell, species, species_data, phys_props::PhysProps)
-    @inbounds dv = merging_grid.extent_multiplier .* sqrt.(2 * phys_props.T[cell, species] * k_B / species_data[species].mass)
-    @inbounds merging_grid.extent_v_lower = phys_props.v[:, cell, species] .- dv
-    @inbounds merging_grid.extent_v_upper = phys_props.v[:, cell, species] .+ dv
-    @inbounds merging_grid.extent_v_mid = phys_props.v[:, cell, species]
-    @inbounds merging_grid.Δv = SVector{3}(2 * dv[1] / merging_grid.Nx, 2 * dv[2] / merging_grid.Ny, 2 * dv[3] / merging_grid.Nz)
-    merging_grid.Δv_inv = 1.0 ./ merging_grid.Δv
+function compute_velocity_extent!(merging_grid::GridN2Merge{D}, cell, species, species_data, phys_props::PhysProps) where D
+    @inbounds vloc = SVector{3,Float64}(phys_props.v[1, cell, species], phys_props.v[2, cell, species], phys_props.v[3, cell, species])
+
+    @inbounds dv = merging_grid.extent_multiplier * sqrt(2 * phys_props.T[cell, species] * k_B / species_data[species].mass)
+    @inbounds merging_grid.extent_v_lower = vloc - dv
+    @inbounds merging_grid.extent_v_upper = vloc + dv
+    @inbounds merging_grid.extent_v_mid = vloc
+    @inbounds merging_grid.Δv = SVector{3,Float64}(2 * dv[1] / merging_grid.Nx, 2 * dv[2] / merging_grid.Ny, 2 * dv[3] / merging_grid.Nz)
+    @inbounds merging_grid.Δv_inv = SVector{3,Float64}(1.0 / merging_grid.Δv[1], 1.0 / merging_grid.Δv[2], 1.0 / merging_grid.Δv[3])
 end
 
 """
@@ -271,16 +274,16 @@ Compute extent of velocity grid based on explicitly set extents.
 * `vy_extent`: lower and upper bounds of the grid extent in the y velocity direction
 * `vz_extent`: lower and upper bounds of the grid extent in the z velocity direction
 """
-function compute_velocity_extent!(merging_grid, vx_extent, vy_extent, vz_extent)
-    @inbounds merging_grid.extent_v_lower = SVector(vx_extent[1], vy_extent[1], vz_extent[1])
-    @inbounds merging_grid.extent_v_upper = SVector(vx_extent[2], vy_extent[2], vz_extent[2])
-    @inbounds merging_grid.extent_v_mid = SVector(0.5 * (vx_extent[1] + vx_extent[2]),
+function compute_velocity_extent!(merging_grid::GridN2Merge{D}, vx_extent, vy_extent, vz_extent) where D
+    @inbounds merging_grid.extent_v_lower = SVector{3,Float64}(vx_extent[1], vy_extent[1], vz_extent[1])
+    @inbounds merging_grid.extent_v_upper = SVector{3,Float64}(vx_extent[2], vy_extent[2], vz_extent[2])
+    @inbounds merging_grid.extent_v_mid = SVector{3,Float64}(0.5 * (vx_extent[1] + vx_extent[2]),
                                                   0.5 * (vy_extent[1] + vy_extent[2]),
                                                   0.5 * (vz_extent[1] + vz_extent[2]))
-    @inbounds merging_grid.Δv = SVector{3}((vx_extent[2] - vx_extent[1]) / merging_grid.Nx,
+    @inbounds merging_grid.Δv = SVector{3,Float64}((vx_extent[2] - vx_extent[1]) / merging_grid.Nx,
                                            (vy_extent[2] - vy_extent[1]) / merging_grid.Ny,
                                            (vz_extent[2] - vz_extent[1]) / merging_grid.Nz)
-    merging_grid.Δv_inv = 1.0 ./ merging_grid.Δv
+    @inbounds merging_grid.Δv_inv = SVector{3,Float64}(1.0 / merging_grid.Δv[1], 1.0 / merging_grid.Δv[2], 1.0 / merging_grid.Δv[3])
 end
 
 """
@@ -296,7 +299,7 @@ correspond to the velocity octants outside the grid).
 # Returns:
 Index of cell on the merging grid.
 """
-function compute_grid_index(merging_grid, v)
+function compute_grid_index(merging_grid::GridN2Merge{D}, v) where D
     outside_flag = false
     
     @inbounds if (v[1] < merging_grid.extent_v_lower[1]) || (v[1] > merging_grid.extent_v_upper[1])
@@ -567,8 +570,8 @@ function compute_new_particles!(rng, merging_grid::GridN2Merge{D}, particles::Pa
             mcell.v2 = mcell.v_mean - merging_grid.direction_vec .* mcell.v_std_sq
 
             merging_grid.direction_vecD = @SVector rand(rng, direction_signs, D)
-            mcell.x1 = mcell.x_mean + merging_grid.direction_vec .* mcell.x_std_sq
-            mcell.x2 = mcell.x_mean - merging_grid.direction_vec .* mcell.x_std_sq
+            mcell.x1 = mcell.x_mean + merging_grid.direction_vecD .* mcell.x_std_sq
+            mcell.x2 = mcell.x_mean - merging_grid.direction_vecD .* mcell.x_std_sq
         elseif (mcell.np == 2)
             # get the particle indices we saved and just write data based on them
             i = mcell.particle_index1
@@ -660,13 +663,12 @@ in the physical grid cell being considered, as stored in the `phys_props` parame
     [Comput. Phys. Comm., 2015](https://doi.org/10.1016/j.cpc.2015.01.020).
 * G. Oblapenko, D. Goldstein, P. Varghese, C. Moore, A velocity space hybridization-based Boltzmann equation solver. [J. Comput. Phys, 2020](https://doi.org/10.1016/j.jcp.2020.109302).
 """
-function merge_grid_based!(rng, merging_grid, particles::ParticleVector{D}, pia, cell, species, species_data, phys_props::PhysProps) where D
+function merge_grid_based!(rng, merging_grid::GridN2Merge{D}, particles::ParticleVector{D}, pia, cell, species, species_data, phys_props::PhysProps) where D
     # 0-D, no grid, particles in single cell
     compute_velocity_extent!(merging_grid, cell, species, species_data, phys_props)
     compute_grid!(merging_grid, particles, pia, cell, species)
     compute_new_particles!(rng, merging_grid, particles, pia, cell, species)
 end
-
 
 """
     merge_grid_based!(rng, merging_grid, particles, pia, cell, species, species_data, vx_extent, vy_extent, vz_extent)
@@ -693,7 +695,7 @@ The extent of the grid is specified explicitly.
     [Comput. Phys. Comm., 2015](https://doi.org/10.1016/j.cpc.2015.01.020).
 * G. Oblapenko, D. Goldstein, P. Varghese, C. Moore, A velocity space hybridization-based Boltzmann equation solver. [J. Comput. Phys, 2020](https://doi.org/10.1016/j.jcp.2020.109302).
 """
-function merge_grid_based!(rng, merging_grid, particles::ParticleVector{D}, pia, cell, species, species_data, vx_extent, vy_extent, vz_extent) where D
+function merge_grid_based!(rng, merging_grid::GridN2Merge{D}, particles::ParticleVector{D}, pia, cell, species, species_data, vx_extent, vy_extent, vz_extent) where D
     # 0-D, no grid, particles in single cell
     compute_velocity_extent!(merging_grid, vx_extent, vy_extent, vz_extent)
     compute_grid!(merging_grid, particles, pia, cell, species)
@@ -726,8 +728,7 @@ If particle positions end up outside of the simulation domain, the particles are
     [Comput. Phys. Comm., 2015](https://doi.org/10.1016/j.cpc.2015.01.020).
 * G. Oblapenko, D. Goldstein, P. Varghese, C. Moore, A velocity space hybridization-based Boltzmann equation solver. [J. Comput. Phys, 2020](https://doi.org/10.1016/j.jcp.2020.109302).
 """
-function merge_grid_based!(rng, merging_grid, particles::ParticleVector{D}, pia, cell, species, species_data, phys_props::PhysProps, grid::Grid1DUniform) where D
-    # 0-D, no grid, particles in single cell
+function merge_grid_based!(rng, merging_grid::GridN2Merge{D}, particles::ParticleVector{D}, pia, cell, species, species_data, phys_props::PhysProps, grid::Grid1DUniform) where D
     compute_velocity_extent!(merging_grid, cell, species, species_data, phys_props)
     compute_grid!(merging_grid, particles, pia, cell, species)
     compute_new_particles!(rng, merging_grid, particles, pia, cell, species, grid)
@@ -760,8 +761,7 @@ If particle positions end up outside of the simulation domain, the particles are
     [Comput. Phys. Comm., 2015](https://doi.org/10.1016/j.cpc.2015.01.020).
 * G. Oblapenko, D. Goldstein, P. Varghese, C. Moore, A velocity space hybridization-based Boltzmann equation solver. [J. Comput. Phys, 2020](https://doi.org/10.1016/j.jcp.2020.109302).
 """
-function merge_grid_based!(rng, merging_grid, particles::ParticleVector{D}, pia, cell, species, species_data, vx_extent, vy_extent, vz_extent, grid::Grid1DUniform) where D
-    # 0-D, no grid, particles in single cell
+function merge_grid_based!(rng, merging_grid::GridN2Merge{D}, particles::ParticleVector{D}, pia, cell, species, species_data, vx_extent, vy_extent, vz_extent, grid::Grid1DUniform) where D
     compute_velocity_extent!(merging_grid, vx_extent, vy_extent, vz_extent)
     compute_grid!(merging_grid, particles, pia, cell, species)
     compute_new_particles!(rng, merging_grid, particles, pia, cell, species, grid)
