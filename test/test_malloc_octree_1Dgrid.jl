@@ -56,19 +56,6 @@
 
         particles3 = [ParticleVector{1}(n_particles)]
 
-        T0 = 273.0
-        n_dens = 1e23
-        moments_list = [4, 6, 8, 10]
-        
-        sigma_ref = π * (interaction_data[1,1].vhs_d^2)
-
-        vref = sqrt(2 * k_B * T0 / species_data[1].mass)
-        Lref = 1.0 / (n_dens * sigma_ref)
-        tref = Lref / vref
-
-        Δt = dt_scaled * tref
-        V = 1.0
-
         pia = ParticleIndexerArray(grid.n_cells, 1)
 
         sample_particles_equal_weight!(rng, grid, particles3[1], pia, 1,
@@ -106,19 +93,6 @@
 
         particles3 = [ParticleVector{2}(n_particles)]
 
-        T0 = 273.0
-        n_dens = 1e23
-        moments_list = [4, 6, 8, 10]
-        
-        sigma_ref = π * (interaction_data[1,1].vhs_d^2)
-
-        vref = sqrt(2 * k_B * T0 / species_data[1].mass)
-        Lref = 1.0 / (n_dens * sigma_ref)
-        tref = Lref / vref
-
-        Δt = dt_scaled * tref
-        V = 1.0
-
         pia = ParticleIndexerArray(grid.n_cells, 1)
 
         sample_particles_equal_weight!(rng, grid, particles3[1], pia, 1,
@@ -155,19 +129,6 @@
         target2 = 100
 
         particles3 = [ParticleVector{3}(n_particles)]
-
-        T0 = 273.0
-        n_dens = 1e23
-        moments_list = [4, 6, 8, 10]
-        
-        sigma_ref = π * (interaction_data[1,1].vhs_d^2)
-
-        vref = sqrt(2 * k_B * T0 / species_data[1].mass)
-        Lref = 1.0 / (n_dens * sigma_ref)
-        tref = Lref / vref
-
-        Δt = dt_scaled * tref
-        V = 1.0
 
         pia = ParticleIndexerArray(grid.n_cells, 1)
 
