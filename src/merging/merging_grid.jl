@@ -71,9 +71,9 @@ and `extent_multiplier` is a user-defined parameter (3.5 is a reasonable choice)
 * `cells`: vector of `GridCell` instances for each grid cell, as well as the external octants
 """
 mutable struct GridN2Merge{D}
-    Nx::Int8
-    Ny::Int8
-    Nz::Int8
+    Nx::Int64
+    Ny::Int64
+    Nz::Int64
     NyNz::Int64
     Ntotal::Int64
 
