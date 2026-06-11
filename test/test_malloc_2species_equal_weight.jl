@@ -1,4 +1,4 @@
-@testset "2species elastic equal-weight collisions" begin
+@testset "malloc: 2species elastic equal-weight collisions" begin
 
     seed = 1234
     rng = StableRNG(seed)
