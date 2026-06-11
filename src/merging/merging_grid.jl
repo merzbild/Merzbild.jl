@@ -28,8 +28,8 @@ mutable struct GridCell{D}
     w::Float64
     v_mean::SVector{3,Float64}
     v_std_sq::SVector{3,Float64}
-    x_mean::SVector{3,Float64}
-    x_std_sq::SVector{3,Float64}
+    x_mean::SVector{D,Float64}
+    x_std_sq::SVector{D,Float64}
     particle_index1::Int64
     particle_index2::Int64
 
@@ -104,7 +104,7 @@ mutable struct GridN2Merge{D}
         cells = Vector{GridCell{D}}(undef, Nx * Ny * Nz + 8)
 
         for i in 1:Ntotal
-            cells[i] = GridCell{D}(0, 0.0, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0, 0,
+            cells[i] = GridCell{D}(0, 0.0, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], zero(SVector{D,Float64}), zero(SVector{D,Float64}), 0, 0,
                                 0.0, 0.0, [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], zero(SVector{D,Float64}), zero(SVector{D,Float64}))
         end
 
@@ -339,15 +339,15 @@ Resets all data for a merging grid instance.
 # Positional arguments:
 * `merging_grid`: the grid merging (`GridN2Merge`) instance defining the velocity space grid
 """
-function clear_merging_grid!(merging_grid)
+function clear_merging_grid!(merging_grid::GridN2Merge{D}) where D
     Ntot = merging_grid.Ntotal
     @inbounds for index in 1:Ntot
         mcell = merging_grid.cells[index]
         mcell.w = 0.0
         mcell.v_mean = SVector{3,Float64}(0.0, 0.0, 0.0)
         mcell.v_std_sq = SVector{3,Float64}(0.0, 0.0, 0.0)
-        mcell.x_mean = SVector{3,Float64}(0.0, 0.0, 0.0)
-        mcell.x_std_sq = SVector{3,Float64}(0.0, 0.0, 0.0)
+        mcell.x_mean = zero(SVector{D,Float64})
+        mcell.x_std_sq = zero(SVector{D,Float64})
         mcell.np = 0
         mcell.particle_index1 = 0
         mcell.particle_index2 = 0
@@ -366,23 +366,24 @@ Compute all the required cell properties for a grid-based merge.
 * `cell`: the cell index
 * `species`: the species index
 """
-function compute_grid!(merging_grid::GridN2Merge, particles::ParticleVector{D}, pia, cell, species) where D
+function compute_grid!(merging_grid::GridN2Merge{D}, particles::ParticleVector{D}, pia, cell, species) where D
     clear_merging_grid!(merging_grid)
 
     @inbounds s1 = pia.indexer[cell,species].start1
     @inbounds e1 = pia.indexer[cell,species].end1
     @inbounds for i in s1:e1
         index = compute_grid_index(merging_grid, particles[i].v)
+        mcell = merging_grid.cells[index]
 
-        merging_grid.cells[index].np += 1
-        merging_grid.cells[index].w += particles[i].w
-        merging_grid.cells[index].v_mean = merging_grid.cells[index].v_mean + particles[i].v * particles[i].w
-        merging_grid.cells[index].x_mean = merging_grid.cells[index].x_mean + particles[i].x * particles[i].w
+        mcell.np += 1
+        mcell.w += particles[i].w
+        mcell.v_mean = mcell.v_mean + particles[i].v * particles[i].w
+        mcell.x_mean = mcell.x_mean + particles[i].x * particles[i].w
 
-        if (merging_grid.cells[index].np == 1)
-            merging_grid.cells[index].particle_index1 = i
-        elseif (merging_grid.cells[index].np == 2)
-            merging_grid.cells[index].particle_index2 = i
+        if (mcell.np == 1)
+            mcell.particle_index1 = i
+        elseif (mcell.np == 2)
+            mcell.particle_index2 = i
         end
     end
 
@@ -391,16 +392,17 @@ function compute_grid!(merging_grid::GridN2Merge, particles::ParticleVector{D}, 
         @inbounds e2 = pia.indexer[cell,species].end2
         @inbounds for i in s2:e2
             index = compute_grid_index(merging_grid, particles[i].v)
+            mcell = merging_grid.cells[index]
 
-            merging_grid.cells[index].np += 1
-            merging_grid.cells[index].w += particles[i].w
-            merging_grid.cells[index].v_mean = merging_grid.cells[index].v_mean + particles[i].v * particles[i].w
-            merging_grid.cells[index].x_mean = merging_grid.cells[index].x_mean + particles[i].x * particles[i].w
+            mcell.np += 1
+            mcell.w += particles[i].w
+            mcell.v_mean = mcell.v_mean + particles[i].v * particles[i].w
+            mcell.x_mean = mcell.x_mean + particles[i].x * particles[i].w
 
-            if (merging_grid.cells[index].np == 1)
-                merging_grid.cells[index].particle_index1 = i
-            elseif (merging_grid.cells[index].np == 2)
-                merging_grid.cells[index].particle_index2 = i
+            if (mcell.np == 1)
+                mcell.particle_index1 = i
+            elseif (mcell.np == 2)
+                mcell.particle_index2 = i
             end
         end
     end
@@ -418,9 +420,9 @@ function compute_grid!(merging_grid::GridN2Merge, particles::ParticleVector{D}, 
 
     @inbounds for i in s1:e1
         index = compute_grid_index(merging_grid, particles[i].v)
-
-        merging_grid.cells[index].v_std_sq = merging_grid.cells[index].v_std_sq + (particles[i].v - merging_grid.cells[index].v_mean).^2 * particles[i].w
-        merging_grid.cells[index].x_std_sq = merging_grid.cells[index].x_std_sq + (particles[i].x - merging_grid.cells[index].x_mean).^2 * particles[i].w
+        mcell = merging_grid.cells[index]
+        mcell.v_std_sq = mcell.v_std_sq + (particles[i].v - mcell.v_mean).^2 * particles[i].w
+        mcell.x_std_sq = mcell.x_std_sq + (particles[i].x - mcell.x_mean).^2 * particles[i].w
     end
 
     @inbounds if pia.indexer[cell,species].start2 > 0
@@ -428,9 +430,9 @@ function compute_grid!(merging_grid::GridN2Merge, particles::ParticleVector{D}, 
         @inbounds e2 = pia.indexer[cell,species].end2
         @inbounds for i in s2:e2
             index = compute_grid_index(merging_grid, particles[i].v)
-
-            merging_grid.cells[index].v_std_sq = merging_grid.cells[index].v_std_sq + (particles[i].v - merging_grid.cells[index].v_mean).^2 * particles[i].w
-            merging_grid.cells[index].x_std_sq = merging_grid.cells[index].x_std_sq + (particles[i].x - merging_grid.cells[index].x_mean).^2 * particles[i].w
+            mcell = merging_grid.cells[index]
+            mcell.v_std_sq = mcell.v_std_sq + (particles[i].v - mcell.v_mean).^2 * particles[i].w
+            mcell.x_std_sq = mcell.x_std_sq + (particles[i].x - mcell.x_mean).^2 * particles[i].w
         end
     end
 
@@ -457,7 +459,7 @@ So particles may end up outside of the domain.
 * `cell`: the cell index
 * `species`: the species index
 """
-function compute_new_particles!(rng, merging_grid::GridN2Merge, particles::ParticleVector{D}, pia, cell, species) where D
+function compute_new_particles!(rng, merging_grid::GridN2Merge{D}, particles::ParticleVector{D}, pia, cell, species) where D
     # no limits on particle location, i.e. 0-D
     Ntot = merging_grid.Ntotal
     @inbounds for index in 1:Ntot
@@ -548,7 +550,7 @@ Compute new particles based on the grid cell properties; placing out-of-domain p
 * `species`: the species index
 * `grid`: the `Grid1DUniform` grid
 """
-function compute_new_particles!(rng, merging_grid::GridN2Merge, particles::ParticleVector{D}, pia, cell, species, grid::Grid1DUniform) where D
+function compute_new_particles!(rng, merging_grid::GridN2Merge{D}, particles::ParticleVector{D}, pia, cell, species, grid::Grid1DUniform) where D
     Ntot = merging_grid.Ntotal
     @inbounds for index in 1:Ntot
         mcell = merging_grid.cells[index]
