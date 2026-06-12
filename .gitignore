@@ -13,3 +13,4 @@ simulations/1D/multithread_debugging.jl
 out.log
 error.log
 /*.pdf
+vibe/
