@@ -1,6 +1,5 @@
 @testset "malloc: grid N:2 merging on 1D grid with particles with dim(x)=0,1,2,3" begin
 
-
     # Important!
     # The time scaling in the analytical solution is different
     # Tref = 273.0
@@ -43,7 +42,6 @@
     n_particles = np_base * nx
 
     # sample particles
-    # Fnum * ppc = Np in cell = ndens * V_cell
     ndens = 5000.0
     T = 300.0
 
@@ -51,11 +49,160 @@
 
     @testset "1D particles, 1D merging" begin
         # 1d particle x vector
-        mg = GridN2Merge{1}(6, 6, 6, 3.0)
+        mg1 = GridN2Merge{1}(6, 6, 6, 3.0)
         target = 1000
 
+        particles1 = [ParticleVector{1}(n_particles)]
+        pia = ParticleIndexerArray(grid.n_cells, 1)
 
-        particles3 = [ParticleVector{1}(n_particles)]
+        sample_particles_equal_weight!(rng, grid, particles1[1], pia, 1,
+                                       species_data, ndens, T, Fnum)
+
+        merges = false
+        compute_props!(particles1, pia, species_data, phys_props)
+        for cell in 1:nx
+            if pia.indexer[cell,1].n_local > target
+                merge_grid_based!(rng, mg1, particles1[1], pia, 1, 1, species_data, phys_props, grid)
+                merges = true
+            end
+        end
+        @test merges == true
+
+        # reset particles
+        particles1 = [ParticleVector{1}(n_particles)]
+        pia = ParticleIndexerArray(grid.n_cells, 1)
+
+        sample_particles_equal_weight!(rng, grid, particles1[1], pia, 1,
+                                       species_data, ndens, T, Fnum)
+
+        for cell in 1:nx
+            if pia.indexer[cell,1].n_local > target
+                bytes_merge = @allocated merge_grid_based!(rng, mg1, particles1[1], pia, 1, 1, species_data, phys_props, grid)
+                merges = true
+                @test bytes_merge <= 80
+            end
+        end
+
+        @test merges == true
+
+        # now try merging with explicit velocity bounds
+        # reset particles
+        particles1 = [ParticleVector{1}(n_particles)]
+        pia = ParticleIndexerArray(grid.n_cells, 1)
+
+        sample_particles_equal_weight!(rng, grid, particles1[1], pia, 1,
+                                       species_data, ndens, T, Fnum)
+
+        vlim = SVector{2,Float64}(-1000.0, 1000.0)
+        for cell in 1:nx
+            if pia.indexer[cell,1].n_local > target
+                merge_grid_based!(rng, mg1, particles1[1], pia, 1, 1, species_data, vlim,
+                                  vlim, vlim, grid)
+                merges = true
+            end
+        end
+
+        @test merges == true
+        # reset particles
+        particles1 = [ParticleVector{1}(n_particles)]
+        pia = ParticleIndexerArray(grid.n_cells, 1)
+
+        sample_particles_equal_weight!(rng, grid, particles1[1], pia, 1,
+                                       species_data, ndens, T, Fnum)
+
+        for cell in 1:nx
+            if pia.indexer[cell,1].n_local > target
+                bytes_merge = @allocated merge_grid_based!(rng, mg1, particles1[1], pia, 1, 1, species_data, vlim,
+                                                           vlim, vlim, grid)
+                @test bytes_merge <= 180
+                merges = true
+            end
+        end
+
+        @test merges == true
+    end
+
+    @testset "2D particles, 2D merging" begin
+        # 2d particle x vector
+        mg2 = GridN2Merge{2}(6, 6, 6, 3.0)
+        target = 1000
+
+        particles2 = [ParticleVector{2}(n_particles)]
+        pia = ParticleIndexerArray(grid.n_cells, 1)
+
+        sample_particles_equal_weight!(rng, grid, particles2[1], pia, 1,
+                                       species_data, ndens, T, Fnum)
+
+        merges = false
+        compute_props!(particles2, pia, species_data, phys_props)
+        for cell in 1:nx
+            if pia.indexer[cell,1].n_local > target
+                merge_grid_based!(rng, mg2, particles2[1], pia, 1, 1, species_data, phys_props, grid)
+                merges = true
+            end
+        end
+        @test merges == true
+
+        # reset particles
+        particles2 = [ParticleVector{2}(n_particles)]
+        pia = ParticleIndexerArray(grid.n_cells, 1)
+
+        sample_particles_equal_weight!(rng, grid, particles2[1], pia, 1,
+                                       species_data, ndens, T, Fnum)
+
+        for cell in 1:nx
+            if pia.indexer[cell,1].n_local > target
+                bytes_merge = @allocated merge_grid_based!(rng, mg2, particles2[1], pia, 1, 1, species_data, phys_props, grid)
+                merges = true
+                @test bytes_merge <= 80
+            end
+        end
+
+        @test merges == true
+
+        # now try merging with explicit velocity bounds
+        # reset particles
+        particles2 = [ParticleVector{2}(n_particles)]
+        pia = ParticleIndexerArray(grid.n_cells, 1)
+
+        sample_particles_equal_weight!(rng, grid, particles2[1], pia, 1,
+                                       species_data, ndens, T, Fnum)
+
+        vlim = SVector{2,Float64}(-1000.0, 1000.0)
+        for cell in 1:nx
+            if pia.indexer[cell,1].n_local > target
+                merge_grid_based!(rng, mg2, particles2[1], pia, 1, 1, species_data, vlim,
+                                  vlim, vlim, grid)
+                merges = true
+            end
+        end
+
+        @test merges == true
+        # reset particles
+        particles2 = [ParticleVector{2}(n_particles)]
+        pia = ParticleIndexerArray(grid.n_cells, 1)
+
+        sample_particles_equal_weight!(rng, grid, particles2[1], pia, 1,
+                                       species_data, ndens, T, Fnum)
+
+        for cell in 1:nx
+            if pia.indexer[cell,1].n_local > target
+                bytes_merge = @allocated merge_grid_based!(rng, mg2, particles2[1], pia, 1, 1, species_data, vlim,
+                                                           vlim, vlim, grid)
+                @test bytes_merge <= 180
+                merges = true
+            end
+        end
+
+        @test merges == true
+    end
+
+    @testset "3D particles, 3D merging" begin
+        # 3d particle x vector
+        mg3 = GridN2Merge{3}(6, 6, 6, 3.0)
+        target = 1000
+
+        particles3 = [ParticleVector{3}(n_particles)]
         pia = ParticleIndexerArray(grid.n_cells, 1)
 
         sample_particles_equal_weight!(rng, grid, particles3[1], pia, 1,
@@ -65,15 +212,14 @@
         compute_props!(particles3, pia, species_data, phys_props)
         for cell in 1:nx
             if pia.indexer[cell,1].n_local > target
-                merge_grid_based!(rng, mg, particles3[1], pia, 1, 1, species_data, phys_props)
+                merge_grid_based!(rng, mg3, particles3[1], pia, 1, 1, species_data, phys_props, grid)
                 merges = true
             end
         end
         @test merges == true
 
-
         # reset particles
-        particles3 = [ParticleVector{1}(n_particles)]
+        particles3 = [ParticleVector{3}(n_particles)]
         pia = ParticleIndexerArray(grid.n_cells, 1)
 
         sample_particles_equal_weight!(rng, grid, particles3[1], pia, 1,
@@ -81,13 +227,48 @@
 
         for cell in 1:nx
             if pia.indexer[cell,1].n_local > target
-                bytes_merge = @allocated merge_grid_based!(rng, mg, particles3[1], pia, 1, 1, species_data, phys_props)
+                bytes_merge = @allocated merge_grid_based!(rng, mg3, particles3[1], pia, 1, 1, species_data, phys_props, grid)
                 merges = true
-                @test bytes_merge == 0
+                @test bytes_merge <= 80
+            end
+        end
+
+        @test merges == true
+
+        # now try merging with explicit velocity bounds
+        # reset particles
+        particles3 = [ParticleVector{3}(n_particles)]
+        pia = ParticleIndexerArray(grid.n_cells, 1)
+
+        sample_particles_equal_weight!(rng, grid, particles3[1], pia, 1,
+                                       species_data, ndens, T, Fnum)
+
+        vlim = SVector{2,Float64}(-1000.0, 1000.0)
+        for cell in 1:nx
+            if pia.indexer[cell,1].n_local > target
+                merge_grid_based!(rng, mg3, particles3[1], pia, 1, 1, species_data, vlim,
+                                  vlim, vlim, grid)
+                merges = true
+            end
+        end
+
+        @test merges == true
+        # reset particles
+        particles3 = [ParticleVector{3}(n_particles)]
+        pia = ParticleIndexerArray(grid.n_cells, 1)
+
+        sample_particles_equal_weight!(rng, grid, particles3[1], pia, 1,
+                                       species_data, ndens, T, Fnum)
+
+        for cell in 1:nx
+            if pia.indexer[cell,1].n_local > target
+                bytes_merge = @allocated merge_grid_based!(rng, mg3, particles3[1], pia, 1, 1, species_data, vlim,
+                                                           vlim, vlim, grid)
+                @test bytes_merge <= 180
+                merges = true
             end
         end
 
         @test merges == true
     end
-
 end

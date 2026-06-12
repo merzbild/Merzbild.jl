@@ -26,12 +26,18 @@ using ChunkSplitters
 # include("test_2species.jl")  # then we test 2-species elastic collisions
 # include("test_2species_equal_weight.jl")  # then we test 2-species elastic collisions for equal-weight particles
 # include("test_merging_grid_indexing.jl")  # then we test basic indexing in grid-based merging
-# include("test_merging_grid_merging.jl")  # then we test grid-based merging in 0D
+include("test_merging_grid_merging.jl")  # then we test grid-based merging in 0D
+include("test_merging_grid_merging_2Dparticles.jl")  # then we test grid-based merging in 0D, 2D particles
+include("test_merging_grid_merging_1Dparticles.jl")  # then we test grid-based merging in 0D, 1D particles
+include("test_merging_grid_merging_0Dparticles.jl")  # then we test grid-based merging in 0D, 0D particles
 # include("test_merging_grid_buffer_sorting.jl")  # then we test that particles are freed correctly in NNLS-based merging
 # include("test_bkw_varweight_grid.jl")  # then we test variable-weight NTC collisions+grid-based merging in 0D (BKW relaxation)
 # include("test_octree_bounds_and_splitting.jl")  # then we test bin bounds and splitting in octree merging
 # include("test_octree_sorting.jl")  # then we test sorting in octree merging
 # include("test_octree_merging.jl")  # then we test computation of props and octree merging
+# include("test_octree_merging_2Dparticles.jl")  # then we test computation of props and octree merging, Particle{2}
+# include("test_octree_merging_1Dparticles.jl")  # then we test computation of props and octree merging, Particle{1}
+# include("test_octree_merging_0Dparticles.jl")  # then we test computation of props and octree merging, Particle{0}
 # include("test_octree_merging_buffer_sorting.jl")  # then we test that particles are freed correctly in octree merging
 # include("test_bkw_varweight_octree.jl")  # then we test variable-weight NTC collisions+octree merging in 0D (BKW relaxation)
 # include("test_2species_varweight_octree.jl")  # 2-species variable-weight elastic collisions and merging

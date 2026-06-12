@@ -1,4 +1,4 @@
-@testset "merging_grid_merging" begin
+@testset "merging_grid_merging, 3D particles" begin
 
 
     function create_particle_in_octant(octant, v_val; w=1.0)
@@ -80,6 +80,8 @@
     v0_computed = phys_props.v[:,1,1]
 
     mg = GridN2Merge(Nx, Ny, Nz, 3.5)
+
+    @test typeof(mg) == GridN2Merge{3}
 
     merge_grid_based!(rng, mg, particles[1], pia, 1, 1, species_data, phys_props)
 

@@ -39,8 +39,12 @@
     threshold = 6000
     Ntarget = 5000
 
+    Nx = 8
+    Ny = 8
+    Nz = 8
+
     @testset "0D particles, 0D merging" begin
-        oc = OctreeN2Merge{0}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+        mg0 = GridN2Merge{0}(Nx, Ny, Nz, 3.5)
 
         T0::Float64 = 273.0
         moments_list = [4, 6, 8, 10]
@@ -78,11 +82,11 @@
 
         merges = false
 
-        for ts in 1:10
+        for ts in 1:3
             ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
 
             if phys_props.np[1,1] > threshold
-                merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
+                merge_grid_based!(rng, mg0, particles[1], pia, 1, 1, species_data, phys_props)
                 merges = true
             end
             
@@ -92,12 +96,12 @@
 
         merges = false
 
-        for ts in 1:30
+        for ts in 1:120
             bytes_coll = @allocated ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
             @test bytes_coll == 0
 
             if phys_props.np[1,1] > threshold
-                bytes_merge = @allocated merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
+                bytes_merge = @allocated merge_grid_based!(rng, mg0, particles[1], pia, 1, 1, species_data, phys_props)
                 merges = true
                 @test bytes_merge == 0
             end
@@ -111,7 +115,7 @@
 
     @testset "1D particles, 1D merging" begin
         # 1d particle x vector
-        oc1 = OctreeN2Merge{1}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+        mg1 = GridN2Merge{1}(Nx, Ny, Nz, 3.5)
         particles3 = [ParticleVector{1}(np_base)]
 
         T0 = 273.0
@@ -149,7 +153,7 @@
             ntc!(rng, collision_factors, collision_data, interaction_data, particles3[1], pia, 1, 1, Δt, V)
 
             if phys_props.np[1,1] > threshold
-                merge_octree_N2_based!(rng, oc1, particles3[1], pia, 1, 1, Ntarget)
+                merge_grid_based!(rng, mg1, particles3[1], pia, 1, 1, species_data, phys_props)
                 merges = true
             end
             
@@ -159,12 +163,12 @@
 
         merges = false
 
-        for ts in 1:20
+        for ts in 1:120
             bytes_coll = @allocated ntc!(rng, collision_factors, collision_data, interaction_data, particles3[1], pia, 1, 1, Δt, V)
             @test bytes_coll == 0
 
             if phys_props.np[1,1] > threshold
-                bytes_merge = @allocated merge_octree_N2_based!(rng, oc1, particles3[1], pia, 1, 1, Ntarget)
+                bytes_merge = @allocated merge_grid_based!(rng, mg1, particles3[1], pia, 1, 1, species_data, phys_props)
                 merges = true
                 @test bytes_merge == 0
             end
@@ -178,7 +182,7 @@
 
     @testset "2D particles, 2D merging" begin
         # 2d particle x vector
-        oc2 = OctreeN2Merge{2}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+        mg2 = GridN2Merge{2}(Nx, Ny, Nz, 3.5)
         particles3 = [ParticleVector{2}(np_base)]
 
         T0 = 273.0
@@ -216,7 +220,7 @@
             ntc!(rng, collision_factors, collision_data, interaction_data, particles3[1], pia, 1, 1, Δt, V)
 
             if phys_props.np[1,1] > threshold
-                merge_octree_N2_based!(rng, oc2, particles3[1], pia, 1, 1, Ntarget)
+                merge_grid_based!(rng, mg2, particles3[1], pia, 1, 1, species_data, phys_props)
                 merges = true
             end
             
@@ -226,12 +230,12 @@
 
         merges = false
 
-        for ts in 1:20
+        for ts in 1:120
             bytes_coll = @allocated ntc!(rng, collision_factors, collision_data, interaction_data, particles3[1], pia, 1, 1, Δt, V)
             @test bytes_coll == 0
 
             if phys_props.np[1,1] > threshold
-                bytes_merge = @allocated merge_octree_N2_based!(rng, oc2, particles3[1], pia, 1, 1, Ntarget)
+                bytes_merge = @allocated merge_grid_based!(rng, mg2, particles3[1], pia, 1, 1, species_data, phys_props)
                 merges = true
                 @test bytes_merge == 0
             end
@@ -245,9 +249,7 @@
 
     @testset "3D particles, 3D merging" begin
         # 3d particle x vector
-        oc3 = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
-        threshold = 6000
-        Ntarget = 5000
+        mg3 = GridN2Merge{3}(Nx, Ny, Nz, 3.5)
         particles3 = [ParticleVector{3}(np_base)]
 
         T0 = 273.0
@@ -285,7 +287,7 @@
             ntc!(rng, collision_factors, collision_data, interaction_data, particles3[1], pia, 1, 1, Δt, V)
 
             if phys_props.np[1,1] > threshold
-                merge_octree_N2_based!(rng, oc3, particles3[1], pia, 1, 1, Ntarget)
+                merge_grid_based!(rng, mg3, particles3[1], pia, 1, 1, species_data, phys_props)
                 merges = true
             end
             
@@ -295,12 +297,12 @@
 
         merges = false
 
-        for ts in 1:20
+        for ts in 1:120
             bytes_coll = @allocated ntc!(rng, collision_factors, collision_data, interaction_data, particles3[1], pia, 1, 1, Δt, V)
             @test bytes_coll == 0
 
             if phys_props.np[1,1] > threshold
-                bytes_merge = @allocated merge_octree_N2_based!(rng, oc3, particles3[1], pia, 1, 1, Ntarget)
+                bytes_merge = @allocated merge_grid_based!(rng, mg3, particles3[1], pia, 1, 1, species_data, phys_props)
                 merges = true
                 @test bytes_merge == 0
             end

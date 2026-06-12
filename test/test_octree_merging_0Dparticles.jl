@@ -1,4 +1,4 @@
-@testset "octree_merging, 3D particles" begin
+@testset "octree_merging, 0D particles" begin
 
     function create_particle_in_octant(octant, v_val; w=1.0)
         # assume octants symmetric around (0, 0, 0)
@@ -19,13 +19,13 @@
             v_y = -v_val
         end
 
-        return Particle(Float64(w), [v_x, v_y, v_z], [1.0, -10.0, 3.0])
+        return Particle{0}(Float64(w), SVector{3,Float64}(v_x, v_y, v_z), SVector{0,Float64}())
     end
     
     function create_24_3particles_in_octant(; weights=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0])
     # create 3 particles in octant, each with weight == octant * weights[octant]
     # and velocity = 9.0 - octant - 0.5 / 9.0 - octant + 0.5 / 9.0 - octant
-        vp = ParticleVector(24)
+        vp = ParticleVector{0}(24)
 
         i = 0
         for octant in 1:8
@@ -45,7 +45,7 @@
 
     function create_2particles_total()
     # create just 2 particles
-        vp = ParticleVector(2)
+        vp = ParticleVector{0}(2)
 
         i = 0
         i += 1
@@ -71,9 +71,7 @@
     pia = ParticleIndexerArray(24)
 
     # symmetric octree with split at v0 = (0.0, 0.0, 0.0)
-    octree = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
-
-    @test typeof(octree) == OctreeN2Merge{3}
+    octree = OctreeN2Merge{0}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
 
     Merzbild.init_octree!(octree, particles24[1], pia, 1, 1)
     
@@ -113,10 +111,6 @@
         @test abs(octree.full_bins[i].v_mean[2] - (9.0 - i) * v_ys) < 1e-14 
         @test abs(octree.full_bins[i].v_mean[3] - (9.0 - i) * v_zs) < 1e-14 
 
-        @test abs(octree.full_bins[i].x_mean[1] - (1.0)) < 1e-14
-        @test abs(octree.full_bins[i].x_mean[2] - (-10.0)) < 1e-14
-        @test abs(octree.full_bins[i].x_mean[3] - (3.0)) < 1e-14
-
         @test Merzbild.get_bin_post_merge_np(octree, i) == 2
     end
 
@@ -128,7 +122,7 @@
     v0_computed = phys_props.v[:,1,1]
     @test n0_computed == total_w
 
-    octree2 = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
+    octree2 = OctreeN2Merge{0}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
     merge_octree_N2_based!(rng, octree2, particles24[1], pia, 1, 1, 16)
 
     @test octree2.Nbins == 8
@@ -190,7 +184,6 @@
     @test e1 == pia.n_total[1]
 
     for i in s1:e1
-        @test isnan(particles24[1][i].x[1]) == false
         @test particles24[1][i].w > 0
     end
     s2 = pia.indexer[1,1].start2
@@ -200,7 +193,6 @@
     @test s2 == 0
 
     for i in s2:e2
-        @test isnan(particles24[1][i].x[1]) == false
         @test particles24[1][i].w > 0
     end
 
@@ -261,7 +253,6 @@
     @test e1 - s1 + 1 + e2 - s2 + 1 == pia.n_total[1]
 
     for i in s1:e1
-        @test isnan(particles24[1][i].x[1]) == false
         @test particles24[1][i].w > 0
     end
 
@@ -269,7 +260,6 @@
     @test s2 > 0
 
     for i in s2:e2
-        @test isnan(particles24[1][i].x[1]) == false
         @test particles24[1][i].w > 0
     end
 
@@ -296,7 +286,7 @@
     pia = ParticleIndexerArray(24)
 
     # symmetric octree with split at v0 = (0.0, 0.0, 0.0)
-    octree = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC, bin_bounds_compute=OctreeBinBoundsInherit)
+    octree = OctreeN2Merge{0}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC, bin_bounds_compute=OctreeBinBoundsInherit)
     merge_octree_N2_based!(rng, octree, particles24[1], pia, 1, 1, 16)
     compute_props!(particles24, pia, species_data, phys_props)
 
