@@ -225,7 +225,7 @@ mutable struct NCDataHolder <: AbstractNCDataHolder
     @doc """
         NCDataHolder(nc_filename, species_data, phys_props; global_attributes=Dict{Any,Any}())
 
-    Construct a `NCDataHolder` instance with an empty list of variable to skip,
+    Construct a `NCDataHolder` instance with an empty list of variables to skip.
 
     # Positional arguments
     * `nc_filename`: filename to write output to
@@ -531,7 +531,7 @@ mutable struct NCDataHolderSurf <: AbstractNCDataHolder
     @doc """
         NCDataHolderSurf(nc_filename, species_data, surf_props; global_attributes=Dict{Any,Any}())
 
-    Construct a `NCDataHolderSurf` instance with an empty list of variable to skip.
+    Construct a `NCDataHolderSurf` instance with an empty list of variables to skip.
 
     # Positional arguments
 
@@ -762,7 +762,7 @@ mutable struct NCDataHolderFlux <: AbstractNCDataHolder
     @doc """
         NCDataHolderFlux(nc_filename, species_data, flux_props; global_attributes=Dict{Any,Any}())
 
-    Construct a `NCDataHolderFlux` instance with an empty list of variable to skip.
+    Construct a `NCDataHolderFlux` instance with an empty list of variables to skip.
 
     # Positional arguments
 

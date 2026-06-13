@@ -56,7 +56,6 @@ Scale the columns of the matrix to have unit L2 norm and store the inverse of th
 
 # Positional arguments
 * `matrix`: the matrix of the LHS
-* `ncols`: number of columns in the matrix
 * `column_norms`: the vector in which to store the computed inverses of the original column-wise norms
 """
 function scale_columns!(matrix, column_norms)

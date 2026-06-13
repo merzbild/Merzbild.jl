@@ -177,7 +177,7 @@ probabilistically sample an extra particle, so that on average, the expected num
 end
 
 """
-    sample_particles_equal_weight!(rng, grid1duniform, particles, pia, species, species_data, ndens::Float64, T, Fnum)
+    sample_particles_equal_weight!(rng, grid1duniform, particles, pia, species, species_data, ndens::Float64, T, Fnum, cell_chunk)
 
 Sample particles from a Maxwellian distribution in each cell of 1-D uniform grid given the target number density.
 If the computed number of particles is not an integer value, the fractional remainder is used to
