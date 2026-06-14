@@ -53,8 +53,7 @@
         
         # Perform collision
         Merzbild.collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, 
-                                                    interaction_data[1,1], particles[1], particles[2],
-                                                    particles, particles, pia, 1, 1, 1)
+                                                    interaction_data[1,1], particles[1], particles[2])
         
         # Check that collision was performed
         @test collision_factors.n_coll_performed > 0
@@ -95,8 +94,7 @@
         
         # Perform collision
         Merzbild.collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, 
-                                                    interaction_data[1,1], particles[1], particles[2],
-                                                    particles, particles, pia, 1, 1, 1)
+                                                    interaction_data[1,1], particles[1], particles[2])
         
         # Check that collision was performed
         @test collision_factors.n_coll_performed > 0
@@ -137,8 +135,7 @@
         
         # Perform collision
         Merzbild.collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, 
-                                                    interaction_data[1,1], particles[1], particles[2],
-                                                    particles, particles, pia, 1, 1, 1)
+                                                    interaction_data[1,1], particles[1], particles[2])
         
         # Check that collision was performed
         @test collision_factors.n_coll_performed > 0
@@ -194,8 +191,7 @@
         
         # Perform collision
         Merzbild.collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, 
-                                                    interaction_data_2[1,2], particles_ar[1], particles_he[1],
-                                                    particles_ar, particles_he, pia_2, 1, 1, 2)
+                                                    interaction_data_2[1,2], particles_ar[1], particles_he[1])
         
         # Check that collision was performed
         @test collision_factors.n_coll_performed > 0
@@ -255,8 +251,7 @@
         
         # Perform collision
         Merzbild.collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, 
-                                                    interaction_data_2[1,2], particles_ar[1], particles_he[1],
-                                                    particles_ar, particles_he, pia_2, 1, 1, 2)
+                                                    interaction_data_2[1,2], particles_ar[1], particles_he[1])
         
         # Check that collision was performed
         @test collision_factors.n_coll_performed > 0
