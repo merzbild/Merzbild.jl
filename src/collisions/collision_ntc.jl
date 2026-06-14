@@ -197,8 +197,8 @@ function compute_n_coll_two_species(rng, collision_factors, np1, np2, Δt, V)
 end
 
 """
-    collide_2particles_vhs!(rng, collision_data, collision_factors, interaction_l, pa_i, pa_k,
-                            particles_1, particles_2, pia, cell, species1, species2; dw_tol=1e-16)
+    collide_2particles_vhs!(rng, collision_data, collision_factors, interaction_l, pa_i::Particle{D}, pa_k::Particle{D},
+                            particles_1::ParticleVector{D}, particles_2::ParticleVector{D}, pia, cell, species1, species2; dw_tol=1e-16)
 
 Collide two particles elastically using the VHS model. Particles can be of same or different species.
 If particles' weights differ by less than `dw_tol`, an equal-weight collision is performed and no particles are split.
@@ -272,8 +272,7 @@ end
 
 
 """
-    collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction_l, pa_i, pa_k,
-                                         particles_1, particles_2, pia, cell, species1, species2)
+    collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction_l, pa_i::Particle{D}, pa_k::Particle{D})
 
 Collide two particles elastically using the VHS model, assuming equal weights - no particle splitting is performed even
 if weights are unequal. Particles can be of same or different species.
@@ -291,8 +290,7 @@ if weights are unequal. Particles can be of same or different species.
 * `species1`: the index of the first species for which collisions are performed
 * `species2`: the index of the second species for which collisions are performed
 """
-@inline function collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction, pa_i::Particle{D}, pa_k::Particle{D},
-                                                      particles_1::ParticleVector{D}, particles_2::ParticleVector{D}, pia, cell, species1, species2) where D
+@inline function collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction, pa_i::Particle{D}, pa_k::Particle{D}) where D
     sigma = sigma_vhs(interaction, collision_data.g)
     sigma_g_w_max = sigma * collision_data.g * max(pa_i.w, pa_k.w)
 
@@ -309,7 +307,7 @@ if weights are unequal. Particles can be of same or different species.
 end
 
 """
-    ntc!(rng, collision_factors, collision_data, interaction, particles, pia,
+    ntc!(rng, collision_factors, collision_data, interaction, particles::ParticleVector{D}, pia,
          cell, species, Δt, V; dw_tol=1e-16)
 
 Perform elastic collisions between particles of same species using the NTC algorithm
@@ -381,7 +379,7 @@ end
 
 """
     ntc!(rng, collision_factors, collision_data, interaction,
-         particles_1, particles_2, pia,
+         particles_1::ParticleVector{D}, particles_2::ParticleVector{D}, pia,
          cell, species1, species2, Δt, V; dw_tol=1e-16)
 
 Perform elastic collisions between particles of different species using the NTC algorithm
@@ -453,7 +451,7 @@ function ntc!(rng, collision_factors, collision_data, interaction,
 end
 
 """
-    ntc_equal_weight!(rng, collision_factors, collision_data, interaction, particles, pia,
+    ntc_equal_weight!(rng, collision_factors, collision_data, interaction, particles::ParticleVector{D}, pia,
                       cell, species, Δt, V)
 
 Perform elastic collisions between particles of same species using the NTC algorithm
@@ -514,8 +512,7 @@ function ntc_equal_weight!(rng, collision_factors, collision_data, interaction, 
         
         compute_g!(collision_data, pa_i, pa_k)
         if (collision_data.g > eps())
-            collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction_l, pa_i, pa_k,
-                                                 particles, particles, pia, cell, species, species)
+            collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction_l, pa_i, pa_k)
         end
     end
 end
