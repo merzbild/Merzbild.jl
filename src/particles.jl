@@ -2,7 +2,7 @@ using StaticArrays
 using TOML
 
 """
-    Particle
+    Particle{D}
 
 A structure to store information about a single particle with a D-dimensional position vector.
 
@@ -183,14 +183,14 @@ Create an empty multi-species/multi-cell `ParticleIndexerArray`.
 ParticleIndexerArray(grid, species_data::Array{Species}) = ParticleIndexerArray(grid.n_cells, length(species_data))
 
 """
-    ParticleVector
+    ParticleVector{D}
 
 The structure used to store particles, sort and keep track of particle indices, and keep track of unused particles.
 The lengths of the `particles`, `index`, `cell`, and `buffer` vectors are all the same (and stay the same during
 resizing of a `ParticleVector` instance). Only the first `nbuffer` elements of the `buffer` vector store
-indices of the actually unused particles.
+indices of the actually unused particles. `D` determines the dimension of the particles' position vectors.
 
-Accessing `ParticleVector[i]` will return a `Particle`, with the actual particle returned being
+Accessing `ParticleVector{D}[i]` will return a `Particle{D}` instance, with the actual particle returned being
 `ParticleVector.particles[ParticleVector.index[i]]`.
 
 # Fields
@@ -209,12 +209,12 @@ mutable struct ParticleVector{D}
 end
 
 """
-    ParticleVector(np)
+    ParticleVector{D}(np)
 
-Create an empty `ParticleVector` instance of length `np` (all vectors will have length `np`), filled with particles with weight 0, velocity 0, position 0.
+Create an empty `ParticleVector{D}` instance of length `np` (all vectors will have length `np`), filled with particles with weight 0, velocity 0, position 0.
 
 # Positional arguments
-* `np`: the length of the `ParticleVector` instance to create
+* `np`: the length of the `ParticleVector{D}` instance to create
 """
 function ParticleVector{D}(np::Integer) where D
     zero_pos = SVector{D,Float64}(ntuple(_ -> 0.0, Val(D)))
@@ -224,11 +224,18 @@ function ParticleVector{D}(np::Integer) where D
                               Vector{Int64}(np:-1:1), np)
 end
 
-# Backward compatible constructor for ParticleVector (defaults to D=3)
+"""
+    ParticleVector(np)
+
+Create an empty `ParticleVector{3}` instance of length `np` (all vectors will have length `np`), filled with particles with weight 0, velocity 0, position 0.
+
+# Positional arguments
+* `np`: the length of the `ParticleVector{3}` instance to create
+"""
 ParticleVector(np::Integer) = ParticleVector{3}(np)
 
 """
-    Base.getindex(pv::ParticleVector, i)
+    Base.getindex(pv::ParticleVector{D}, i)
 
 Returns the underlying particle in a `ParticleVector` instance with index `i`.
 
@@ -243,7 +250,7 @@ Is usually called as `ParticleVector[i]`.
 end
 
 """
-    Base.setindex!(pv::ParticleVector, p::Particle, i::Integer)
+    Base.setindex!(pv::ParticleVector{D}, p::Particle{D}, i::Integer)
 
 Set the underlying particle in a `ParticleVector` instance with index `i` to a new particle.
 
@@ -259,7 +266,7 @@ Is usually called as `ParticleVector[i] = p`.
 end
 
 """
-    Base.length(pv::ParticleVector)
+    Base.length(pv::ParticleVector{D})
 
 Returns the length of a `ParticleVector` instance.
 
@@ -273,7 +280,7 @@ Is usually called as `length(ParticleVector)`.
 end
 
 """
-    Base.resize!(pv::ParticleVector, n::Integer)
+    Base.resize!(pv::ParticleVector{D}, n::Integer)
 
 Resize a `ParticleVector` instance, taking care of the indices, buffer, and creating placeholder new particles
 with weight 0, velocity 0, and position 0.
@@ -316,7 +323,7 @@ function Base.resize!(pv::ParticleVector{D}, n::Integer) where D
 end
 
 """
-    update_particle_buffer_new_particle!(pv::ParticleVector, position)
+    update_particle_buffer_new_particle!(pv::ParticleVector{D}, position)
 
 Update the buffer in a `ParticleVector` instance when a new particle is created. This writes the index of the new particle
 (the last index stored in the active part of the buffer) to the `index` vector at position `position`, and reduces
@@ -333,7 +340,7 @@ the length of the active part of the buffer by 1.
 end
 
 """
-    update_particle_buffer_new_particle!(pv::ParticleVector, pia, species)
+    update_particle_buffer_new_particle!(pv::ParticleVector{D}, pia, species)
 
 Update the buffer in a `ParticleVector` instance when a new particle is created at the end of the particle array, and reduces
 the length of the active part of the buffer by 1.
@@ -404,7 +411,7 @@ This places the particle index in the 2-nd group of particle indices in the `Par
 end
 
 """
-    delete_particle!(pv::ParticleVector, pia, cell, species, i)
+    delete_particle!(pv::ParticleVector{D}, pia, cell, species, i)
 
 Delete particle with index i of species `species` in cell `cell`
 and update the particle indexers and buffers accordingly. This changes the ordering of the non-deleted particles in the cell.
@@ -434,7 +441,7 @@ and update the particle indexers and buffers accordingly. This changes the order
 end
 
 """
-    delete_particle_end!(pv::ParticleVector, pia, cell, species)
+    delete_particle_end!(pv::ParticleVector{D}, pia, cell, species)
 
 Delete the last particle of species `species` in cell `cell`: if particles are present in the 2nd
 group of the indices stored in the `ParticleIndexer` instance, it will delete the last particle in that group;
@@ -457,7 +464,7 @@ If no particles are present in the cell, the function does nothing. This does no
 end
 
 """
-    delete_particle_end_group1!(pv::ParticleVector, pia, cell, species)
+    delete_particle_end_group1!(pv::ParticleVector{D}, pia, cell, species)
 
 Delete particle with index `pia.indexer[cell, species].end1`` of species `species` in cell `cell`
 and update the particle indexers and buffers accordingly (i.e. delete the last particle in the 1st group of particles
@@ -524,7 +531,7 @@ If no particles are present in the 1st group of particles, the function does not
 end
 
 """
-    delete_particle_end_group2!(pv::ParticleVector, pia, cell, species)
+    delete_particle_end_group2!(pv::ParticleVector{D}, pia, cell, species)
 
 Delete particle with index `pia.indexer[cell, species].end2`` of species `species` in cell `cell`
 and update the particle indexers and buffers accordingly (i.e. delete the last particle in the 2nd group of the particles
@@ -644,9 +651,9 @@ function load_species_data(species_filename, species_name::String)
 end
 
 """
-    squash_pia!(pv, pia, species)
+    squash_pia!(pv::ParticleVector{D}, pia, species)
 
-Restore the continuity of indices in a `ParticleVector and associated
+Restore the continuity of indices in a `ParticleVector` and associated
 `ParticleIndexerArray` instance for a specific species.
 If for this species the instance has `contiguous == true`, nothing will be done.
 
@@ -742,7 +749,7 @@ function squash_pia!(particles, pia)
 end
 
 """
-    update_buffer_index_new_particle!(pv, pia, cell, species)
+    update_buffer_index_new_particle!(pv::ParticleVector{D}, pia, cell, species)
 
 Update a `ParticleIndexerArray` and the buffer in a `ParticleVector` instance
 when a particle of a given species in a given cell is created. The particle index is added
@@ -762,7 +769,7 @@ and [`update_particle_buffer_new_particle!`](@ref update_particle_buffer_new_par
 end
 
 """
-    add_particle!(pv, position, w, v, x)
+    add_particle!(pv::ParticleVector{D}, position, w, v, x)
 
 Create a new particle in a `ParticleVector` instance at position `position`.
 The `ParticleIndexer`/`ParticleIndexerArray` instances should be updated
@@ -834,7 +841,7 @@ function pretty_print_pia(pia, species)
 end
 
 """
-    count_disordered_particles(pv, pia, species)
+    count_disordered_particles(pv::ParticleVector{D}, pia, species)
 
 Count number of particles of species for which `pv.index[i] != i + offset(cell)`. The larger this
 count, the less orderly the layout of particles in memory, which can potentially lead
@@ -988,7 +995,7 @@ function check_pia_is_correct(pia, species)
 end
 
 """
-    check_unique_index(pv, pia, species)
+    check_unique_index(pv::ParticleVector{D}, pia, species)
 
 Test that for all particles in a simulation, no two indices
 are the same, i.e. no two particles `i` and `j`, `i!=j` point
@@ -1069,7 +1076,7 @@ end
 
 
 """
-    check_unique_buffer(pv)
+    check_unique_buffer(pv::ParticleVector{D})
 
 Test that the buffer elements in the active part of a buffer in a `ParticleVector` instance
 are unique (active part is `pv.buffer[1:pv.nbuffer]`).
@@ -1106,7 +1113,7 @@ function check_unique_buffer(pv::ParticleVector{D}) where D
 end
 
 """
-    swap_particles_true_index!(pv1, pv2, i, j)
+    swap_particles_true_index!(pv1::ParticleVector{D}, pv2::ParticleVector{D}, i, j)
 
 Swap particles `pv1.particles[i]` and `pv2.particles[j]` in two `ParticleVector` instances. This does not update any
 associated indices or buffers. This uses the underlying ("true") indices of the particles.
@@ -1133,7 +1140,7 @@ associated indices or buffers. This uses the underlying ("true") indices of the 
 end
 
 """
-    swap_particles!(pv1, pv2, i, j)
+    swap_particles!(pv1::ParticleVector{D}, pv2::ParticleVector{D}, i, j)
 
 Swap particles `pv1[i]` and `pv2[j]` in two `ParticleVector` instances. This does not update any
 associated indices or buffers.
@@ -1152,7 +1159,7 @@ function swap_particles!(pv1::ParticleVector{D}, pv2::ParticleVector{D}, i, j) w
 end
 
 """
-    restore_particle_ordering!(pv::ParticleVector, inv_map::Vector{Int64})
+    restore_particle_ordering!(pv::ParticleVector{D}, inv_map::Vector{Int64})
 
 Restore the ordering of particles in a ParticleVector so that pv.index[i] == i.
 This function ensures that:
@@ -1218,7 +1225,7 @@ function restore_particle_ordering!(pv::ParticleVector{D}, inv_map::Vector{Int64
 end
 
 """
-    restore_particle_ordering!(pv::ParticleVector, pia, species, inv_map::Vector{Int64})
+    restore_particle_ordering!(pv::ParticleVector{D}, pia, species, inv_map::Vector{Int64})
 
 Restore the ordering of particles in a ParticleVector and update the associated ParticleIndexerArray.
 This function calls [`restore_particle_ordering!`](@ref) to restore the particle ordering and then updates
