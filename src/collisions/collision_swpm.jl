@@ -173,7 +173,7 @@ function compute_n_coll_single_species(rng, collision_factors_swpm::CollisionFac
 end
 
 """
-    swpm!(rng, collision_factors_swpm, collision_data, interaction, particles, pia,
+    swpm!(rng, collision_factors_swpm, collision_data, interaction, particles::ParticleVector{D}, pia,
           cell, species, G, Δt, V)
 
 Perform elastic collisions between variable-weight particles of same species using the SWPM algorithm

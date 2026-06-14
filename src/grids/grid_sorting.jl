@@ -41,7 +41,7 @@ Create a `GridSortInPlace` instance given a grid and number of particles.
 GridSortInPlace(grid::G, n_particles::Integer) where {G<:AbstractGrid} = GridSortInPlace(grid.n_cells, n_particles)
 
 """
-    sort_particles!(gridsort::GridSortInPlace, grid, particles, pia, species)
+    sort_particles!(gridsort::GridSortInPlace, grid, particles::ParticleVector{D}, pia, species)
 
 Sort particles on a grid using an in-place sorting algorithm. The `pia` instance is allowed to
 have non-contiguous indices (arising for example from merging). This function

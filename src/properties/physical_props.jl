@@ -372,7 +372,7 @@ compute the length of the particle array.
 end
 
 """
-    compute_props_sorted!(particles, pia, species_data, phys_props, grid::G, cell_chunk) where {G<:AbstractGrid}
+    compute_props_sorted!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props, grid::G, cell_chunk) where {G<:AbstractGrid,D}
 
 Compute the physical properties of all species in a
 subset of cells and store the result in a `PhysProps` instance,
@@ -433,7 +433,7 @@ function compute_props_sorted!(particles::Vector{ParticleVector{D}}, pia, specie
 end
 
 """
-    compute_props_sorted!(particles, pia, species_data, phys_props, grid::AbstractGrid) where {G<:AbstractGrid}
+    compute_props_sorted!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props, grid::AbstractGrid) where {G<:AbstractGrid,D}
 
 Compute the physical properties of all species in all cells and store the result in a `PhysProps` instance,
 assuming the particles are sorted.

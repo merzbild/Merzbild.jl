@@ -179,7 +179,7 @@ function avg_props!(flux_props_avg::FluxProps, flux_props::FluxProps, n_avg_time
 end
 
 """
-    compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props, grid::G, cell_chunk) where {G<:AbstractGrid}
+    compute_flux_props_sorted!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props, flux_props, grid::G, cell_chunk) where {G<:AbstractGrid, D}
 
 Compute the flux densities of all species in a
 subset of cells and store the result in a `FluxProps` instance,
@@ -227,7 +227,7 @@ function compute_flux_props_sorted!(particles::Vector{ParticleVector{D}}, pia, s
 end
 
 """
-    compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props, grid::G) where {G<:AbstractGrid}
+    compute_flux_props_sorted!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props, flux_props, grid::G) where {G<:AbstractGrid,D}
 
 Compute the flux densities of all species in all
 cells and store the result in a `FluxProps` instance,

@@ -1,7 +1,7 @@
 @muladd begin
 
 """
-    fp_linear!(rng, collision_data_fp, interaction, species_data, particles, pia, cell, species, Δt, V)
+    fp_linear!(rng, collision_data_fp, interaction, species_data, particles::ParticleVector{D}, pia, cell, species, Δt, V)
 
 Model single-species elastic collisions using a linear Fokker-Planck approximation.
 

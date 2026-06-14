@@ -352,7 +352,7 @@ function compute_multi_index_moments(n)
 end
 
 """
-    compute_w_total_v0!(nnls_merging, particles, pia, cell, species)
+    compute_w_total_v0!(nnls_merging, particles::ParticleVector{D}, pia, cell, species)
 
 Compute total computational weight of particles and mean velocity, as well as velocity bounds of the
 set of particles in each velocity direction.
@@ -918,7 +918,7 @@ end
 
 """
     compute_lhs_particles_additional!(rng, col_index, nnls_merging, lhs_matrix, vel_pos_matrix,
-                                      particles, pia, cell, species,
+                                      particles::ParticleVector{D}, pia, cell, species,
                                       n_rand_pairs, centered_at_mean, v_multipliers)
 
 Compute additional LHS columns for additional particles. One particle is added at the local zero velocity (

@@ -1,5 +1,5 @@
 """
-    merge_roulette!(rng, particles, pia, cell, species, target_np)
+    merge_roulette!(rng, particles::ParticleVector{D}, pia, cell, species, target_np)
 
 Perform roulette merging - delete random particles until target number of particles is reached, and re-weight remaining particles
 to conserve number density.
