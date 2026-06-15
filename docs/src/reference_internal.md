@@ -5,7 +5,6 @@ The public API functions are exported by the module
 ## Particle indexing
 ```@docs
 Merzbild.map_cont_index
-Merzbild.update_particle_indexer_new_lower_count!
 Merzbild.update_particle_indexer_new_particle!
 Base.getindex
 Base.setindex!
