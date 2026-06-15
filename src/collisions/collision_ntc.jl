@@ -441,7 +441,7 @@ function ntc!(rng, collision_factors, collision_data, interaction,
         pa_i = particles_1[i]
         pa_k = particles_2[k]
         
-        compute_g!(collision_data, particles_1[i], particles_2[k])
+        compute_g!(collision_data, pa_i, pa_k)
 
         if (collision_data.g > eps())
             collide_2particles_vhs!(rng, collision_data, collision_factors, interaction_l, pa_i, pa_k,
@@ -582,7 +582,7 @@ function ntc_equal_weight!(rng, collision_factors, collision_data, interaction,
         pa_i = particles_1[i]
         pa_k = particles_2[k]
         
-        compute_g!(collision_data, particles_1[i], particles_2[k])
+        compute_g!(collision_data, pa_i, pa_k)
 
         if (collision_data.g > eps())
             collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction_l, pa_i, pa_k)
