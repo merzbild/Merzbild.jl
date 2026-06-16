@@ -22,8 +22,8 @@ Structure to store computed surface properties.
 mutable struct SurfProps
     n_elements::Int64
     n_species::Int64
-    areas::Array{Float64}  # surface element areas: elements
-    inv_areas::Array{Float64}  # surface element areas: elements
+    areas::Vector{Float64}  # surface element areas: elements
+    inv_areas::Vector{Float64}  # surface element areas: elements
     normals::Array{Float64,2}  # surface normals: component x elements
     np::Array{Float64,2}  # number of particles: elements x species
     flux_incident::Array{Float64,2}  # incident mass flux: elements x species
@@ -79,8 +79,6 @@ function update_surface_incident!(particle, species, surf_props, surface_element
     @inbounds py = particle.w * particle.v[2]
     @inbounds pz = particle.w * particle.v[3]
 
-    @inbounds p_dot_n = px * surf_props.normals[1, surface_element_id] + py * surf_props.normals[2, surface_element_id] + pz * surf_props.normals[3, surface_element_id]
-
     @inbounds surf_props.np[surface_element_id, species] += 1
     @inbounds surf_props.flux_incident[surface_element_id, species] += particle.w
 
@@ -88,11 +86,17 @@ function update_surface_incident!(particle, species, surf_props, surface_element
     @inbounds surf_props.force[2, surface_element_id, species] += py
     @inbounds surf_props.force[3, surface_element_id, species] += pz
 
+    @inbounds n_x = surf_props.normals[1, surface_element_id]
+    @inbounds n_y = surf_props.normals[2, surface_element_id]
+    @inbounds n_z = surf_props.normals[3, surface_element_id]
+
+    p_dot_n = px * n_x + py * n_y + pz * n_z
+
     @inbounds surf_props.normal_pressure[surface_element_id, species] -= p_dot_n
 
-    @inbounds surf_props.shear_pressure[1, surface_element_id, species] += (px - p_dot_n * surf_props.normals[1, surface_element_id])
-    @inbounds surf_props.shear_pressure[2, surface_element_id, species] += (py - p_dot_n * surf_props.normals[2, surface_element_id])
-    @inbounds surf_props.shear_pressure[3, surface_element_id, species] += (pz - p_dot_n * surf_props.normals[3, surface_element_id])
+    @inbounds surf_props.shear_pressure[1, surface_element_id, species] += (px - p_dot_n * n_x)
+    @inbounds surf_props.shear_pressure[2, surface_element_id, species] += (py - p_dot_n * n_y)
+    @inbounds surf_props.shear_pressure[3, surface_element_id, species] += (pz - p_dot_n * n_z)
 
     @inbounds surf_props.kinetic_energy_flux[surface_element_id, species] += 0.5 * (px * particle.v[1] + py * particle.v[2] + pz * particle.v[3])
 end
@@ -114,18 +118,22 @@ function update_surface_reflected!(particle, species, surf_props, surface_elemen
     @inbounds py = particle.w * particle.v[2]
     @inbounds pz = particle.w * particle.v[3]
 
-    @inbounds p_dot_n = px * surf_props.normals[1, surface_element_id] + py * surf_props.normals[2, surface_element_id] + pz * surf_props.normals[3, surface_element_id]
-
     @inbounds surf_props.flux_reflected[surface_element_id, species] -= particle.w
 
     @inbounds surf_props.force[1, surface_element_id, species] -= px
     @inbounds surf_props.force[2, surface_element_id, species] -= py
     @inbounds surf_props.force[3, surface_element_id, species] -= pz
 
+    @inbounds n_x = surf_props.normals[1, surface_element_id]
+    @inbounds n_y = surf_props.normals[2, surface_element_id]
+    @inbounds n_z = surf_props.normals[3, surface_element_id]
+
+    p_dot_n = px * n_x + py * n_y + pz * n_z
+
     @inbounds surf_props.normal_pressure[surface_element_id, species] += p_dot_n
-    @inbounds surf_props.shear_pressure[1, surface_element_id, species] -= (px - p_dot_n * surf_props.normals[1, surface_element_id])
-    @inbounds surf_props.shear_pressure[2, surface_element_id, species] -= (py - p_dot_n * surf_props.normals[2, surface_element_id])
-    @inbounds surf_props.shear_pressure[3, surface_element_id, species] -= (pz - p_dot_n * surf_props.normals[3, surface_element_id])
+    @inbounds surf_props.shear_pressure[1, surface_element_id, species] -= (px - p_dot_n * n_x)
+    @inbounds surf_props.shear_pressure[2, surface_element_id, species] -= (py - p_dot_n * n_y)
+    @inbounds surf_props.shear_pressure[3, surface_element_id, species] -= (pz - p_dot_n * n_z)
 
     @inbounds surf_props.kinetic_energy_flux[surface_element_id, species] -= 0.5 * (px * particle.v[1] + py * particle.v[2] + pz * particle.v[3])
 end
@@ -144,10 +152,12 @@ Scale computed surface properties using the molecular mass of species, the inver
 function surface_props_scale!(species, surf_props, species_data, Δt)
     @inbounds factor_base = species_data[species].mass / Δt
 
-    @inbounds @simd for surface_element_id in 1:surf_props.n_elements
+    n_elements = surf_props.n_elements
+
+    @inbounds @simd for surface_element_id in 1:n_elements
         factor = factor_base * surf_props.inv_areas[surface_element_id]
 
-        surf_props.flux_incident[surface_element_id, species] *= factor
+        surf_props.flux_incident[surface_element_id, species] *= factor # factor
         surf_props.flux_reflected[surface_element_id, species] *= factor
 
         for i in 1:3
@@ -176,14 +186,6 @@ function clear_props!(surf_props::SurfProps)
     fill!(surf_props.normal_pressure, 0.0)
     fill!(surf_props.shear_pressure, 0.0)
     fill!(surf_props.kinetic_energy_flux, 0.0)
-
-    # surf_props.np[:,:] .= 0
-    # surf_props.flux_incident[:,:] .= 0.0
-    # surf_props.flux_reflected[:,:] .= 0.0
-    # surf_props.force[:,:,:] .= 0.0
-    # surf_props.normal_pressure[:,:] .= 0.0
-    # surf_props.shear_pressure[:,:,:] .= 0.0
-    # surf_props.kinetic_energy_flux[:,:] .= 0.0
 end
 
 """

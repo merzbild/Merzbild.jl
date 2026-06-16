@@ -220,7 +220,8 @@ function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, boundarie
             particles.cell[i] = get_cell(grid, particles[i].x)
         end
     else
-        @inbounds for cell in 1:grid.n_cells
+        n_cells = grid.n_cells
+        @inbounds for cell in 1:n_cells
             s = pia.indexer[cell, species].start1
             e = pia.indexer[cell, species].end1
             
@@ -270,7 +271,8 @@ function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, boundarie
             particles.cell[i] = get_cell(grid, particles[i].x)
         end
     else
-        for cell in 1:grid.n_cells
+        n_cells = grid.n_cells
+        for cell in 1:n_cells
             @inbounds s = pia.indexer[cell, species].start1
             @inbounds e = pia.indexer[cell, species].end1
             

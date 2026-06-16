@@ -73,7 +73,8 @@ function sort_particles!(gridsort::GridSortInPlace, grid, particles::ParticleVec
         gridsort.cell_counts[newcell+1] += 1
     end
 
-    @inbounds for cell in 1:grid.n_cells
+    n_cells = grid.n_cells
+    @inbounds for cell in 1:n_cells
         gridsort.cell_counts[cell+1] = gridsort.cell_counts[cell+1] + gridsort.cell_counts[cell]
 
         cell_start = gridsort.cell_counts[cell] + 1
