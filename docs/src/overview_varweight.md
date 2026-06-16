@@ -56,7 +56,7 @@ nv = 20
 # some initial guess on # of particles in simulation
 np_base = 40^3  
 
-particles = [ParticleVector(np_base)]
+particles = [ParticleVector{0}(np_base)]
 
 # sample from a BKW distribution at t=0
 vdf0 = (vx, vy, vz) -> bkw(vx, vy, vz, species_data[1].mass, T0, 0.0)
@@ -88,20 +88,21 @@ is used. The algorithm groups particles into bins in velocity space, recursively
 the number of post-merge particles reaches the prescribed value. It then performs an ``N:2`` merge in each bin,
 replacing all particles in a bin with 2 particles.
 
-To set up this merging algorithm, one needs to create a `OctreeN2Merge` instance, specifying
+To set up this merging algorithm, one needs to create a `OctreeN2Merge{D}` instance, specifying
 - The extent of the first (root) bin - whether it accounts for the extent of the particles or whether it is just taken to be very large
 - How bins are split (along the middle velocity, the mean velocity, or the median velocity)
 - Whether the velocity bounds of each sub-bin are recomputed based on the particles in the bin or are based purely on the bounds of the parent bin and the splitting velocity
 - Maximum number of bins
 - Maximum refinement depth
 
+It is important that the dimension `D` of the merging instance coincides with that used for the particle positions.
 For example, we can create an octree merging instance that splits velocity bins across the middle,
 sets the root bin bounds to the bounding box of the particle velocities, and inherits the bin bounds of the parent
 bin when splitting a bin. We also immediately merge our particles, setting a target particle number of 100.
 
 ```julia
 # set up the merging algorithm
-oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel,
+oc = OctreeN2Merge{0}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel,
                    bin_bounds_compute=OctreeBinBoundsInherit, max_Nbins=6000)
 
 # set Ntarget
@@ -145,7 +146,7 @@ nv = 20
 # some initial guess on # of particles in simulation
 np_base = 40^3  
 
-particles = [ParticleVector(np_base)]
+particles = [ParticleVector{0}(np_base)]
 
 # sample from a BKW distribution at t=0
 vdf0 = (vx, vy, vz) -> bkw(vx, vy, vz, species_data[1].mass, T0, 0.0)
@@ -159,7 +160,7 @@ n_sampled = sample_on_grid!(rng, vdf0, particles[1], nv, species_data[1].mass, T
 pia = ParticleIndexerArray(n_sampled)
 
 # set up the merging algorithm
-oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel,
+oc = OctreeN2Merge{0}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel,
                    bin_bounds_compute=OctreeBinBoundsInherit, max_Nbins=6000)
 
 # set Ntarget for merging

@@ -100,7 +100,7 @@ T0_He = 2000.0
 T0_list = [T0_Ar, T0_He]
 
 # create the 2-element Vector of ParticleVectors for the 2 species
-particles = [ParticleVector(n_particles_Ar), ParticleVector(n_particles_He)]
+particles = [ParticleVector{0}(n_particles_Ar), ParticleVector{0}(n_particles_He)]
 
 # create the 2-species 1-cell particle indexer array filled with zeros
 # as we haven't sampled any particles yet

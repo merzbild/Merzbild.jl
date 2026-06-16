@@ -31,9 +31,9 @@ If we want to have `ppc` particles and a number density of `ndens`, then we can 
 Fnum = grid.cells[1].V * ndens / ppc
 ```
 
-We then initialize an `Vector` of `ParticleVector`'s to store our particles for each species:
+We then initialize an `Vector` of `ParticleVector`'s to store our particles for each species. We now use 1-dimensional position vectors:
 ```julia
-particles = [ParticleVector(n_particles)]
+particles = [ParticleVector{1}(n_particles)]
 ```
 and perform the sampling:
 ```julia
@@ -190,7 +190,7 @@ boundaries = MaxwellWalls1D(species_data, T_wall, T_wall, -v_wall, v_wall, 1.0, 
 # we will not be creating or destroying any particles, so we can compute the exact number
 # of particles we will have in the simulation
 n_particles = ppc * nx
-particles = [ParticleVector(n_particles)]
+particles = [ParticleVector{1}(n_particles)]
 pia = ParticleIndexerArray(grid.n_cells, 1)
 gridsorter = GridSortInPlace(grid, n_particles)
 index_inv_map = zeros(Int64, n_particles)

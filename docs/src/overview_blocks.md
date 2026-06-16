@@ -40,8 +40,13 @@ instances is needed to keep track of the particles of different species in diffe
 For this purpose Merzbild.jl provides the `ParticleIndexerArray` struct. It has two fields:
 - `ParticleIndexerArray.indexer`: a 2-dimensional array of `ParticleIndexer` instances with dimensions `n_cells*n_species`
 - `ParticleIndexerArray.n_total`: a 1-dimensional vector of length `n_species` with per-species total particle counts 
+- `ParticleIndexerArray.contiguous`: a 1-dimensional vector of length `n_species` describing whether indexing is contiguous for each species (see the section on [`Particle buffers and contiguous indexing`](@ref))
+- `ParticleIndexerArray.index_last`: a 1-dimensional vector of length `n_species` holding the index of the last particle of each species.
 
-Thus, to iterate over the particles of a specific species in a specific cell, one uses an instance of the
+**IMPORTANT**: the indexing layout **always assumes** that any particles in any of the index ranges pointed to by a group2 come after all the particles in any of the index ranges pointed to by a group2.
+So the first index of a particle in any of the group2 ranges is always larger than the last index of any of the particles in any of the group1 ranges.
+
+To iterate over the particles of a specific species in a specific cell, one uses an instance of the
 `ParticleIndexerArray` (called `pia` in the code by convention):
 ```julia
 for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
@@ -67,32 +72,34 @@ The function [`pretty_print_pia`](@ref) can be used to print the particle indexe
 ## Particles: Particle and ParticleVector
 Now that we can index particles, we need to create some lists of particles to index. For that, we need
 to define what a particle is.
-For this purpose, a `Particle` struct is available in the code. It has the following fields:
+For this purpose, a `Particle{D}` struct is available in the code. It has the following fields:
 - `w`: the computational weight of the particle (in a fixed-weight DSMC simulation, this is the ``F_{num}`` parameter)
 - `v`: the 3-dimensional velocity vector of the particle
-- `x`: the 3-dimensional position vector of the particle
+- `x`: the D-dimensional position vector of the particle
 
+For spatially homogeneous simulations, `D` can be set to 0, so that the location of the particles is not tracked at all.
 Each species has its own list of particles associated with it, so a `particles` variable in the simulation could have the
-following the type `Vector{Vector{Particle}}`. Then `particles[species_1]` would correspond to the list of all particles
+following the type `Vector{Vector{Particle{D}}}`. Then `particles[species_1]` would correspond to the list of all particles
 of chemical species `species_1`. `pia.indexer[cell,species_1]` would then be used to index the particles of `species_1`
-in a specific cell `cell`.
+in a specific cell `cell`. If no `D` is specified explicitly, the dimension of the position vector defaults to 3.
 
-The drawback of using `Vector{Vector{Particle}}` is that for non-spatially homogeneous simulations, the particles need to be
+The drawback of using `Vector{Vector{Particle{D}}}` is that for non-spatially homogeneous simulations, the particles need to be
 sorted after each convection step, and this would involving constantly re-writing the position and velocity vectors.
 To reduce the computational cost
-of sorting, an additional abstraction layer is added via the struct `ParticleVector` that is intended to be used instead of 
-a simple `Vector{Particle}` instance.
-An instance of `ParticleVector` has the following fields:
-- `particles`: the underlying vector of particles
+of sorting, an additional abstraction layer is added via the struct `ParticleVector{D}` that is intended to be used instead of 
+a simple `Vector{Particle{D}}` instance.
+An instance of `ParticleVector{D}` has the following fields:
+- `particles`: the underlying vector of particles with a D-dimensional position.
 - `index`: the sorted indices of the particles
 - `cell`: used in particle sorting to keep track of new assigned cells
 - `buffer`: a LIFO queue used to track which particles from `particles` are not being used (i.e. allocated in memory but not present in the simulation)
 - `nbuffer`: the number of elements in `buffer`
 
-Given a `ParticleVector` instance `pv`, one can still transparently access a particle at index `i` as `pv[i]`.
+Given a `ParticleVector{D}` instance `pv`, one can still transparently access a particle at index `i` as `pv[i]`.
 This access operation however uses the sorted `index` list to get the actual index of the particle,
 so `pv[i]` is equivalent to `pv.particles[pv.index[i]]`. During particle sorting, only the indices in `index`
 are shuffled around, which is computationally cheaper than sorting the particles directly.
+If no `D` is specified explicitly, the dimension of the position vector of the particles defaults to 3.
 
 ![particle_vector_trim](assets/particlevector.png)
 
@@ -278,7 +285,7 @@ species_data = load_species_data(particles_data_path, "Ar")
 
 # init particle vector for a 1000 particles
 n_particles = 1000
-particles = [ParticleVector(n_particles)]
+particles = [ParticleVector{0}(n_particles)]
 
 # set number density to 1e23
 ndens = 1e23
@@ -293,7 +300,7 @@ T = 500.0
 # sampled any particles yet
 pia = ParticleIndexerArray(0)
 
-# sample particles in a [0.0, 1.0]x[0.0, 1.0]x[0.0, 1.0] cell
+# for D=3 this would sample particles in a [0.0, 1.0]x[0.0, 1.0]x[0.0, 1.0] cell; for 0-D particles the position is not tracked
 sample_particles_equal_weight!(rng, particles[1], pia, 1, 1, n_particles, T, species_data[1].mass, Fnum,
                                0.0, 1.0, 0.0, 1.0, 0.0, 1.0; distribution=:Maxwellian)
 
