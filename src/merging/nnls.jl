@@ -33,7 +33,7 @@ function construct_householder!(u::AbstractVector{T}, up::T)::T where T
     # @assert cl > 0
     clinv = one(T) / cl
     sm = zero(T)
-    @inbounds for i in 1:m
+    @inbounds @simd for i in 1:m
         sm += (u[i] * clinv)^2
     end
     cl *= sqrt(sm)
@@ -62,19 +62,19 @@ function apply_householder!(u::AbstractVector{T}, up::T, c::AbstractVector{T}) w
         # cl = abs(u1)
         # @assert cl > zero(T)
         @inbounds b = up * u[1]
-        if b >= 0
+        if b >= zero(T)
             return
         end
         b = one(T) / b
 
         @inbounds sm = c[1] * up
-        @inbounds for i in 2:m
+        @inbounds @simd for i in 2:m
             sm = sm + c[i] * u[i]
         end
         if sm != zero(T)
             sm *= b
             @inbounds c[1] = c[1] + sm * up
-            @inbounds for i in 2:m
+            @inbounds @simd for i in 2:m
                 c[i] = c[i] + sm * u[i]
             end
         end
@@ -358,7 +358,7 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
             end
             unorm = sqrt(unorm)
 
-            @inbounds if ((unorm + abs(A[nsetp + 1, j]) * factor) - unorm) > 0
+            @inbounds if ((unorm + abs(A[nsetp + 1, j]) * factor) - unorm) > zero(T)
                 # COL J IS SUFFICIENTLY INDEPENDENT.  COPY B INTO ZZ, UPDATE ZZ
                 # AND SOLVE FOR ZTEST ( = PROPOSED NEW VALUE FOR X(J) ).
                 # println("copying b into zz")
@@ -375,7 +375,7 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
                 @inbounds ztest = zz[nsetp + 1] / A[nsetp + 1, j]
 
                 # SEE IF ZTEST IS POSITIVE
-                if ztest > 0
+                if ztest > zero(T)
                     break
                 end
             end
@@ -384,7 +384,7 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
             # RESTORE A(NPP1,J), SET W(J)=0., AND LOOP BACK TO TEST DUAL
             # COEFFS AGAIN.
             @inbounds A[nsetp + 1, j] = Asave
-            @inbounds w[j] = 0
+            @inbounds w[j] = zero(T)
         end
         if terminated
             break
@@ -416,11 +416,11 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
 
         if nsetp != m
             @inbounds for l in (nsetp + 1):m
-                A[l, j] = 0
+                A[l, j] = zero(T)
             end
         end
 
-        @inbounds w[j] = 0
+        @inbounds w[j] = zero(T)
 
         # SOLVE THE TRIANGULAR SYSTEM.
         # STORE THE SOLUTION TEMPORARILY IN ZZ().
@@ -443,7 +443,7 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
             alpha = convert(T, 2)
             @inbounds for ip in Base.OneTo(nsetp)
                 l = idx[ip]
-                if zz[ip] <= 0
+                if zz[ip] <= zero(T)
                     t = -x[l] / (zz[ip] - x[l])
                     if alpha > t
                         alpha = t
@@ -470,7 +470,7 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
             @inbounds i = idx[jj]
 
             while true
-                @inbounds x[i] = 0
+                @inbounds x[i] = zero(T)
 
                 if jj != nsetp
                     jj += one(TI)
@@ -479,7 +479,7 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
                         idx[j - 1] = ii
                         cc, ss, sig = orthogonal_rotmat(A[j - 1, ii], A[j, ii])
                         A[j - 1, ii] = sig
-                        A[j, ii] = 0
+                        A[j, ii] = zero(T)
                         for l in Base.OneTo(n)
                             if l != ii
                                 # Apply procedure G2 (CC,SS,A(J-1,L),A(J,L))
@@ -510,7 +510,7 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
                 @inbounds for jji in Base.OneTo(nsetp)
                     # jj = jji
                     i = idx[jji]
-                    if x[i] <= 0
+                    if x[i] <= zero(T)
                         allfeasible = false
                         break
                     end
