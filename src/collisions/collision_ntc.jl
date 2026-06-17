@@ -248,9 +248,11 @@ and no particle splitting is performed
             Δw = pa_i.w - pa_k.w
             pa_i.w = pa_k.w
 
-            particles_1[pia.index_last[species1]].w = Δw
-            particles_1[pia.index_last[species1]].v = pa_i.v
-            particles_1[pia.index_last[species1]].x = pa_i.x
+            pil = pia.index_last[species1]
+
+            particles_1[pil].w = Δw
+            particles_1[pil].v = pa_i.v
+            particles_1[pil].x = pa_i.x
         else  # (particles[k].w > particles[i].w)
             if (length(particles_2) <= pia.index_last[species1])
                 resize!(particles_2, length(particles_2)+DELTA_PARTICLES)
@@ -261,9 +263,11 @@ and no particle splitting is performed
             Δw = pa_k.w - pa_i.w
             pa_k.w = pa_i.w
 
-            particles_2[pia.index_last[species2]].w = Δw
-            particles_2[pia.index_last[species2]].v = pa_k.v
-            particles_2[pia.index_last[species2]].x = pa_k.x
+            pil = pia.index_last[species2]
+
+            particles_2[pil].w = Δw
+            particles_2[pil].v = pa_k.v
+            particles_2[pil].x = pa_k.x
         end
         scatter_vhs!(rng, collision_data, interaction, pa_i, pa_k)
     end
@@ -352,20 +356,23 @@ function ntc!(rng, collision_factors, collision_data, interaction, particles::Pa
 
     @inbounds interaction_l = interaction[species, species]
 
+    @inbounds indexer = pia.indexer[cell, species]
     @inbounds for _ in 1:n_coll_int
-        i = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species].n_local)
-        k = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species].n_local)
+
+        n_loc = indexer.n_local  # can change due to splitting!
+        i = floor(Int64, rand(rng, Float64) * n_loc)
+        k = floor(Int64, rand(rng, Float64) * n_loc)
 
         while (i == k)
-            k = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species].n_local)
+            k = floor(Int64, rand(rng, Float64) * n_loc)
         end
 
         # example: bounds from [1,4], [7,9]; n_total = 7
         # n_group1 = 4, n_group2 = 3
         # i = 0,1,2,3 - [1,4]
         # i = 4,5,6 - [7,9]
-        i = map_cont_index(pia.indexer[cell, species], i)
-        k = map_cont_index(pia.indexer[cell, species], k)
+        i = map_cont_index(indexer, i)
+        k = map_cont_index(indexer, k)
         pa_i = particles[i]
         pa_k = particles[k]
         
@@ -427,7 +434,11 @@ function ntc!(rng, collision_factors, collision_data, interaction,
 
     @inbounds interaction_l = interaction[species1, species2]
 
+    @inbounds indexer1 = pia.indexer[cell, species1]
+    @inbounds indexer2 = pia.indexer[cell, species2]
+
     @inbounds for _ in 1:n_coll_int
+
         i = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species1].n_local)
         k = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species2].n_local)
 
@@ -435,8 +446,8 @@ function ntc!(rng, collision_factors, collision_data, interaction,
         # n_group1 = 4, n_group2 = 3
         # i = 0,1,2,3 - [1,4]
         # i = 4,5,6 - [7,9]
-        i = map_cont_index(pia.indexer[cell, species1], i)
-        k = map_cont_index(pia.indexer[cell, species2], k)
+        i = map_cont_index(indexer1, i)
+        k = map_cont_index(indexer2, k)
 
         pa_i = particles_1[i]
         pa_k = particles_2[k]
