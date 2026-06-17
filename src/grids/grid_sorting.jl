@@ -56,30 +56,36 @@ and therefore the cell for each particle has to be determined (by calling `get_c
 * `species`: the index of the species being sorted
 """
 function sort_particles!(gridsort::GridSortInPlace, grid, particles::ParticleVector{D}, pia, species) where D
+    cell_counts = gridsort.cell_counts
+    sorted_indices = gridsort.sorted_indices
+    p_index = particles.index
+    p_cell = particles.cell
+    p_particles = particles.particles
+
     @inbounds n_tot = pia.n_total[species] 
-    @inbounds if n_tot > length(gridsort.sorted_indices)
-        resize!(gridsort.sorted_indices, n_tot + DELTA_PARTICLES)
+    @inbounds if n_tot > length(sorted_indices)
+        resize!(sorted_indices, n_tot + DELTA_PARTICLES)
     end
 
-    fill!(gridsort.cell_counts, 0)
+    fill!(cell_counts, 0)
 
     @inbounds if !pia.contiguous[species]
         squash_pia!(particles, pia, species)
     end
 
-    @inbounds @simd for i in 1:n_tot
-        newcell = get_cell(grid, particles[i].x)
-        particles.cell[i] = newcell
-        gridsort.cell_counts[newcell+1] += 1
+    @inbounds for i in 1:n_tot
+        newcell = get_cell(grid, p_particles[p_index[i]].x)
+        p_cell[i] = newcell
+        cell_counts[newcell+1] += 1
     end
 
     n_cells = grid.n_cells
     @inbounds for cell in 1:n_cells
-        gridsort.cell_counts[cell+1] = gridsort.cell_counts[cell+1] + gridsort.cell_counts[cell]
+        cell_counts[cell+1] = cell_counts[cell+1] + cell_counts[cell]
 
-        cell_start = gridsort.cell_counts[cell] + 1
-        cell_np = gridsort.cell_counts[cell+1] - gridsort.cell_counts[cell]
-        cell_end = gridsort.cell_counts[cell+1]
+        cell_start = cell_counts[cell] + 1
+        cell_np = cell_counts[cell+1] - cell_counts[cell]
+        cell_end = cell_counts[cell+1]
 
         indexer = pia.indexer[cell,species]
 
@@ -100,15 +106,13 @@ function sort_particles!(gridsort::GridSortInPlace, grid, particles::ParticleVec
     end
 
     @inbounds for i in n_tot:-1:1
-        curr_cell = particles.cell[i]
-        gridsort.sorted_indices[gridsort.cell_counts[curr_cell+1]] = particles.index[i]
+        curr_cell = p_cell[i]
+        sorted_indices[cell_counts[curr_cell+1]] = p_index[i]
 
-        gridsort.cell_counts[curr_cell+1] -= 1
+        cell_counts[curr_cell+1] -= 1
     end
 
-    @inbounds @simd for i in 1:n_tot
-        @inbounds particles.index[i] = gridsort.sorted_indices[i]
-    end
+    unsafe_copyto!(p_index, 1, sorted_indices, 1, n_tot)
 
     @inbounds pia.contiguous[species] = true
 end
@@ -127,28 +131,33 @@ assumes that at the start of the sorting, it is **known** in which cell each par
 * `species`: the index of the species being sorted
 """
 function sort_particles!(gridsort::GridSortInPlace, particles, pia, species)
+    cell_counts = gridsort.cell_counts
+    sorted_indices = gridsort.sorted_indices
+    p_index = particles.index
+    p_cell = particles.cell
+
     @inbounds n_cells = size(pia.indexer)[1]
     @inbounds n_tot = pia.n_total[species] 
-    @inbounds if n_tot > length(gridsort.sorted_indices)
-        resize!(gridsort.sorted_indices, n_tot + DELTA_PARTICLES)
+    @inbounds if n_tot > length(sorted_indices)
+        resize!(sorted_indices, n_tot + DELTA_PARTICLES)
     end
 
-    fill!(gridsort.cell_counts, 0)
+    fill!(cell_counts, 0)
 
     @inbounds if !pia.contiguous[species]
         squash_pia!(particles, pia, species)
     end
 
-    @inbounds @simd for i in 1:n_tot
-        gridsort.cell_counts[particles.cell[i]+1] += 1
+    @inbounds for i in 1:n_tot
+        cell_counts[p_cell[i]+1] += 1
     end
 
     @inbounds for cell in 1:n_cells
-        gridsort.cell_counts[cell+1] = gridsort.cell_counts[cell+1] + gridsort.cell_counts[cell]
+        cell_counts[cell+1] = cell_counts[cell+1] + cell_counts[cell]
 
-        cell_start = gridsort.cell_counts[cell] + 1
-        cell_np = gridsort.cell_counts[cell+1] - gridsort.cell_counts[cell]
-        cell_end = gridsort.cell_counts[cell+1]
+        cell_start = cell_counts[cell] + 1
+        cell_np = cell_counts[cell+1] - cell_counts[cell]
+        cell_end = cell_counts[cell+1]
 
         indexer = pia.indexer[cell,species]
 
@@ -169,15 +178,13 @@ function sort_particles!(gridsort::GridSortInPlace, particles, pia, species)
     end
 
     @inbounds for i in n_tot:-1:1
-        curr_cell = particles.cell[i]
-        gridsort.sorted_indices[gridsort.cell_counts[curr_cell+1]] = particles.index[i]
+        curr_cell = p_cell[i]
+        sorted_indices[cell_counts[curr_cell+1]] = p_index[i]
 
-        gridsort.cell_counts[curr_cell+1] -= 1
+        cell_counts[curr_cell+1] -= 1
     end
 
-    @inbounds @simd for i in 1:n_tot
-        @inbounds particles.index[i] = gridsort.sorted_indices[i]
-    end
+    unsafe_copyto!(p_index, 1, sorted_indices, 1, n_tot)
 
     @inbounds pia.contiguous[species] = true
 end
