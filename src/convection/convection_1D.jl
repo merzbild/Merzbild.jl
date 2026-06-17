@@ -117,11 +117,9 @@ Convect particles on a 1-D uniform grid.
 * `Δt`: the convection timestep
 """
 function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particles::ParticleVector{D}, pia, species, species_data, Δt) where D
-    # @inbounds @simd for i in 1:pia.n_total[species]
-    
     @inbounds if pia.contiguous[species]
         @inbounds n_tot = pia.n_total[species]
-        @inbounds @simd for i in 1:n_tot
+        @inbounds for i in 1:n_tot
             convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt) 
         end
     else
@@ -129,7 +127,7 @@ function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D
             s = pia.indexer[cell, species].start1
             e = pia.indexer[cell, species].end1
             
-            @simd for i in s:e
+            for i in s:e
                 convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt) 
             end
 
@@ -137,7 +135,7 @@ function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D
                 s = pia.indexer[cell, species].start2
                 e = pia.indexer[cell, species].end2
             
-                @simd for i in s:e
+                for i in s:e
                     convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt) 
                 end
             end
@@ -167,7 +165,7 @@ function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D
     clear_props!(surf_props)
     @inbounds if pia.contiguous[species]
         @inbounds n_tot = pia.n_total[species]
-        @inbounds @simd for i in 1:n_tot
+        @inbounds for i in 1:n_tot
             convect_single_particle!(rng, grid, boundaries, particles[i], species, surf_props, species_data[species].mass, Δt) 
         end
     else
@@ -175,7 +173,7 @@ function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D
             s = pia.indexer[cell, species].start1
             e = pia.indexer[cell, species].end1
             
-            @simd for i in s:e
+            for i in s:e
                 convect_single_particle!(rng, grid, boundaries, particles[i], species, surf_props, species_data[species].mass, Δt) 
             end
 
@@ -183,7 +181,7 @@ function convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D
                 s = pia.indexer[cell, species].start2
                 e = pia.indexer[cell, species].end2
             
-                @simd for i in s:e
+                for i in s:e
                     convect_single_particle!(rng, grid, boundaries, particles[i], species, surf_props, species_data[species].mass, Δt) 
                 end
             end
@@ -211,11 +209,9 @@ Convect particles on a 1-D uniform grid and write post-convection cell index to 
 * `Δt`: the convection timestep
 """
 function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particles::ParticleVector{D}, pia, species, species_data, Δt) where D
-    # @inbounds @simd for i in 1:pia.n_total[species]
-    
     @inbounds if pia.contiguous[species]
         @inbounds n_tot = pia.n_total[species]
-        @inbounds @simd for i in 1:n_tot
+        @inbounds for i in 1:n_tot
             convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt)
             particles.cell[i] = get_cell(grid, particles[i].x)
         end
@@ -225,7 +221,7 @@ function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, boundarie
             s = pia.indexer[cell, species].start1
             e = pia.indexer[cell, species].end1
             
-            @simd for i in s:e
+            for i in s:e
                 convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt)
                 particles.cell[i] = get_cell(grid, particles[i].x)
             end
@@ -234,7 +230,7 @@ function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, boundarie
                 s = pia.indexer[cell, species].start2
                 e = pia.indexer[cell, species].end2
             
-                @simd for i in s:e
+                for i in s:e
                     convect_single_particle!(rng, grid, boundaries, particles[i], species, Δt)
                     particles.cell[i] = get_cell(grid, particles[i].x)
                 end
@@ -261,12 +257,10 @@ Convect particles on a 1-D uniform grid and write post-convection cell index to 
 * `Δt`: the convection timestep
 """
 function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particles::ParticleVector{D}, pia, species, species_data, surf_props::SurfProps, Δt) where D
-    # @inbounds @simd for i in 1:pia.n_total[species]
-    
     clear_props!(surf_props)
     @inbounds if pia.contiguous[species]
         @inbounds n_tot = pia.n_total[species]
-        @inbounds @simd for i in 1:n_tot
+        @inbounds for i in 1:n_tot
             convect_single_particle!(rng, grid, boundaries, particles[i], species, surf_props, species_data[species].mass, Δt)
             particles.cell[i] = get_cell(grid, particles[i].x)
         end
@@ -276,7 +270,7 @@ function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, boundarie
             @inbounds s = pia.indexer[cell, species].start1
             @inbounds e = pia.indexer[cell, species].end1
             
-            @inbounds @simd for i in s:e
+            @inbounds for i in s:e
                 convect_single_particle!(rng, grid, boundaries, particles[i], species, surf_props, species_data[species].mass, Δt)
                 particles.cell[i] = get_cell(grid, particles[i].x)
             end
@@ -285,7 +279,7 @@ function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, boundarie
                 @inbounds s = pia.indexer[cell, species].start2
                 @inbounds e = pia.indexer[cell, species].end2
             
-                @inbounds @simd for i in s:e
+                @inbounds for i in s:e
                     convect_single_particle!(rng, grid, boundaries, particles[i], species, surf_props, species_data[species].mass, Δt) 
                     particles.cell[i] = get_cell(grid, particles[i].x)
                 end
