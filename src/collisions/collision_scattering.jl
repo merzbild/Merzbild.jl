@@ -17,7 +17,6 @@ Scatter two particles using VHS (isotropic) scattering.
 @inline function scatter_vhs!(rng, collision_data, interaction, p1, p2)
     ϕ = twopi * rand(rng, Float64)
     sphi, cphi = sincos(ϕ)
-    # sphi = sin(ϕ)
 
     ctheta = 2.0 * rand(rng, Float64) - 1.0
     stheta = sqrt(1.0 - ctheta^2)
@@ -45,13 +44,12 @@ the velocity of the center of mass to the electron.
 """
 @inline function scatter_electron_vhs!(rng, particle_electron, g_new)
     ϕ = twopi * rand(rng, Float64)
-    cphi = cos(ϕ)
-    sphi = sin(ϕ)
+    sphi, cphi = sincos(ϕ)
 
     ctheta = 2.0 * rand(rng, Float64) - 1.0
     stheta = sqrt(1.0 - ctheta^2)
 
-    particle_electron.v = SVector{3, Float64}(ctheta * g_new, stheta * cphi * g_new, stheta * sphi * g_new)
+    particle_electron.v = g_new * SVector{3, Float64}(ctheta, stheta * cphi, stheta * sphi)
 end
 
 """
