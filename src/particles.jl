@@ -1126,17 +1126,20 @@ associated indices or buffers. This uses the underlying ("true") indices of the 
 """
 @inline function swap_particles_true_index!(pv1::ParticleVector{D}, pv2::ParticleVector{D}, i, j) where D
     # TODO: check if inlining speeds things up or slows them down, doesn't seem to have an impact
-    @inbounds tmp_w = pv1.particles[i].w
-    @inbounds tmp_v = pv1.particles[i].v
-    @inbounds tmp_x = pv1.particles[i].x
+    @inbounds p1 = pv1.particles[i]
+    @inbounds p2 = pv2.particles[j]
 
-    @inbounds pv1.particles[i].w = pv2.particles[j].w
-    @inbounds pv1.particles[i].v = pv2.particles[j].v
-    @inbounds pv1.particles[i].x = pv2.particles[j].x
+    tmp_w = p1.w
+    tmp_v = p1.v
+    tmp_x = p1.x
 
-    @inbounds pv2.particles[j].w = tmp_w
-    @inbounds pv2.particles[j].v = tmp_v
-    @inbounds pv2.particles[j].x = tmp_x
+    p1.w = p2.w
+    p1.v = p2.v
+    p1.x = p2.x
+
+    p2.w = tmp_w
+    p2.v = tmp_v
+    p2.x = tmp_x
 end
 
 """
