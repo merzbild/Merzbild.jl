@@ -118,4 +118,10 @@
         bytes = @allocated sort_particles!(gridsorter, particles[1], pia, 1)
         @test bytes == 0
     end
+
+    flux_props = FluxProps(pia)
+    compute_flux_props!(particles, pia, species_data, phys_props, flux_props, grid)
+
+    bytes = @allocated compute_flux_props!(particles, pia, species_data, phys_props, flux_props, grid)
+    @test bytes == 0
 end
