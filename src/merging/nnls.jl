@@ -30,14 +30,14 @@ function construct_householder!(u::AbstractVector{T}, up::T)::T where T
     end
 
     cl = maximum(abs, u)
-    @assert cl > 0
-    clinv = 1 / cl
+    # @assert cl > 0
+    clinv = one(T) / cl
     sm = zero(T)
-    for ui in u
-        sm += (ui * clinv)^2
+    @inbounds for i in 1:m
+        sm += (u[i] * clinv)^2
     end
     cl *= sqrt(sm)
-    @inbounds if u[1] > 0
+    @inbounds if u[1] > zero(T)
         cl = -cl
     end
     @inbounds result = u[1] - cl
@@ -59,19 +59,19 @@ Revised FEB 1995 to accompany reprinting of the book by SIAM.
 function apply_householder!(u::AbstractVector{T}, up::T, c::AbstractVector{T}) where T
     m = length(u)
     if m > 1
-        @inbounds cl = abs(u[1])
-        @assert cl > 0
+        # cl = abs(u1)
+        # @assert cl > zero(T)
         @inbounds b = up * u[1]
         if b >= 0
             return
         end
-        b = 1 / b
+        b = one(T) / b
 
         @inbounds sm = c[1] * up
         @inbounds for i in 2:m
             sm = sm + c[i] * u[i]
         end
-        if sm != 0
+        if sm != zero(T)
             sm *= b
             @inbounds c[1] = c[1] + sm * up
             @inbounds for i in 2:m
