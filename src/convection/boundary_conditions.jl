@@ -65,7 +65,7 @@ Perform specular reflection of a particle in the x direction.
 end
 
 """
-    specular_reflection_x!(particle)
+    diffuse_reflection_x!(rng, particle, wall_reflection_v_sq, wall_normal_sign, wall_v)
 
 Perform diffuse reflection of a particle, assuming the wall is orthogonal to the x axis.
 
