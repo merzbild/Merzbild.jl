@@ -10,6 +10,7 @@ specified.
 in particle arrays has been implemented. See documentaton on contiguous indexing.
 * Removed unused `update_particle_indexer_new_lower_count!` function
 * Added tests that check that for unexpected memory allocations
+* Various performance optimizations
 
 ## v0.7.10
 * Documentation improvements
