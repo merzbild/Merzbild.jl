@@ -3,7 +3,8 @@ include("test_malloc_bkw_varweight_octree.jl")  # malloc with merging and variab
 include("test_malloc_octree_1Dgrid.jl")  # malloc with octree merging on 1D grid
 include("test_malloc_bkw_varweight_gridmerge.jl")  # malloc with grid merging and variable-weight collisions
 include("test_malloc_gridmerge_1Dgrid.jl")  # malloc with grid merging on 1D grid
-
+include("test_malloc_convection_1D.jl")  # malloc with convection on 1D grid
+include("test_malloc_accelerate_ionize.jl")  # malloc with ionization reactions and acceleration
 
 
 # tests assume that VHS data for Ar, He is
