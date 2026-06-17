@@ -254,7 +254,7 @@ and no particle splitting is performed
             particles_1[pil].v = pa_i.v
             particles_1[pil].x = pa_i.x
         else  # (particles[k].w > particles[i].w)
-            if (length(particles_2) <= pia.index_last[species1])
+            if (length(particles_2) <= pia.index_last[species2])
                 resize!(particles_2, length(particles_2)+DELTA_PARTICLES)
             end
 
@@ -272,8 +272,6 @@ and no particle splitting is performed
         scatter_vhs!(rng, collision_data, interaction, pa_i, pa_k)
     end
 end
-
-
 
 """
     collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction_l, pa_i::Particle{D}, pa_k::Particle{D})
