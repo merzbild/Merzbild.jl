@@ -124,12 +124,16 @@ Charles L. Lawson and Richard J. Hanson at Jet Propulsion Laboratory
 Revised FEB 1995 to accompany reprinting of the book by SIAM.
 """
 function solve_triangular_system!(zz, A, idx, nsetp, jj)
-    @inbounds for l in Base.OneTo(nsetp)
+    ip = nsetp
+    @inbounds jj = idx[ip]
+    @inbounds zz[ip] /= A[ip, jj]
+
+    # Process the remaining iterations
+    @inbounds for l in 2:nsetp
         ip = nsetp + 1 - l
-        if (l != 1)
-            for ii in 1:ip
-                zz[ii] = zz[ii] - A[ii, jj] * zz[ip + 1]
-            end
+        zm = zz[ip + 1]
+        @simd for ii in 1:ip
+            zz[ii] = zz[ii] - A[ii, jj] * zm
         end
         jj = idx[ip]
         zz[ip] /= A[ip, jj]
