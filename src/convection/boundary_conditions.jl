@@ -79,17 +79,15 @@ Perform diffuse reflection of a particle, assuming the wall is orthogonal to the
 function diffuse_reflection_x!(rng, particle, wall_reflection_v_sq, wall_normal_sign, wall_v)
     # Note: inlining this function via @inline slows the code down!
     R = max(1e-50, rand(rng))
-
     v_normal = wall_normal_sign * sqrt(-wall_reflection_v_sq * log(R))
     
     R = max(1e-50, rand(rng))
     v_tang = sqrt(-wall_reflection_v_sq * log(R))
 
     R = twopi * rand(rng)
-    v_tang1 = sin(R) * v_tang 
-    v_tang2 = cos(R) * v_tang
+    v_tang1, v_tang2 = sincos(R)
 
-    @inbounds particle.v = SVector{3, Float64}(v_normal + wall_v[1], v_tang1 + wall_v[2], v_tang2 + wall_v[3])
+    @inbounds particle.v = SVector{3, Float64}(v_normal + wall_v[1], v_tang1 * v_tang + wall_v[2], v_tang2 * v_tang + wall_v[3])
 end
 
 """
