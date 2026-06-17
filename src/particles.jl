@@ -367,7 +367,9 @@ a `ParticleIndexer` instance describing how particle indices are split across 2 
 * `i`: the index to map
 """
 @inline function map_cont_index(particle_indexer, i)
-    return i < particle_indexer.n_group1 ? i + particle_indexer.start1 : (i - particle_indexer.n_group1) + particle_indexer.start2
+    return ifelse(i < particle_indexer.n_group1, 
+                  i + particle_indexer.start1, 
+                  i + (particle_indexer.start2 - particle_indexer.n_group1))
 end
 
 """

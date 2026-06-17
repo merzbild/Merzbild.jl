@@ -228,7 +228,7 @@ and no particle splitting is performed
     # update (σ g w)_max if needed
     collision_factors.sigma_g_w_max = max(sigma_g_w_max, collision_factors.sigma_g_w_max)
 
-    @inbounds if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
+    @inbounds if (rand(rng, Float64) * collision_factors.sigma_g_w_max < sigma_g_w_max)
         collision_factors.n_coll_performed += 1
         compute_com!(collision_data, interaction, pa_i, pa_k)
         # do collision
@@ -248,11 +248,11 @@ and no particle splitting is performed
             Δw = pa_i.w - pa_k.w
             pa_i.w = pa_k.w
 
-            pil = pia.index_last[species1]
+            p1_new = particles_1[pia.index_last[species1]]
 
-            particles_1[pil].w = Δw
-            particles_1[pil].v = pa_i.v
-            particles_1[pil].x = pa_i.x
+            p1_new.w = Δw
+            p1_new.v = pa_i.v
+            p1_new.x = pa_i.x
         else  # (particles[k].w > particles[i].w)
             if (length(particles_2) <= pia.index_last[species2])
                 resize!(particles_2, length(particles_2)+DELTA_PARTICLES)
@@ -263,11 +263,11 @@ and no particle splitting is performed
             Δw = pa_k.w - pa_i.w
             pa_k.w = pa_i.w
 
-            pil = pia.index_last[species2]
+            p2_new = particles_2[pia.index_last[species2]]
 
-            particles_2[pil].w = Δw
-            particles_2[pil].v = pa_k.v
-            particles_2[pil].x = pa_k.x
+            p2_new.w = Δw
+            p2_new.v = pa_k.v
+            p2_new.x = pa_k.x
         end
         scatter_vhs!(rng, collision_data, interaction, pa_i, pa_k)
     end
@@ -299,7 +299,7 @@ if weights are unequal. Particles can be of same or different species.
     # update (σ g w)_max if needed
     collision_factors.sigma_g_w_max = max(sigma_g_w_max, collision_factors.sigma_g_w_max)
 
-    @inbounds if (rand(rng, Float64) < sigma_g_w_max / collision_factors.sigma_g_w_max)
+    @inbounds if (rand(rng, Float64) * collision_factors.sigma_g_w_max < sigma_g_w_max)
         collision_factors.n_coll_performed += 1
         collision_factors.n_eq_w_coll_performed += 1
         compute_com!(collision_data, interaction, pa_i, pa_k)
@@ -345,7 +345,7 @@ function ntc!(rng, collision_factors, collision_data, interaction, particles::Pa
     @inbounds collision_factors.n1 = pia.indexer[cell, species].n_local
     @inbounds collision_factors.n2 = pia.indexer[cell, species].n_local
     @inbounds n_coll_float = compute_n_coll_single_species(rng, collision_factors, pia.indexer[cell, species].n_local, Δt, V)
-    n_coll_int = floor(Int64, n_coll_float)
+    n_coll_int = trunc(Int64, n_coll_float)
     # println(n_coll_float, ", ", n_coll_int)
 
     collision_factors.n_coll = n_coll_int
@@ -358,11 +358,11 @@ function ntc!(rng, collision_factors, collision_data, interaction, particles::Pa
     @inbounds for _ in 1:n_coll_int
 
         n_loc = indexer.n_local  # can change due to splitting!
-        i = floor(Int64, rand(rng, Float64) * n_loc)
-        k = floor(Int64, rand(rng, Float64) * n_loc)
+        i = trunc(Int64, rand(rng, Float64) * n_loc)
+        k = trunc(Int64, rand(rng, Float64) * n_loc)
 
         while (i == k)
-            k = floor(Int64, rand(rng, Float64) * n_loc)
+            k = trunc(Int64, rand(rng, Float64) * n_loc)
         end
 
         # example: bounds from [1,4], [7,9]; n_total = 7
@@ -423,7 +423,7 @@ function ntc!(rng, collision_factors, collision_data, interaction,
     @inbounds collision_factors.n2 = pia.indexer[cell, species2].n_local
     @inbounds n_coll_float = compute_n_coll_two_species(rng, collision_factors,
                                               pia.indexer[cell, species1].n_local, pia.indexer[cell, species2].n_local, Δt, V)
-    n_coll_int = floor(Int64, n_coll_float)
+    n_coll_int = trunc(Int64, n_coll_float)
     # println(n_coll_float, ", ", n_coll_int)
 
     collision_factors.n_coll = n_coll_int
@@ -437,8 +437,8 @@ function ntc!(rng, collision_factors, collision_data, interaction,
 
     @inbounds for _ in 1:n_coll_int
 
-        i = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species1].n_local)
-        k = floor(Int64, rand(rng, Float64) * pia.indexer[cell, species2].n_local)
+        i = trunc(Int64, rand(rng, Float64) * pia.indexer[cell, species1].n_local)
+        k = trunc(Int64, rand(rng, Float64) * pia.indexer[cell, species2].n_local)
 
         # example: bounds from [1,4], [7,9]; n_total = 7
         # n_group1 = 4, n_group2 = 3
