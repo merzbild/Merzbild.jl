@@ -70,15 +70,16 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
 
     n_avg = n_timesteps - avg_start + 1
 
-    for t in 1:n_timesteps
+    @inbounds for t in 1:n_timesteps
         if t % 1000 == 0
             println(t)
         end
 
         # collide particles
         for cell in 1:grid.n_cells
-            @timeit "collide" ntc!(rng, collision_factors[1, 1, cell],
-                                   collision_data, interaction_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
+            @timeit "collide" ntc_equal_weight!(rng, collision_factors[1, 1, cell],
+                                                collision_data, interaction_data, particles[1],
+                                                pia, cell, 1, Δt, grid.cells[cell].V)
         end
 
         # convect particles
