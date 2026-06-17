@@ -287,7 +287,7 @@ function avg_props!(phys_props_avg::PhysProps, phys_props::PhysProps, n_avg_time
 
     for species in 1:phys_props.n_species
         @inbounds phys_props_avg.lpa[species] = phys_props_avg.lpa[species] + phys_props.lpa[species] * inv_nt_avg
-        @inbounds @simd for cell in 1:phys_props.n_cells
+        @inbounds for cell in 1:phys_props.n_cells
             phys_props_avg.np[cell,species] = phys_props_avg.np[cell,species] + phys_props.np[cell,species] * inv_nt_avg
             phys_props_avg.n[cell,species] = phys_props_avg.n[cell,species] + phys_props.n[cell,species] * inv_nt_avg
             phys_props_avg.v[1,cell,species] = phys_props_avg.v[1,cell,species] + phys_props.v[1,cell,species] * inv_nt_avg
@@ -325,19 +325,23 @@ function compute_props_sorted!(particles, pia, species_data, phys_props, cell_ch
 
             s1 = pia.indexer[cell,species].start1
             e1 = pia.indexer[cell,species].end1
-            @inbounds @simd for i in s1:e1
-                n += particles[species][i].w
-                v = v + particles[species][i].v * particles[species][i].w
+            @inbounds for i in s1:e1
+                particle = particles[species][i]
+
+                n += particle.w
+                v = v + particle.v * particle.w
             end
 
             np = e1 >= s1 ? e1-s1 + 1.0 : 0.0
 
             if (n > 0.0)
                 v /= n
-                @inbounds @simd for i in s1:e1
-                    E = E + particles[species][i].w * ((particles[species][i].v[1] - v[1])^2
-                                                              + (particles[species][i].v[2] - v[2])^2
-                                                              + (particles[species][i].v[3] - v[3])^2)
+                @inbounds for i in s1:e1
+                    particle = particles[species][i]
+                    
+                    E = E + particle.w * ((particle.v[1] - v[1])^2
+                                            + (particle.v[2] - v[2])^2
+                                            + (particle.v[3] - v[3])^2)
                 end
                 E *= 0.5 * species_data[species].mass / (n * k_B)
                 T = (2.0/3.0) * E
@@ -404,18 +408,22 @@ function compute_props_sorted!(particles::Vector{ParticleVector{D}}, pia, specie
 
                 s1 = pia.indexer[cell,species].start1
                 e1 = pia.indexer[cell,species].end1
-                @inbounds @simd for i in s1:e1
-                    n += particles[species][i].w
-                    v = v + particles[species][i].v * particles[species][i].w
+                @inbounds for i in s1:e1
+                    particle = particles[species][i]
+
+                    n += particle.w
+                    v = v + particle.v * particle.w
                     np += 1.0
                 end
 
                 if (n > 0.0)
                     v /= n
-                    @inbounds @simd for i in s1:e1
-                        E = E + particles[species][i].w * ((particles[species][i].v[1] - v[1])^2
-                                                         + (particles[species][i].v[2] - v[2])^2
-                                                         + (particles[species][i].v[3] - v[3])^2)
+                    @inbounds for i in s1:e1
+                        particle = particles[species][i]
+
+                        E = E + particle.w * ((particle.v[1] - v[1])^2
+                                              + (particle.v[2] - v[2])^2
+                                              + (particle.v[3] - v[3])^2)
                     end
                     E *= 0.5 * species_data[species].mass / (n * k_B)
                     T = (2.0/3.0) * E
