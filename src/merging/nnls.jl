@@ -98,14 +98,14 @@ Revised FEB 1995 to accompany reprinting of the book by SIAM.
 function orthogonal_rotmat(a::T, b::T)::Tuple{T, T, T} where T
     if abs(a) > abs(b)
         xr = b / a
-        yr = sqrt(1 + xr^2)
-        c = (1 / yr) * sign(a)
+        yr = sqrt(1.0 + xr^2)
+        c = (1.0 / yr) * copysign(one(T), a)
         s = c * xr
         sig = abs(a) * yr
-    elseif b != 0
+    elseif b != zero(T)
         xr = a / b
-        yr = sqrt(1 + xr^2)
-        s = (1 / yr) * sign(b)
+        yr = sqrt(1.0 + xr^2)
+        s = (1.0 / yr) * copysign(one(T), b)
         c = s * xr
         sig = abs(b) * yr
     else
@@ -288,10 +288,11 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
     iter = 0
     
     for i in Base.OneTo(n)
-        x[i] = 0.0
         idx[i] = i
-        w[i] = 0.0
     end
+
+    fill!(x, zero(T))
+    fill!(w, zero(T))
 
     # idx .= 1:n
 
@@ -357,9 +358,10 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
                 # COL J IS SUFFICIENTLY INDEPENDENT.  COPY B INTO ZZ, UPDATE ZZ
                 # AND SOLVE FOR ZTEST ( = PROPOSED NEW VALUE FOR X(J) ).
                 # println("copying b into zz")
-                @inbounds for iii in Base.OneTo(m)
-                    zz[iii] = b[iii]
-                end
+                # @inbounds for iii in Base.OneTo(m)
+                #     zz[iii] = b[iii]
+                # end
+                unsafe_copyto!(zz, 1, b, 1, m)
                 # zz .= b
                 
                 apply_householder!(
@@ -388,9 +390,10 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
         # SET Z TO SET P.    UPDATE B,  UPDATE INDICES,  APPLY HOUSEHOLDER
         # TRANSFORMATIONS TO COLS IN NEW SET Z,  ZERO SUBDIAGONAL ELTS IN
         # COL J,  SET W(J)=0.
-        @inbounds for iii in Base.OneTo(m)
-            b[iii] = zz[iii]
-        end
+        # @inbounds for iii in Base.OneTo(m)
+        #     b[iii] = zz[iii]
+        # end
+        unsafe_copyto!(b, 1, zz, 1, m)
 
         @inbounds idx[iz] = idx[iz1]
         @inbounds idx[iz1] = j
@@ -463,7 +466,7 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
             @inbounds i = idx[jj]
 
             while true
-                x[i] = 0
+                @inbounds x[i] = 0
 
                 if jj != nsetp
                     jj += one(TI)
@@ -477,8 +480,9 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
                             if l != ii
                                 # Apply procedure G2 (CC,SS,A(J-1,L),A(J,L))
                                 temp = A[j - 1, l]
-                                A[j - 1, l] = cc * temp + ss * A[j, l]
-                                A[j, l] = -ss * temp + cc * A[j, l]
+                                t2 = A[j, l]
+                                A[j - 1, l] = cc * temp + ss * t2
+                                A[j, l] = -ss * temp + cc * t2
                             end
                         end
 
@@ -491,7 +495,7 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
 
                 nsetp -= one(TI)
                 iz1 -= one(TI)
-                idx[iz1] = i
+                @inbounds idx[iz1] = i
 
                 # SEE IF THE REMAINING COEFFS IN SET P ARE FEASIBLE.  THEY SHOULD
                 # BE BECAUSE OF THE WAY ALPHA WAS DETERMINED.
@@ -514,9 +518,10 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
 
             # COPY B( ) INTO ZZ( ).  THEN SOLVE AGAIN AND LOOP BACK.
             # zz .= b
-            @inbounds for iii in Base.OneTo(m)
-                zz[iii] = b[iii]
-            end
+            # @inbounds for iii in Base.OneTo(m)
+            #     zz[iii] = b[iii]
+            # end
+            unsafe_copyto!(zz, 1, b, 1, m)
             jj = solve_triangular_system!(zz, A, idx, nsetp, jj)
         end
         if terminated
