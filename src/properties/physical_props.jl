@@ -284,10 +284,12 @@ function avg_props!(phys_props_avg::PhysProps, phys_props::PhysProps, n_avg_time
     end
 
     inv_nt_avg = 1.0 / n_avg_timesteps
+    n_cells = phys_props.n_cells
 
     for species in 1:phys_props.n_species
         @inbounds phys_props_avg.lpa[species] = phys_props_avg.lpa[species] + phys_props.lpa[species] * inv_nt_avg
-        @inbounds for cell in 1:phys_props.n_cells
+
+        @inbounds for cell in 1:n_cells
             phys_props_avg.np[cell,species] = phys_props_avg.np[cell,species] + phys_props.np[cell,species] * inv_nt_avg
             phys_props_avg.n[cell,species] = phys_props_avg.n[cell,species] + phys_props.n[cell,species] * inv_nt_avg
             phys_props_avg.v[1,cell,species] = phys_props_avg.v[1,cell,species] + phys_props.v[1,cell,species] * inv_nt_avg
