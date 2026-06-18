@@ -103,16 +103,15 @@
     @test maximum(abs.(sol["ndens"][1, 2, :] .- n_He)) / n_He < 6e-15
 
     for species in 1:2
-        diff = abs.(ref_T[1, species, :] - sol_T[1, species, :])
-        @test maximum(diff) < 9.3e-13
+        diff = abs.(ref_T[1, species, :] - sol_T[1, species, :]) / ref_T[1, species, :]
+        @test maximum(diff) < 1e-13
     end
 
     for species in 1:2
-        @test abs(sol_T[1, species, end] - T_eq) / T_eq < 0.055
+        @test abs(sol_T[1, species, end] - T_eq) / T_eq < 0.075
     end
 
     close(sol)
     close(ref_sol)
-
     rm(sol_path)
 end

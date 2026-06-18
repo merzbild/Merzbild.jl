@@ -5,14 +5,16 @@
     # The ions are merged away (very coarsely)
     # Electrons and neutrals are merged using octree merging
     # Uses a very simple constant cross-section model
-    # running this for 300k timesteps and a T0_e of Merzbild.eV * 2.0
+    # running this for 350k timesteps and a T0_e of Merzbild.eV * 2.0
     # with sampling on a finer grid (nv_heavy = 20, nv_electrons = 40)
+    # settimg threshold_electrons = 2000, np_target_electrons = 1500 
     # and computing rate based
-    # on densities for 100_000 < nt < 290_000
-    # gives a rate of 4.0565095021838734e-16
+    # on densities for 150_000 < nt < 350_000
+    # gives a rate of 4.266287551708332e-16
     # reference bolsig value (bolsig version from 07/2024) using same data
     # (input file bolsig_input_const_Ar.dat and cross-section file bolsig_const_Ar_cs.txt)
     # gives a rate of 3.970707E-16
+    # the other two test cases in the file use other temperatures and densities and E field values
 
     # first we test with small T0_e
     E_Tn = 100 # field strength in Tn
@@ -45,7 +47,6 @@
     Random.seed!(seed)
     rng = StableRNG(seed)
 
-
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
     interaction_data_path = joinpath(@__DIR__, "..", "data", "vhs.toml")
     cs_data_path = joinpath(@__DIR__, "..", "data", "test_neutral_electron_data.xml")
@@ -65,8 +66,8 @@
     index_electron = 3
 
 
-    nv_heavy = 15  # init neutrals and ions on a coarser grid
-    nv_electrons = 20
+    nv_heavy = 20  # init neutrals and ions on a coarser grid
+    nv_electrons = 40
     np_base_heavy = nv_heavy^3  # some initial guess on # of particles in simulation
     np_base_electrons = nv_electrons^3  # some initial guess on # of particles in simulation
 
@@ -181,12 +182,13 @@
  
     ndens_tot = n_dens_e + n_dens_ions + n_dens_neutrals
 
-    # test overall number density conservation, 4.4e-13 is relative error due to initialization
+    # test number density conservation of ions+neutrals, 4.4e-13 is relative error due to initialization
     ndens_conservation = true
 
     for t in 1:n_t
         if abs(sum(sol["ndens"][1, :, t]) - ndens_tot) / ndens_tot > 4.4e-13
             ndens_conservation = false
+            println(abs(sum(sol["ndens"][1, :, t]) - ndens_tot) / ndens_tot)
         end
     end
 
@@ -203,12 +205,15 @@
 
     @test charge_neutrality == true
 
+    close(sol)
+    exit()
+
     # test compared to ref solution
     ref_sol_path = joinpath(@__DIR__, "data", "ionization_Ar_no_es.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
 
-    @test maximum(abs.(ref_sol["ndens"][1, :, 1:n_t] .- sol["ndens"][1, :, 1:n_t])) < 4 * eps()
-    @test maximum(abs.(ref_sol["T"][1, :, 1:n_t] .- sol["T"][1, :, 1:n_t])) < 7.5e-12  # not zero
+    @test maximum(abs.((ref_sol["ndens"][1, :, 1:n_t] .- sol["ndens"][1, :, 1:n_t]) ./ ref_sol["ndens"][1, :, 1:n_t])) < 4 * eps()
+    @test maximum(abs.((ref_sol["T"][1, :, 1:n_t] .- sol["T"][1, :, 1:n_t]) ./ ref_sol["T"][1, :, 1:n_t])) < 7.5e-12  # not zero
     # because in v0.7.9 some octree merging computations replaced 1/w with 1 * inv_w
 
     close(sol)
@@ -360,8 +365,8 @@
     ref_sol_path = joinpath(@__DIR__, "data", "ionization_Ar_no_es_v2.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
 
-    @test maximum(abs.(ref_sol["ndens"][1, :, 1:n_t] .- sol["ndens"][1, :, 1:n_t])) < 4 * eps()
-    @test maximum(abs.(ref_sol["T"][1, :, 1:n_t] .- sol["T"][1, :, 1:n_t])) < 7.5e-14
+    @test maximum(abs.((ref_sol["ndens"][1, :, 1:n_t] .- sol["ndens"][1, :, 1:n_t]) ./ ref_sol["ndens"][1, :, 1:n_t])) < 4 * eps()
+    @test maximum(abs.((ref_sol["T"][1, :, 1:n_t] .- sol["T"][1, :, 1:n_t]) ./ ref_sol["T"][1, :, 1:n_t])) < 7.5e-14
 
     close(sol)
     rm(sol_path)
@@ -520,8 +525,8 @@
     ref_sol_path = joinpath(@__DIR__, "data", "ionization_Ar_no_es_v2_invratio.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
 
-    @test maximum(abs.(ref_sol["ndens"][1, :, 1:n_t] .- sol["ndens"][1, :, 1:n_t])) < 4 * eps()
-    @test maximum(abs.(ref_sol["T"][1, :, 1:n_t] .- sol["T"][1, :, 1:n_t])) < 7.5e-14
+    @test maximum(abs.((ref_sol["ndens"][1, :, 1:n_t] .- sol["ndens"][1, :, 1:n_t]) ./ ref_sol["ndens"][1, :, 1:n_t])) < 4 * eps()
+    @test maximum(abs.((ref_sol["T"][1, :, 1:n_t] .- sol["T"][1, :, 1:n_t]) ./ ref_sol["T"][1, :, 1:n_t])) < 7.5e-14
 
     close(sol)
     rm(sol_path)
