@@ -90,9 +90,8 @@
     for ts in 1:n_t
         ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
 
-        if phys_props.np[1,1] > threshold
+        if pia.n_total[1] > threshold
             merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
-            # println(oc.Nbins)
         end
         
         compute_props_with_total_moments!(particles, pia, species_data, phys_props)
