@@ -1,3 +1,5 @@
+# python scripts/compute_rate.py --filename test/data/tmp_ion_no_es.nc --tstart 100000 --tend 2
+# 90000 --nid 0 --ionid 1 --eid 2 --dt 5e-14
 import argparse
 from netCDF4 import Dataset
 import numpy as np
