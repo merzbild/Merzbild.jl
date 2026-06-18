@@ -1,4 +1,5 @@
 include("test_malloc_2species_equal_weight.jl")  # malloc with equal weight collisions and props computes
+include("test_malloc_props_computes.jl")  # malloc with props computes
 include("test_malloc_bkw_varweight_octree.jl")  # malloc with merging and variable-weight collisions
 include("test_malloc_octree_1Dgrid.jl")  # malloc with octree merging on 1D grid
 include("test_malloc_bkw_varweight_gridmerge.jl")  # malloc with grid merging and variable-weight collisions
