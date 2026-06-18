@@ -66,8 +66,8 @@
     index_electron = 3
 
 
-    nv_heavy = 20  # init neutrals and ions on a coarser grid
-    nv_electrons = 40
+    nv_heavy = 15  # init neutrals and ions on a coarser grid
+    nv_electrons = 20
     np_base_heavy = nv_heavy^3  # some initial guess on # of particles in simulation
     np_base_electrons = nv_electrons^3  # some initial guess on # of particles in simulation
 
@@ -182,13 +182,12 @@
  
     ndens_tot = n_dens_e + n_dens_ions + n_dens_neutrals
 
-    # test number density conservation of ions+neutrals, 4.4e-13 is relative error due to initialization
+    # test number density conservation, aka we have no ionization in this case
     ndens_conservation = true
 
     for t in 1:n_t
         if abs(sum(sol["ndens"][1, :, t]) - ndens_tot) / ndens_tot > 4.4e-13
             ndens_conservation = false
-            println(abs(sum(sol["ndens"][1, :, t]) - ndens_tot) / ndens_tot)
         end
     end
 
@@ -204,10 +203,6 @@
     end
 
     @test charge_neutrality == true
-
-    close(sol)
-    exit()
-
     # test compared to ref solution
     ref_sol_path = joinpath(@__DIR__, "data", "ionization_Ar_no_es.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
@@ -217,7 +212,7 @@
     # because in v0.7.9 some octree merging computations replaced 1/w with 1 * inv_w
 
     close(sol)
-    rm(sol_path)
+    # rm(sol_path)
 
     # now we test with higher T0_e and E_tn and should get ionization
     E_Tn = 600
@@ -369,9 +364,7 @@
     @test maximum(abs.((ref_sol["T"][1, :, 1:n_t] .- sol["T"][1, :, 1:n_t]) ./ ref_sol["T"][1, :, 1:n_t])) < 7.5e-14
 
     close(sol)
-    rm(sol_path)
-
-
+    # rm(sol_path)
 
     # now we test with higher T0_e and E_tn and should get ionization
     # and have inverse ratio of densities to check splitting
@@ -529,5 +522,5 @@
     @test maximum(abs.((ref_sol["T"][1, :, 1:n_t] .- sol["T"][1, :, 1:n_t]) ./ ref_sol["T"][1, :, 1:n_t])) < 7.5e-14
 
     close(sol)
-    rm(sol_path)
+    # rm(sol_path)
 end
