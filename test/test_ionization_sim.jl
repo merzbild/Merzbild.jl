@@ -212,7 +212,7 @@
     # because in v0.7.9 some octree merging computations replaced 1/w with 1 * inv_w
 
     close(sol)
-    # rm(sol_path)
+    rm(sol_path)
 
     # now we test with higher T0_e and E_tn and should get ionization
     E_Tn = 600
@@ -364,7 +364,7 @@
     @test maximum(abs.((ref_sol["T"][1, :, 1:n_t] .- sol["T"][1, :, 1:n_t]) ./ ref_sol["T"][1, :, 1:n_t])) < 7.5e-14
 
     close(sol)
-    # rm(sol_path)
+    rm(sol_path)
 
     # now we test with higher T0_e and E_tn and should get ionization
     # and have inverse ratio of densities to check splitting
@@ -522,5 +522,5 @@
     @test maximum(abs.((ref_sol["T"][1, :, 1:n_t] .- sol["T"][1, :, 1:n_t]) ./ ref_sol["T"][1, :, 1:n_t])) < 7.5e-14
 
     close(sol)
-    # rm(sol_path)
+    rm(sol_path)
 end
