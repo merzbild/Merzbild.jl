@@ -53,7 +53,7 @@ the velocity of the center of mass to the electron.
 end
 
 """
-    scatter_ionization_electrons_and_ion!(rng, collision_data, particles_electron, particles_ion, i1, i2, k1, mass_ratio)
+    scatter_ionization_electrons_and_ion!(rng, collision_data, p_e1, p_e2, p_ion, mass_ratio)
 
 Scatter electrons and ion after an ionization reaction using VHS (isotropic) scattering.
 
@@ -63,26 +63,21 @@ Scatter electrons and ion after an ionization reaction using VHS (isotropic) sca
     center-of-mass velocity the magnitude of the pre-collisional relative velocity
     of the electron and the neutral, and the post-collisional magnitudes of the velocities
     of the electrons
-* `particles_electron`: the vector of electron particles
-* `particles_ion`: the vector of ion particles
-* `i1`: the index of the first electron particle to scatter off of the neutral
-* `i2`: the index of the second electron particle to scatter off of the neutral
-* `k1`: the index of the ion produced in the ionization reaction
+* `i1`: the first electron particle to scatter off of the neutral
+* `i2`: the second electron particle to scatter off of the neutral
+* `k1`: the ion produced in the ionization reaction
 * `mass_ratio`: ratio of the electron mass to the ion mass
 
 # References
 * K. Nanbu, Eqns. (47)-(53b), [IEEE Trans. Plasma. Sci., 2000](https://doi.org/10.1109/27.887765)
 """
-function scatter_ionization_electrons_and_ion!(rng, collision_data, particles_electron, particles_ion, i1, i2, k1, mass_ratio)
-    @inbounds p_i1 = particles_electron[i1]
-    @inbounds p_i2 = particles_electron[i2]
-
-    scatter_electron_vhs!(rng, p_i1, collision_data.g_new_1)
-    scatter_electron_vhs!(rng, p_i2, collision_data.g_new_2)
-    @inbounds particles_ion[k1].v = -mass_ratio * (p_i1.v + p_i2.v) + collision_data.v_com
+function scatter_ionization_electrons_and_ion!(rng, collision_data, p_e1, p_e2, p_ion, mass_ratio)
+    scatter_electron_vhs!(rng, p_e1, collision_data.g_new_1)
+    scatter_electron_vhs!(rng, p_e2, collision_data.g_new_2)
+    p_ion.v = -mass_ratio * (p_e1.v + p_e2.v) + collision_data.v_com
     
-    p_i1.v = p_i1.v + collision_data.v_com
-    p_i2.v = p_i2.v + collision_data.v_com
+    p_e1.v = p_e1.v + collision_data.v_com
+    p_e2.v = p_e2.v + collision_data.v_com
 end
 
 end

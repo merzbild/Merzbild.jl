@@ -61,7 +61,8 @@
     # ionization energy of argon is 15.76 eV
     Merzbild.compute_g_new_ionization!(collision_data, interaction_data[1,2], E_ion_eV, ElectronEnergySplitEqual)
 
-    Merzbild.scatter_ionization_electrons_and_ion!(rng, collision_data, particles_electron, particles_ion, 1, 2, 1, m_ratio)
+    Merzbild.scatter_ionization_electrons_and_ion!(rng, collision_data,
+                                                   particles_electron[1], particles_electron[2], particles_ion[1], m_ratio)
 
     # neutral particles don't change (we delete them later anyway but need the data to set the ions properties)
     @test maximum(abs.(particles_neutral[1].x - [0.0, 1.0, -2.0])) < 2*eps()
@@ -111,7 +112,8 @@
     E_total_pre_eV = E_neutral_eV + E_electron_pre_eV
 
     Merzbild.compute_g_new_ionization!(collision_data, interaction_data[1,2], E_ion_eV, ElectronEnergySplitZeroE)
-    Merzbild.scatter_ionization_electrons_and_ion!(rng, collision_data, particles_electron, particles_ion, 1, 2, 1, m_ratio)
+    Merzbild.scatter_ionization_electrons_and_ion!(rng, collision_data,
+                                                   particles_electron[1], particles_electron[2], particles_ion[1], m_ratio)
 
     # neutral particles don't change (we delete them later anyway but need the data to set the ions properties)
     @test maximum(abs.(particles_neutral[1].x - [0.0, 1.0, -2.0])) < 2*eps()
@@ -164,7 +166,8 @@
     E_total_pre_eV = E_neutral_eV + E_electron_pre_eV
     # ionization energy of argon is 15.76 eV
     Merzbild.compute_g_new_ionization!(collision_data, interaction_data[1,2], E_ion_eV, ElectronEnergySplitEqual)
-    Merzbild.scatter_ionization_electrons_and_ion!(rng, collision_data, particles_electron, particles_ion, 1, 2, 1, m_ratio)
+    Merzbild.scatter_ionization_electrons_and_ion!(rng, collision_data,
+                                                   particles_electron[1], particles_electron[2], particles_ion[1], m_ratio)
 
     # neutral particles don't change (we delete them later anyway but need the data to set the ions properties)
     @test maximum(abs.(particles_neutral[1].x - [0.0, 1.0, -2.0])) < 2*eps()
@@ -213,7 +216,8 @@
     E_total_pre_eV = E_neutral_eV + E_electron_pre_eV
     # ionization energy of argon is 15.76 eV
     Merzbild.compute_g_new_ionization!(collision_data, interaction_data[1,2], E_ion_eV, ElectronEnergySplitEqual)
-    Merzbild.scatter_ionization_electrons_and_ion!(rng, collision_data, particles_electron, particles_ion, 1, 2, 1, m_ratio)
+    Merzbild.scatter_ionization_electrons_and_ion!(rng, collision_data,
+                                                   particles_electron[1], particles_electron[2], particles_ion[1], m_ratio)
 
     # neutral particles don't change (we delete them later anyway but need the data to set the ions properties)
     @test maximum(abs.(particles_neutral[1].x - [0.0, 1.0, -2.0])) < 2*eps()
@@ -275,7 +279,8 @@
     # ionization energy of argon is 15.76 eV
     Merzbild.compute_g_new_ionization!(collision_data, interaction_data[1,2], E_ion_eV, ElectronEnergySplitEqual)
 
-    Merzbild.scatter_ionization_electrons_and_ion!(rng, collision_data, particles_electron, particles_ion, 1, 2, 1, m_ratio)
+    Merzbild.scatter_ionization_electrons_and_ion!(rng, collision_data,
+                                                   particles_electron[1], particles_electron[2], particles_ion[1], m_ratio)
 
     # neutral particles don't change (we delete them later anyway but need the data to set the ions properties)
     @test maximum(abs.(particles_neutral[1].x - [0.0, 1.0, -2.0])) < 2*eps()
