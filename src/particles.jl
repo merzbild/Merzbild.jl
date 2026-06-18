@@ -482,6 +482,7 @@ If no particles are present in the 1st group of particles, the function does not
 """
 @inline function delete_particle_end_group1!(pv::ParticleVector{D}, pia, cell, species) where D
     @inbounds indexer = pia.indexer[cell, species]
+    index_last = pia.index_last
 
     if indexer.n_group1 == 0
         return
@@ -497,9 +498,9 @@ If no particles are present in the 1st group of particles, the function does not
     indexer.n_group1 -= 1
 
     new_last = false
-    @inbounds if index_of_deleted == pia.index_last[species]
+    @inbounds if index_of_deleted == index_last[species]
         new_last = true
-        @inbounds pia.index_last[species] -= 1
+        @inbounds index_last[species] -= 1
     end
 
     @inbounds pia.n_total[species] -= 1
@@ -513,16 +514,17 @@ If no particles are present in the 1st group of particles, the function does not
             # need to find new index_last, iterate only over group1 since we're already in that part
             found = false
             if !found
-                for c in cell-1:-1:1
-                    @inbounds if pia.indexer[c, species].n_group1 > 0
-                        @inbounds pia.index_last[species] = pia.indexer[c, species].end1
+                @inbounds for c in cell-1:-1:1
+                    indexer_c = pia.indexer[c, species]
+                    if indexer_c.n_group1 > 0
+                        index_last[species] = indexer_c.end1
                         found = true
                         break
                     end
                 end
             end
             if !found
-                @inbounds pia.index_last[species] = 0
+                index_last[species] = 0
             end
         end
     end
@@ -549,6 +551,7 @@ If no particles are present in the 2nd group of particles, the function does not
 """
 @inline function delete_particle_end_group2!(pv::ParticleVector{D}, pia, cell, species) where D
     @inbounds indexer = pia.indexer[cell, species]
+    index_last = pia.index_last
 
     if indexer.n_group2 == 0
         return
@@ -564,9 +567,9 @@ If no particles are present in the 2nd group of particles, the function does not
     indexer.n_group2 -= 1
 
     new_last = false
-    @inbounds if index_of_deleted == pia.index_last[species]
+    @inbounds if index_of_deleted == index_last[species]
         new_last = true
-        @inbounds pia.index_last[species] -= 1
+        index_last[species] -= 1
     end
 
     @inbounds pia.n_total[species] -= 1
@@ -579,9 +582,10 @@ If no particles are present in the 2nd group of particles, the function does not
         # need to find new index_last
         if new_last
             found = false
-            for c in cell-1:-1:1
-                @inbounds if pia.indexer[c, species].n_group2 > 0
-                    @inbounds pia.index_last[species] = pia.indexer[c, species].end2
+            @inbounds for c in cell-1:-1:1
+                indexer_c = pia.indexer[c, species]
+                if indexer_c.n_group2 > 0
+                    index_last[species] = indexer_c.end2
                     found = true
                     break
                 end
@@ -591,16 +595,17 @@ If no particles are present in the 2nd group of particles, the function does not
             @inbounds n_cells = size(pia.indexer)[1]
 
             if !found
-                for c in n_cells:-1:1
-                    @inbounds if pia.indexer[c, species].n_group1 > 0
-                        @inbounds pia.index_last[species] = pia.indexer[c, species].end1
+                @inbounds for c in n_cells:-1:1
+                    indexer_c = pia.indexer[c, species]
+                    if indexer_c.n_group1 > 0
+                        index_last[species] = indexer_c.end1
                         found = true
                         break
                     end
                 end
             end
             if !found
-                @inbounds pia.index_last[species] = 0
+                @inbounds index_last[species] = 0
             end
         end
     end
