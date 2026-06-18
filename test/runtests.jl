@@ -22,7 +22,7 @@ include("runtests_swpm.jl")  # SWPM tests
 include("test_misc.jl")  # various misc utility functions
 include("runtests_reference_solutions.jl")  # tests that compare against reference solutions
 include("runtests_malloc.jl")  # tests to check for unexpected memory allocations
-# include("test_aqua.jl")
+include("test_aqua.jl")
 
 
 # tests assume that VHS data for Ar, He is
