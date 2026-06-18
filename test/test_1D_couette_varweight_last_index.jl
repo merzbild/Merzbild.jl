@@ -106,16 +106,13 @@
         end
     end
 
-    # write_netcdf(ds_avg, phys_props_avg, n_timesteps)
-
     close_netcdf(ds)
-    # close_netcdf(ds_avg)
 
     @test check_pia_is_correct(pia, 1) == (true, 0)
     @test check_unique_index(particles[1], pia, 1) == (true, 0)
     @test check_unique_buffer(particles[1]) == (true, 0)
 
-    ref_sol_path = joinpath(@__DIR__, "data", "couette_0.0005_50_500.0_300.0_1000_vw200to150.nc")
+    ref_sol_path = joinpath(@__DIR__, "data", "couette_0.0005_50_500.0_300.0_1000_vw200to150_lastindex.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
     sol = NCDataset(sol_path, "r")
  
@@ -128,8 +125,14 @@
         end
     end
 
+    @test maximum(abs.(ref_sol["ndens"][:, 1, 1:5] .- sol["ndens"][:, 1, 1:5])) < 2 * eps()
+    @test maximum(abs.(ref_sol["T"][:, 1, 1:5] .- sol["T"][:, 1, 1:5])) < 2.4e-13
+    # this is # of physical particles, should not change
+    @test abs(sum(ref_sol["ndens"][:, 1, 1:5]) - sum(sol["ndens"][:, 1, 1:5]))/sum(sol["ndens"][:, 1, 1:5]) <= eps()
+
     @test ndens_conservation == true
 
+    close(ref_sol)
     close(sol)
     rm(sol_path)
 

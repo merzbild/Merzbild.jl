@@ -19,7 +19,7 @@ include("test_1D_couette_fp.jl")  # test  1-D Couette flow, particle Fokker-Plan
 include("test_2species_equal_weight0Dparticles.jl")  # test fixed-weight collisions with particles with dim(x)=
 # include("test_bkw_varweight_octree_0Dparticle.jl")  # test variable weight BKW + octree merging with 0D particles"
 # include("test_1D_couette_varweight_1DParticle.jl")  # test variable weight Couette + octree merging with 1D particles
-# include("test_1D_couette_varweight_last_index.jl")  # test variable weight Couette with last_index and less squashing
+include("test_1D_couette_varweight_last_index.jl")  # test variable weight Couette with last_index and less squashing
 
 
 # tests assume that VHS data for Ar, He is
