@@ -9,13 +9,13 @@ include("test_bkw_varweight_nnls.jl")  # test NNLS-based merging
 # include("test_ionization_sim.jl")  # test 0D ionization simulation without event splitting
 # include("test_ionization_sim_indexing.jl")  # test 0D ionization simulation with multiple neutral/ion species
 include("test_1D_couette.jl")  # test Couette flow
-# include("test_1D_couette_varweight.jl")  # test 1-D Couette flow, variable-weight DSMC, surface computes
+include("test_1D_couette_varweight.jl")  # test 1-D Couette flow, variable-weight DSMC, surface computes
 include("test_1D_couette_nnls.jl")  # test 1-D Couette flow, variable-weight DSMC, NNLS merging surface computes
 include("test_1D_couette_fp.jl")  # test  1-D Couette flow, particle Fokker-Planck collisions
-# include("test_couette_varweight_octree_chunking.jl")  # test serial but chunked variable-weight simulation
-# include("test_1D_couette_varweight_index_resort.jl")  # test 1-D Couette flow, variable-weight DSMC, index re-sorting
+include("test_couette_varweight_octree_chunking.jl")  # test serial but chunked variable-weight simulation
+include("test_1D_couette_varweight_index_resort.jl")  # test 1-D Couette flow, variable-weight DSMC, index re-sorting
 # include("test_bkw_varweight_octree_swpm.jl")  # SWPM for BKW test case
-# include("test_1D_couette_varweight_swpm.jl")  # SWPM for Couette flow
+include("test_1D_couette_varweight_swpm.jl")  # SWPM for Couette flow
 include("test_2species_equal_weight0Dparticles.jl")  # test fixed-weight collisions with particles with dim(x)=
 # include("test_bkw_varweight_octree_0Dparticle.jl")  # test variable weight BKW + octree merging with 0D particles"
 # include("test_1D_couette_varweight_1DParticle.jl")  # test variable weight Couette + octree merging with 1D particles
