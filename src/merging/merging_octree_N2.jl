@@ -542,6 +542,9 @@ Also sets the velocity bounds of the new bins.
 function split_bin!(octree, bin_id, particles::ParticleVector{D}) where D
     n_nonempty_bins = 0
     
+    # the bin we're splitting
+    bin0 = octree.bins[bin_id]
+
     particle_in_bin_counter = octree.particle_in_bin_counter
     ndens_counter = octree.ndens_counter
     nonempty_bins = octree.nonempty_bins
@@ -552,7 +555,7 @@ function split_bin!(octree, bin_id, particles::ParticleVector{D}) where D
     fill!(nonempty_bins, 0)
     fill!(nonempty_counter, 0)
     
-    @inbounds current_depth = octree.bins[bin_id].depth
+    @inbounds current_depth = bin0.depth
     @inbounds bs = octree.bin_start[bin_id]
     @inbounds be = octree.bin_end[bin_id]
 
@@ -564,7 +567,7 @@ function split_bin!(octree, bin_id, particles::ParticleVector{D}) where D
     end
 
     if (octree.split == OctreeBinMidSplit)
-        @inbounds octree.vel_middle = 0.5 * (octree.bins[bin_id].v_min + octree.bins[bin_id].v_max)
+        @inbounds octree.vel_middle = 0.5 * (bin0.v_min + bin0.v_max)
     elseif (octree.split == OctreeBinMeanSplit)
         compute_v_mean!(octree, bs, be, particles) # octree.vel_middle = octree.bins[bin_id].v_mean
     elseif (octree.split == OctreeBinMedianSplit)
@@ -614,25 +617,29 @@ function split_bin!(octree, bin_id, particles::ParticleVector{D}) where D
     # now we replaced ith with n_nonempty_bins bins that each produce 1 or 2 particles
     octree.total_post_merge_np -= 2
     if (octree.bin_bounds_compute == OctreeBinBoundsInherit)
-        @inbounds octree.v_min_parent = octree.bins[bin_id].v_min
-        @inbounds octree.v_max_parent = octree.bins[bin_id].v_max
+        @inbounds octree.v_min_parent = bin0.v_min
+        @inbounds octree.v_max_parent = bin0.v_max
 
         # iterate over non-empty bins and inherit parent bin bounds + split around middle velocity
         @inbounds for i in 1:n_nonempty_bins
             bi = get_new_bin_id(i, bin_id, octree.Nbins)
+
+            bin = octree.bins[bi]
+            neb = nonempty_bins[i]
+
             bin_bounds_inherit!(octree, bi,
                                 octree.v_min_parent, octree.v_max_parent,
-                                octree.vel_middle, nonempty_bins[i])
-            octree.bins[bi].np = nonempty_counter[i]
-            octree.bins[bi].w = ndens_counter[nonempty_bins[i]]
-            octree.bins[bi].depth = current_depth + 1
+                                octree.vel_middle, neb)
+            bin.np = nonempty_counter[i]
+            bin.w = ndens_counter[neb]
+            bin.depth = current_depth + 1
 
             octree.total_post_merge_np += get_bin_post_merge_np(octree, bi)
             # octree.bins[bin_id + i - 1].post_merge_np = get_bin_post_merge_np(octree, bin_id + i - 1)
-            if (octree.bins[bi].np > 2) && (octree.bins[bi].depth < octree.max_depth)
-                octree.bins[bi].can_be_refined = true
+            if (bin.np > 2) && (bin.depth < octree.max_depth)
+                bin.can_be_refined = true
             else
-                octree.bins[bi].can_be_refined = false
+                bin.can_be_refined = false
             end
         end
     else
@@ -640,17 +647,18 @@ function split_bin!(octree, bin_id, particles::ParticleVector{D}) where D
         # will recompute bin bounds if we do next round of refinement
         @inbounds for i in 1:n_nonempty_bins
             bi = get_new_bin_id(i, bin_id, octree.Nbins)
-            octree.bins[bi].np = nonempty_counter[i]
-            octree.bins[bi].w = ndens_counter[nonempty_bins[i]]
-            octree.bins[bi].depth = current_depth + 1
+            bin = octree.bins[bi]
+            bin.np = nonempty_counter[i]
+            bin.w = ndens_counter[nonempty_bins[i]]
+            bin.depth = current_depth + 1
 
             # we had a bin that would've produced 2 particles
             # now we replaced ith with n_nonempty_bins bins that each produce 1 or 2 particles
             octree.total_post_merge_np += get_bin_post_merge_np(octree, bi)
-            if (octree.bins[bi].np > 2) && (octree.bins[bi].depth < octree.max_depth)
-                octree.bins[bi].can_be_refined = true
+            if (bin.np > 2) && (bin.depth < octree.max_depth)
+                bin.can_be_refined = true
             else
-                octree.bins[bi].can_be_refined = false
+                bin.can_be_refined = false
             end
         end
     end
