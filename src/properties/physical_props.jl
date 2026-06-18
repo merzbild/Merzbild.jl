@@ -285,17 +285,35 @@ function avg_props!(phys_props_avg::PhysProps, phys_props::PhysProps, n_avg_time
 
     inv_nt_avg = 1.0 / n_avg_timesteps
     n_cells = phys_props.n_cells
+    n_species = phys_props.n_species
 
-    for species in 1:phys_props.n_species
-        @inbounds phys_props_avg.lpa[species] = phys_props_avg.lpa[species] + phys_props.lpa[species] * inv_nt_avg
+    avg_lpa = phys_props_avg.lpa
+    curr_lpa = phys_props.lpa
+    
+    avg_np = phys_props_avg.np
+    curr_np = phys_props.np
+    
+    avg_n = phys_props_avg.n
+    curr_n = phys_props.n
+    
+    avg_v = phys_props_avg.v
+    curr_v = phys_props.v
+    
+    avg_T = phys_props_avg.T
+    curr_T = phys_props.T
 
-        @inbounds for cell in 1:n_cells
-            phys_props_avg.np[cell,species] = phys_props_avg.np[cell,species] + phys_props.np[cell,species] * inv_nt_avg
-            phys_props_avg.n[cell,species] = phys_props_avg.n[cell,species] + phys_props.n[cell,species] * inv_nt_avg
-            phys_props_avg.v[1,cell,species] = phys_props_avg.v[1,cell,species] + phys_props.v[1,cell,species] * inv_nt_avg
-            phys_props_avg.v[2,cell,species] = phys_props_avg.v[2,cell,species] + phys_props.v[2,cell,species] * inv_nt_avg
-            phys_props_avg.v[3,cell,species] = phys_props_avg.v[3,cell,species] + phys_props.v[3,cell,species] * inv_nt_avg
-            phys_props_avg.T[cell,species] = phys_props_avg.T[cell,species] + phys_props.T[cell,species] * inv_nt_avg
+    @inbounds for species in 1:n_species
+        avg_lpa[species] += curr_lpa[species] * inv_nt_avg
+
+        @simd for cell in 1:n_cells
+            avg_np[cell, species] += curr_np[cell, species] * inv_nt_avg
+            avg_n[cell, species]  += curr_n[cell, species] * inv_nt_avg
+            
+            avg_v[1, cell, species] += curr_v[1, cell, species] * inv_nt_avg
+            avg_v[2, cell, species] += curr_v[2, cell, species] * inv_nt_avg
+            avg_v[3, cell, species] += curr_v[3, cell, species] * inv_nt_avg
+            
+            avg_T[cell, species]  += curr_T[cell, species] * inv_nt_avg
         end
     end
 end
@@ -317,7 +335,16 @@ compute the length of the particle array.
 * `cell_chunk`: the list of cell indices or range of cell indices in which to compute the properties
 """
 function compute_props_sorted!(particles, pia, species_data, phys_props, cell_chunk)
-    for species in 1:phys_props.n_species
+    indexer = pia.indexer
+    pp_np = phys_props.np
+    pp_n  = phys_props.n
+    pp_v  = phys_props.v
+    pp_T  = phys_props.T
+
+    @inbounds for species in 1:phys_props.n_species
+        species_particles = particles[species]
+        species_mass = species_data[species].mass
+
         for cell in cell_chunk
             n = 0.0
             np = 0.0
@@ -325,10 +352,11 @@ function compute_props_sorted!(particles, pia, species_data, phys_props, cell_ch
             T = 0.0
             v = SVector{3,Float64}(0.0, 0.0, 0.0)
 
-            s1 = pia.indexer[cell,species].start1
-            e1 = pia.indexer[cell,species].end1
-            @inbounds for i in s1:e1
-                particle = particles[species][i]
+            idx = indexer[cell, species]
+            s1 = idx.start1
+            e1 = idx.end1
+            for i in s1:e1
+                particle = species_particles[i]
 
                 n += particle.w
                 v = v + particle.v * particle.w
@@ -338,23 +366,23 @@ function compute_props_sorted!(particles, pia, species_data, phys_props, cell_ch
 
             if (n > 0.0)
                 v /= n
-                @inbounds for i in s1:e1
-                    particle = particles[species][i]
+                for i in s1:e1
+                    particle = species_particles[i]
                     
                     E = E + particle.w * ((particle.v[1] - v[1])^2
                                             + (particle.v[2] - v[2])^2
                                             + (particle.v[3] - v[3])^2)
                 end
-                E *= 0.5 * species_data[species].mass / (n * k_B)
+                E *= 0.5 * species_mass / (n * k_B)
                 T = (2.0/3.0) * E
             end
-    
-            @inbounds phys_props.np[cell,species] = np
-            @inbounds phys_props.n[cell,species] = n
-            @inbounds phys_props.v[1,cell,species] = v[1]
-            @inbounds phys_props.v[2,cell,species] = v[2]
-            @inbounds phys_props.v[3,cell,species] = v[3]
-            @inbounds phys_props.T[cell,species] = T
+            
+            pp_np[cell, species] = np
+            pp_n[cell, species] = n
+            pp_v[1, cell, species] = v[1]
+            pp_v[2, cell, species] = v[2]
+            pp_v[3, cell, species] = v[3]
+            pp_T[cell, species] = T
         end
     end
 end
