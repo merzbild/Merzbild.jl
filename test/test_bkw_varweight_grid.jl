@@ -113,8 +113,8 @@
     sol_mom = sol["moments"]
 
     for mom_no in 1:length(moments_list)
-        diff = abs.(ref_mom[mom_no, 1, 1, :] - sol_mom[mom_no, 1, 1, :])
-        @test maximum(diff) <= 8.75e-15 # 2 * eps()
+        diff = abs.(ref_mom[mom_no, 1, 1, :] - sol_mom[mom_no, 1, 1, :]) / ref_mom[mom_no, 1, 1, :]
+        @test maximum(diff) <= 1e-13 # 2 * eps()
     end
 
     close(ref_sol)

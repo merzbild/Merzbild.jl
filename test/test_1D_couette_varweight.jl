@@ -114,7 +114,7 @@
     @test check_unique_index(particles[1], pia, 1) == (true, 0)
     @test check_unique_buffer(particles[1]) == (true, 0)
 
-    ref_sol_path = joinpath(@__DIR__, "data", "couette_0.0005_50_500.0_300.0_1000_vw200to150.nc")
+    ref_sol_path = joinpath(@__DIR__, "data", "couette_0.0005_50_500.0_300.0_1000_vw200to150_3dp.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
     sol = NCDataset(sol_path, "r")
  
@@ -137,7 +137,7 @@
     rm(sol_path)
 
 
-    ref_sol_path = joinpath(@__DIR__, "data", "couette_0.0005_50_500.0_300.0_1000_vw200to150_surf.nc")
+    ref_sol_path = joinpath(@__DIR__, "data", "couette_0.0005_50_500.0_300.0_1000_vw200to150_surf_3dp.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
     sol = NCDataset(sol_path_surf, "r")
  
