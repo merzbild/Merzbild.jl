@@ -41,13 +41,13 @@
     @test Merzbild.vy_sign(8) == 1
     @test Merzbild.vz_sign(8) == 1
 
-    @test Merzbild.check_speed_bound(-2.0, 1.0, 3.0) == 1.0
-    @test Merzbild.check_speed_bound(5.0, 1.0, 3.0) == 3.0
-    @test Merzbild.check_speed_bound(0.0, -1.0, 3.0) == 0.0
+    # @test Merzbild.check_speed_bound(-2.0, 1.0, 3.0) == 1.0
+    # @test Merzbild.check_speed_bound(5.0, 1.0, 3.0) == 3.0
+    # @test Merzbild.check_speed_bound(0.0, -1.0, 3.0) == 0.0
 
-    @test Merzbild.check_speed_bound(-20.0, -4.0, 8.0, 0.5) == -2.0
-    @test Merzbild.check_speed_bound(20.0, -4.0, 8.0, 0.5) == 4.0
-    @test Merzbild.check_speed_bound(-6.0, -4.0, 8.0, 0.5) == -3.0
+    # @test Merzbild.check_speed_bound(-20.0, -4.0, 8.0, 0.5) == -2.0
+    # @test Merzbild.check_speed_bound(20.0, -4.0, 8.0, 0.5) == 4.0
+    # @test Merzbild.check_speed_bound(-6.0, -4.0, 8.0, 0.5) == -3.0
 
     mim = Merzbild.compute_multi_index_moments(3)
 

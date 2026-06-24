@@ -1,6 +1,6 @@
 # Merzbild.jl benchmarks
 
-Various benchmarks and comparisons to other open-source codes are provided here for reference test cases.
+Various benchmarks and comparisons to other open-source codes are provided here for reference test cases. An overview of benchmarks between different versions of Merzbild is provided in the Summary section.
 
 ## Couette flow, serial, small grid
 
@@ -238,3 +238,40 @@ Shown is the speed-up compared to a serial execution on the same computer (see a
 |                               | **2 cores** |  **4 cores** |  **8 cores** |  **16 cores** | **32 cores** |
 |:-----------------------------:|:-----------:|:------------:|:------------:|:-------------:|:-------------:|
 | `n_chunks=n_threads`, no DLB  |   1.88      |    3.68      |     5.24     |      5.70     |     6.57      |
+
+## Couette flow, variable-weight particles, octree merging
+
+TODO
+
+## 0D ionization, variable-weight particles, octree merging
+
+TODO
+
+## 0D ionization, variable-weight particles, NNLS merging
+
+TODO
+
+## Summary
+
+### Couette flow, serial, small grid
+
+|                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
+|:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
+| v0.7.0 (Julia 1.11)     |       33.5s           |    28.4s                              |             33.0s               |
+| v0.8.0 (Julia 1.12)     |       TODO            |    TODO                               |             TODO                |    
+
+
+### Couette flow, serial, large grid
+
+|                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
+|:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
+| v0.7.0 (Julia 1.11)     |       1164s           |    795s                               |             1467s               |
+| v0.8.0 (Julia 1.12)     |       TODO            |    TODO                               |             TODO                |    
+
+### Couette flow threading speed-up
+
+|                     | **M1 Pro, 32 GB RAM, 2/4/8 threads** | **Intel Core i9-13900K, 128 GB RAM, 2/4/8 threads** | **AMD EPYC 9374F, 378 GB RAM 2/4/8/16/32 threads** |
+|:-------------------:|:------------------------------------:|:---------------------------------------------------:|:--------------------------------------------------:|
+| v0.7.0 (Julia 1.11) | 2.3 / 3.8 / 5.8                      |    1.9 / 3.2 / 5.1                                  | 1.9 / 3.9 / 5.2 / 5.7 / 6.5                        |
+| v0.8.0 (Julia 1.12) |       TODO                           |    TODO                                             |             TODO                                   |    
+

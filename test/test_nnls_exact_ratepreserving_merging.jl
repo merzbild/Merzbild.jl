@@ -182,8 +182,8 @@
     k_rate_ionization = rate_ionization / w0
 
     # test RHS rate coefficients
-    scaled_k_elastic = k_rate_elastic / (cs_ref * sqrt(nnls_rp.Ex^2 + nnls_rp.Ey^2 + nnls_rp.Ez^2))
-    scaled_k_ion = k_rate_ionization / (cs_ref * sqrt(nnls_rp.Ex^2 + nnls_rp.Ey^2 + nnls_rp.Ez^2))
+    scaled_k_elastic = k_rate_elastic / (cs_ref * sqrt(nnls_rp.Ev[1]^2 + nnls_rp.Ev[2]^2 + nnls_rp.Ev[3]^2))
+    scaled_k_ion = k_rate_ionization / (cs_ref * sqrt(nnls_rp.Ev[1]^2 + nnls_rp.Ev[2]^2 + nnls_rp.Ev[3]^2))
 
     @test abs(nnls_rp.rhs_vector[8] - scaled_k_elastic)/scaled_k_elastic < 1e-13
     @test abs(nnls_rp.rhs_vector[9] - scaled_k_ion)/scaled_k_ion < 1e-13
@@ -273,7 +273,7 @@
     k_rate_ionization = rate_ionization / w0
 
     # test RHS rate coefficients
-    scaled_k_elastic = k_rate_elastic / (cs_ref * sqrt(nnls_rp.Ex^2 + nnls_rp.Ey^2 + nnls_rp.Ez^2))
+    scaled_k_elastic = k_rate_elastic / (cs_ref * sqrt(nnls_rp.Ev[1]^2 + nnls_rp.Ev[2]^2 + nnls_rp.Ev[3]^2))
 
     @test abs(nnls_rp.rhs_vector[8] - scaled_k_elastic)/scaled_k_elastic < 5e-14
 
@@ -381,8 +381,8 @@
     k_rate_ionization = rate_ionization / (w0 * w_neutral)
 
     # test RHS rate coefficients
-    scaled_k_elastic = k_rate_elastic / (cs_ref * sqrt(nnls_rp.Ex^2 + nnls_rp.Ey^2 + nnls_rp.Ez^2))
-    scaled_k_ion = k_rate_ionization / (cs_ref * sqrt(nnls_rp.Ex^2 + nnls_rp.Ey^2 + nnls_rp.Ez^2))
+    scaled_k_elastic = k_rate_elastic / (cs_ref * sqrt(nnls_rp.Ev[1]^2 + nnls_rp.Ev[2]^2 + nnls_rp.Ev[3]^2))
+    scaled_k_ion = k_rate_ionization / (cs_ref * sqrt(nnls_rp.Ev[1]^2 + nnls_rp.Ev[2]^2 + nnls_rp.Ev[3]^2))
 
     @test abs(nnls_rp.rhs_vector[8] - scaled_k_elastic)/scaled_k_elastic < 2e-15
     @test abs(nnls_rp.rhs_vector[9] - scaled_k_ion)/scaled_k_ion < 4e-15

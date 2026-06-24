@@ -43,7 +43,7 @@ velocity grid with extent ``[-v_{x,max},v_{x,max}]\\times[-v_{y,max},v_{y,max}]\
 * `vx_max`: extent of the grid in the x direction
 * `vy_max`: extent of the grid in the y direction
 * `vz_max`: extent of the grid in the z direction
-* `dy`: grid spacing in x direction
+* `dx`: grid spacing in x direction
 * `dy`: grid spacing in y direction
 * `dz`: grid spacing in z direction
 * `vx_grid`: `Vector` of grid nodes in x direction

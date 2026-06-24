@@ -172,7 +172,7 @@ for all `species`.
 ParticleIndexerArray(n_particles::T) where T<:AbstractVector = ParticleIndexerArray(reshape([ParticleIndexer(np) for np in n_particles], 1, :),
                                                                                     copy(n_particles))
 """
-    ParticleIndexerArray(grid, species_data::Array{Species}) where T<:AbstractVector
+    ParticleIndexerArray(grid, species_data::Array{Species})
 
 Create an empty multi-species/multi-cell `ParticleIndexerArray`.
 
@@ -776,7 +776,7 @@ and [`update_particle_buffer_new_particle!`](@ref update_particle_buffer_new_par
 end
 
 """
-    add_particle!(pv::ParticleVector{D}, position, w, v, x)
+    add_particle!(pv::ParticleVector{D}, position, w, v::SVector{3,Float64}, x::SVector{D2,Float64})
 
 Create a new particle in a `ParticleVector` instance at position `position`.
 The `ParticleIndexer`/`ParticleIndexerArray` instances should be updated

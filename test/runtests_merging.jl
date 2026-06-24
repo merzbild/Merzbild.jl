@@ -13,9 +13,9 @@ include("test_octree_merging_0Dparticles.jl")  # then we test computation of pro
 include("test_octree_merging_buffer_sorting.jl")  # then we test that particles are freed correctly in octree merging
 include("test_nnls_utils.jl")  # test NNLS-based merging utils first
 include("test_nnls_merging.jl")  # test NNLS-based merging
-# include("test_nnls_merging_2Dparticles.jl")  # test NNLS for Particle{2}
-# include("test_nnls_merging_1Dparticles.jl")  # test NNLS for Particle{1}
-# include("test_nnls_merging_0Dparticles.jl")  # test NNLS for Particle{0}
+include("test_nnls_merging_2Dparticles.jl")  # test NNLS for Particle{2}
+include("test_nnls_merging_1Dparticles.jl")  # test NNLS for Particle{1}
+include("test_nnls_merging_0Dparticles.jl")  # test NNLS for Particle{0}
 include("test_nnls_merging_buffer_sorting.jl")  # then we test that particles are freed correctly in NNLS-based merging
 include("test_nnls_ratepreserving_merging.jl")  # test NNLS merging with approximate rate preservation
 include("test_nnls_exact_ratepreserving_merging.jl")  # test NNLS merging with exact rate preservation 

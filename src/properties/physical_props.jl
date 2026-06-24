@@ -46,6 +46,7 @@ defined as ``\\int \\sqrt{v_x^2+v_y^2+v_z^2}^M f(v_x,v_y,v_z)dv_x dv_y dv_z``.
 # Positional arguments
 * `n_cells`: number of cells
 * `n_species`: number of species
+* `moments_list`: list of total moment orders to compute 
 
 # Keyword arguments
 * `ndens_not_Np`: whether the `n` field stores number density (if `true`) and not the number of physical particles in a cell (if `false`)
@@ -66,7 +67,7 @@ defined as ``\\int \\sqrt{v_x^2+v_y^2+v_z^2}^M f(v_x,v_y,v_z)dv_x dv_y dv_z``.
 
 # Positional arguments
 * `pia`: the `ParticleIndexerArray` instance
-* `n_species`: number of species
+* `moments_list`: list of total moment orders to compute
 
 # Keyword arguments
 * `ndens_not_Np`: whether the `n` field stores number density (if `true`) and not the number of physical particles in a cell (if `false`)
