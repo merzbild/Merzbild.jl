@@ -86,7 +86,7 @@
     for cell in 1:grid.n_cells
         if pia.indexer[cell,1].n_local > merge_threshold
 
-            nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1; centered_at_mean=false, v_multipliers=[], w_threshold=1e-12)
+            nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1; w_threshold=1e-12)
 
             if nnls_success_flag == -1
                 fails += 1
@@ -110,7 +110,7 @@
                  collision_data, interaction_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
         
             if pia.indexer[cell,1].n_local > merge_threshold
-                nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1; centered_at_mean=false, v_multipliers=[], w_threshold=1e-12)
+                nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1; w_threshold=1e-12)
     
                 if nnls_success_flag == -1
                     merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)

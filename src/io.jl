@@ -534,8 +534,6 @@ mutable struct NCDataHolderSurf <: AbstractNCDataHolder
     Construct a `NCDataHolderSurf` instance with an empty list of variables to skip.
 
     # Positional arguments
-
-    # Positional arguments
     * `nc_filename`: filename to write output to
     * `species_data`: the vector of `Species` data for the species in the simulation
     * `surf_props`: the `SurfProps` instance which will be used for the computation and output of surface properties
@@ -763,8 +761,6 @@ mutable struct NCDataHolderFlux <: AbstractNCDataHolder
         NCDataHolderFlux(nc_filename, species_data, flux_props; global_attributes=Dict{Any,Any}())
 
     Construct a `NCDataHolderFlux` instance with an empty list of variables to skip.
-
-    # Positional arguments
 
     # Positional arguments
     * `nc_filename`: filename to write output to

@@ -50,6 +50,63 @@ function weighted_median_with_interpolation(values, weights)
 end
 
 """
+    vx_sign(octant)
+    
+Return sign of velocity vx of an octant in velocity space.
+
+# Positional arguments
+* `octant`: index of the octant in velocity space
+
+# Returns
+Sign of the x-velocity corresponding to the octant.
+"""
+function vx_sign(octant)
+    if octant % 2 == 1
+        return -1
+    else
+        return 1
+    end
+end
+
+"""
+    vy_sign(octant)
+    
+Return sign of velocity vy of an octant in velocity space.
+
+# Positional arguments
+* `octant`: index of the octant in velocity space
+
+# Returns
+Sign of the y-velocity corresponding to the octant.
+"""
+function vy_sign(octant)
+    if (octant == 3) || (octant == 4) || (octant == 7) || (octant == 8)
+        return 1
+    else
+        return -1
+    end
+end
+
+"""
+    vz_sign(octant)
+
+Return sign of velocity `vz` of an octant in velocity space.
+
+# Positional arguments
+* `octant`: index of the octant in velocity space
+
+# Returns
+Sign of the z-velocity corresponding to the octant
+"""
+function vz_sign(octant)
+    if octant >= 5
+        return 1
+    else
+        return -1
+    end
+end
+
+"""
     scale_columns!(matrix, column_norms)
 
 Scale the columns of the matrix to have unit L2 norm and store the inverse of the original norm in a vector.

@@ -726,17 +726,17 @@ function compute_bin_props!(octree::OctreeN2Merge{D}, bin_id, particles::Particl
     inv_w = 1.0 / octree.bins[bin_id].w
 
     @inbounds for i in bs:be
-        pin = octree.particle_indexes_sorted[i]
-        v_mean = v_mean + particles[pin].w * particles[pin].v
-        x_mean = x_mean + particles[pin].w * particles[pin].x
+        p_i = particles[octree.particle_indexes_sorted[i]]
+        v_mean = v_mean + p_i.w * p_i.v
+        x_mean = x_mean + p_i.w * p_i.x
     end
     v_mean = v_mean * inv_w
     x_mean = x_mean * inv_w
 
     @inbounds for i in bs:be
-        pin = octree.particle_indexes_sorted[i]
-        v_std_sq = v_std_sq + particles[pin].w * (particles[pin].v - v_mean).^2
-        x_std_sq = x_std_sq + particles[pin].w * (particles[pin].x - x_mean).^2
+        p_i = particles[octree.particle_indexes_sorted[i]]
+        v_std_sq = v_std_sq + p_i.w * (p_i.v - v_mean).^2
+        x_std_sq = x_std_sq + p_i.w * (p_i.x - x_mean).^2
     end
     v_std_sq = v_std_sq * inv_w
     x_std_sq = x_std_sq * inv_w

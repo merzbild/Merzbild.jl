@@ -1,14 +1,22 @@
 # Changelog
 
 ## v0.8
+
+### Breaking changes
 * Usage of `Vector{Particle}` completely deprecated; tests have been updated
 * `Particle` now has a `D` type parameter describing the dimension of the position vector. `D` defaults to 3 unless
 specified.
 * Merging routines now also have a `D` type parameter describing the dimension of the position vector of the particles to merge.
 `D` defaults to 3 unless specified.
+* Removed unused `update_particle_indexer_new_lower_count!` function
+* NNLS merging functions now do not take `v_multipliers`, `n_rand_pairs`, and `centered_at_mean` as arguments, and do not use any fictitious particles
+* function `check_speed_bounds` has been removed
+
+### New functionality
 * `squash_pia!` can be called less frequently, i.e. only before particle convection, as better tracking of last index
 in particle arrays has been implemented. See documentaton on contiguous indexing.
-* Removed unused `update_particle_indexer_new_lower_count!` function
+
+### Misc
 * Added tests that check that for unexpected memory allocations
 * Various performance optimizations
 
