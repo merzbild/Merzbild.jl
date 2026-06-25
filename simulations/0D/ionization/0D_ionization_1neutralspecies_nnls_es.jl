@@ -110,7 +110,7 @@ function run(seed, E_Tn, n_t,
     species_data::Vector{Species} = load_species_data("data/particles.toml", ["Ar", "Ar+", "e-"])
     interaction_data::Array{Interaction, 2} = load_interaction_data_with_dummy("data/vhs.toml", species_data)
 
-    n_e_interactions = load_electron_neutral_interactions(species_data, cross_section_filepath,
+    n_e_interactions = ElectronNeutralInteractions(species_data, cross_section_filepath,
                                                           Dict("Ar" => "IST-Lisbon"),
                                                           Dict("Ar" => ScatteringIsotropic),
                                                           Dict("Ar" => ElectronEnergySplitEqual))
