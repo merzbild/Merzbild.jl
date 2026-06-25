@@ -37,7 +37,7 @@
     species_data::Vector{Species} = load_species_data(particles_data_path, ["Ar", "Ar+", "e-"])
     interaction_data::Array{Interaction, 2} = load_interaction_data_with_dummy(interaction_data_path, species_data)
 
-    n_e_interactions = load_electron_neutral_interactions(species_data, cs_data_path,
+    n_e_interactions = ElectronNeutralInteractions(species_data, cs_data_path,
                                                           Dict("Ar" => "ConstantDB"),
                                                           Dict("Ar" => ScatteringIsotropic),
                                                           Dict("Ar" => ElectronEnergySplitEqual))

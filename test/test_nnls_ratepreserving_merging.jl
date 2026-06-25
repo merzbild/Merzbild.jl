@@ -56,7 +56,7 @@
     interaction_data = load_interaction_data(interaction_data_path, species_data, 1e-10, 1.0, 273.0)
 
     e_n_data_path = joinpath(@__DIR__, "..", "data", "test_neutral_electron_data.xml")
-    n_e_interactions = load_electron_neutral_interactions(species_data, e_n_data_path,
+    n_e_interactions = ElectronNeutralInteractions(species_data, e_n_data_path,
                                                           Dict("Ar" => "ConstantDB"),
                                                           Dict("Ar" => ScatteringIsotropic),
                                                           Dict("Ar" => ElectronEnergySplitEqual))

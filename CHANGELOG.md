@@ -15,6 +15,7 @@ specified. `ParticleVector` now also has a `D` type parameter.
 * NetCDF PhysProps output now does not write total moments; an `NCDataHolderMoments` has been added for that purpose
 * PhysProps no longer stores any moment data and `compute_props_with_total_moments!` has been removed
 * Particle netCDF I/O simplified, skips output of position and cell data for 0-D particles
+* `load_electron_neutral_interactions` replaced by an `ElectronNeutralInteractions` constructor
 
 ### New functionality
 * `squash_pia!` can be called less frequently, i.e. only before particle convection, as better tracking of last index
