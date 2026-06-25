@@ -126,7 +126,7 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons,
 
     pia = ParticleIndexerArray(n_sampled)
 
-    phys_props::PhysProps = PhysProps(1, 3, [], Tref=T0)
+    phys_props::PhysProps = PhysProps(1, 3)
     compute_props!(particles, pia, species_data, phys_props)
 
     if pia.n_total[1] > threshold_neutrals

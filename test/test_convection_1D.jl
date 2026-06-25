@@ -54,7 +54,7 @@
     @test particles[1][4].v == [-11.0, -3.0, 1.0]
     @test particles[1][4].w == 2.0
 
-    phys_props = PhysProps(grid.n_cells, 1, [], Tref=1)
+    phys_props = PhysProps(grid.n_cells, 1)
     compute_props!(particles, pia, species_data, phys_props)
 
     for i in 1:grid.n_cells

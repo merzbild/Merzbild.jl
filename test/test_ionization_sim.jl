@@ -91,7 +91,7 @@
 
     pia = ParticleIndexerArray(n_sampled)
 
-    phys_props::PhysProps = PhysProps(1, 3, [], Tref=T0)
+    phys_props::PhysProps = PhysProps(1, 3)
 
     sol_path = joinpath(@__DIR__, "data", "tmp_ion_no_es.nc")
 

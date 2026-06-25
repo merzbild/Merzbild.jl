@@ -155,7 +155,7 @@ function run(seed, merge_method, merge_parameter, Nsamples, io_handle; sampling_
             Nsamples_end += 1
         else
             flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1;
-                                     vref=vref, scaling=:variance, centered_at_mean=false, v_multipliers=[], iteration_mult=8)
+                                     vref=vref, scaling=:variance, iteration_mult=8)
 
             if flag != -1
                 Nsamples_end += 1

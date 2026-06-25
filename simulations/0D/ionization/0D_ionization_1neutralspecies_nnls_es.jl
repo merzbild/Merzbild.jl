@@ -156,7 +156,7 @@ function run(seed, E_Tn, n_t,
 
     pia = ParticleIndexerArray(n_sampled)
 
-    phys_props::PhysProps = PhysProps(1, 3, [], Tref=T0)
+    phys_props::PhysProps = PhysProps(1, 3)
     compute_props!(particles, pia, species_data, phys_props)
 
     ds = NCDataHolder(fname, species_data, phys_props)
@@ -177,7 +177,7 @@ function run(seed, E_Tn, n_t,
 
     if pia.n_total[3] > threshold_electrons
         @timeit "merge e t=0" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[3], pia, 1, 3;
-                                                                    vref=vref, scaling=:variance, centered_at_mean=false, v_multipliers=[], iteration_mult=5)
+                                                                    vref=vref, scaling=:variance, iteration_mult=5)
         
         if nnls_success_flag == -1
             println("resorting to octree for electrons at t=0")
@@ -238,7 +238,7 @@ function run(seed, E_Tn, n_t,
                 @timeit "NNLSmergeARP e" nnls_success_flag = merge_nnls_based_rate_preserving!(rng, mnnls_rp, 
                 interaction_data, n_e_interactions, n_e_cs,
                 particles[3], pia, 1, 3, index_neutral,
-                ref_cs_elastic, ref_cs_ionization; centered_at_mean=false, v_multipliers=[], vref=vref, scaling=:variance, iteration_mult=5)
+                ref_cs_elastic, ref_cs_ionization; vref=vref, scaling=:variance, iteration_mult=5)
             elseif rate_preserving == :exact
                 @timeit "NNLSmergeERP e" nnls_success_flag = merge_nnls_based_rate_preserving!(rng, mnnls_rp, 
                 interaction_data, n_e_interactions, n_e_cs,
@@ -246,14 +246,14 @@ function run(seed, E_Tn, n_t,
                 ref_cs_elastic, ref_cs_ionization; vref=vref, scaling=:variance, iteration_mult=5)
             else
                 @timeit "NNLSmerge e" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[3], pia, 1, 3;
-                                                                          centered_at_mean=false, v_multipliers=[], vref=vref, scaling=:variance, iteration_mult=5)
+                                                                            vref=vref, scaling=:variance, iteration_mult=5)
             end
             
             if nnls_success_flag == -1
 
                 
                 @timeit "NNLSmerge bup e" nnls_success_flag = merge_nnls_based!(rng, mnnls_backup, particles[3], pia, 1, 3;
-                                                      centered_at_mean=false, v_multipliers=[], vref=vref, scaling=:variance, iteration_mult=5) 
+                                                                                vref=vref, scaling=:variance, iteration_mult=5) 
 
                 if nnls_success_flag == -1
                     println("Resorting to octree merging")

@@ -48,7 +48,7 @@
     seed = 1234
     rng = StableRNG(seed)
 
-    phys_props = PhysProps(2, 1, [], Tref=1)
+    phys_props = PhysProps(2, 1)
 
     particles, pia = create_particles_and_pia(50)
     

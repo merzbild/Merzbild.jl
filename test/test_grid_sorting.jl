@@ -177,7 +177,7 @@
         @test pia_fine.indexer[cell,1].n_local == counts[cell]
     end
 
-    phys_props = PhysProps(grid_fine.n_cells, 1, [], Tref=1)
+    phys_props = PhysProps(grid_fine.n_cells, 1)
     compute_props!(particles, pia_fine, species_data, phys_props)
     n_per_cell = Fnum * counts
 
@@ -225,7 +225,7 @@
         @test pia_fine.indexer[cell,1].n_local == counts[cell]
     end
 
-    phys_props = PhysProps(grid_fine.n_cells, 1, [], Tref=1)
+    phys_props = PhysProps(grid_fine.n_cells, 1)
     compute_props!(particles, pia_fine, species_data, phys_props)
     n_per_cell = Fnum * counts
 

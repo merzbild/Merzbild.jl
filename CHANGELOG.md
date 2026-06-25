@@ -5,16 +5,23 @@
 ### Breaking changes
 * Usage of `Vector{Particle}` completely deprecated; tests have been updated
 * `Particle` now has a `D` type parameter describing the dimension of the position vector. `D` defaults to 3 unless
-specified.
+specified. `ParticleVector` now also has a `D` type parameter.
 * Merging routines now also have a `D` type parameter describing the dimension of the position vector of the particles to merge.
 `D` defaults to 3 unless specified.
 * Removed unused `update_particle_indexer_new_lower_count!` function
 * NNLS merging functions now do not take `v_multipliers`, `n_rand_pairs`, and `centered_at_mean` as arguments, and do not use any fictitious particles
-* function `check_speed_bounds` has been removed
+* The function `check_speed_bounds` has been removed
+* NetCDF output now does not write species names to a variable, but rather to a global attribute as a single comma-separated string
+* NetCDF PhysProps output now does not write total moments; an `NCDataHolderMoments` has been added for that purpose
+* PhysProps no longer stores any moment data and `compute_props_with_total_moments!` has been removed
+* Particle netCDF I/O simplified, skips output of position and cell data for 0-D particles
 
 ### New functionality
 * `squash_pia!` can be called less frequently, i.e. only before particle convection, as better tracking of last index
 in particle arrays has been implemented. See documentaton on contiguous indexing.
+* NetCDF output now allows to choose exact format and defalts to `NC_64BIT_OFFSET`, significantly speeding-up I/O
+* `compute_moment_scaling!`, `compute_moments!` functions to compute scaled total velocity moments
+* `NCDataHolderMoments` struct type added for I/O of computed moment data
 
 ### Misc
 * Added tests that check that for unexpected memory allocations

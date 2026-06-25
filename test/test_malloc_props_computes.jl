@@ -34,8 +34,8 @@
                                    n_particles_He, species_data[2].mass, T0_He, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
 
 
-    phys_props = PhysProps(1, 2, [], Tref=T0_Ar)
-    phys_props_avg = PhysProps(1, 2, [], Tref=T0_Ar)
+    phys_props = PhysProps(1, 2)
+    phys_props_avg = PhysProps(1, 2)
     compute_props_sorted!(particles, pia, species_data, phys_props)
     avg_props!(phys_props_avg, phys_props, 8)
 

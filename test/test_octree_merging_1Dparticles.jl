@@ -64,7 +64,7 @@
     seed = 1234
     rng = StableRNG(seed)
 
-    phys_props::PhysProps = PhysProps(1, 1, [], Tref=1)
+    phys_props::PhysProps = PhysProps(1, 1)
     
     # particles24::Vector{Vector{Particle}} = [create_24_3particles_in_octant()]
     particles24 = [create_24_3particles_in_octant()]

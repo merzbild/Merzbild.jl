@@ -10,7 +10,6 @@ If the field value is `true`, the corresponding physical grid property will not 
 
 # Fields
 * `skip_length_particle_array`: whether the length of the particle array should be skipped
-* `skip_moments`: whether the output of the total moments should be skipped
 * `skip_number_of_particles`: whether the output of the number of particles should be skipped
 * `skip_number_density`: whether the output of the number density/number of physical particles should be skipped
 * `skip_velocity`: whether the output of the velocity should be skipped
@@ -18,7 +17,6 @@ If the field value is `true`, the corresponding physical grid property will not 
 """
 struct IOSkipList
     skip_length_particle_array::Bool
-    skip_moments::Bool
     skip_number_of_particles::Bool
     skip_number_density::Bool
     skip_velocity::Bool
@@ -28,7 +26,7 @@ struct IOSkipList
         IOSkipList(list_of_variables_to_skip)
     
     Construct an `IOSkipList` from a list of variable names.
-    The possible names are: `length_particle_array`, `moments`,
+    The possible names are: `length_particle_array`,
     `np` or `nparticles`, `ndens`, `v`, `T`.
 
     # Positional arguments
@@ -37,7 +35,6 @@ struct IOSkipList
     function IOSkipList(list_of_variables_to_skip)
 
         skip_length_particle_array = false
-        skip_moments = false
         skip_number_of_particles = false
         skip_number_density = false
         skip_velocity = false
@@ -45,10 +42,6 @@ struct IOSkipList
     
         if "length_particle_array" in list_of_variables_to_skip
             skip_length_particle_array = true
-        end
-    
-        if "moments" in list_of_variables_to_skip
-            skip_moments = true
         end
     
         if ("np" in list_of_variables_to_skip) || ("nparticles" in list_of_variables_to_skip)
@@ -67,7 +60,7 @@ struct IOSkipList
             skip_temperature = true
         end
     
-        return new(skip_length_particle_array, skip_moments, skip_number_of_particles,
+        return new(skip_length_particle_array, skip_number_of_particles,
                    skip_number_density, skip_velocity, skip_temperature)
     end
 
@@ -90,11 +83,8 @@ Struct that holds NetCDF-output related data for physical properties (grid prope
 * `filehandle`: handle to the open NetCDF file
 * `ndens_not_Np`: whether the number density or the number of physical particles is being output
 * `timestep_dim`: timestep dimension that used to keep track of the number of output steps
-* `v_spn`: variable to hold species' names (dimension `n_species`)
 * `v_timestep`: variable to hold the simulation timestep number (dimension `time`)
 * `v_lpa`: variable to hold lengths of particle arrays (dimension `n_species x time`)
-* `v_mompows`: variable to hold list of total moment powers (dimension `n_moments`)
-* `v_moments`: variable to hold total moments (dimension `n_moments x n_cells x n_species x time`)
 * `v_np`:  variable to hold number of particles (dimension ` n_cells x n_species x time`)
 * `v_ndens`: variable to hold number density or the number of physical particles (dimension ` n_cells x n_species x time`)
 * `v_v`: variable to hold velocity (dimension `3 x n_cells x n_species x time`)
@@ -117,11 +107,8 @@ mutable struct NCDataHolder <: AbstractNCDataHolder
     filehandle::NcFile
     ndens_not_Np::Bool
     timestep_dim::NcDim  # timestep dimension, used to keep track of where we are in the file
-    v_spn::NcVar  # species names: "n_species"
     v_timestep::NcVar  # timestep
     v_lpa::NcVar  # length of particle array: "n_species" x "time"
-    v_mompows::NcVar  # moment powers: "n_moments"
-    v_moments::NcVar  # moment values: "n_moments" x "n_cells" x "n_species" x "time"
     v_np::NcVar  # number of particles: "n_cells" x "n_species" x "time"
     v_ndens::NcVar  # number density: "n_cells" x "n_species" x "time"
     v_v::NcVar  # velocity: 3 x "n_cells" x "n_species" x "time"
@@ -140,7 +127,7 @@ mutable struct NCDataHolder <: AbstractNCDataHolder
     skip_list::IOSkipList
 
     @doc """
-        NCDataHolder(nc_filename, names_skip_list, species_data, phys_props; global_attributes=Dict{Any,Any}())
+        NCDataHolder(nc_filename, names_skip_list, species_data, phys_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
 
     Construct a `NCDataHolder` instance with a list of variables to skip.
 
@@ -152,11 +139,13 @@ mutable struct NCDataHolder <: AbstractNCDataHolder
     
     # Keyword arguments
     * `global_attributes`: dictionary of any additional attributes to write to the netCDF file as a global attribute
+    * `mode`: NetCDF file format mode (default: `NC_64BIT_OFFSET` for older and faster format, can use `NC_NETCDF4` for NetCDF4 format)
     """
-    function NCDataHolder(nc_filename, names_skip_list, species_data, phys_props; global_attributes=Dict{Any,Any}())
+    function NCDataHolder(nc_filename, names_skip_list, species_data, phys_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
         skip_list = IOSkipList(names_skip_list)
 
         gatts = deepcopy(global_attributes)
+        gatts["species_names"] = join([species.name for species in species_data], ",")  # if ["Ar"], ["He"], gatts["species_names"] = "Ar,He"
 
         if phys_props.ndens_not_Np
             gatts["COMMENT ndens"] = "In this file, the ndens variable stores the number density, NOT # of physical particles in cell"
@@ -167,28 +156,19 @@ mutable struct NCDataHolder <: AbstractNCDataHolder
         v_dim = NcDim("vel_components", 3, unlimited=false)
         cells_dim = NcDim("n_cells", phys_props.n_cells, unlimited=false)
         species_dim = NcDim("n_species", phys_props.n_species, unlimited=false)
-        moments_dim = NcDim("n_moments", phys_props.n_moments, unlimited=false)
         timestep_dim = NcDim("timestep", 0, unlimited=true)
 
-        v_spn = NcVar("species_names", [species_dim], t=String, compress=-1)
         v_timestep = NcVar("timestep", [timestep_dim], t=Float64, compress=-1)
         v_lpa = NcVar("length_particle_array", [species_dim, timestep_dim], t=Float64, compress=-1)
-        v_mompows = NcVar("moment_powers", [moments_dim], t=Int32, compress=-1)
-        v_moments = NcVar("moments", [moments_dim, cells_dim, species_dim, timestep_dim], t=Float64, compress=-1)
         v_np = NcVar("np", [cells_dim, species_dim, timestep_dim], t=Float64, compress=-1)
         v_ndens = NcVar("ndens", [cells_dim, species_dim, timestep_dim], t=Float64, compress=-1)
         v_v = NcVar("v", [v_dim, cells_dim, species_dim, timestep_dim], t=Float64, compress=-1)
         v_T = NcVar("T", [cells_dim, species_dim, timestep_dim], t=Float64, compress=-1)
 
-        varlist::Vector{NetCDF.NcVar} = [v_spn, v_timestep]
+        varlist::Vector{NetCDF.NcVar} = [v_timestep]
 
         if !skip_list.skip_length_particle_array
             push!(varlist, v_lpa)
-        end
-
-        if !skip_list.skip_moments
-            push!(varlist, v_mompows)
-            push!(varlist, v_moments)
         end
 
         if !skip_list.skip_number_of_particles
@@ -207,25 +187,19 @@ mutable struct NCDataHolder <: AbstractNCDataHolder
             push!(varlist, v_T)
         end
 
-        filehandle = NetCDF.create(nc_filename, varlist, gatts=gatts, mode=NC_NETCDF4)
-
-        NetCDF.putvar(v_spn, [species.name for species in species_data])
-
-        if !skip_list.skip_moments
-            NetCDF.putvar(v_mompows, phys_props.moment_powers)
-        end
+        filehandle = NetCDF.create(nc_filename, varlist, gatts=gatts, mode=mode)
 
         return new(filehandle, phys_props.ndens_not_Np,
-                   timestep_dim, v_spn, v_timestep, v_lpa, v_mompows, v_moments, v_np, v_ndens, v_v, v_T,
+                   timestep_dim, v_timestep, v_lpa, v_np, v_ndens, v_v, v_T,
                    [phys_props.n_species, 1], [phys_props.n_cells, phys_props.n_species, 1],
                    [3, phys_props.n_cells, phys_props.n_species, 1], [1], [1, 1], [1, 1, 1], [1, 1, 1, 1], [0.0],
                    skip_list)
     end
 
     @doc """
-        NCDataHolder(nc_filename, species_data, phys_props; global_attributes=Dict{Any,Any}())
+        NCDataHolder(nc_filename, species_data, phys_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
 
-    Construct a `NCDataHolder` instance with an empty list of variables to skip.
+    Construct a `NCDataHolder` instance with an empty list of variable to skip,
 
     # Positional arguments
     * `nc_filename`: filename to write output to
@@ -234,9 +208,10 @@ mutable struct NCDataHolder <: AbstractNCDataHolder
     
     # Keyword arguments
     * `global_attributes`: dictionary of any additional attributes to write to the netCDF file as a global attribute
+    * `mode`: NetCDF file format mode (default: `NC_64BIT_OFFSET` for older and faster format, can use `NC_NETCDF4` for NetCDF4 format)
     """
-    function NCDataHolder(nc_filename, species_data, phys_props; global_attributes=Dict{Any,Any}())
-        return NCDataHolder(nc_filename, [], species_data, phys_props; global_attributes=global_attributes)
+    function NCDataHolder(nc_filename, species_data, phys_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
+        return NCDataHolder(nc_filename, [], species_data, phys_props; global_attributes=global_attributes, mode=mode)
     end
 end
 
@@ -303,12 +278,6 @@ function write_netcdf(ds, phys_props::PhysProps, timestep; sync_freq=0)
 
     if !ds.skip_list.skip_temperature
         NetCDF.putvar(ds.v_T, phys_props.T, start=ds.currtimesteps_1_1, count=ds.n_cells_n_species_1)
-    end
-
-    if !ds.skip_list.skip_moments
-        if (phys_props.n_moments > 0)
-            NetCDF.putvar(ds.v_moments, phys_props.moments, start=[1, 1, 1, currtimesteps], count=[phys_props.n_moments, phys_props.n_cells, phys_props.n_species, 1])
-        end
     end
 
     if (sync_freq > 0) && (currtimesteps % sync_freq == 0)
@@ -404,7 +373,6 @@ Struct that holds NetCDF-output related data for surface properties I/O.
 # Fields
 * `filehandle`: handle to the open NetCDF file
 * `timestep_dim`: timestep dimension that used to keep track of the number of output steps
-* `v_spn`: variable to hold species' names (dimension `n_species`)
 * `v_timestep`: variable to hold the simulation timestep number (dimension `time`)
 * `v_np`:  variable to hold number of particles that hit the surface (dimension ` n_elements x n_species x time`)
 * `v_flux_incident`: variable to hold incident mass flux (dimension `n_elements x n_species x time`)
@@ -430,7 +398,6 @@ Struct that holds NetCDF-output related data for surface properties I/O.
 mutable struct NCDataHolderSurf <: AbstractNCDataHolder
     filehandle::NcFile
     timestep_dim::NcDim  # timestep dimension, used to keep track of where we are in the file
-    v_spn::NcVar  # species names: "n_species"
     v_timestep::NcVar  # timestep
 
     v_np::NcVar  # number of particles: "n_elements" x "n_species" x "time"
@@ -454,7 +421,7 @@ mutable struct NCDataHolderSurf <: AbstractNCDataHolder
     skip_list::IOSkipListSurf
 
     @doc """
-        NCDataHolderSurf(nc_filename, names_skip_list, species_data, surf_props; global_attributes=Dict{Any,Any}())
+        NCDataHolderSurf(nc_filename, names_skip_list, species_data, surf_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
 
     Construct a `NCDataHolderSurf` instance with a list of variables to skip.
 
@@ -466,18 +433,19 @@ mutable struct NCDataHolderSurf <: AbstractNCDataHolder
     
     # Keyword arguments
     * `global_attributes`: dictionary of any additional attributes to write to the netCDF file as a global attribute
+    * `mode`: NetCDF file format mode (default: `NC_64BIT_OFFSET` for older and faster format, can use `NC_NETCDF4` for NetCDF4 format)
     """
-    function NCDataHolderSurf(nc_filename, names_skip_list, species_data, surf_props; global_attributes=Dict{Any,Any}())
+    function NCDataHolderSurf(nc_filename, names_skip_list, species_data, surf_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
         skip_list = IOSkipListSurf(names_skip_list)
 
         gatts = deepcopy(global_attributes)
+        gatts["species_names"] = join([species.name for species in species_data], ",") # if ["Ar"], ["He"], gatts["species_names"] = "Ar,He"
 
         v_dim = NcDim("vector_components", 3, unlimited=false)
         elements_dim = NcDim("n_elements", surf_props.n_elements, unlimited=false)
         species_dim = NcDim("n_species", surf_props.n_species, unlimited=false)
         timestep_dim = NcDim("timestep", 0, unlimited=true)
 
-        v_spn = NcVar("species_names", [species_dim], t=String, compress=-1)
         v_timestep = NcVar("timestep", [timestep_dim], t=Float64, compress=-1)
 
         v_np = NcVar("np", [elements_dim, species_dim, timestep_dim], t=Float64, compress=-1)
@@ -488,7 +456,7 @@ mutable struct NCDataHolderSurf <: AbstractNCDataHolder
         v_shear_pressure = NcVar("shear_pressure", [v_dim, elements_dim, species_dim, timestep_dim], t=Float64, compress=-1)
         v_kinetic_energy_flux = NcVar("kinetic_energy_flux", [elements_dim, species_dim, timestep_dim], t=Float64, compress=-1)
 
-        varlist::Vector{NetCDF.NcVar} = [v_spn, v_timestep]
+        varlist::Vector{NetCDF.NcVar} = [v_timestep]
 
         if !skip_list.skip_number_of_particles
             push!(varlist, v_np)
@@ -515,12 +483,10 @@ mutable struct NCDataHolderSurf <: AbstractNCDataHolder
             push!(varlist, v_kinetic_energy_flux)
         end
 
-        filehandle = NetCDF.create(nc_filename, varlist, gatts=gatts, mode=NC_NETCDF4)
-
-        NetCDF.putvar(v_spn, [species.name for species in species_data])
+        filehandle = NetCDF.create(nc_filename, varlist, gatts=gatts, mode=mode)
 
         return new(filehandle, 
-                   timestep_dim, v_spn, v_timestep, v_np, v_flux_incident, v_flux_reflected, v_force,
+                   timestep_dim, v_timestep, v_np, v_flux_incident, v_flux_reflected, v_force,
                    v_normal_pressure, v_shear_pressure, v_kinetic_energy_flux,
                    [surf_props.n_species, 1], [surf_props.n_elements, surf_props.n_species, 1],
                    [3, surf_props.n_elements, surf_props.n_species, 1],
@@ -529,9 +495,11 @@ mutable struct NCDataHolderSurf <: AbstractNCDataHolder
     end
 
     @doc """
-        NCDataHolderSurf(nc_filename, species_data, surf_props; global_attributes=Dict{Any,Any}())
+        NCDataHolderSurf(nc_filename, species_data, surf_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
 
-    Construct a `NCDataHolderSurf` instance with an empty list of variables to skip.
+    Construct a `NCDataHolderSurf` instance with an empty list of variable to skip.
+
+    # Positional arguments
 
     # Positional arguments
     * `nc_filename`: filename to write output to
@@ -540,9 +508,10 @@ mutable struct NCDataHolderSurf <: AbstractNCDataHolder
     
     # Keyword arguments
     * `global_attributes`: dictionary of any additional attributes to write to the netCDF file as a global attribute
+    * `mode`: NetCDF file format mode (default: `NC_64BIT_OFFSET` for older and faster format, can use `NC_NETCDF4` for NetCDF4 format)
     """
-    function NCDataHolderSurf(nc_filename, species_data, surf_props; global_attributes=Dict{Any,Any}())
-        return NCDataHolderSurf(nc_filename, [], species_data, surf_props; global_attributes=global_attributes)
+    function NCDataHolderSurf(nc_filename, species_data, surf_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
+        return NCDataHolderSurf(nc_filename, [], species_data, surf_props; global_attributes=global_attributes, mode=mode)
     end
 end
 
@@ -601,7 +570,6 @@ function write_netcdf(ds, surf_props::SurfProps, timestep; sync_freq=0)
         NetCDF.sync(ds.filehandle)
     end
 end
-
 
 """
     IOSkipListFlux
@@ -669,7 +637,6 @@ Struct that holds NetCDF-output related data for fluxes I/O.
 # Fields
 * `filehandle`: handle to the open NetCDF file
 * `timestep_dim`: timestep dimension that used to keep track of the number of output steps
-* `v_spn`: variable to hold species' names (dimension `n_species`)
 * `v_timestep`: variable to hold the simulation timestep number (dimension `time`)
 * `v_kinetic_energy_flux`: variable to hold kinetic energy flux (dimension `3 x n_elements x n_species x time`)
 * `v_diagonal_momentum_flux`: variable to the diagonal components of the momentum flux tensor (dimension `3 x n_elements x n_species x time`)
@@ -685,7 +652,6 @@ Struct that holds NetCDF-output related data for fluxes I/O.
 mutable struct NCDataHolderFlux <: AbstractNCDataHolder
     filehandle::NcFile
     timestep_dim::NcDim  # timestep dimension, used to keep track of where we are in the file
-    v_spn::NcVar  # species names: "n_species"
     v_timestep::NcVar  # timestep
 
     v_kinetic_energy_flux::NcVar  # kinetic energy flux: "3 x n_elements" x "n_species" x "time"
@@ -701,7 +667,7 @@ mutable struct NCDataHolderFlux <: AbstractNCDataHolder
     skip_list::IOSkipListFlux
 
     @doc """
-        NCDataHolderFlux(nc_filename, names_skip_list, species_data, flux_props; global_attributes=Dict{Any,Any}())
+        NCDataHolderFlux(nc_filename, names_skip_list, species_data, flux_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
 
     Construct a `NCDataHolderFlux` instance with a list of variables to skip.
 
@@ -713,25 +679,25 @@ mutable struct NCDataHolderFlux <: AbstractNCDataHolder
     
     # Keyword arguments
     * `global_attributes`: dictionary of any additional attributes to write to the netCDF file as a global attribute
+    * `mode`: NetCDF file format mode (default: `NC_64BIT_OFFSET` for older and faster format, can use `NC_NETCDF4` for NetCDF4 format)
     """
-    function NCDataHolderFlux(nc_filename, names_skip_list, species_data, flux_props; global_attributes=Dict{Any,Any}())
+    function NCDataHolderFlux(nc_filename, names_skip_list, species_data, flux_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
         skip_list = IOSkipListFlux(names_skip_list)
 
         gatts = deepcopy(global_attributes)
-
+        gatts["species_names"] = join([species.name for species in species_data], ",") # if ["Ar"], ["He"], gatts["species_names"] = "Ar,He"
+        
         v_dim = NcDim("vector_components", 3, unlimited=false)
         cells_dim = NcDim("n_cells", flux_props.n_cells, unlimited=false)
         species_dim = NcDim("n_species", flux_props.n_species, unlimited=false)
         timestep_dim = NcDim("timestep", 0, unlimited=true)
 
-        v_spn = NcVar("species_names", [species_dim], t=String, compress=-1)
         v_timestep = NcVar("timestep", [timestep_dim], t=Float64, compress=-1)
 
         v_kinetic_energy_flux = NcVar("kinetic_energy_flux", [v_dim, cells_dim, species_dim, timestep_dim], t=Float64, compress=-1)
         v_diagonal_momentum_flux = NcVar("diagonal_momentum_flux", [v_dim, cells_dim, species_dim, timestep_dim], t=Float64, compress=-1)
         v_off_diagonal_momentum_flux = NcVar("off_diagonal_momentum_flux", [v_dim, cells_dim, species_dim, timestep_dim], t=Float64, compress=-1)
-
-        varlist::Vector{NetCDF.NcVar} = [v_spn, v_timestep]
+        varlist::Vector{NetCDF.NcVar} = [v_timestep]
 
         if !skip_list.skip_kinetic_energy_flux
             push!(varlist, v_kinetic_energy_flux)
@@ -745,12 +711,10 @@ mutable struct NCDataHolderFlux <: AbstractNCDataHolder
             push!(varlist, v_off_diagonal_momentum_flux)
         end
 
-        filehandle = NetCDF.create(nc_filename, varlist, gatts=gatts, mode=NC_NETCDF4)
-
-        NetCDF.putvar(v_spn, [species.name for species in species_data])
+        filehandle = NetCDF.create(nc_filename, varlist, gatts=gatts, mode=mode)
 
         return new(filehandle, 
-                   timestep_dim, v_spn, v_timestep,
+                   timestep_dim, v_timestep,
                    v_kinetic_energy_flux, v_diagonal_momentum_flux, v_off_diagonal_momentum_flux,
                    [3, flux_props.n_cells, flux_props.n_species, 1],
                    [1], [1, 1, 1, 1], [0.0],
@@ -758,9 +722,11 @@ mutable struct NCDataHolderFlux <: AbstractNCDataHolder
     end
 
     @doc """
-        NCDataHolderFlux(nc_filename, species_data, flux_props; global_attributes=Dict{Any,Any}())
+        NCDataHolderFlux(nc_filename, species_data, flux_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
 
-    Construct a `NCDataHolderFlux` instance with an empty list of variables to skip.
+    Construct a `NCDataHolderFlux` instance with an empty list of variable to skip.
+
+    # Positional arguments
 
     # Positional arguments
     * `nc_filename`: filename to write output to
@@ -769,9 +735,10 @@ mutable struct NCDataHolderFlux <: AbstractNCDataHolder
     
     # Keyword arguments
     * `global_attributes`: dictionary of any additional attributes to write to the netCDF file as a global attribute
+    * `mode`: NetCDF file format mode (default: `NC_64BIT_OFFSET` for older and faster format, can use `NC_NETCDF4` for NetCDF4 format)
     """
-    function NCDataHolderFlux(nc_filename, species_data, flux_props; global_attributes=Dict{Any,Any}())
-        return NCDataHolderFlux(nc_filename, [], species_data, flux_props; global_attributes=global_attributes)
+    function NCDataHolderFlux(nc_filename, species_data, flux_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
+        return NCDataHolderFlux(nc_filename, [], species_data, flux_props; global_attributes=global_attributes, mode=mode)
     end
 end
 
@@ -820,10 +787,11 @@ function write_netcdf(ds, flux_props::FluxProps, timestep; sync_freq=0)
 end
 
 """
-    write_netcdf(nc_filename, pv::ParticleVector, pia, species, species_data; global_attributes=Dict{Any,Any}())
+    write_netcdf(nc_filename, particles::Vector{ParticleVector{D}}, pia, species_data, species_ids; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
     
-Write particles of a single species to a NetCDF file. The particles are written cell-wise, so the ordering
+Write particles of species listed in `species_ids` to a NetCDF file. The particles are written cell-wise, so the ordering
 is not preserved in case particles are present in the set of indices pointed to by `group2` indices.
+If `D==0` (particle position is not tracked), neither the particle position nor the cell index is written to the file.
 
 # Positional arguments
 * `nc_filename`: filename to write output to
@@ -831,147 +799,144 @@ is not preserved in case particles are present in the set of indices pointed to 
 * `pia`: the `ParticleIndexerArray` instance
 * `species`: the index of the species being written
 * `species_data`: the vector of `Species` data for the species in the simulation
+* `species_ids`: list of species ids (in range 1:n_species) of species for which to write particle data
 
 # Keyword arguments
 * `global_attributes`: dictionary of any additional attributes to write to the netCDF file as a global attribute
 """
-function write_netcdf(nc_filename, pv::ParticleVector{D}, pia, species, species_data; global_attributes=Dict{Any,Any}()) where D
+function write_netcdf(nc_filename, particles::Vector{ParticleVector{D}}, pia, species_data, species_ids; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET) where D
     gatts = deepcopy(global_attributes)
-
-    np_dim = NcDim("nparticles_$([species_data[species].name])", pia.n_total[species], unlimited=false)
-    three_dim = NcDim("3d", 3, unlimited=false)
-    one_dim = NcDim("1d", 1, unlimited=false)
-    
-    v_w = NcVar("w", [np_dim], t=Float64)
-    v_v = NcVar("v", [np_dim, three_dim], t=Float64)
-    v_x = NcVar("x", [np_dim, three_dim], t=Float64)
-    v_cell = NcVar("cell", [np_dim], t=Int64)
-    v_spn = NcVar("species_names", [one_dim], t=String)
-
-    varlist::Vector{NetCDF.NcVar} = [v_spn, v_w, v_v, v_x, v_cell]
-
-    filehandle = NetCDF.create(nc_filename, varlist, gatts=gatts, mode=NC_NETCDF4)
-
-    NetCDF.putvar(v_spn, [species_data[species].name])
+    full_names_list = [species.name for species in species_data]  # if ["Ar"], ["He"], gatts["species_names"] = "Ar,He"
+    gatts["species_names"] = join([full_names_list[i] for i in species_ids], ",")
 
     @inbounds n_cells = size(pia.indexer)[1]
+    @inbounds n_species = length(species_ids)
 
-    counter = 0
-    c_1 = [1]
-    c_1_3 = [1,3]
-
-    vv = zeros(3)
-    xx = zeros(3)
-
-    for cell in 1:n_cells
-        @inbounds s1 = pia.indexer[cell, species].start1
-        @inbounds e1 = pia.indexer[cell, species].end1
-
-        @inbounds for i in s1:e1
-            counter += 1
-            NetCDF.putvar(v_w, [pv[i].w], start=[counter], count=c_1)
-            vv[:] = pv[i].v
-            xx[:] = pv[i].x
-            NetCDF.putvar(v_v, vv, start=[counter, 1], count=c_1_3)
-            NetCDF.putvar(v_x, xx, start=[counter, 1], count=c_1_3)
-            NetCDF.putvar(v_cell, [cell], start=[counter], count=c_1)
-        end
-
-        if pia.indexer[cell, species].n_group2 > 0
-            @inbounds s2 = pia.indexer[cell, species].start2
-            @inbounds e2 = pia.indexer[cell, species].end2
-            @inbounds for i in s2:e2
-                counter += 1
-                NetCDF.putvar(v_w, [pv[i].w], start=[counter], count=c_1)
-                vv[:] = pv[i].v
-                xx[:] = pv[i].x
-                NetCDF.putvar(v_v, vv, start=[counter, 1], count=c_1_3)
-                NetCDF.putvar(v_x, xx, start=[counter, 1], count=c_1_3)
-                NetCDF.putvar(v_cell, [cell], start=[counter], count=c_1)
-            end
-        end
+    three_dim = NcDim("3d", 3, unlimited=false)
+    if D > 0
+        spatial_dim = NcDim("spatial_dim", D, unlimited=false)
     end
 
-    finalize(filehandle)
-end
-
-"""
-    write_netcdf(nc_filename, particles::Vector{ParticleVector}, pia, species_data; global_attributes=Dict{Any,Any}())
-    
-Write particles of all species to a NetCDF file. The particles are written cell-wise, so the ordering
-is not preserved in case particles are present in the set of indices pointed to by `group2` indices.
-
-# Positional arguments
-* `nc_filename`: filename to write output to
-* `pv`: the `ParticleVector` instances of particles to be written
-* `pia`: the `ParticleIndexerArray` instance
-* `species`: the index of the species being written
-* `species_data`: the vector of `Species` data for the species in the simulation
-
-# Keyword arguments
-* `global_attributes`: dictionary of any additional attributes to write to the netCDF file as a global attribute
-"""
-function write_netcdf(nc_filename, particles::Vector{ParticleVector{D}}, pia, species_data; global_attributes=Dict{Any,Any}()) where D
-    gatts = deepcopy(global_attributes)
-
-    @inbounds n_cells = size(pia.indexer)[1]
-    @inbounds n_species = size(pia.indexer)[2]
-
-    three_dim = NcDim("3d", 3, unlimited=false)
-    n_species_dim = NcDim("n_species", n_species, unlimited=false)
-    
-    v_spn = NcVar("species_names", [n_species_dim], t=String)
-
-    varlist::Vector{NetCDF.NcVar} = [v_spn]
+    varlist::Vector{NetCDF.NcVar} = []
     dimlist::Vector{NetCDF.NcDim} = [NcDim("nparticles_$(species_data[species].name)", pia.n_total[species], unlimited=false)
-                                     for species in 1:n_species]
-
-
-    for species in 1:n_species
-        push!(varlist, NcVar("w_$(species_data[species].name)", [dimlist[species]], t=Float64))  # 2, 6
-        push!(varlist, NcVar("v_$(species_data[species].name)", [dimlist[species], three_dim], t=Float64))  # 3, 7
-        push!(varlist, NcVar("x_$(species_data[species].name)", [dimlist[species], three_dim], t=Float64))  # 4, 8
-        push!(varlist, NcVar("cell_$(species_data[species].name)", [dimlist[species]], t=Int64))  # 5, 9
+                                     for species in species_ids]
+    gatts["Particle x-position dimension"] = "$D"
+    for species in species_ids
+        push!(varlist, NcVar("w_$(species_data[species].name)", [dimlist[species]], t=Float64))  # 1
+        push!(varlist, NcVar("v_$(species_data[species].name)", [dimlist[species], three_dim], t=Float64))  # 2
+        if D > 0
+            push!(varlist, NcVar("x_$(species_data[species].name)", [dimlist[species], spatial_dim], t=Float64))  # 3
+            push!(varlist, NcVar("cell_$(species_data[species].name)", [dimlist[species]], t=Float64))  # 4
+        end
     end
 
-    filehandle = NetCDF.create(nc_filename, varlist, gatts=gatts, mode=NC_NETCDF4)
+    filehandle = NetCDF.create(nc_filename, varlist, gatts=gatts, mode=mode)
 
-    NetCDF.putvar(varlist[1], [species_data[species].name for species in 1:n_species])
-
-    counter = 0
     c_1 = [1]
-    c_1_3 = [1,3]
+    c_1_3 = [1, 3]
+    c_1_D = [1, D]
 
+    # Preallocate coordinate/index vectors outside the loop to reach zero inner-loop allocations
+    st_1 = [1]
+    st_2 = [1, 1]
+    w_buf = [0.0]
+    cell_buf = [0]
     vv = zeros(3)
-    xx = zeros(3)
+    xx = zeros(max(1, D))
 
-    for species in 1:n_species
-        counter = 0 
-        for cell in 1:n_cells
-            @inbounds s1 = pia.indexer[cell, species].start1
-            @inbounds e1 = pia.indexer[cell, species].end1
+    if D > 0
+        @inbounds for species in species_ids
+            counter = 0 
+            for cell in 1:n_cells
+                s1 = pia.indexer[cell, species].start1
+                e1 = pia.indexer[cell, species].end1
 
-            @inbounds for i in s1:e1
-                counter += 1
-                NetCDF.putvar(varlist[2 + (species-1)*4], [particles[species][i].w], start=[counter], count=c_1)
-                vv[:] = particles[species][i].v
-                xx[:] = particles[species][i].x
-                NetCDF.putvar(varlist[3 + (species-1)*4], vv, start=[counter, 1], count=c_1_3)
-                NetCDF.putvar(varlist[4 + (species-1)*4], xx, start=[counter, 1], count=c_1_3)
-                NetCDF.putvar(varlist[5 + (species-1)*4], [cell], start=[counter], count=c_1)
-            end
-
-            if pia.indexer[cell, species].n_group2 > 0
-                @inbounds s2 = pia.indexer[cell, species].start2
-                @inbounds e2 = pia.indexer[cell, species].end2
-                @inbounds for i in s2:e2
+                for i in s1:e1
                     counter += 1
-                    NetCDF.putvar(varlist[2 + (species-1)*4], [particles[species][i].w], start=[counter], count=c_1)
+                    
+                    # Write weight
+                    st_1[1] = counter
+                    w_buf[1] = particles[species][i].w
+                    NetCDF.putvar(varlist[1 + (species-1)*4], w_buf, start=st_1, count=c_1)
+                    
+                    # Write velocity (remains 3D)
                     vv[:] = particles[species][i].v
+                    st_2[1] = counter
+                    NetCDF.putvar(varlist[2 + (species-1)*4], vv, start=st_2, count=c_1_3)
+                    
+                    # Write position x (D-dimensional)
                     xx[:] = particles[species][i].x
-                    NetCDF.putvar(varlist[3 + (species-1)*4], vv, start=[counter, 1], count=c_1_3)
-                    NetCDF.putvar(varlist[4 + (species-1)*4], xx, start=[counter, 1], count=c_1_3)
-                    NetCDF.putvar(varlist[5 + (species-1)*4], [cell], start=[counter], count=c_1)
+                    NetCDF.putvar(varlist[3 + (species-1)*4], xx, start=st_2, count=c_1_D)
+
+                    # Write cell index
+                    cell_buf[1] = cell
+                    NetCDF.putvar(varlist[4 + (species-1)*4], cell_buf, start=st_1, count=c_1)
+                end
+
+                if pia.indexer[cell, species].n_group2 > 0
+                    s2 = pia.indexer[cell, species].start2
+                    e2 = pia.indexer[cell, species].end2
+                    for i in s2:e2
+                        counter += 1
+                        
+                        # Write weight
+                        st_1[1] = counter
+                        w_buf[1] = particles[species][i].w
+                        NetCDF.putvar(varlist[1 + (species-1)*4], w_buf, start=st_1, count=c_1)
+                        
+                        # Write velocity
+                        vv[:] = particles[species][i].v
+                        st_2[1] = counter
+                        NetCDF.putvar(varlist[2 + (species-1)*4], vv, start=st_2, count=c_1_3)
+                        
+                        # Write position x
+                        xx[:] = particles[species][i].x
+                        NetCDF.putvar(varlist[3 + (species-1)*4], xx, start=st_2, count=c_1_D)
+                        
+                        # Write cell index
+                        cell_buf[1] = cell
+                        NetCDF.putvar(varlist[4 + (species-1)*4], cell_buf, start=st_1, count=c_1)
+                    end
+                end
+            end
+        end
+    else
+        @inbounds for species in species_ids
+            counter = 0 
+            for cell in 1:n_cells
+                s1 = pia.indexer[cell, species].start1
+                e1 = pia.indexer[cell, species].end1
+
+                for i in s1:e1
+                    counter += 1
+                    
+                    # Write weight
+                    st_1[1] = counter
+                    w_buf[1] = particles[species][i].w
+                    NetCDF.putvar(varlist[1 + (species-1)*2], w_buf, start=st_1, count=c_1)
+                    
+                    # Write velocity (remains 3D)
+                    vv[:] = particles[species][i].v
+                    st_2[1] = counter
+                    NetCDF.putvar(varlist[2 + (species-1)*2], vv, start=st_2, count=c_1_3)
+                end
+
+                if pia.indexer[cell, species].n_group2 > 0
+                    s2 = pia.indexer[cell, species].start2
+                    e2 = pia.indexer[cell, species].end2
+                    for i in s2:e2
+                        counter += 1
+                        
+                        # Write weight
+                        st_1[1] = counter
+                        w_buf[1] = particles[species][i].w
+                        NetCDF.putvar(varlist[1 + (species-1)*2], w_buf, start=st_1, count=c_1)
+                        
+                        # Write velocity
+                        vv[:] = particles[species][i].v
+                        st_2[1] = counter
+                        NetCDF.putvar(varlist[2 + (species-1)*2], vv, start=st_2, count=c_1_3)
+                    end
                 end
             end
         end

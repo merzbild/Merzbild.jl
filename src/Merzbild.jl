@@ -8,6 +8,7 @@ include("utils.jl")
 include("particles.jl")
 include("distributions_and_sampling.jl")
 include("properties/physical_props.jl")
+include("properties/moment_props.jl")
 include("properties/flux_props.jl")
 include("properties/collisional_props.jl")
 include("collisions/collisions.jl")
@@ -16,6 +17,7 @@ include("merging/merging.jl")
 include("pic/pic.jl")
 include("properties/surface_props.jl")
 include("io.jl")
+include("io_moments.jl")
 include("convection/convection.jl")
 include("parallel.jl")
 
@@ -26,7 +28,8 @@ export sample_maxwellian_on_grid!, sample_on_grid!, bkw, maxwellian
 export load_species_data, Particle, sample_particles_equal_weight!
 export sample_particles_phase_box_weighted!
 export Species, Interaction
-export compute_props!, compute_props_sorted!, compute_props_with_total_moments!
+export compute_props!, compute_props_sorted!
+export compute_moment_scaling!, compute_moments!
 export clear_props!, avg_props!
 export ParticleIndexer, ParticleIndexerArray
 export PhysProps
@@ -34,7 +37,7 @@ export CollisionFactors, CollisionFactorsSWPM
 export CollisionData, CollisionDataFP
 export SurfProps, reduce_surf_props!
 export squash_pia!
-export NCDataHolder, NCDataHolderSurf, IOSkipList, IOSkipListSurf, NCDataHolderFlux, IOSkipListFlux
+export NCDataHolder, NCDataHolderSurf, IOSkipList, IOSkipListSurf, NCDataHolderFlux, IOSkipListFlux, NCDataHolderMoments
 export write_netcdf
 export close_netcdf
 export load_interaction_data, load_interaction_data_with_dummy, load_species_and_interaction_data

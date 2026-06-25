@@ -69,14 +69,23 @@
                                 0.0, 1.0, 0.0, 1.0, 0.0, 1.0;
                                 v_mult=3.5, cutoff_mult=3.5, noise=0.0, v_offset=[0.0, 0.0, 0.0])
 
+    mscaling = zeros(length(moments_list))
+    mvals_list = zeros(length(moments_list))
+    compute_moment_scaling!(mscaling, moments_list, 1, species_data, T0)
+
     pia = ParticleIndexerArray(n_sampled)
 
-    phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
-    compute_props_with_total_moments!(particles, pia, species_data, phys_props)
+    phys_props::PhysProps = PhysProps(1, 1)
+    compute_props!(particles, pia, species_data, phys_props)
+    compute_moments!(mvals_list, mscaling, moments_list, particles, pia, 1, 1, species_data, phys_props)
 
     sol_path = joinpath(@__DIR__, "data", "tmp_bkw_octree.nc")
     ds = NCDataHolder(sol_path, species_data, phys_props)
     write_netcdf(ds, phys_props, 0)
+
+    sol_path_moments = joinpath(@__DIR__, "data", "tmp_bkw_octree_moments.nc")
+    ds_moments = NCDataHolderMoments(sol_path_moments, species_data, 1, 1, moments_list)
+    write_netcdf(ds_moments, mvals_list, 0)
 
     collision_factors::CollisionFactors = CollisionFactors()
     collision_data::CollisionData = CollisionData()
@@ -101,10 +110,13 @@
             @test pia.index_last[1] == pia.indexer[1,1].end1
         end
         
-        compute_props_with_total_moments!(particles, pia, species_data, phys_props)
+        compute_props!(particles, pia, species_data, phys_props)
+        compute_moments!(mvals_list, mscaling, moments_list, particles, pia, 1, 1, species_data, phys_props)
         write_netcdf(ds, phys_props, ts)
+        write_netcdf(ds_moments, mvals_list, ts)
     end
     close_netcdf(ds)
+    close_netcdf(ds_moments)
 
     @test check_pia_is_correct(pia, 1) == (true, 0)
     @test check_unique_index(particles[1], pia, 1) == (true, 0)
@@ -117,11 +129,12 @@
     ref_sol_path = joinpath(@__DIR__, "data", "bkw_vw_octree_seed1234.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
     sol = NCDataset(sol_path, "r")
+    sol_moments = NCDataset(sol_path_moments, "r")
 
     @test length(sol["timestep"]) == n_t + 1
 
     ref_mom = ref_sol["moments"]
-    sol_mom = sol["moments"]
+    sol_mom = sol_moments["moments"]
 
     for mom_no in 1:length(moments_list)
         diff = abs.(ref_mom[mom_no, 1, 1, :] - sol_mom[mom_no, 1, 1, :]) / ref_mom[mom_no, 1, 1, :]
@@ -143,5 +156,7 @@
     @test maximum(diff) < 0.21
 
     close(sol)
+    close(sol_moments)
     rm(sol_path)
+    rm(sol_path_moments)
 end
