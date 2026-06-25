@@ -36,7 +36,7 @@
 
     nx = 10
     grid = Grid1DUniform(0.5, 10)
-    phys_props = PhysProps(grid.n_cells, 1, [], Tref=1)
+    phys_props = PhysProps(grid.n_cells, 1)
 
     # init particle vector, particle indexer, grid particle sorter
     n_particles = np_base * nx

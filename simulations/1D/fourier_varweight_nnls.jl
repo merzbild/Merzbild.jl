@@ -159,12 +159,12 @@ function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
             if pia.indexer[cell,1].n_local > merge_threshold
                 @timeit "merge NNLS" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1;
                                                                            scaling=:variance, iteration_mult=5,
-                                                                           centered_at_mean=false, v_multipliers=[], w_threshold=1e-12)
+                                                                           w_threshold=1e-12)
     
                 if nnls_success_flag == -1
                     @timeit "merge NNLS backup" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1;
                                                                                       scaling=:variance, iteration_mult=5,
-                                                                                      centered_at_mean=false, v_multipliers=[], w_threshold=1e-12)
+                                                                                      w_threshold=1e-12)
                 end
     
                 if nnls_success_flag == -1
@@ -194,12 +194,12 @@ function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
             if pia.indexer[cell,1].n_local > merge_threshold
                 @timeit "merge NNLS" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1;
                                                                            scaling=:variance, iteration_mult=5,
-                                                                           centered_at_mean=false, v_multipliers=[], w_threshold=1e-12)
+                                                                           w_threshold=1e-12)
     
                 if nnls_success_flag == -1
                     @timeit "merge NNLS backup" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1;
                                                                                       scaling=:variance, iteration_mult=5,
-                                                                                      centered_at_mean=false, v_multipliers=[], w_threshold=1e-12)
+                                                                                      w_threshold=1e-12)
                 end
     
                 if nnls_success_flag == -1

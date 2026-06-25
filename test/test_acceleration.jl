@@ -34,8 +34,6 @@
 
     n_offsets = [173, 188, 93]
 
-    
-
     for i in 1:3
         @test n_offsets[i] < n_sampled[i]
         pia2.indexer[1,i].end1 = n_offsets[i]
@@ -46,9 +44,9 @@
         pia2.indexer[1,i].n_group2 = n_sampled[i] - n_offsets[i]
     end
 
-    phys_props::PhysProps = PhysProps(1, 3, [4, 6, 8], Tref=273.0)
+    phys_props::PhysProps = PhysProps(1, 3)
 
-    compute_props_with_total_moments!(particles, pia, species_data, phys_props)
+    compute_props!(particles, pia, species_data, phys_props)
 
     n0_computed = phys_props.n[1,:]
     T0_computed = phys_props.T[1,:]
@@ -56,9 +54,20 @@
     vy_computed = phys_props.v[2,1,:]
     vz_computed = phys_props.v[3,1,:]
 
-    M4_computed = phys_props.moments[1,1,:]
-    M6_computed = phys_props.moments[2,1,:]
-    M8_computed = phys_props.moments[3,1,:]
+    mlist = [4,6,8]
+    mscaling = zeros(3)
+    mvals_list = zeros((3,3))
+    compute_moment_scaling!(mscaling, mlist, 1, species_data, 273.0)
+    
+    for i in 1:3
+        mvals_tmp = zeros(3)
+        compute_moments!(mvals_tmp, mscaling, mlist, particles, pia, 1, 1, species_data, phys_props)
+        mvals_list[i,:] .= mvals_tmp
+    end
+
+    M4_computed = mvals_list[:,1]
+    M6_computed = mvals_list[:,2]
+    M8_computed = mvals_list[:,3]
 
     E = 997.0
     Δt = 1e-3
@@ -70,15 +79,21 @@
     # acceleration should not affect temperature/density/moments and y/z velocities
     # we will have some changes in T, M4/M6/M8 due to acceleration changing the x velocity
     # and subsequent change in round-off errors
-    compute_props_with_total_moments!(particles, pia, species_data, phys_props)
+    compute_props!(particles, pia, species_data, phys_props)
+
+    for i in 1:3
+        mvals_tmp = zeros(3)
+        compute_moments!(mvals_tmp, mscaling, mlist, particles, pia, 1, 1, species_data, phys_props)
+        mvals_list[i,:] .= mvals_tmp
+    end
     
     @test maximum(abs.(n0_computed - phys_props.n[1,:])) < eps()
     @test maximum(abs.(T0_computed - phys_props.T[1,:]) ./ T0_computed) < 1.5e-10
     @test maximum(abs.(vy_computed - phys_props.v[2,1,:])) < eps()
     @test maximum(abs.(vz_computed - phys_props.v[3,1,:])) < eps()
-    @test maximum(abs.(M4_computed - phys_props.moments[1,1,:]) ./ M4_computed) < 2e-10
-    @test maximum(abs.(M6_computed - phys_props.moments[2,1,:]) ./ M6_computed) < 3.3e-10
-    @test maximum(abs.(M8_computed - phys_props.moments[3,1,:]) ./ M8_computed) < 4.9e-10
+    @test maximum(abs.(M4_computed - mvals_list[:,1]) ./ M4_computed) < 2e-10
+    @test maximum(abs.(M6_computed - mvals_list[:,2]) ./ M6_computed) < 3.3e-10
+    @test maximum(abs.(M8_computed - mvals_list[:,3]) ./ M8_computed) < 4.9e-10
 
     # acceleration (via electric field) of neutral species should not affect it
     @test maximum(abs.(phys_props.v[1,1,1] - vx_computed[1])) < eps()
@@ -97,15 +112,21 @@
     # acceleration should not affect temperature/density/moments and y/z velocities
     # we will have some changes in T, M4/M6/M8 due to acceleration changing the x velocity
     # and subsequent change in round-off errors
-    compute_props_with_total_moments!(particles, pia, species_data, phys_props)
+    compute_props!(particles, pia, species_data, phys_props)
+
+    for i in 1:3
+        mvals_tmp = zeros(3)
+        compute_moments!(mvals_tmp, mscaling, mlist, particles, pia, 1, 1, species_data, phys_props)
+        mvals_list[i,:] .= mvals_tmp
+    end
     
     @test maximum(abs.(n0_computed - phys_props.n[1,:])) < eps()
     @test maximum(abs.(T0_computed - phys_props.T[1,:]) ./ T0_computed) < 1.5e-10
     @test maximum(abs.(vy_computed - phys_props.v[2,1,:])) < eps()
     @test maximum(abs.(vz_computed - phys_props.v[3,1,:])) < eps()
-    @test maximum(abs.(M4_computed - phys_props.moments[1,1,:]) ./ M4_computed) < 2e-10
-    @test maximum(abs.(M6_computed - phys_props.moments[2,1,:]) ./ M6_computed) < 3.3e-10
-    @test maximum(abs.(M8_computed - phys_props.moments[3,1,:]) ./ M8_computed) < 4.9e-10
+    @test maximum(abs.(M4_computed - mvals_list[:,1]) ./ M4_computed) < 2e-10
+    @test maximum(abs.(M6_computed - mvals_list[:,2]) ./ M6_computed) < 3.3e-10
+    @test maximum(abs.(M8_computed - mvals_list[:,3]) ./ M8_computed) < 4.9e-10
 
     # acceleration (via electric field) of neutral species should not affect it
     @test maximum(abs.(phys_props.v[1,1,1] - vx_computed[1])) < eps()

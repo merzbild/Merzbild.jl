@@ -63,11 +63,19 @@ function run(seed)
 
     pia = ParticleIndexerArray(n_sampled)
 
-    phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
-    compute_props_with_total_moments!(particles, pia, species_data, phys_props)
+    mscaling = zeros(length(moments_list))
+    mvals_list = zeros(length(moments_list))
+    compute_moment_scaling!(mscaling, moments_list, 1, species_data, T0)
+
+    phys_props = PhysProps(1, 1)
+    compute_props!(particles, pia, species_data, phys_props)
+    compute_moments!(mvals_list, mscaling, moments_list, particles, pia, 1, 1, species_data, phys_props)
 
     ds = NCDataHolder("scratch/data/tmp_bkw_grid.nc", species_data, phys_props)
     write_netcdf(ds, phys_props, 0)
+
+    ds_moments = NCDataHolderMoments("scratch/data/tmp_bkw_grid_moments.nc", species_data, 1, 1, moments_list)
+    write_netcdf(ds_moments, mvals_list, 0)
 
     collision_factors::CollisionFactors = CollisionFactors()
     collision_data::CollisionData = CollisionData()
@@ -91,9 +99,12 @@ function run(seed)
             merge_grid_based!(rng, mg, particles[1], pia, 1, 1, species_data, phys_props)
         end
         
-        compute_props_with_total_moments!(particles, pia, species_data, phys_props)
+        compute_props!(particles, pia, species_data, phys_props)
+        compute_moments!(mvals_list, mscaling, moments_list, particles, pia, 1, 1, species_data, phys_props)
         write_netcdf(ds, phys_props, ts)
+        write_netcdf(ds_moments, mvals_list, ts)
     end
     close_netcdf(ds)
+    close_netcdf(ds_moments)
 end
 @code_warntype run(1234)

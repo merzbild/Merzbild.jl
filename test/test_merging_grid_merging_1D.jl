@@ -50,7 +50,7 @@
     seed = 1234
     rng = StableRNG(seed)
 
-    phys_props::PhysProps = PhysProps(grid.n_cells, 1, [], Tref=1)
+    phys_props::PhysProps = PhysProps(grid.n_cells, 1)
     
     particles, pia = create_particles_in_2cells()
     

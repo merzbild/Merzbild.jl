@@ -25,17 +25,23 @@
         
         pia = ParticleIndexerArray(n_sampled)
 
-        phys_props::PhysProps = PhysProps(1, 1, [4, 6, 8], Tref=T0)
-        compute_props_with_total_moments!(particles, pia, species_data, phys_props)
+        phys_props::PhysProps = PhysProps(1, 1)
+        compute_props!(particles, pia, species_data, phys_props)
         @test abs((phys_props.n[1,1] - n_dens) / n_dens) < Δrel_xsmall
         @test abs((phys_props.v[1,1,1] - v0[1])) < Δabs
         @test abs((phys_props.v[2,1,1] - v0[2])) < Δabs
         @test abs((phys_props.v[3,1,1] - v0[3])) < Δabs
         @test abs((phys_props.T[1,1] - T0) / T0) < Δrel_small
-        @test abs(phys_props.moments[1,1,1] .- 1.0) < 1e-4  # test 4th moment
-        @test abs(phys_props.moments[2,1,1] .- 1.0) < 2e-4  # test 6th moment
-        @test abs(phys_props.moments[3,1,1] .- 1.0) < 5e-4  # test 8th moment
 
+        mlist = [4,6,8]
+        mscaling = zeros(3)
+        mvals_list = zeros(3)
+        compute_moment_scaling!(mscaling, mlist, 1, species_data, T0)
+        compute_moments!(mvals_list, mscaling, mlist, particles, pia, 1, 1, species_data, phys_props)
+
+        @test abs(mvals_list[1] - 1.0) < 1e-4  # test 4th moment
+        @test abs(mvals_list[2] - 1.0) < 2e-4  # test 6th moment
+        @test abs(mvals_list[3] - 1.0) < 5e-4  # test 8th moment
 
         @inbounds pia.indexer[1, 1].start2 == 0
         @inbounds pia.indexer[1, 1].end2 == -1

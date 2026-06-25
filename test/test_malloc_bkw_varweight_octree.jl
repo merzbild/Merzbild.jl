@@ -64,8 +64,13 @@
 
         pia = ParticleIndexerArray(n_sampled)
 
-        phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
-        compute_props_with_total_moments!(particles, pia, species_data, phys_props)
+        mscaling = zeros(length(moments_list))
+        mvals_list = zeros(length(moments_list))
+        compute_moment_scaling!(mscaling, moments_list, 1, species_data, T0)
+
+        phys_props::PhysProps = PhysProps(1, 1)
+        compute_props!(particles, pia, species_data, phys_props)
+        compute_moments!(mvals_list, mscaling, moments_list, particles, pia, 1, 1, species_data, phys_props)
 
         collision_factors::CollisionFactors = CollisionFactors()
         collision_data::CollisionData = CollisionData()
@@ -86,7 +91,8 @@
                 merges = true
             end
             
-            compute_props_with_total_moments!(particles, pia, species_data, phys_props)
+            compute_props!(particles, pia, species_data, phys_props)
+            compute_moments!(mvals_list, mscaling, moments_list, particles, pia, 1, 1, species_data, phys_props)
         end
         @test merges == true
 
@@ -102,8 +108,11 @@
                 @test bytes_merge == 0
             end
             
-            bytes_props = @allocated compute_props_with_total_moments!(particles, pia, species_data, phys_props)
+            bytes_props = @allocated compute_props!(particles, pia, species_data, phys_props)
             @test bytes_props == 0
+
+            bytes_moments = @allocated compute_moments!(mvals_list, mscaling, moments_list, particles, pia, 1, 1, species_data, phys_props)
+            @test bytes_moments == 0
         end
 
         @test merges == true
@@ -127,8 +136,6 @@
         Δt = dt_scaled * tref
         V = 1.0
 
-        phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
-
         vdf0 = (vx, vy, vz) -> bkw(vx, vy, vz, species_data[1].mass, T0, 0.0)
 
         n_sampled = sample_on_grid!(rng, vdf0, particles3[1], nv, species_data[1].mass, T0, n_dens,
@@ -136,6 +143,14 @@
                                     v_mult=3.5, cutoff_mult=3.5, noise=0.0, v_offset=[0.0, 0.0, 0.0])
 
         pia = ParticleIndexerArray(n_sampled)
+
+        mscaling = zeros(length(moments_list))
+        mvals_list = zeros(length(moments_list))
+        compute_moment_scaling!(mscaling, moments_list, 1, species_data, T0)
+
+        phys_props::PhysProps = PhysProps(1, 1)
+        compute_props!(particles3, pia, species_data, phys_props)
+        compute_moments!(mvals_list, mscaling, moments_list, particles3, pia, 1, 1, species_data, phys_props)
 
         collision_factors::CollisionFactors = CollisionFactors()
         collision_data::CollisionData = CollisionData()
@@ -153,7 +168,8 @@
                 merges = true
             end
             
-            compute_props_with_total_moments!(particles3, pia, species_data, phys_props)
+            compute_props!(particles3, pia, species_data, phys_props)
+            compute_moments!(mvals_list, mscaling, moments_list, particles3, pia, 1, 1, species_data, phys_props)
         end
         @test merges == true
 
@@ -169,8 +185,11 @@
                 @test bytes_merge == 0
             end
             
-            bytes_props = @allocated compute_props_with_total_moments!(particles3, pia, species_data, phys_props)
+            bytes_props = @allocated compute_props!(particles3, pia, species_data, phys_props)
             @test bytes_props == 0
+
+            bytes_moments = @allocated compute_moments!(mvals_list, mscaling, moments_list, particles3, pia, 1, 1, species_data, phys_props)
+            @test bytes_moments == 0
         end
 
         @test merges == true
@@ -194,8 +213,6 @@
         Δt = dt_scaled * tref
         V = 1.0
 
-        phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
-
         vdf0 = (vx, vy, vz) -> bkw(vx, vy, vz, species_data[1].mass, T0, 0.0)
 
         n_sampled = sample_on_grid!(rng, vdf0, particles3[1], nv, species_data[1].mass, T0, n_dens,
@@ -203,6 +220,14 @@
                                     v_mult=3.5, cutoff_mult=3.5, noise=0.0, v_offset=[0.0, 0.0, 0.0])
 
         pia = ParticleIndexerArray(n_sampled)
+
+        mscaling = zeros(length(moments_list))
+        mvals_list = zeros(length(moments_list))
+        compute_moment_scaling!(mscaling, moments_list, 1, species_data, T0)
+
+        phys_props::PhysProps = PhysProps(1, 1)
+        compute_props!(particles3, pia, species_data, phys_props)
+        compute_moments!(mvals_list, mscaling, moments_list, particles3, pia, 1, 1, species_data, phys_props)
 
         collision_factors::CollisionFactors = CollisionFactors()
         collision_data::CollisionData = CollisionData()
@@ -220,7 +245,8 @@
                 merges = true
             end
             
-            compute_props_with_total_moments!(particles3, pia, species_data, phys_props)
+            compute_props!(particles3, pia, species_data, phys_props)
+            compute_moments!(mvals_list, mscaling, moments_list, particles3, pia, 1, 1, species_data, phys_props)
         end
         @test merges == true
 
@@ -236,8 +262,11 @@
                 @test bytes_merge == 0
             end
             
-            bytes_props = @allocated compute_props_with_total_moments!(particles3, pia, species_data, phys_props)
+            bytes_props = @allocated compute_props!(particles3, pia, species_data, phys_props)
             @test bytes_props == 0
+
+            bytes_moments = @allocated compute_moments!(mvals_list, mscaling, moments_list, particles3, pia, 1, 1, species_data, phys_props)
+            @test bytes_moments == 0
         end
 
         @test merges == true
@@ -263,8 +292,6 @@
         Δt = dt_scaled * tref
         V = 1.0
 
-        phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
-
         vdf0 = (vx, vy, vz) -> bkw(vx, vy, vz, species_data[1].mass, T0, 0.0)
 
         n_sampled = sample_on_grid!(rng, vdf0, particles3[1], nv, species_data[1].mass, T0, n_dens,
@@ -272,6 +299,14 @@
                                     v_mult=3.5, cutoff_mult=3.5, noise=0.0, v_offset=[0.0, 0.0, 0.0])
 
         pia = ParticleIndexerArray(n_sampled)
+
+        mscaling = zeros(length(moments_list))
+        mvals_list = zeros(length(moments_list))
+        compute_moment_scaling!(mscaling, moments_list, 1, species_data, T0)
+
+        phys_props::PhysProps = PhysProps(1, 1)
+        compute_props!(particles3, pia, species_data, phys_props)
+        compute_moments!(mvals_list, mscaling, moments_list, particles3, pia, 1, 1, species_data, phys_props)
 
         collision_factors::CollisionFactors = CollisionFactors()
         collision_data::CollisionData = CollisionData()
@@ -289,7 +324,8 @@
                 merges = true
             end
             
-            compute_props_with_total_moments!(particles3, pia, species_data, phys_props)
+            compute_props!(particles3, pia, species_data, phys_props)
+            compute_moments!(mvals_list, mscaling, moments_list, particles3, pia, 1, 1, species_data, phys_props)
         end
         @test merges == true
 
@@ -305,8 +341,11 @@
                 @test bytes_merge == 0
             end
             
-            bytes_props = @allocated compute_props_with_total_moments!(particles3, pia, species_data, phys_props)
+            bytes_props = @allocated compute_props!(particles3, pia, species_data, phys_props)
             @test bytes_props == 0
+
+            bytes_moments = @allocated compute_moments!(mvals_list, mscaling, moments_list, particles3, pia, 1, 1, species_data, phys_props)
+            @test bytes_moments == 0
         end
 
         @test merges == true

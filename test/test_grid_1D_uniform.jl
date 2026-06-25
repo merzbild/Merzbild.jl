@@ -53,7 +53,7 @@
         @test particles[1].cell[(i-1)*ppc + 1] == i
     end
 
-    phys_props::PhysProps = PhysProps(grid.n_cells, 1, [], Tref=1)
+    phys_props::PhysProps = PhysProps(grid.n_cells, 1)
     compute_props!(particles, pia, species_data, phys_props)
 
     @test phys_props.n_species == 1
@@ -71,7 +71,7 @@
 
     @test sum(phys_props.np) == ppc * grid.n_cells
 
-    phys_props_ndens::PhysProps = PhysProps(grid.n_cells, 1, [], Tref=1, ndens_not_Np=true)
+    phys_props_ndens::PhysProps = PhysProps(grid.n_cells, 1, ndens_not_Np=true)
     compute_props_sorted!(particles, pia, species_data, phys_props_ndens, grid)
 
     @test phys_props_ndens.n_species == 1

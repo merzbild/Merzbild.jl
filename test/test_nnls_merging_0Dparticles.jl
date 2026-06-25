@@ -79,7 +79,13 @@
     Ny = 2
     Nz = 2
 
-    phys_props::PhysProps = PhysProps(1, 1, [4], Tref=1)
+    T_mom_ref = 1
+    phys_props::PhysProps = PhysProps(1, 1)
+
+    mlist = [4]
+    mscaling = zeros(1)
+    mvals_list = zeros(1)
+    compute_moment_scaling!(mscaling, mlist, 1, species_data, T_mom_ref)
 
     Δabs = 2.5
     Δrel_xsmall = 5e-13
@@ -88,6 +94,7 @@
     pia = ParticleIndexerArray(length(particles[1]))
 
     compute_props!(particles, pia, species_data, phys_props)
+    compute_moments!(mvals_list, mscaling, mlist, particles, pia, 1, 1, species_data, phys_props)
 
     mim = []
     n_moms = 4
@@ -104,7 +111,7 @@
     np0 = phys_props.np[1, 1]
     v0 = phys_props.v[:, 1, 1]
     T0 = phys_props.T[1, 1]
-    M40 = phys_props.moments[1, 1, 1]
+    M40 = mvals_list[1]
 
     mixed_order_3 = compute_multi_index_moments(3)
     moms3 = zeros(length(mixed_order_3))
@@ -118,6 +125,7 @@
     @test sum(abs.(mnnls.w_total .- n0)) < 1.5e-14
 
     compute_props!(particles, pia, species_data, phys_props)
+    compute_moments!(mvals_list, mscaling, mlist, particles, pia, 1, 1, species_data, phys_props)
     # test that merging conserves mass / momentum / energy
     @test phys_props.np[1, 1] < np0
     @test abs(n0 - phys_props.n[1, 1]) < 1.5e-14
@@ -125,7 +133,7 @@
     @test abs(T0 - phys_props.T[1, 1]) < 3.6e-14
 
     # test higher-order moment in g
-    @test abs(M40 - phys_props.moments[1, 1, 1]) < 7.4e-12
+    @test abs(M40 - mvals_list[1]) < 7.4e-12
 
     # test moments of order 3
     moms3_post = zeros(length(mixed_order_3))

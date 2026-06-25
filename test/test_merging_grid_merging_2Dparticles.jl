@@ -54,7 +54,7 @@
     Ny = 2
     Nz = 2
 
-    phys_props::PhysProps = PhysProps(1, 1, [], Tref=1)
+    phys_props::PhysProps = PhysProps(1, 1)
 
     Δabs = 2.5
     Δrel_xsmall = 5e-13

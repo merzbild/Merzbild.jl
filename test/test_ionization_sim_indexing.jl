@@ -92,7 +92,7 @@
 
     pia = ParticleIndexerArray(n_sampled)
 
-    phys_props::PhysProps = PhysProps(1, 5, [], Tref=T0)
+    phys_props::PhysProps = PhysProps(1, 5)
 
     collision_factors = create_collision_factors_array(5)
     collision_data = CollisionData()

@@ -41,7 +41,7 @@
     sample_particles_equal_weight!(rng, particles[2], pia, 1, 2, 
                                    n_particles_He, species_data[2].mass, T0_He, Fnum_He, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
 
-    phys_props::PhysProps = PhysProps(1, 2, [], Tref=T0_Ar)
+    phys_props::PhysProps = PhysProps(1, 2)
     compute_props!(particles, pia, species_data, phys_props)
     
     sol_path = joinpath(@__DIR__, "data", "tmp_2species_varweight_elastic.nc")
