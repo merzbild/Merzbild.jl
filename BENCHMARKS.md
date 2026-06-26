@@ -249,6 +249,8 @@ TODO
 
 ## 0D ionization, variable-weight particles, NNLS merging
 
+This uses event splitting and non-rate-preserving NNLS merging conserving all mixed-order moments up to total order 6.
+
 TODO
 
 ## Summary
@@ -275,3 +277,13 @@ TODO
 | v0.7.0 (Julia 1.11) | 2.3 / 3.8 / 5.8                      |    1.9 / 3.2 / 5.1                                  | 1.9 / 3.9 / 5.2 / 5.7 / 6.5                        |
 | v0.8.0 (Julia 1.12) |       TODO                           |    TODO                                             |             TODO                                   |    
 
+
+### Couette flow, variable-weight particles, octree merging
+
+TODO
+
+### 0D ionization, variable-weight particles, octree merging
+
+TODO
+
+### 0D ionization, variable-weight particles, NNLS merging

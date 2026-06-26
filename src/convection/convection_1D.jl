@@ -45,7 +45,7 @@ Convect a singe particle on a 1-D uniform grid.
     # if a particle is too near a wall, we offset it a bit to avoid particles
     # that are exactly at a wall screwing up counters, etc.
     x_clamped = clamp(x_new, grid.min_x, grid.max_x)
-    @inbounds particle.x = set_x(particle.x, x_clamped)
+    particle.x = set_x(particle.x, x_clamped)
 end
 
 """
@@ -71,12 +71,12 @@ Convect a singe particle on a 1-D uniform grid, updating surface properties if i
 
     @inbounds while (x_new >= grid.L) || (x_new <= 0.0) 
         if (x_new >= grid.L)
-            @inbounds t_rest -= abs((grid.L - x_old) / particle.v[1])
+            t_rest -= abs((grid.L - x_old) / particle.v[1])
             bc_id = 2
             wall_normal = -1.0
             x_old = grid.L
         else
-            @inbounds t_rest -= abs(x_old / particle.v[1])
+            t_rest -= abs(x_old / particle.v[1])
             bc_id = 1
             wall_normal = 1.0
             x_old = 0.0
@@ -84,20 +84,20 @@ Convect a singe particle on a 1-D uniform grid, updating surface properties if i
 
         update_surface_incident!(particle, species, surf_props, bc_id)
 
-        @inbounds reflect_particle_x!(rng, particle, boundaries.reflection_velocities_sq[bc_id, species],
+        reflect_particle_x!(rng, particle, boundaries.reflection_velocities_sq[bc_id, species],
                                     wall_normal,
                                     boundaries.boundaries[bc_id].v,
                                     boundaries.boundaries[bc_id].accommodation)
 
         update_surface_reflected!(particle, species, surf_props, bc_id)
 
-        @inbounds x_new = x_old + particle.v[1] * t_rest
+        x_new = x_old + particle.v[1] * t_rest
     end
 
     # if a particle is too near a wall, we offset it a bit to avoid particles
     # that are exactly at a wall screwing up counters, etc.
     x_clamped = clamp(x_new, grid.min_x, grid.max_x)
-    @inbounds particle.x = set_x(particle.x, x_clamped)
+    particle.x = set_x(particle.x, x_clamped)
 end
 
 """

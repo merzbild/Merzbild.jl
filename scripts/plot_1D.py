@@ -1,12 +1,13 @@
 # Usage example:
 # python scripts/plot_1D.py --file scratch/data/couette_0.0005_50_500.0_300.0_1000.nc --propname T --startt 1
-# --plotname plots/couette_T.png --labels "Couette"
+# --plotname plots/couette_T.png --labels "Couette" --scalex 1
 # velocity is plotted with an offset of a linear profile that goes from -500 to 500 m/s
 # spartafile: optional path to SPARTA output file
 # spartavarid: number of the variable in the file to plot
 # it is assumed that the sparta cells are sorted, are the same ones as used in Merzbild.jl
 # the output should begin at line 10, line 9 is the header line
 # ITEM: CELLS id f_1[1] f_1[2] f_1[3] f_1[4] f_1[5] f_1[6] - to plot id set varid to 0, f_1[1] - set to 1, etc.
+# scalex is an optional list of values to scale the x axis of each plotted result by (since plotting is done via cell indices and not actual grid size)
 
 from matplotlib import pyplot as plt
 import argparse
@@ -21,6 +22,7 @@ parser.add_argument("--startt", required=True)
 parser.add_argument("--labels", nargs='+')
 parser.add_argument("--spartafile", required=False)
 parser.add_argument("--spartavarid", required=False)
+parser.add_argument("--scalex", nargs='+', required=False)
 args = parser.parse_args()
 
 
@@ -49,9 +51,14 @@ if labels == None:
 elif len(labels) != len(args.files):
     raise ValueError("Length of labels list should be the same as of the files' list!")
 
+scales = [1 for _ in args.files]
+
+if args.scalex is not None:
+    scales = [float(s) for s in args.scalex]
+
 startt = int(args.startt)
 
-for label, file in zip(labels, args.files):
+for label, file, sc in zip(labels, args.files, scales):
     ds = Dataset(file)
 
     if propname in ["ndens", "np", "T"]:
@@ -61,7 +68,7 @@ for label, file in zip(labels, args.files):
 
         data_arr = np.asarray(ds.variables[propname][:].data[:, 0, :])
         for i in range(startt, nt):
-            ax.plot(x_arr, data_arr[i, :], label=f"{label}, nt={i}", linewidth=2)
+            ax.plot(x_arr * sc, data_arr[i, :], label=f"{label}, nt={i}", linewidth=2)
     elif propname.lower() in v_map:
         nx = np.shape(ds.variables["v"][:].data)[-2]
         nt = np.shape(ds.variables["v"][:].data)[0]
@@ -70,7 +77,7 @@ for label, file in zip(labels, args.files):
         data_arr = np.asarray(ds.variables["v"][:].data[:, 0, :, v_map[propname]])
         voffset = np.linspace(-500, 500, nx)
         for i in range(startt,nt):
-            ax.plot(x_arr, data_arr[i, :] - voffset, label=f"{label}, nt={i}", linewidth=2)
+            ax.plot(x_arr * sc, data_arr[i, :] - voffset, label=f"{label}, nt={i}", linewidth=2)
         # ax.plot(ds.variables["timestep"][:].data, ds.variables["v"][:].data[:, 0, 0, v_map[propname]], label=label, linewidth=2)
 
     ds.close()

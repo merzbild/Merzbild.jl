@@ -70,13 +70,13 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
 
     n_avg = n_timesteps - avg_start + 1
 
-    @inbounds for t in 1:n_timesteps
+    @timeit "main loop" @inbounds for t in 1:n_timesteps
         if t % 1000 == 0
             println(t)
         end
 
         # collide particles
-        for cell in 1:grid.n_cells
+         @inbounds for cell in 1:grid.n_cells
             @timeit "collide" ntc_equal_weight!(rng, collision_factors[1, 1, cell],
                                                 collision_data, interaction_data, particles[1],
                                                 pia, cell, 1, Δt, grid.cells[cell].V)
@@ -118,8 +118,8 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
         end
     end
 
-    @timeit "I/O" write_netcdf(ds_avg, phys_props_avg, n_timesteps)
-    @timeit "I/O" write_netcdf(ds_surf_avg, surf_props_avg, n_timesteps)
+    @timeit "I/O final" write_netcdf(ds_avg, phys_props_avg, n_timesteps)
+    @timeit "I/O final" write_netcdf(ds_surf_avg, surf_props_avg, n_timesteps)
 
     close_netcdf(ds)
     close_netcdf(ds_avg)

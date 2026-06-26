@@ -81,10 +81,9 @@ function sort_particles!(gridsort::GridSortInPlace, grid, particles::ParticleVec
 
     n_cells = grid.n_cells
     @inbounds for cell in 1:n_cells
-        cell_counts[cell+1] = cell_counts[cell+1] + cell_counts[cell]
-
         cell_start = cell_counts[cell] + 1
-        cell_np = cell_counts[cell+1] - cell_counts[cell]
+        cell_np = cell_counts[cell+1]
+        cell_counts[cell+1] = cell_counts[cell+1] + cell_counts[cell]
         cell_end = cell_counts[cell+1]
 
         indexer = pia.indexer[cell,species]
@@ -153,10 +152,9 @@ function sort_particles!(gridsort::GridSortInPlace, particles, pia, species)
     end
 
     @inbounds for cell in 1:n_cells
-        cell_counts[cell+1] = cell_counts[cell+1] + cell_counts[cell]
-
         cell_start = cell_counts[cell] + 1
-        cell_np = cell_counts[cell+1] - cell_counts[cell]
+        cell_np = cell_counts[cell+1]
+        cell_counts[cell+1] = cell_counts[cell+1] + cell_counts[cell]
         cell_end = cell_counts[cell+1]
 
         indexer = pia.indexer[cell,species]
