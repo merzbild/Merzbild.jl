@@ -1080,8 +1080,6 @@ function check_unique_index(pv::ParticleVector{D}, pia, species) where D
     return true, 0
 end
 
-
-
 """
     check_unique_buffer(pv::ParticleVector{D})
 
