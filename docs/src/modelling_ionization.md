@@ -92,7 +92,8 @@ a `DataX` field, whereas the cross-section values are in a `DataY` field.
 
 The tabulated values for the different processes, along with the threshold energy values are stored in
 a [`ElectronNeutralInteractions`](@ref) structure, which holds all the electron-neutral interactions for a system.
-To instantiate such an instance, the [`load_electron_neutral_interactions`](@ref) is called. The type of scattering
+To instantiate such an instance, we call [`ElectronNeutralInteractions`](@ref) and pass in a filename of the database file,
+as well as other relevant parameters. The type of scattering
 used for each species is set by the `scattering_laws` parameter, and how the energy split across primary and secondary electrons
 in ionization reactions is governed by the `energy_splits` parameter.
 

@@ -35,6 +35,9 @@
 
     pia = ParticleIndexerArray(grid.n_cells, 1)
 
+    @test pia.n_cells == grid.n_cells
+    @test pia.n_species == 1
+
     sample_particles_equal_weight!(rng, grid, particles[1], pia, 1,
                                    species_data, ppc, T, Fnum)
 
@@ -130,4 +133,6 @@
     pia = ParticleIndexerArray(grid, species_data)
     @test length(pia.n_total) == 2
     @test size(pia.indexer) == (8, 2)
+    @test pia.n_cells == 8
+    @test pia.n_species == 2
 end 

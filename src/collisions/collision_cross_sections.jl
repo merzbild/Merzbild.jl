@@ -417,7 +417,7 @@ function load_elastic_data(xml_data)
 end
 
 
-"""
+@doc """
     ElectronNeutralInteractions(species_data, filename, databases, scattering_laws, energy_splits)
 
 Load electron-neutral interaction data from an LXCAT format XML file for

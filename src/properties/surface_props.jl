@@ -60,7 +60,7 @@ be equal to 1, the normals are parallel to the x axis.
 * `pia`: the `ParticleIndexerArray` instance
 * `grid`: the `Grid1DUniform` grid
 """
-SurfProps(pia, grid::Grid1DUniform) = SurfProps(2, size(pia.indexer)[2], [1.0, 1.0],
+SurfProps(pia, grid::Grid1DUniform) = SurfProps(2, pia.n_species, [1.0, 1.0],
                                                       [1.0 0.0 0.0; -1.0 0.0 0.0]')
 
 """

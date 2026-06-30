@@ -1,7 +1,8 @@
 @testset "test_indexing" begin
     pia = ParticleIndexerArray(20)
 
-    @test pia.n_total[1] == 20
+    @test pia.n_cells == 1
+    @test pia.n_species == 1
     @test pia.indexer[1,1].n_local == 20
     @test pia.indexer[1,1].start1 == 1
     @test pia.indexer[1,1].end1 == 20
@@ -11,6 +12,8 @@
     Merzbild.update_particle_indexer_new_particle!(pia, 1, 1)
     Merzbild.update_particle_indexer_new_particle!(pia, 1, 1)
 
+    @test pia.n_cells == 1
+    @test pia.n_species == 1
     @test pia.n_total[1] == 22
     @test pia.indexer[1,1].n_local == 22
     @test pia.indexer[1,1].start1 == 1
@@ -40,7 +43,6 @@
         @test index == 31 + i0 - 10 - 1
     end
 
-
     pia.n_total[1] = 10
     pia.indexer[1,1].n_local = 10
     pia.indexer[1,1].start1 = 24
@@ -63,6 +65,8 @@
     end
 
     pia = ParticleIndexerArray(10, 2)
+    @test pia.n_cells == 10
+    @test pia.n_species == 2
     @test length(pia.n_total) == 2
     @test size(pia.indexer) == (10, 2)
 end

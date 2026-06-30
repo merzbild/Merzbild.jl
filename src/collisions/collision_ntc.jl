@@ -91,7 +91,7 @@ in the simulation, with shape `(n_species,n_species,n_cells)`.
 3-dimensional array of `CollisionFactors` instances with shape `(n_species,n_species,n_cells)`.
 """
 function create_collision_factors_array(pia::ParticleIndexerArray)
-    return create_collision_factors_array(size(pia.indexer)[2], size(pia.indexer)[1])
+    return create_collision_factors_array(pia.n_species, pia.n_cells)
 end
 
 """
@@ -855,7 +855,7 @@ function ntc_n_e!(rng, collision_factors, collision_data, interaction,
 
                     p_e_new.w = particles_n_i.w
                     p_e_new.v = particles_e_k.v
-                    p_e_new.v = particles_e_k.x
+                    p_e_new.x = particles_e_k.x
 
                     # set neutral particle weight to 0
                     particles_n_i.w = 0.0

@@ -135,7 +135,7 @@ function sort_particles!(gridsort::GridSortInPlace, particles, pia, species)
     p_index = particles.index
     p_cell = particles.cell
 
-    @inbounds n_cells = size(pia.indexer)[1]
+    n_cells = pia.n_cells
     @inbounds n_tot = pia.n_total[species] 
     @inbounds if n_tot > length(sorted_indices)
         resize!(sorted_indices, n_tot + DELTA_PARTICLES)

@@ -5,10 +5,10 @@
 Particle
 ParticleVector
 ParticleVector(np)
-Base.getindex(pv::ParticleVector, i)
-Base.setindex!(pv::ParticleVector, p::Particle, i::Integer)
-Base.length(pv::ParticleVector)
-Base.resize!(pv::ParticleVector, n::Integer)
+Base.getindex(pv::ParticleVector{D}, i) where D
+Base.setindex!(pv::ParticleVector{D}, p::Particle{D}, i::Integer) where D
+Base.length(pv::ParticleVector{D}) where D
+Base.resize!(pv::ParticleVector{D}, n::Integer) where D
 ```
 
 ## Particle indexing
@@ -39,7 +39,6 @@ load_species_data
 load_interaction_data
 load_interaction_data_with_dummy
 load_species_and_interaction_data
-load_electron_neutral_interactions
 ```
 
 ## Sampling
@@ -55,9 +54,8 @@ sample_particles_phase_box_weighted!
 ## Computing grid and surface macroscopic properties
 ```@docs
 PhysProps
-PhysProps(n_cells, n_species, moments_list; Tref=300.0)
-PhysProps(pia, moments_list; Tref=300.0)
-PhysProps(pia)
+PhysProps(n_cells, n_species; ndens_not_Np=false)
+PhysProps(pia::ParticleIndexerArray; ndens_not_Np=false)
 SurfProps
 SurfProps(n_elements, n_species, areas, normals)
 SurfProps(pia, grid::Grid1DUniform)
@@ -65,12 +63,13 @@ FluxProps
 FluxProps(n_cells, n_species)
 FluxProps(pia)
 compute_props!
-compute_props_with_total_moments!
 compute_props_sorted!
 compute_flux_props!
 compute_flux_props_sorted!
 avg_props!
 clear_props!
+compute_moment_scaling!
+compute_moments!
 ```
 
 ## Collisional properties
@@ -112,6 +111,7 @@ fp_linear!
 ## Electron-neutral interactions
 ```@docs
 ElectronNeutralInteractions
+ElectronNeutralInteractions(species_data, filename, databases, scattering_laws, energy_splits)
 ComputedCrossSections
 Merzbild.ElectronEnergySplit
 Merzbild.ScatteringLaw
@@ -177,10 +177,10 @@ convect_particles_and_compute_cell!
 
 ## Particle-surface interactions
 ```@docs
-MaxwellWallBC
-MaxwellWalls1D
-MaxwellWalls1D(species_data, T_l::Float64, T_r::Float64, vy_l::Float64, vy_r::Float64, accomodation_l::Float64,          
-    accomodation_r::Float64)
+MaxwellWallBC1D
+MaxwellWallBC1D(normal_sign, species_data, species, T::Float64, v, accommodation::Float64)
+FullyDiffuseBC1D
+FullyDiffuseBC1D(normal_sign, species_data, species, T::Float64, v)
 ```
 
 ## I/O
@@ -196,14 +196,16 @@ IOSkipListFlux
 IOSkipListFlux(list_of_variables_to_skip)
 IOSkipListFlux()
 NCDataHolder
-NCDataHolder(nc_filename, names_skip_list, species_data, phys_props; global_attributes=Dict{Any,Any}())
-NCDataHolder(nc_filename, species_data, phys_props; global_attributes=Dict{Any,Any}())
+NCDataHolder(nc_filename, names_skip_list, species_data, phys_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
+NCDataHolder(nc_filename, species_data, phys_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
 NCDataHolderSurf
-NCDataHolderSurf(nc_filename, names_skip_list, species_data, surf_props; global_attributes=Dict{Any,Any}())
-NCDataHolderSurf(nc_filename, species_data, surf_props; global_attributes=Dict{Any,Any}())
+NCDataHolderSurf(nc_filename, names_skip_list, species_data, surf_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
+NCDataHolderSurf(nc_filename, species_data, surf_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
 NCDataHolderFlux
-NCDataHolderFlux(nc_filename, names_skip_list, species_data, flux_props; global_attributes=Dict{Any,Any}())
-NCDataHolderFlux(nc_filename, species_data, flux_props; global_attributes=Dict{Any,Any}())
+NCDataHolderFlux(nc_filename, names_skip_list, species_data, flux_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
+NCDataHolderFlux(nc_filename, species_data, flux_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
+NCDataHolderMoments
+NCDataHolderMoments(nc_filename, species_data, n_cells, n_species, moment_powers; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
 write_netcdf
 close_netcdf
 ```

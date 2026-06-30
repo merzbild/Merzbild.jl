@@ -102,6 +102,8 @@ detailed explanation, one is referred to [the documentation on contiguous indexi
 * `pia.indexer[cell,species].end2 + 1 == pia.indexer[cell+1,species].start2`, `cell = 1,...,n_cells - 1`
 
 # Fields
+* `n_cells`: number of cells being indexed
+* `n_species`: number of species being indexed
 * `indexer`: the array of size `(n_cells, n_species)` (number of grid cells * number of species in the simulation)
   storing the `ParticleIndexer` instances
 * `n_total`: vector of length `n_species` storing the total number of particles of each species
@@ -110,6 +112,8 @@ detailed explanation, one is referred to [the documentation on contiguous indexi
   (tracks the highest index used, allowing for non-contiguous indexing when particles are deleted from the middle)
 """
 mutable struct ParticleIndexerArray
+    n_cells::Int64
+    n_species::Int64
     indexer::Array{ParticleIndexer,2}  # cells x species
     n_total::Vector{Int64}  # per-species
     contiguous::Vector{Bool}  # per-species
@@ -125,7 +129,7 @@ mutable struct ParticleIndexerArray
     * `n_total`: the vector of the total number of particles of each species
     """
     function ParticleIndexerArray(indexer_arr::Array{ParticleIndexer,2}, n_total)
-        return new(indexer_arr, n_total, [true for i in 1:length(n_total)], copy(n_total))
+        return new(size(indexer_arr)[1], size(indexer_arr)[2], indexer_arr, n_total, [true for i in 1:length(n_total)], copy(n_total))
     end
 
     @doc """
@@ -145,7 +149,7 @@ mutable struct ParticleIndexerArray
                 pia_indexer[i, j] = ParticleIndexer()
             end
         end
-        return new(pia_indexer, [0 for i in 1:n_species], [true for i in 1:n_species], [0 for i in 1:n_species])
+        return new(n_cells, n_species, pia_indexer, [0 for i in 1:n_species], [true for i in 1:n_species], [0 for i in 1:n_species])
     end
 end
 
@@ -158,7 +162,6 @@ Create a single-species/single-cell `ParticleIndexerArray` and set up the indexi
 * `n_particles`: the number of particles (integer number)
 """
 ParticleIndexerArray(n_particles::Integer) = ParticleIndexerArray(hcat(ParticleIndexer(n_particles)), [n_particles])
-
 
 """
     ParticleIndexerArray(n_particles::T) where T<:AbstractVector
@@ -235,7 +238,7 @@ Create an empty `ParticleVector{3}` instance of length `np` (all vectors will ha
 ParticleVector(np::Integer) = ParticleVector{3}(np)
 
 """
-    Base.getindex(pv::ParticleVector{D}, i)
+    Base.getindex(pv::ParticleVector{D}, i) where D
 
 Returns the underlying particle in a `ParticleVector` instance with index `i`.
 
@@ -250,7 +253,7 @@ Is usually called as `ParticleVector[i]`.
 end
 
 """
-    Base.setindex!(pv::ParticleVector{D}, p::Particle{D}, i::Integer)
+    Base.setindex!(pv::ParticleVector{D}, p::Particle{D}, i::Integer) where D
 
 Set the underlying particle in a `ParticleVector` instance with index `i` to a new particle.
 
@@ -266,7 +269,7 @@ Is usually called as `ParticleVector[i] = p`.
 end
 
 """
-    Base.length(pv::ParticleVector{D})
+    Base.length(pv::ParticleVector{D}) where D
 
 Returns the length of a `ParticleVector` instance.
 
@@ -592,7 +595,7 @@ If no particles are present in the 2nd group of particles, the function does not
             end
 
             # if we start searching for group1, we need to include all cells!
-            @inbounds n_cells = size(pia.indexer)[1]
+            n_cells = pia.n_cells
 
             if !found
                 @inbounds for c in n_cells:-1:1
@@ -673,7 +676,7 @@ function squash_pia!(pv::ParticleVector{D}, pia, species) where D
     if pia.contiguous[species]
         return
     else
-        @inbounds n_cells = size(pia.indexer)[1]
+        n_cells = pia.n_cells
         if n_cells > 1
             @inbounds last_end = pia.indexer[1, species].end1 > 0 ? pia.indexer[1, species].end1 : 0
             for i in 1:n_cells-1
@@ -827,7 +830,7 @@ for a specific species.
 * `species`: the index of the species for which the indices are displayed
 """
 function pretty_print_pia(pia, species)
-    n_cells = size(pia.indexer)[1]
+    n_cells = pia.n_cells
     println("Total: $(pia.n_total[species]), index_last: $(pia.index_last[species])")
     for cell in 1:n_cells
         out_string = ""
@@ -880,7 +883,7 @@ function count_disordered_particles(pv::ParticleVector{D}, pia, species; use_off
     count = 0
 
     if use_offset
-        n_cells = size(pia.indexer)[1]
+        n_cells = pia.n_cells
         for cell in 1:n_cells
             offset = 0
             if pia.indexer[cell,species].n_group1 > 0
@@ -918,7 +921,7 @@ for each cell for each species, the following should hold:
     * `n_local == n_group1 + n_group2`
     * if `n_group1 > 0`, then `n_group1 == end1 - start1 + 1`
     * if `n_group1 == 0`, then `start1 == 0`, `end1 == -1`
-    * if `n_group2 > 0`, then `n_group1 == end2 - start2 + 1`
+    * if `n_group2 > 0`, then `n_group2 == end2 - start2 + 1`
     * if `n_group2 == 0`, then `start2 == 0`, `end2 == -1`
     * `pia.n_total[species] == sum([pia.indexer[cell, species].n_local for cell in 1:n_cells])`
 and `index_last[species]` points to the last index used.
@@ -943,7 +946,7 @@ If indexing is correct, returns `(true, 0)`.
 function check_pia_is_correct(pia, species)
     # the code here explicitly does not use @inbounds
     # as we aim for correctness, not efficiency
-    n_cells = size(pia.indexer)[1]
+    n_cells = pia.n_cells
 
     n_tot = 0
 
@@ -1037,7 +1040,7 @@ If indexing is correct, returns `(true, 0)`.
 function check_unique_index(pv::ParticleVector{D}, pia, species) where D
     # the code here explicitly does not use @inbounds
     # as we aim for correctness, not efficiency
-    n_cells = size(pia.indexer)[1]
+    n_cells = pia.n_cells
 
     n_counts = zeros(Int64, length(pv.index))
 

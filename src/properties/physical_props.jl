@@ -16,7 +16,6 @@ Structure to store computed physical properties in a physical cell.
 * `n`: number density or number of physical particles in a cell (array of shape `(n_cells, n_species)`)
 * `v`: per-species flow velocity in a cell (array of shape `(3, n_cells, n_species)`)
 * `T`: per-species temperature in a cell (array of shape `(n_cells, n_species)`)
-* `Tref`: reference temperature used to scale moments
 """
 mutable struct PhysProps
     ndens_not_Np::Bool
@@ -42,9 +41,9 @@ Construct physical properties given the number of cells and species.
 * `ndens_not_Np`: whether the `n` field stores number density (if `true`) and not the number of physical particles in a cell (if `false`)
 
 """
-PhysProps(n_cells, n_species; ndens_not_Np=false, Tref=300.0) = PhysProps(ndens_not_Np, n_cells, n_species,
-                                                                    zeros(n_species), zeros(n_cells, n_species),
-                                                                    zeros(n_cells, n_species), zeros(3, n_cells, n_species), zeros(n_cells, n_species))
+PhysProps(n_cells, n_species; ndens_not_Np=false) = PhysProps(ndens_not_Np, n_cells, n_species,
+                                                              zeros(n_species), zeros(n_cells, n_species),
+                                                              zeros(n_cells, n_species), zeros(3, n_cells, n_species), zeros(n_cells, n_species))
 
 """
     PhysProps(pia::ParticleIndexerArray; ndens_not_Np=false)
@@ -57,7 +56,7 @@ Construct physical properties given a `ParticleIndexerArray` instance,.
 # Keyword arguments
 * `ndens_not_Np`: whether the `n` field stores number density (if `true`) and not the number of physical particles in a cell (if `false`)
 """
-PhysProps(pia::ParticleIndexerArray; ndens_not_Np=false) = PhysProps(size(pia.indexer)[1], size(pia.indexer)[2], ndens_not_Np=ndens_not_Np)
+PhysProps(pia::ParticleIndexerArray; ndens_not_Np=false) = PhysProps(pia.n_cells, pia.n_species, ndens_not_Np=ndens_not_Np)
 
 """
     compute_props!(particles, pia, species_data, phys_props)

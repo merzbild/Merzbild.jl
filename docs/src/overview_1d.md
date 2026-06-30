@@ -81,21 +81,16 @@ it will be resized in by the `restore_particle_ordering!` function).
 
 ## Creating boundary conditions
 Next, we need to create boundary conditions for the left and right walls.
-Currently, a diffusely reflecting wall is implemented with a user-defined accommodation coefficient
-(if it is equal to 0, the reflection is fully specular; if it is equal to 1, the reflection is fully diffuse).
+Currently, fully diffusely reflecting walls, specularly reflecting walls, and a Maxwell
+boundary with a user-defined accommodation coefficient are available, with specific version optimized for 1D
+simulations. Due to dynamical dispatch, more generic conditions can be used in place of the specialized 1D ones
+even in 1D simulations, but this will be less efficient.
 
-This type of boundary condition (which stores the wall temperature, wall velocity, and accommodation coefficient)
-is described by the `MaxwellWallBC` structure, which should be defined for each wall.
+We instantiate two fully diffuse boundary conditions and pack them into a `Tuple` (the order being left and right wall):
 
-However, it is not intended to be defined or used directly; instead, for a 1-D simulation, a higher-level
-`MaxwellWalls1D` structure is used, which holds not only the two `MaxwellWallBC` instances (for the left and right walls),
-but also some species-wise precomputed quantities for the diffuse reflection. The `MaxwellWalls1D` struct assumes that
-the wall velocity in the `x` and `z` directions is 0, but a non-zero `y` velocity may be specified.
-
-A `MaxwellWalls1D` instance can be initialized like this (this will create two walls with equal temperatures
-and `y` velocities in opposite directions):
 ```julia
-boundaries = MaxwellWalls1D(species_data, T_wall, T_wall, -v_wall, v_wall, 1.0, 1.0)
+bc_list = (FullyDiffuseBC1D(species_data, 1, T_wall, [0.0, -v_wall, 0.0]),
+           FullyDiffuseBC1D(species_data, 1, T_wall, [0.0, v_wall, 0.0]))
 ```
 
 ## Calculation of surface properties
@@ -126,13 +121,13 @@ This is done by calling the [`convect_particles!`](@ref) function.
 The convection should be followed by particle sorting before any computations of physical properties are done.
 
 ```julia
-convect_particles!(rng, grid, boundaries, particles[species_id], pia, species_id, species_data, Δt)
+convect_particles!(rng, grid, bc_list, particles[species_id], pia, species_id, species_data, Δt)
 ```
 
 The function `convect_particles` as called above will **not** compute surface properties. To do that,
 a `SurfProps` instance needs to be passed:
 ```julia
-convect_particles!(rng, grid, boundaries, particles[species_id], pia, species_id, species_data, surf_props, Δt)
+convect_particles!(rng, grid, bc_list, particles[species_id], pia, species_id, species_data, surf_props, Δt)
 ```
 
 ## Convection and sorting with precomputed particle/cell indices
@@ -184,7 +179,8 @@ interaction_data::Array{Interaction, 2} = load_interaction_data(interaction_data
 
 # create our grid and BCs
 grid = Grid1DUniform(L, nx)
-boundaries = MaxwellWalls1D(species_data, T_wall, T_wall, -v_wall, v_wall, 1.0, 1.0)
+bc_list = (FullyDiffuseBC1D(species_data, 1, T_wall, [0.0, -v_wall, 0.0]),
+           FullyDiffuseBC1D(species_data, 1, T_wall, [0.0, v_wall, 0.0]))
 
 # init particle vector, particle indexer, grid particle sorter
 # we will not be creating or destroying any particles, so we can compute the exact number
@@ -247,7 +243,7 @@ for t in 1:n_timesteps
     end
 
     # convect particles
-    convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, surf_props, Δt)
+    convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, surf_props, Δt)
 
     # sort particles
     sort_particles!(gridsorter, grid, particles[1], pia, 1)

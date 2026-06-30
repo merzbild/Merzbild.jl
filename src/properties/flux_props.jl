@@ -54,7 +54,7 @@ Construct a `FluxProps` instance given a `ParticleIndexerArray` instance.
 # Positional arguments
 * `pia`: the `ParticleIndexerArray` instance
 """
-FluxProps(pia) = FluxProps(size(pia.indexer)[1], size(pia.indexer)[2])
+FluxProps(pia) = FluxProps(pia.n_cells, pia.n_species)
 
 """
     compute_flux_props!(particles, pia, species_data, phys_props::PhysProps, flux_props::FluxProps, grid::G) where {G<:AbstractGrid}
@@ -83,11 +83,13 @@ function compute_flux_props!(particles::Vector{ParticleVector{D}}, pia, species_
             kefd = SVector{3,Float64}(0.0, 0.0, 0.0)  # kinetic_energy_flux
             dmfd = SVector{3,Float64}(0.0, 0.0, 0.0)  # diagonal_momentum_flux
             odmfd = SVector{3,Float64}(0.0, 0.0, 0.0)  # off_diagonal_momentum_flux
+
+            cell_vel = SVector{3,Float64}(phys_props.v[1, cell, species],
+                                          phys_props.v[2, cell, species],
+                                          phys_props.v[3, cell, species])
             
             for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
-                c = particles[species][i].v - SVector{3,Float64}(phys_props.v[1, cell, species],
-                                                                 phys_props.v[2, cell, species],
-                                                                 phys_props.v[3, cell, species])
+                c = particles[species][i].v - cell_vel
                 cxsq = c[1]^2
                 cysq = c[2]^2
                 czsq = c[3]^2
@@ -100,9 +102,7 @@ function compute_flux_props!(particles::Vector{ParticleVector{D}}, pia, species_
         
             if pia.indexer[cell,species].n_group2 > 0
                 for i in pia.indexer[cell,species].start2:pia.indexer[cell,species].end2
-                    c = particles[species][i].v - SVector{3,Float64}(phys_props.v[1, cell, species],
-                                                                    phys_props.v[2, cell, species],
-                                                                    phys_props.v[3, cell, species])
+                    c = particles[species][i].v - cell_vel
                     cxsq = c[1]^2
                     cysq = c[2]^2
                     czsq = c[3]^2

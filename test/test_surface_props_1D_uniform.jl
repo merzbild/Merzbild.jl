@@ -295,7 +295,8 @@
 
     # test convection, contiguous
     # specular walls
-    boundaries = MaxwellWalls1D(species_data, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0)
+    bc_list = (MaxwellWallBC1D(species_data, 1, 1.0, [0.0, 0.0, 0.0], 0.0),
+               MaxwellWallBC1D(species_data, 1, 1.0, [0.0, 0.0, 0.0], 0.0))
 
     ppc = 4
     particles = [ParticleVector(ppc * grid.n_cells)]
@@ -341,7 +342,7 @@
 
     clear_props!(surf_props)
 
-    convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, surf_props, 0.2)
+    convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, surf_props, 0.2)
 
     @test surf_props.np == [4.0;1.0;;]
 
@@ -400,7 +401,7 @@
 
     clear_props!(surf_props)
 
-    convect_particles_and_compute_cell!(rng, grid, boundaries, particles[1], pia, 1, species_data, surf_props, 0.2)
+    convect_particles_and_compute_cell!(rng, grid, bc_list, particles[1], pia, 1, species_data, surf_props, 0.2)
 
     @test surf_props.np == [4.0;1.0;;]
 
@@ -437,7 +438,6 @@
         particles[1][i] = Particle(w, SVector{3,Float64}(vx, 0, 3.0), SVector{3,Float64}(3.9, 0.0, 0.0))
     end
     
-    
     pia.n_total[1] = 8
     pia.indexer[1,1].n_local = 4
     pia.indexer[1,1].start1 = 1
@@ -461,7 +461,7 @@
     Merzbild.delete_particle_end!(particles[1], pia, 1, 1)
     pia.contiguous[1] = false
 
-    convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, surf_props, 0.2)
+    convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, surf_props, 0.2)
 
     @test surf_props.np == [2.0;1.0;;]
 
@@ -520,7 +520,7 @@
     Merzbild.delete_particle_end!(particles[1], pia, 1, 1)
     pia.contiguous[1] = false
 
-    convect_particles_and_compute_cell!(rng, grid, boundaries, particles[1], pia, 1, species_data, surf_props, 0.2)
+    convect_particles_and_compute_cell!(rng, grid, bc_list, particles[1], pia, 1, species_data, surf_props, 0.2)
 
     @test surf_props.np == [2.0;1.0;;]
 

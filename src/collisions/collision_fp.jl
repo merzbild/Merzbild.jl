@@ -54,7 +54,7 @@ function fp_linear!(rng, collision_data_fp, interaction, species_data, particles
 
     if indexer.n_group2 > 0
         @inbounds for part_id in indexer.start2:indexer.end2
-            collision_data_fp.vel_ave = vel_ave + particles[part_id].v * particles[part_id].w
+            collision_data_fp.vel_ave = collision_data_fp.vel_ave + particles[part_id].v * particles[part_id].w
             local_w += particles[part_id].w
         end
     end
