@@ -535,7 +535,7 @@ function sample_particles_equal_weight!(rng, particles::ParticleVector{D}, pia, 
     if distribution == :Maxwellian
         sample_maxwellian!(rng, particles, nparticles, offset, m, T, v0)
     elseif distribution == :BKW
-        sample_bkw!(rng, particles, nparticles, m, T, v0)
+        sample_bkw!(rng, particles, nparticles, offset, m, T, v0)
     end
 end
 
@@ -617,7 +617,9 @@ function sample_particles_phase_box_weighted!(rng, particles::ParticleVector{D},
         particles.cell[i+offset] = cell
     end
 
-    @inbounds for i in 1:nparticles
+    i_s = 1 + offset
+    i_e = nparticles + offset
+    @inbounds for i in i_s:i_e
         particles[i].w *= n_total / w_tot
     end
 end

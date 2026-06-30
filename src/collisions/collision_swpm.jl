@@ -89,7 +89,7 @@ in the simulation, with shape `(n_species,n_species,n_cells)`.
 3-dimensional array of `CollisionFactorsSWPM` instances with shape `(n_species,n_species,n_cells)`.
 """
 function create_collision_factors_swpm_array(pia::ParticleIndexerArray)
-    return create_collision_factors_swpm_array(size(pia.indexer)[2], size(pia.indexer)[1])
+    return create_collision_factors_swpm_array(pia.n_species, pia.n_cells)
 end
 
 """

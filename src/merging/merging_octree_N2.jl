@@ -857,7 +857,7 @@ function compute_new_particles!(rng, octree::OctreeN2Merge{D}, particles::Partic
     # if we delete from particles in last cell AND we delete less particles than were in group 2
     # then continuity is not broken
     # !(A && B) == !A || !B
-    @inbounds if !(cell == size(pia.indexer)[1]) || (n_particles_to_delete > pia.indexer[cell,species].n_group2)
+    @inbounds if !(cell == pia.n_cells) || (n_particles_to_delete > pia.indexer[cell,species].n_group2)
         pia.contiguous[species] = false
     end
 
@@ -977,7 +977,7 @@ function compute_new_particles!(rng, octree::OctreeN2Merge{D}, particles::Partic
     # if we delete from particles in last cell AND we delete less particles than were in group 2
     # then continuity is not broken
     # !(A && B) == !A || !B
-    @inbounds if !(cell == size(pia.indexer)[1]) || (n_particles_to_delete > indexer.n_group2)
+    @inbounds if !(cell == pia.n_cells) || (n_particles_to_delete > indexer.n_group2)
         pia.contiguous[species] = false
     end
 

@@ -84,7 +84,7 @@ function compute_moments!(moment_values, moment_scaling, moment_powers, particle
         end
         
         # Normalize by scaling and n
-        for n_mom in eachindex(moment_values)
+        @inbounds for n_mom in eachindex(moment_values)
             moment_values[n_mom] /= (moment_scaling[n_mom] * n)
         end
     end

@@ -24,7 +24,8 @@
 
     # create our grid and BCs
     grid = Grid1DUniform(L, nx)
-    boundaries = MaxwellWalls1D(species_data, T_wall, T_wall, -v_wall, v_wall, 1.0, 1.0)
+    bc_list = (MaxwellWallBC1D(species_data, 1, T_wall, [0.0, -v_wall, 0.0], 1.0),
+               MaxwellWallBC1D(species_data, 1, T_wall, [0.0, v_wall, 0.0], 1.0))
 
     # init particle vector, particle indexer, grid particle sorter
     n_particles = ppc * nx
@@ -91,7 +92,7 @@
         end
 
         # convect particles
-        convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, surf_props, Δt)
+        convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, surf_props, Δt)
 
         # sort particles
         sort_particles!(gridsorter, grid, particles[1], pia, 1)

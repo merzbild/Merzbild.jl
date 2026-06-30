@@ -88,14 +88,11 @@ Merzbild.compute_new_particles!
 Merzbild.vx_sign
 Merzbild.vy_sign
 Merzbild.vz_sign
-Merzbild.check_speed_bound
 Merzbild.base_multi_index_moments
 Merzbild.compute_w_total_v0!
 Merzbild.ccm
 Merzbild.compute_lhs_and_rhs!
 Merzbild.compute_lhs_and_rhs_rate_preserving!
-Merzbild.compute_lhs_particles_additional!
-Merzbild.compute_lhs_particles_additional_rate_preserving!
 Merzbild.scale_lhs_rhs_variance!
 Merzbild.scale_lhs_rhs_vref!
 Merzbild.scale_lhs_rhs_spatial_variance!
@@ -131,16 +128,18 @@ Merzbild.get_cell
 ## Particle movement
 ```@docs
 Merzbild.convect_single_particle!
+Merzbild.set_x
 ```
 
 ## Particle-surface interactions
 ```@docs
 Merzbild.specular_reflection_x!
 Merzbild.diffuse_reflection_x!
-Merzbild.reflect_particle_x!
 Merzbild.update_surface_incident!
 Merzbild.update_surface_reflected!
 Merzbild.surface_props_scale!
+Merzbild.apply_bc!
+Merzbild.apply_bc_dispatched!
 ```
 
 ## I/O
@@ -170,6 +169,7 @@ Merzbild.q_e
 
 ## Misc
 ```@docs
+Merzbild.create_position_vector_D
 Merzbild.compute_thermal_velocity
 Merzbild.binary_search
 Merzbild.linear_interpolation

@@ -40,7 +40,7 @@ instances is needed to keep track of the particles of different species in diffe
 For this purpose Merzbild.jl provides the `ParticleIndexerArray` struct. It has two fields:
 - `ParticleIndexerArray.indexer`: a 2-dimensional array of `ParticleIndexer` instances with dimensions `n_cells*n_species`
 - `ParticleIndexerArray.n_total`: a 1-dimensional vector of length `n_species` with per-species total particle counts 
-- `ParticleIndexerArray.contiguous`: a 1-dimensional vector of length `n_species` describing whether indexing is contiguous for each species (see the section on [`Particle buffers and contiguous indexing`](@ref))
+- `ParticleIndexerArray.contiguous`: a 1-dimensional vector of length `n_species` describing whether indexing is contiguous for each species (see the section on [`Particle buffers and contiguous indexing`](@ref "Particle buffers and contiguous indexing"))
 - `ParticleIndexerArray.index_last`: a 1-dimensional vector of length `n_species` holding the index of the last particle of each species.
 
 **IMPORTANT**: the indexing layout **always assumes** that any particles in any of the index ranges pointed to by a group2 come after all the particles in any of the index ranges pointed to by a group2.
@@ -169,31 +169,24 @@ An instance of `PhysProps` has the following fields:
 - `ndens_not_Np`: a boolean value used to distinguish between the meanings of the `n` field (see below) and ensure consistency
 - `n_cells`: number of grid cells
 - `n_species`: number of species in the simulation
-- `n_moments`: number of total moments computed (see below how moments are defined)
 - `lpa`: vector of length `n_species` storing the lengths of the particle arrays (i.e. how many elements have been allocated, actual particle counts may be less)
 - `np`: array with dimensions `n_cells*n_species`, stores the number of particles of each species in each grid cell
 - `n`: array with dimensions `n_cells*n_species`, stores either the number of physical particles of each species in each grid cell or the number density of each species in each grid cell, see below for explanation
 - `v`: array with dimensions `3*n_cells*n_species`, stores the x, y, and z components of the macroscopic velocity of each species in each grid cell 
 - `T`: array with dimensions `n_cells*n_species`, stores the temperature of each species in each grid cell
-- `moment_powers`: vector of length `n_moments`, stores which total moments are being computed
-- `moments`: array with dimensions `n_moments*n_cells*n_species`, stores the total moments of each species in each grid cell
-- `Tref`: a reference temperature set during initialization of a `PhysProps` instance used to scale the moments so that for an equilibrium distribution at a temperature of ``T_{ref}`` all moments are equal to 1.
 
 One can see that the definition of the `n` field is somewhat ambiguous - it
 can either mean the total number of particles in a cell, or the number density in a cell (equal to the number
 of particles in the cell divided by the cell volume). To distinguish between these two cases, the following convention
 is assumed, one can provide a value of `ndens_not_NP` during instantiation (by default it is `false`, i.e. the number of physical particles
 is computed and not the number density).
-
-If we don't need to compute the total moments, then we can create a `PhysProps` instance by simply
-passing a `ParticleIndexerArray` instance to the constructor, as it already has the required information
-on the number of grid cells and species. So we can simply do this: `props = PhysProps(pia)`.
+We can simply instantiate a `PhysProps` instance like this: `props = PhysProps(pia)`.
 
 The [`compute_props!`](@ref) function computes the macroscopical physical properties
 of all species in all cells in the simulation. **Currently this computes only the number of particles in a cell, regardless of the value of the `ndens_not_Np` field.**
 
 There is an optimized version of this function, which assumes the particles are only indexed by
-the first group of a `ParticleIndexer` instance: [`compute_props_sorted!`](@ref); it also does not computed any moments. This is the case immediately after sorting the particles on a grid.
+the first group of a `ParticleIndexer` instance: [`compute_props_sorted!`](@ref). This is the case immediately after sorting the particles on a grid.
 If a grid is passed as a parameter, it will compute either the number of particles in a cell
 or the number density in a cell depending on the value of `ndens_not_NP` field of the `PhysProps` instance passed to the function.
 
@@ -202,24 +195,6 @@ The [`avg_props!`](@ref) function can also be used to time-average physical prop
 and the other one holds the values of the averaged physical properties. Similarly to the previous case,
 trying to average one `PhysProps` instance "into" another `PhysProps` instance with a different value
 of the `ndens_not_NP` field will raise an error.
-
-The total moment of order ``N`` is defined as
-```math
-M_{N} = \frac{1}{\sum_i w_i}\sum_i w_i \left(v_{x,i}^2+v_{y,i}^2+v_{z,i}^2\right)^{\frac{N}{2}}.
-```
-Here the summation is over all particles of a specific species in a particular grid cell.
-Since computing the moments is expensive, a different function needs to be called to compute
-all the physical properties **and** the moments: [`compute_props_with_total_moments!`](@ref).
-If it is called and a `PhysProps` instance with `n_moments = 0` is passed to it, it will fall back
-to the standard [`compute_props!`](@ref) to avoid unnecessary computations.
-
-Support for computing mixed moments of the form 
-```math
-M_{abc} = \frac{1}{\sum_i w_i}\sum_i w_i v_{x,i}^a v_{y,i}^b v_{z,i}^c
-```
-is planned in future versions of Merzbild.jl.
-
-**NOTE**: the computation of total moments is planned to be decoupled from `PhysProps` and moved into a separate structure.
 
 ## Writing output: NCDataHolder
 Finally, once the properties have been computed, we need to output them.

@@ -809,8 +809,8 @@ function write_netcdf(nc_filename, particles::Vector{ParticleVector{D}}, pia, sp
     full_names_list = [species.name for species in species_data]  # if ["Ar"], ["He"], gatts["species_names"] = "Ar,He"
     gatts["species_names"] = join([full_names_list[i] for i in species_ids], ",")
 
-    @inbounds n_cells = size(pia.indexer)[1]
-    @inbounds n_species = length(species_ids)
+    n_cells = pia.n_cells
+    n_species = pia.n_species
 
     three_dim = NcDim("3d", 3, unlimited=false)
     if D > 0

@@ -22,7 +22,8 @@
 
     # create our grid and BCs
     grid = Grid1DUniform(L, nx)
-    boundaries = MaxwellWalls1D(species_data, T_wall, T_wall, -v_wall, v_wall, 1.0, 1.0)
+    bc_list = (MaxwellWallBC1D(species_data, 1, T_wall, [0.0, -v_wall, 0.0], 1.0),
+               MaxwellWallBC1D(species_data, 1, T_wall, [0.0, v_wall, 0.0], 1.0))
 
     # init particle vector, particle indexer, grid particle sorter
     n_particles = ppc * nx
@@ -42,7 +43,7 @@
 
     for t in 1:2
         # convect particles
-        convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, Δt)
+        convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, Δt)
 
         # sort particles
         sort_particles!(gridsorter, grid, particles[1], pia, 1)
@@ -52,7 +53,7 @@
 
     for t in 1:2
         # convect particles
-        bytes = @allocated convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, Δt)
+        bytes = @allocated convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, Δt)
         @test bytes == 0
 
         # sort particles
@@ -65,7 +66,7 @@
 
     for t in 1:2
         # convect particles
-        convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, surf_props, Δt)
+        convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, surf_props, Δt)
 
         # sort particles
         sort_particles!(gridsorter, grid, particles[1], pia, 1)
@@ -73,7 +74,7 @@
 
     for t in 1:2
         # convect particles
-        bytes = @allocated convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, surf_props, Δt)
+        bytes = @allocated convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, surf_props, Δt)
         @test bytes == 0
 
         # sort particles
@@ -84,7 +85,7 @@
     # now with precomputation of particle indices
     for t in 1:2
         # convect particles
-        convect_particles_and_compute_cell!(rng, grid, boundaries, particles[1], pia, 1, species_data, Δt)
+        convect_particles_and_compute_cell!(rng, grid, bc_list, particles[1], pia, 1, species_data, Δt)
 
         # sort particles
         sort_particles!(gridsorter, particles[1], pia, 1)
@@ -92,7 +93,7 @@
 
     for t in 1:2
         # convect particles
-        bytes = @allocated convect_particles_and_compute_cell!(rng, grid, boundaries, particles[1], pia, 1, species_data, Δt)
+        bytes = @allocated convect_particles_and_compute_cell!(rng, grid, bc_list, particles[1], pia, 1, species_data, Δt)
         @test bytes == 0
 
         # sort particles
@@ -103,7 +104,7 @@
     # now with precomputation of particle indices and computation of surface properties
     for t in 1:2
         # convect particles
-        convect_particles_and_compute_cell!(rng, grid, boundaries, particles[1], pia, 1, species_data, surf_props, Δt)
+        convect_particles_and_compute_cell!(rng, grid, bc_list, particles[1], pia, 1, species_data, surf_props, Δt)
 
         # sort particles
         sort_particles!(gridsorter, particles[1], pia, 1)
@@ -111,7 +112,7 @@
 
     for t in 1:2
         # convect particles
-        bytes = @allocated convect_particles_and_compute_cell!(rng, grid, boundaries, particles[1], pia, 1, species_data, surf_props, Δt)
+        bytes = @allocated convect_particles_and_compute_cell!(rng, grid, bc_list, particles[1], pia, 1, species_data, surf_props, Δt)
         @test bytes == 0
 
         # sort particles

@@ -18,7 +18,8 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, merge_threshold, merge_tar
 
     # create our grid and BCs
     grid = Grid1DUniform(L, nx)
-    boundaries = MaxwellWalls1D(species_data, T_wall, T_wall, -v_wall, v_wall, 1.0, 1.0)
+    bc_list = (FullyDiffuseBC1D(species_data, 1, T_wall, [0.0, -v_wall, 0.0]),
+               FullyDiffuseBC1D(species_data, 1, T_wall, [0.0, v_wall, 0.0]))
 
     # init particle vector, particle indexer, grid particle sorter
     n_particles = ppc * nx
@@ -89,7 +90,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, merge_threshold, merge_tar
         end
 
         # convect particles
-        @timeit "convect" convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, Δt)
+        @timeit "convect" convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, Δt)
 
         # sort particles
         @timeit "sort" sort_particles!(gridsorter, grid, particles[1], pia, 1)
