@@ -21,7 +21,11 @@ include("test_nnls_ratepreserving_merging.jl")  # test NNLS merging with approxi
 include("test_nnls_exact_ratepreserving_merging.jl")  # test NNLS merging with exact rate preservation 
 include("test_roulette_merging.jl")  # roulette merge
 include("test_merging_grid_merging_1D.jl")  # test grid-based merging in 1-D
+include("test_merging_grid_merging_1D_2Dparticles.jl")  # test grid-based merging in 1-D, 2-D particles
+include("test_merging_grid_merging_1D_1Dparticles.jl")  # test grid-based merging in 1-D, 1-D particles
 include("test_octree_merging_1D.jl")  # test octree merging in 1-D
+include("test_octree_merging_1D_2Dparticles.jl")  # test octree merging in 1-D, 2-D particles
+include("test_octree_merging_1D_1Dparticles.jl")  # test octree merging in 1-D, 1-D particles
 
 # tests assume that VHS data for Ar, He is
 # ["Ar,Ar"]
