@@ -274,7 +274,7 @@ and no particle splitting is performed
 end
 
 """
-    collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction_l, pa_i::Particle{D}, pa_k::Particle{D})
+    collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction, pa_i::Particle{D}, pa_k::Particle{D})
 
 Collide two particles elastically using the VHS model, assuming equal weights - no particle splitting is performed even
 if weights are unequal. Particles can be of same or different species.
@@ -285,12 +285,8 @@ if weights are unequal. Particles can be of same or different species.
 * `collision_factors`: the `CollisionFactors` holding the estimate of ``(\\sigma g w)_{max}``
     for the species in question in the cell
 * `interaction`: the `Interaction` instance for the colliding species
-* `particles_1`: `ParticleVector` of the particles of the first species being collided
-* `particles_2`: `ParticleVector` of the particles of the second species being collided
-* `pia`: the `ParticleIndexerArray`
-* `cell`: the index of the cell in which collisions are performed
-* `species1`: the index of the first species for which collisions are performed
-* `species2`: the index of the second species for which collisions are performed
+* `pa_i`: the first particle being collided
+* `pa_k`: the second particle being collided
 """
 @inline function collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction, pa_i::Particle{D}, pa_k::Particle{D}) where D
     sigma = sigma_vhs(interaction, collision_data.g)
@@ -553,10 +549,6 @@ and no weight checks/splitting is performed.
 * `species2`: the index of the second species for which collisions are performed
 * `Δt`: timestep
 * `V`: cell volume
-
-# Keyword arguments
-* `dw_tol`: if weights of particles differ by less than this amount, an equal-weight collision is assumed
-and no particle splitting is performed
 
 # References
 * G.A. Bird, Molecular gas dynamics and the direct simulation of gas flows,

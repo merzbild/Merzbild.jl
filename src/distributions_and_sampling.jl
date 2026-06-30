@@ -540,9 +540,9 @@ function sample_particles_equal_weight!(rng, particles::ParticleVector{D}, pia, 
 end
 
 """
-    sample_particles_phase_box_weighted(rng, particles::ParticleVector{D}, pia, cell, species,
-                                        nparticles, m, T, Fnum, xlo, xhi, ylo, yhi, zlo, zhi;
-                                        v_mult=3.5, vx0=0.0, vy0=0.0, vz0=0.0)
+    sample_particles_phase_box_weighted!(rng, particles::ParticleVector{D}, pia, cell, species,
+                                         nparticles, m, T, n_total, xlo, xhi, ylo, yhi, zlo, zhi;
+                                         v_mult=3.5, vx0=0.0, vy0=0.0, vz0=0.0)
 
 Sample variable-weight particles of a specific species in a specific cell from a Maxwellian.
 The velocities are sampled in a uniform box in phase space with extent ±`v_mult * v_thermal`

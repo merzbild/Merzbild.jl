@@ -102,7 +102,7 @@ function update_surface_incident!(particle, species, surf_props, surface_element
 end
 
 """
-    update_surface_incident!(particle, species, surf_props, surface_element_id)
+    update_surface_reflected!(particle, species, surf_props, surface_element_id)
 
 Update surface properties for surface element `surface_element_id` for a reflected particle.
 

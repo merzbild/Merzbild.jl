@@ -11,7 +11,7 @@ as `reflection_velocity_sq` is dependent on the species' mass.
 * `v`: wall velocity vector
 * `accommodation`: accommodation coefficient (a value of 0 corresponds to specular reflection,
     a value of 1 corresponds to purely diffuse reflection) - these are implemented in separate more efficient functions as well
-* `reflection_velocities_sq`: pre-computed squared thermal reflection velocities
+* `reflection_velocity_sq`: pre-computed squared thermal reflection velocity
 """
 struct MaxwellWallBC1D <: AbstractBC
     T::Float64
@@ -24,7 +24,7 @@ struct MaxwellWallBC1D <: AbstractBC
 
     Construct a `MaxwellWallBC1D` instance for a given species.
 
-    # Fields
+    # Positional arguments
     * `species_data`: the list of `Species` data
     * `species`: index of the species for which to create the BC
     * `T`: wall temperature
@@ -46,7 +46,7 @@ as `reflection_velocity_sq` is dependent on the species' mass.
 # Fields
 * `T`: temperature
 * `v`: wall velocity vector
-* `reflection_velocities_sq`: pre-computed squared thermal reflection velocities
+* `reflection_velocity_sq`: pre-computed squared thermal reflection velocities
 """
 struct FullyDiffuseBC1D <: AbstractBC
     T::Float64
@@ -58,7 +58,7 @@ struct FullyDiffuseBC1D <: AbstractBC
 
     Construct a `FullyDiffuseBC1D` instance for a given species.
 
-    # Fields
+    # Positional arguments
     * `species_data`: the list of `Species` data
     * `species`: index of the species for which to create the BC
     * `T`: wall temperature

@@ -70,7 +70,7 @@ Struct holding computed bin properties required to merge the particles in a bin.
 * `x_std_sq`: variance of position of particles in cell
 * `particle_index1`: index of first particle in the cell (first as in the first particle that is found to
     belong to the cell)
-* `particle_index1`: index of second particle in the cell (second as in the second particle that is found to
+* `particle_index2`: index of second particle in the cell (second as in the second particle that is found to
     belong to the cell)
 * `w1`: the post-merge weight to assign to the first particle in the cell
 * `w2`: the post-merge weight to assign to the second particle in the cell
