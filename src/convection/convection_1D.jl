@@ -3,15 +3,14 @@
 using StaticArrays
 
 """
-    convect_single_particle!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particle::Particle{D}, species, Δt)
+    convect_single_particle!(rng, grid::Grid1DUniform, bc_list, particle::Particle{D}, species, Δt)
 
 Convect a singe particle on a 1-D uniform grid.
 
 # Positional arguments
 * `rng`: the random number generator
 * `grid`: the grid on which the convection is performed
-* `boundaries`: the `MaxwellWalls1D` struct describing the boundaries (it is assumed that the wall with index 1 is the left wall and
-    the wall with index 2 is the right wall)
+* `bc_list`: the `Tuple` of boundary conditions (left and right wall)
 * `particles`: the particle to be convected
 * `species`: the index of the species being convected
 * `Δt`: the convection timestep
@@ -44,15 +43,14 @@ Convect a singe particle on a 1-D uniform grid.
 end
 
 """
-    convect_single_particle!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particle::Particle{D}, species, surf_props::SurfProps, mass, Δt)
+    convect_single_particle!(rng, grid::Grid1DUniform, bc_list, particle::Particle{D}, species, surf_props::SurfProps, mass, Δt)
 
 Convect a singe particle on a 1-D uniform grid, updating surface properties if it collides with a wall.
 
 # Positional arguments
 * `rng`: the random number generator
 * `grid`: the grid on which the convection is performed
-* `boundaries`: the `MaxwellWalls1D` struct describing the boundaries (it is assumed that the wall with index 1 is the left wall and
-    the wall with index 2 is the right wall)
+* `bc_list`: the `Tuple` of boundary conditions (left and right wall)
 * `particles`: the particle to be convected
 * `species`: the index of the species being convected
 * `surf_props`: the `SurfProps` struct where the computed surface properties will be stored
@@ -89,15 +87,14 @@ Convect a singe particle on a 1-D uniform grid, updating surface properties if i
 end
 
 """
-    convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particles::ParticleVector{D}, pia, species, species_data, Δt)
+    convect_particles!(rng, grid::Grid1DUniform, bc_list, particles::ParticleVector{D}, pia, species, species_data, Δt)
 
 Convect particles on a 1-D uniform grid.
 
 # Positional arguments
 * `rng`: the random number generator
 * `grid`: the grid on which the convection is performed
-* `boundaries`: the `MaxwellWalls1D` struct describing the boundaries (it is assumed that the wall with index 1 is the left wall and
-    the wall with index 2 is the right wall)
+* `bc_list`: the `Tuple` of boundary conditions (left and right wall)
 * `particles`: the `ParticleVector` of particles to be convected
 * `pia`: the `ParticleIndexerArray` instance
 * `species`: the index of the species being convected
@@ -132,15 +129,14 @@ function convect_particles!(rng, grid::Grid1DUniform, bc_list, particles::Partic
 end
 
 """
-    convect_particles!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, surf_props::SurfProps, particles::ParticleVector{D}, pia, species, species_data, Δt)
+    convect_particles!(rng, grid::Grid1DUniform, bc_list, surf_props::SurfProps, particles::ParticleVector{D}, pia, species, species_data, Δt)
 
 Convect particles on a 1-D uniform grid, computing surface properties if particles hit a surface.
 
 # Positional arguments
 * `rng`: the random number generator
 * `grid`: the grid on which the convection is performed
-* `boundaries`: the `MaxwellWalls1D` struct describing the boundaries (it is assumed that the wall with index 1 is the left wall and
-    the wall with index 2 is the right wall)
+* `bc_list`: the `Tuple` of boundary conditions (left and right wall)
 * `particles`: the `ParticleVector` of particles to be convected
 * `pia`: the `ParticleIndexerArray` instance
 * `species`: the index of the species being convected
@@ -181,15 +177,14 @@ end
 
 
 """
-    convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, particles::ParticleVector{D}, pia, species, species_data, Δt)
+    convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, bc_list, particles::ParticleVector{D}, pia, species, species_data, Δt)
 
 Convect particles on a 1-D uniform grid and write post-convection cell index to `particles.cell`.
 
 # Positional arguments
 * `rng`: the random number generator
 * `grid`: the grid on which the convection is performed
-* `boundaries`: the `MaxwellWalls1D` struct describing the boundaries (it is assumed that the wall with index 1 is the left wall and
-    the wall with index 2 is the right wall)
+* `bc_list`: the `Tuple` of boundary conditions (left and right wall)
 * `particles`: the `ParticleVector` of particles to be convected
 * `pia`: the `ParticleIndexerArray` instance
 * `species`: the index of the species being convected
@@ -228,15 +223,14 @@ function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, bc_list, 
 end
 
 """
-    convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, boundaries::MaxwellWalls1D, surf_props::SurfProps, particles::ParticleVector{D}, pia, species, species_data, Δt)
+    convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, bc_list, surf_props::SurfProps, particles::ParticleVector{D}, pia, species, species_data, Δt)
 
 Convect particles on a 1-D uniform grid and write post-convection cell index to `particles.cell`, computing surface properties if particles hit a surface.
 
 # Positional arguments
 * `rng`: the random number generator
 * `grid`: the grid on which the convection is performed
-* `boundaries`: the `MaxwellWalls1D` struct describing the boundaries (it is assumed that the wall with index 1 is the left wall and
-    the wall with index 2 is the right wall)
+* `bc_list`: the `Tuple` of boundary conditions (left and right wall)
 * `particles`: the `ParticleVector` of particles to be convected
 * `pia`: the `ParticleIndexerArray` instance
 * `species`: the index of the species being convected

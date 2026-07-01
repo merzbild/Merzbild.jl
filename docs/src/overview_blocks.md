@@ -5,8 +5,8 @@ One of the main parts of the code is the `ParticleIndexer` struct.
 It contains the starting and ending indices of the particles of a single species in a single cell.
 During collisions, the number of the particles of a certain species in a cell may increase,
 either due to inelastic processes, or due to particle splitting in variable-weight collisions.
-These new particles are "tacked onto" the end of the whole array of particles of the species.
-Thus, each  `ParticleIndexer` instance potentially tracks two blocks of particles that are all in a single cell:
+These new particles are "tacked onto" the end of the whole array of particles of the species. This two-group design allows efficient handling of newly created particles during collisions without disturbing the ordered indices of existing particles
+Thus, each `ParticleIndexer` instance potentially tracks two blocks of particles that are all in a single cell:
 the ones that were there before collisions were performed, and the new ones that got created during collisions
 and are at the end of the array.
 
@@ -175,15 +175,13 @@ An instance of `PhysProps` has the following fields:
 - `v`: array with dimensions `3*n_cells*n_species`, stores the x, y, and z components of the macroscopic velocity of each species in each grid cell 
 - `T`: array with dimensions `n_cells*n_species`, stores the temperature of each species in each grid cell
 
-One can see that the definition of the `n` field is somewhat ambiguous - it
-can either mean the total number of particles in a cell, or the number density in a cell (equal to the number
-of particles in the cell divided by the cell volume). To distinguish between these two cases, the following convention
+One can see that the definition of the `n` field is somewhat ambiguous. It can store either: (a) the count of physical particles, or (b) the number density (particles/volume). The `ndens_not_Np` flag is `true` when storing number density, `false` when storing particle counts. To distinguish between these two cases, the following convention
 is assumed, one can provide a value of `ndens_not_NP` during instantiation (by default it is `false`, i.e. the number of physical particles
-is computed and not the number density).
+is computed and not the number density).  
 We can simply instantiate a `PhysProps` instance like this: `props = PhysProps(pia)`.
 
 The [`compute_props!`](@ref) function computes the macroscopical physical properties
-of all species in all cells in the simulation. **Currently this computes only the number of particles in a cell, regardless of the value of the `ndens_not_Np` field.**
+of all species in all cells in the simulation. **This computes only the number of particles in a cell, regardless of the value of the `ndens_not_Np` field.**
 
 There is an optimized version of this function, which assumes the particles are only indexed by
 the first group of a `ParticleIndexer` instance: [`compute_props_sorted!`](@ref). This is the case immediately after sorting the particles on a grid.
@@ -298,8 +296,8 @@ close_netcdf(ds)
 Now we have an overview of how to
 1. Create a structure to hold particles
 2. Index the vector of particles
-4. Load species' data
-3. Sample particles from a distribution
+3. Load species' data
+4. Sample particles from a distribution
 5. Compute macroscopic physical properties
 6. Output these properties to disk
 
