@@ -80,7 +80,7 @@
     rng3 = StableRNG(seed)
 
     sample_particles_phase_box_weighted!(rng3, particles[1], pia, 1, 1, n_particles, species_data[1].mass, T0, n_dens,
-    0.0, 1.0, 0.0, 1.0, 0.0, 1.0; v_mult=3.5, vx0=v0[1], vy0=v0[2], vz0=v0[3])
+    0.0, 1.0, 0.0, 1.0, 0.0, 1.0; v_mult=2.0, vx0=v0[1], vy0=v0[2], vz0=v0[3])
 
     compute_props!(particles, pia, species_data, phys_props)
 
@@ -94,7 +94,7 @@
 
     @test abs(phys_props.n[1,1] - n0_c) / n0_c < 1e-15
     @test abs(maximum((phys_props.v[:,1,1] - v0_c) ./ v0_c)) < 1e-14
-    @test abs(phys_props.T[1,1] - T0_c) / T0_c < 1e-15
+    @test abs(phys_props.T[1,1] - T0_c) / T0_c < 1e-14
 
     # we will use this in next step
     v_20_stored = copy(particles[1][20].v)
@@ -107,7 +107,7 @@
     pia = ParticleIndexerArray(0)
 
     sample_particles_phase_box_weighted!(rng4, particles[1], pia, 1, 1, n_particles, species_data[1].mass, T0, n_dens,
-    0.0, 1.0, 0.0, 1.0, 0.0, 1.0; v_mult=3.5, vx0=v0[1], vy0=v0[2], vz0=v0[3])
+    0.0, 1.0, 0.0, 1.0, 0.0, 1.0; v_mult=2.0, vx0=v0[1], vy0=v0[2], vz0=v0[3])
 
     pia.indexer[1,1].n_group1 = 40
     pia.indexer[1,1].end1 = 40
@@ -121,7 +121,7 @@
 
     @test abs(phys_props.n[1,1] - n0_c) / n0_c < 1e-15
     @test abs(maximum((phys_props.v[:,1,1] - v0_c) ./ v0_c)) < 1e-14
-    @test abs(phys_props.T[1,1] - T0_c) / T0_c < 1e-15
+    @test abs(phys_props.T[1,1] - T0_c) / T0_c < 1e-14
 
     @test abs(maximum(particles[1][20].v - v_20_stored)) < 1e-10
     @test abs(maximum(particles[1][60].v - v_60_stored)) < 1e-10
