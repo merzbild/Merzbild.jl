@@ -32,6 +32,7 @@ in particle arrays has been implemented. See documentaton on contiguous indexing
 * Added tests that check that for unexpected memory allocations
 * Various performance optimizations
 * Minor bug fixes
+* Fixed linear Fokker-Planck for variable-weight particles
 * Documentation improvements
 
 ## v0.7.10
