@@ -27,6 +27,9 @@ function fp_linear!(rng, collision_data_fp, interaction, species_data, particles
     n_begin = indexer.start1
     n_end = indexer.end1
 
+    s2 = indexer.start2
+    e2 = indexer.end2
+
     if n_local < 7
         return nothing
     end
@@ -53,7 +56,7 @@ function fp_linear!(rng, collision_data_fp, interaction, species_data, particles
     end
 
     if indexer.n_group2 > 0
-        @inbounds for part_id in indexer.start2:indexer.end2
+        @inbounds for part_id in s2:e2
             collision_data_fp.vel_ave = collision_data_fp.vel_ave + particles[part_id].v * particles[part_id].w
             local_w += particles[part_id].w
         end
@@ -69,7 +72,7 @@ function fp_linear!(rng, collision_data_fp, interaction, species_data, particles
     end
 
     if indexer.n_group2 > 0
-        @inbounds for part_id in indexer.start2:indexer.end2
+        @inbounds for part_id in s2:e2
             particles[part_id].v = particles[part_id].v - collision_data_fp.vel_ave
             es_old = es_old + (particles[part_id].v[1]^2
                                + particles[part_id].v[2]^2
