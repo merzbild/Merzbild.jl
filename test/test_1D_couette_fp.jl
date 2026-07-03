@@ -59,7 +59,7 @@
         # collide particles
         for cell in 1:grid.n_cells
             fp_linear!(rng, collision_data_fp, interaction_data[1, 1],
-                       species_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
+                       particles[1], pia, cell, 1, species_data, Δt, grid.cells[cell].V)
         end
 
         # convect particles
