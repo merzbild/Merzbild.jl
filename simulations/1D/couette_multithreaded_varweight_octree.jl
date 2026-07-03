@@ -25,8 +25,8 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
 
     # create our grid and BCs
     grid = Grid1DUniform(L, nx)
-    bc_list = (FullyDiffuseBC1D(species_data, 1, T_wall, [0.0, -v_wall, 0.0]),
-               FullyDiffuseBC1D(species_data, 1, T_wall, [0.0, v_wall, 0.0]))
+    bc_list = (FullyDiffuseBC1D(1, species_data, T_wall, [0.0, -v_wall, 0.0]),
+               FullyDiffuseBC1D(1, species_data, T_wall, [0.0, v_wall, 0.0]))
 
     # split cell indices into chunks
     cell_indices = Vector(1:nx)

@@ -68,8 +68,8 @@ function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
     # return
     # create our grid and BCs
     grid = Grid1DUniform(L, nx)
-    bc_list = (FullyDiffuseBC1D(species_data, 1, T_wall1, [0.0, -v_wall, 0.0]),
-               FullyDiffuseBC1D(species_data, 1, T_wall2, [0.0, v_wall, 0.0]))
+    bc_list = (FullyDiffuseBC1D(1, species_data, T_wall1, [0.0, -v_wall, 0.0]),
+               FullyDiffuseBC1D(1, species_data, T_wall2, [0.0, v_wall, 0.0]))
 
     # init particle vector, particle indexer, grid particle sorter
     n_particles = ppc_sampled * nx
