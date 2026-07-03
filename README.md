@@ -151,6 +151,9 @@ at the ["Overview of capabilities"](https://merzbild.github.io/Merzbild.jl/dev/o
 ## Contributing
 Please see [`CONTRIBUTING.MD`](CONTRIBUTING.MD) about some general guidelines on contributing to the development of Merzbild.jl.
 
+## Participating research groups
+[Applied and Computational Mathematics, RWTH Aachen](https://www.acom.rwth-aachen.de)
+
 ## Acknowledgments
 Dr. Georgii Oblapenko acknowledges the support of the German Research Foundation (DFG) via
 the [SFB1481 research group](https://sfb1481.rwth-aachen.de).
