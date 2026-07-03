@@ -86,11 +86,12 @@ boundary with a user-defined accommodation coefficient are available, with speci
 simulations. Due to dynamical dispatch, more generic conditions can be used in place of the specialized 1D ones
 even in 1D simulations, but this will be less efficient.
 
-We instantiate two fully diffuse boundary conditions and pack them into a `Tuple` (the order being left and right wall):
+We instantiate two fully diffuse boundary conditions and pack them into a `Tuple` (the order being left and right wall,
+`1` being the species index):
 
 ```julia
-bc_list = (FullyDiffuseBC1D(species_data, 1, T_wall, [0.0, -v_wall, 0.0]),
-           FullyDiffuseBC1D(species_data, 1, T_wall, [0.0, v_wall, 0.0]))
+bc_list = (FullyDiffuseBC1D(1, species_data, T_wall, [0.0, -v_wall, 0.0]),
+           FullyDiffuseBC1D(1, species_data, T_wall, [0.0, v_wall, 0.0]))
 ```
 
 ## Calculation of surface properties
@@ -179,8 +180,8 @@ interaction_data::Array{Interaction, 2} = load_interaction_data(interaction_data
 
 # create our grid and BCs
 grid = Grid1DUniform(L, nx)
-bc_list = (FullyDiffuseBC1D(species_data, 1, T_wall, [0.0, -v_wall, 0.0]),
-           FullyDiffuseBC1D(species_data, 1, T_wall, [0.0, v_wall, 0.0]))
+bc_list = (FullyDiffuseBC1D(1, species_data, T_wall, [0.0, -v_wall, 0.0]),
+           FullyDiffuseBC1D(1, species_data, T_wall, [0.0, v_wall, 0.0]))
 
 # init particle vector, particle indexer, grid particle sorter
 # we will not be creating or destroying any particles, so we can compute the exact number

@@ -40,7 +40,7 @@ collision_data_fp = CollisionDataFP(ppc * 2)
 Single-species elastic collisions using the linear FP model are performed by calling [`fp_linear!`](@ref) once per
 cell:
 ```julia
-fp_linear!(rng, collision_data_fp, interaction_data[1, 1], species_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
+fp_linear!(rng, collision_data_fp, interaction_data[1, 1], particles[1], pia, cell, 1, species_data, Δt, grid.cells[cell].V)
 ```
 Here `interaction_data[1, 1]` is the (single) self-interaction, `cell` is the index of the cell being collided,
 `Δt` is the timestep, and the last argument is the volume of the physical cell. The function updates the particle
@@ -130,8 +130,8 @@ for t in 1:n_timesteps
 
     # collide particles: one FP update per cell, no collision factors needed
     for cell in 1:grid.n_cells
-        fp_linear!(rng, collision_data_fp, interaction_data[1, 1], species_data,
-                   particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
+        fp_linear!(rng, collision_data_fp, interaction_data[1, 1], 
+                   particles[1], pia, cell, 1, species_data, Δt, grid.cells[cell].V)
     end
 
     # convect particles
