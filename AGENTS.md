@@ -49,3 +49,6 @@ collisions, merging, property computation, I/O) and the user writes their own ti
   `test/test_malloc_*.jl`; keep these green when touching hot paths.
 * New features must have corresponding tests and documentation added (see the checklist in
   `CONTRIBUTING.md`).
+* `run_examples.py` runs all examples in `simulations/` for 10 timesteps/ensembles and writes errors to directory
+  given by the `logdir` command line argument (defaults to `scratch/logs`). Use to verify simulation examples work after
+  changes to code.
