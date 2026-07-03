@@ -23,7 +23,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
 
     # init particle vector, particle indexer, grid particle sorter
     n_particles = ppc * nx
-    particles = particles = [ParticleVector(n_particles)]
+    particles = particles = [ParticleVector{1}(n_particles)]
     pia = ParticleIndexerArray(grid.n_cells, 1)
     gridsorter = GridSortInPlace(grid, n_particles)
 
