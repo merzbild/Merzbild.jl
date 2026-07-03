@@ -125,4 +125,67 @@
 
     @test abs(maximum(particles[1][20].v - v_20_stored)) < 1e-10
     @test abs(maximum(particles[1][60].v - v_60_stored)) < 1e-10
+
+    # now we will split particle indexing into group1, group2
+    # and use particles with dim=2
+    # can't check particle data since random sampling is different
+    particles = [ParticleVector{2}(n_particles)]
+
+    rng5 = StableRNG(seed)
+    pia = ParticleIndexerArray(0)
+
+    sample_particles_phase_box_weighted!(rng5, particles[1], pia, 1, 1, n_particles, species_data[1].mass, T0, n_dens,
+    0.0, 1.0, 0.0, 1.0, 0.0, 1.0; v_mult=2.0, vx0=v0[1], vy0=v0[2], vz0=v0[3])
+
+    pia.indexer[1,1].n_group1 = 40
+    pia.indexer[1,1].end1 = 40
+    pia.indexer[1,1].n_group2 = 60
+    pia.indexer[1,1].start2 = 41
+    pia.indexer[1,1].end2 = 100
+    
+    compute_props!(particles, pia, species_data, phys_props)
+
+    n0_c = phys_props.n[1,1]
+    v0_c = copy(phys_props.v[:,1,1])
+    T0_c = phys_props.T[1,1]
+
+    fp_linear!(rng5, collision_data_fp, interaction_data[1,1], species_data, particles[1], pia, 1, 1, 1.0, 1.0)
+
+    compute_props!(particles, pia, species_data, phys_props)
+
+    @test abs(phys_props.n[1,1] - n0_c) / n0_c < 1e-15
+    @test abs(maximum((phys_props.v[:,1,1] - v0_c) ./ v0_c)) < 1e-14
+    @test abs(phys_props.T[1,1] - T0_c) / T0_c < 1e-14
+
+
+    # now we will split particle indexing into group1, group2
+    # and use particles with dim=1
+    # can't check particle data since random sampling is different
+    particles = [ParticleVector{1}(n_particles)]
+
+    rng6 = StableRNG(seed)
+    pia = ParticleIndexerArray(0)
+
+    sample_particles_phase_box_weighted!(rng6, particles[1], pia, 1, 1, n_particles, species_data[1].mass, T0, n_dens,
+    0.0, 1.0, 0.0, 1.0, 0.0, 1.0; v_mult=2.0, vx0=v0[1], vy0=v0[2], vz0=v0[3])
+
+    pia.indexer[1,1].n_group1 = 40
+    pia.indexer[1,1].end1 = 40
+    pia.indexer[1,1].n_group2 = 60
+    pia.indexer[1,1].start2 = 41
+    pia.indexer[1,1].end2 = 100
+
+    compute_props!(particles, pia, species_data, phys_props)
+
+    n0_c = phys_props.n[1,1]
+    v0_c = copy(phys_props.v[:,1,1])
+    T0_c = phys_props.T[1,1]
+
+    fp_linear!(rng6, collision_data_fp, interaction_data[1,1], species_data, particles[1], pia, 1, 1, 1.0, 1.0)
+
+    compute_props!(particles, pia, species_data, phys_props)
+
+    @test abs(phys_props.n[1,1] - n0_c) / n0_c < 1e-15
+    @test abs(maximum((phys_props.v[:,1,1] - v0_c) ./ v0_c)) < 1e-14
+    @test abs(phys_props.T[1,1] - T0_c) / T0_c < 1e-14
 end
