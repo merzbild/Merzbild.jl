@@ -154,7 +154,7 @@
     surf_props.areas = [2.0, 4.0]
     surf_props.inv_areas = [0.5, 0.25]
     Δt = 1e-20  # we make this super small so that any errors remain larger than machine precision
-    Merzbild.surface_props_scale!(1, surf_props, species_data, Δt)
+    Merzbild.surface_props_scale!(1, species_data, surf_props, Δt)
 
     f = species_data[1].mass * surf_props.inv_areas / Δt
 
@@ -295,8 +295,8 @@
 
     # test convection, contiguous
     # specular walls
-    bc_list = (MaxwellWallBC1D(species_data, 1, 1.0, [0.0, 0.0, 0.0], 0.0),
-               MaxwellWallBC1D(species_data, 1, 1.0, [0.0, 0.0, 0.0], 0.0))
+    bc_list = (MaxwellWallBC1D(1, species_data, 1.0, [0.0, 0.0, 0.0], 0.0),
+               MaxwellWallBC1D(1, species_data, 1.0, [0.0, 0.0, 0.0], 0.0))
 
     ppc = 4
     particles = [ParticleVector(ppc * grid.n_cells)]

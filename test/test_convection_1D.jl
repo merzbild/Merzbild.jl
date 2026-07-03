@@ -31,8 +31,8 @@
     particles[1][4] = Particle(4.0, [-49.0, -20.0, 13.0], [1.55, -1.0, 9.0])
 
     # 1D specularly reflecting boundaries
-    bc_list = (MaxwellWallBC1D(species_data, 1, 1.0, [0.0, 0.0, 0.0], 0.0),
-               MaxwellWallBC1D(species_data, 1, 1.0, [0.0, 0.0, 0.0], 0.0))
+    bc_list = (MaxwellWallBC1D(1, species_data, 1.0, [0.0, 0.0, 0.0], 0.0),
+               MaxwellWallBC1D(1, species_data, 1.0, [0.0, 0.0, 0.0], 0.0))
 
     convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, 2.0)
     sort_particles!(gridsorter, grid, particles[1], pia, 1)
@@ -155,8 +155,8 @@
     Δt = 1e-7
     vy_left_wall = 1100.0
     vy_right_wall = -820.0
-    bc_list = (MaxwellWallBC1D(species_data, 1, 2000.0, [0.0, vy_left_wall, 0.0], 1.0),
-               MaxwellWallBC1D(species_data, 1, 500.0, [0.0, vy_right_wall, 0.0], 1.0))
+    bc_list = (MaxwellWallBC1D(1, species_data, 2000.0, [0.0, vy_left_wall, 0.0], 1.0),
+               MaxwellWallBC1D(1, species_data, 500.0, [0.0, vy_right_wall, 0.0], 1.0))
 
     convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, Δt)
     sort_particles!(gridsorter, grid, particles[1], pia, 1)
@@ -229,8 +229,8 @@
     Δt = 1e-7
     vy_left_wall = 1100.0
     vy_right_wall = -820.0
-    bc_list = (FullyDiffuseBC1D(species_data, 1, 2000.0, [0.0, vy_left_wall, 0.0]),
-               FullyDiffuseBC1D(species_data, 1, 500.0, [0.0, vy_right_wall, 0.0]))
+    bc_list = (FullyDiffuseBC1D(1, species_data, 2000.0, [0.0, vy_left_wall, 0.0]),
+               FullyDiffuseBC1D(1, species_data, 500.0, [0.0, vy_right_wall, 0.0]))
 
     convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, Δt)
     sort_particles!(gridsorter, grid, particles[1], pia, 1)
@@ -294,8 +294,8 @@
     vy_left_wall = 1100.0
     vy_right_wall = -820.0
     # accomodation coefficient of 0.2 - 80% chance of specular reflection
-    bc_list = (MaxwellWallBC1D(species_data, 1, 10.0, [0.0, vy_left_wall, 0.0], 0.2),
-               MaxwellWallBC1D(species_data, 1, 10.0, [0.0, vy_right_wall, 0.0], 1.0))
+    bc_list = (MaxwellWallBC1D(1, species_data, 10.0, [0.0, vy_left_wall, 0.0], 0.2),
+               MaxwellWallBC1D(1, species_data, 10.0, [0.0, vy_right_wall, 0.0], 1.0))
 
     convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, Δt)
     sort_particles!(gridsorter, grid, particles[1], pia, 1)
@@ -328,8 +328,8 @@
         particles[1][i] = Particle(w, [vx, 0.0, 0.0], [1e-4, 0.0, 0.0])
     end
 
-    bc_list = (MaxwellWallBC1D(species_data, 1, 1.0, [0.0, 0.0, 0.0], 0.0),
-               MaxwellWallBC1D(species_data, 1, 1.0, [0.0, 0.0, 0.0], 0.0))
+    bc_list = (MaxwellWallBC1D(1, species_data, 1.0, [0.0, 0.0, 0.0], 0.0),
+               MaxwellWallBC1D(1, species_data, 1.0, [0.0, 0.0, 0.0], 0.0))
 
     convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, 0.5)
     sort_particles!(gridsorter, grid, particles[1], pia, 1)
