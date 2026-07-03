@@ -133,6 +133,7 @@ Merzbild.set_x
 
 ## Particle-surface interactions
 ```@docs
+Merzbild.AbstractBC
 Merzbild.specular_reflection_x!
 Merzbild.diffuse_reflection_x!
 Merzbild.update_surface_incident!
