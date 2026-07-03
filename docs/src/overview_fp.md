@@ -80,8 +80,8 @@ n_timesteps = 50000
 avg_start = 14000
 
 # load particle and interaction data
-species_data = load_species_data("data/particles.toml", "Ar")
-interaction_data = load_interaction_data("data/vhs.toml", species_data)
+species_data = load_species_data(joinpath(MERZBILD_DATA_PATH, "particles.toml"), "Ar")
+interaction_data = load_interaction_data(joinpath(MERZBILD_DATA_PATH, "vhs.toml"), species_data)
 
 # create our grid and BCs
 grid = Grid1DUniform(L, nx)

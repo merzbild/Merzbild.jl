@@ -12,9 +12,9 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     rng::Xoshiro = Xoshiro(seed)
 
     # load particle and interaction data
-    particles_data_path = joinpath("data", "particles.toml")
+    particles_data_path = joinpath(MERZBILD_DATA_PATH, "particles.toml")
     species_data = load_species_data(particles_data_path, "Ar")
-    interaction_data_path = joinpath("data", "vhs.toml")
+    interaction_data_path = joinpath(MERZBILD_DATA_PATH, "vhs.toml")
     interaction_data::Array{Interaction, 2} = load_interaction_data(interaction_data_path, species_data)
 
     # create our grid and BCs

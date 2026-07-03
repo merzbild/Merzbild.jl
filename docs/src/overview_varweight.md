@@ -47,8 +47,8 @@ ndens = 1e23
 T0 = 300.0  
 
 # load species and interaction data
-species_data = load_species_data("data/particles.toml", "Ar")
-interaction_data = load_interaction_data("data/pseudo_maxwell.toml", species_data)
+species_data = load_species_data(joinpath(MERZBILD_DATA_PATH, "particles.toml"), "Ar")
+interaction_data = load_interaction_data(joinpath(MERZBILD_DATA_PATH, "pseudo_maxwell.toml"), species_data)
 
 # number of velocity grid points in each velocity direction
 nv = 20  
@@ -137,8 +137,8 @@ ndens = 1e23
 T0 = 300.0  
 
 # load species and interaction data
-species_data = load_species_data("data/particles.toml", "Ar")
-interaction_data = load_interaction_data("data/pseudo_maxwell.toml", species_data)
+species_data = load_species_data(joinpath(MERZBILD_DATA_PATH, "particles.toml"), "Ar")
+interaction_data = load_interaction_data(joinpath(MERZBILD_DATA_PATH, "pseudo_maxwell.toml"), species_data)
 
 # number of velocity grid points in each velocity direction
 nv = 20  

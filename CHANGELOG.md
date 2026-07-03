@@ -28,6 +28,7 @@ in particle arrays has been implemented. See documentaton on contiguous indexing
 * `NCDataHolderMoments` struct type added for I/O of computed moment data
 * More specialized boundary conditions added for 1D simulations: `FullyDiffuseBC1D`, `MaxwellWallBC1D`, `SpecularWallBC1D`
 * The `ParticleIndexerArray` type now directly stores number of cells and species it is tracking (`.n_cells`, `.n_species`)
+* `MERZBILD_DATA_PATH` now exported for easier loading of particle and interaction data bundled with Merzbild.jl
 
 ### Misc
 * Added tests that check that for unexpected memory allocations

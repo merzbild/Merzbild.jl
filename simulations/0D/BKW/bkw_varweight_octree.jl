@@ -39,8 +39,8 @@ function run(seed::Int64, threshold::Int64, ntarget::Int64)
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)
 
-    species_data::Vector{Species} = load_species_data("data/particles.toml", "Ar")
-    interaction_data::Array{Interaction, 2} = load_interaction_data("data/pseudo_maxwell.toml", species_data)
+    species_data::Vector{Species} = load_species_data(joinpath(MERZBILD_DATA_PATH, "particles.toml"), "Ar")
+    interaction_data::Array{Interaction, 2} = load_interaction_data(joinpath(MERZBILD_DATA_PATH, "pseudo_maxwell.toml"), species_data)
 
     dt_scaled = 0.025
     n_t = 600

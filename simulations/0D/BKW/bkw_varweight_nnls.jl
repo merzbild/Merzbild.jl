@@ -42,8 +42,8 @@ function run(seed, n_full_up_to_total, threshold, ntarget_octree)
     rng::Xoshiro = Xoshiro(seed)
 
     # reset_timer!()
-    species_data::Vector{Species} = load_species_data("data/particles.toml", "Ar")
-    interaction_data::Array{Interaction, 2} = load_interaction_data("data/pseudo_maxwell.toml", species_data)
+    species_data::Vector{Species} = load_species_data(joinpath(MERZBILD_DATA_PATH, "particles.toml"), "Ar")
+    interaction_data::Array{Interaction, 2} = load_interaction_data(joinpath(MERZBILD_DATA_PATH, "pseudo_maxwell.toml"), species_data)
 
     dt_scaled = 0.025
     n_t = 600

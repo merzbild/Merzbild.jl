@@ -17,8 +17,8 @@ function run(seed)
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)
 
-    species_data::Vector{Species} = load_species_data("data/particles.toml", ["Ar", "He"])
-    interaction_data::Array{Interaction, 2} = load_interaction_data("data/vhs.toml", species_data)
+    species_data::Vector{Species} = load_species_data(joinpath(MERZBILD_DATA_PATH, "particles.toml"), ["Ar", "He"])
+    interaction_data::Array{Interaction, 2} = load_interaction_data(joinpath(MERZBILD_DATA_PATH, "vhs.toml"), species_data)
     n_species = length(species_data)
 
     println([species.name for species in species_data])

@@ -33,6 +33,7 @@ check_unique_buffer
 
 ## Loading species and interaction data
 ```@docs
+MERZBILD_DATA_PATH
 Species
 Interaction
 load_species_data

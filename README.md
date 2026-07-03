@@ -39,10 +39,9 @@ function run(seed)
     Random.seed!(seed)
     rng = Xoshiro(seed)
 
-    # load species and interaction data
-    # path is correct if run from root directory of the Merzbild repo
-    species_data = load_species_data("data/particles.toml", ["Ar", "He"])
-    interaction_data = load_interaction_data("data/vhs.toml", species_data)
+    # load species and interaction data provided with Merzbild.jl
+    species_data = load_species_data(joinpath(MERZBILD_DATA_PATH, "particles.toml"), ["Ar", "He"])
+    interaction_data = load_interaction_data(joinpath(MERZBILD_DATA_PATH, "vhs.toml"), species_data)
     n_species = length(species_data)
 
     n_t = 800 # set number of timesteps

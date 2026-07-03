@@ -148,6 +148,16 @@ This is done via instances of the `Species` struct, which have the following fie
 Data about chemical species can be loaded by using the [`load_species_data`](@ref) function, which
 reads a TOML file with the relevant species information.
 
+Merzbild.jl exports a [`MERZBILD_DATA_PATH`](@ref) variable that points to the `data` directory containing
+data bundled with the package. For example, one can write
+
+```julia
+particles_data_path = joinpath(MERZBILD_DATA_PATH, "particles.toml")
+species_data = load_species_data(particles_data_path, "Ar")
+```
+
+to construct the path to the `particles.toml` file provided with Merzbild.jl and load data for Argon from the file.
+
 ## Sampling particles
 In order to sample particles of a certain species from a specific distribution, Merzbild.jl provides
 several functions. For fixed-weight DSMC simulations, one can use the [`sample_particles_equal_weight!`](@ref)
@@ -253,7 +263,7 @@ Random.seed!(seed)
 rng = Xoshiro(seed)
 
 # load particle data
-particles_data_path = joinpath("data", "particles.toml")
+particles_data_path = joinpath(MERZBILD_DATA_PATH, "particles.toml")
 species_data = load_species_data(particles_data_path, "Ar")
 
 # init particle vector for a 1000 particles

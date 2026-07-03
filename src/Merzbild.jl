@@ -24,6 +24,17 @@ include("parallel.jl")
 const OCTREE_DEFAULT_BUFFER_SIZE::Int64 = 8192
 const DELTA_PARTICLES::Int64 = 256
 
+"""
+    MERZBILD_DATA_PATH
+
+Absolute path to the `data` directory bundled with Merzbild.jl, holding the built-in species
+(`particles.toml`) and interaction (`vhs.toml`, `pseudo_maxwell.toml`) data files. Use it to load
+bundled data independently of the current working directory, e.g.
+`load_species_data(joinpath(MERZBILD_DATA_PATH, "particles.toml"), "Ar")`.
+"""
+const MERZBILD_DATA_PATH = joinpath(pkgdir(Merzbild), "data")
+export MERZBILD_DATA_PATH
+
 export sample_maxwellian_on_grid!, sample_on_grid!, bkw, maxwellian
 export load_species_data, Particle, sample_particles_equal_weight!
 export sample_particles_phase_box_weighted!

@@ -83,7 +83,7 @@ seed = 1
 Random.seed!(seed)
 rng = Xoshiro(seed)
 
-species_data = load_species_data("data/particles.toml", ["Ar", "He"])
+species_data = load_species_data(joinpath(MERZBILD_DATA_PATH, "particles.toml"), ["Ar", "He"])
 n_species = length(species_data)
 
 # number of timesteps to run simulation for
@@ -126,7 +126,7 @@ compute_props!(particles, pia, species_data, phys_props)
 write_netcdf(ds, phys_props, 0)
 
 # load interaction data
-interaction_data = load_interaction_data("data/vhs.toml", species_data)
+interaction_data = load_interaction_data(joinpath(MERZBILD_DATA_PATH, "vhs.toml"), species_data)
 
 # create the 3-D array of collision factors
 collision_factors::Array{CollisionFactors, 3} = create_collision_factors_array(n_species)

@@ -107,8 +107,8 @@ function run(seed, E_Tn, n_t,
 
     reset_timer!()
 
-    species_data::Vector{Species} = load_species_data("data/particles.toml", ["Ar", "Ar+", "e-"])
-    interaction_data::Array{Interaction, 2} = load_interaction_data_with_dummy("data/vhs.toml", species_data)
+    species_data::Vector{Species} = load_species_data(joinpath(MERZBILD_DATA_PATH, "particles.toml"), ["Ar", "Ar+", "e-"])
+    interaction_data::Array{Interaction, 2} = load_interaction_data_with_dummy(joinpath(MERZBILD_DATA_PATH, "vhs.toml"), species_data)
 
     n_e_interactions = ElectronNeutralInteractions(species_data, cross_section_filepath,
                                                           Dict("Ar" => "IST-Lisbon"),

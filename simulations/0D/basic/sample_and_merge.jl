@@ -90,7 +90,7 @@ function run(seed, merge_method, merge_parameter, Nsamples, io_handle; sampling_
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)
 
-    species_data::Vector{Species} = load_species_data("data/particles.toml", "Ar")
+    species_data::Vector{Species} = load_species_data(joinpath(MERZBILD_DATA_PATH, "particles.toml"), "Ar")
     oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
     mim = []
