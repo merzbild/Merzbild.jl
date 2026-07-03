@@ -172,7 +172,7 @@ function convect_particles!(rng, grid::Grid1DUniform, bc_list, particles::Partic
         end
     end
 
-    surface_props_scale!(species, surf_props, species_data, Δt)
+    surface_props_scale!(species, species_data, surf_props, Δt)
 end
 
 
@@ -270,7 +270,7 @@ function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, bc_list, 
         end
     end
 
-    surface_props_scale!(species, surf_props, species_data, Δt)
+    surface_props_scale!(species, species_data, surf_props, Δt)
 end
 
 end

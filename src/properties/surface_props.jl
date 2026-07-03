@@ -139,17 +139,17 @@ function update_surface_reflected!(particle, species, surf_props, surface_elemen
 end
 
 """
-    surface_props_scale!(species, surf_props, species_data, Δt)
+    surface_props_scale!(species, species_data, surf_props, Δt)
 
 Scale computed surface properties using the molecular mass of species, the inverse of the timestep, and the inverse surface area.
 
 # Positional arguments
 * `species`: the species of the particle
-* `surf_props`: the `SurfProps` instance
 * `species_data`: the vector of `SpeciesData` of the chemical species in the flow
+* `surf_props`: the `SurfProps` instance
 * `Δt`: the timestep over which the surface properties were computed
 """
-function surface_props_scale!(species, surf_props, species_data, Δt)
+function surface_props_scale!(species, species_data, surf_props, Δt)
     @inbounds factor_base = species_data[species].mass / Δt
 
     n_elements = surf_props.n_elements

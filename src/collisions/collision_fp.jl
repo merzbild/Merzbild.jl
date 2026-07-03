@@ -1,7 +1,7 @@
 @muladd begin
 
 """
-    fp_linear!(rng, collision_data_fp, interaction, species_data, particles::ParticleVector{D}, pia, cell, species, Δt, V)
+    fp_linear!(rng, collision_data_fp, interaction, particles::ParticleVector{D}, pia, cell, species, species_data, Δt, V)
 
 Model single-species elastic collisions using a linear Fokker-Planck approximation.
 
@@ -9,11 +9,11 @@ Model single-species elastic collisions using a linear Fokker-Planck approximati
 * `rng`: the random number generator
 * `collision_data_fp`: `CollisionDataFP` instance used for storing collisional quantities
 * `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
-* `species_data`: the vector of `SpeciesData`
 * `particles`: `ParticleVector` of the particles being collided
 * `pia`: the `ParticleIndexerArray`
 * `cell`: the index of the cell in which collisions are performed
 * `species`: the index of the species for which collisions are performed
+* `species_data`: the vector of `SpeciesData`
 * `Δt`: timestep
 * `V`: cell volume
 
@@ -21,7 +21,7 @@ Model single-species elastic collisions using a linear Fokker-Planck approximati
 * M.H. Gorji, M. Torrilhon, P. Jenny, Fokker-Planck model for computational studies of monatomic rarefied gas flows.
     [J. Fluid Mech., 2011](https://doi.org/10.1017/jfm.2011.188).
 """
-function fp_linear!(rng, collision_data_fp, interaction, species_data, particles::ParticleVector{D}, pia, cell, species, Δt, V) where D
+function fp_linear!(rng, collision_data_fp, interaction, particles::ParticleVector{D}, pia, cell, species, species_data, Δt, V) where D
     @inbounds indexer = pia.indexer[cell, species]
     n_local = indexer.n_local
     n_begin = indexer.start1

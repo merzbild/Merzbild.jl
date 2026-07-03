@@ -35,7 +35,7 @@
     v0_c = copy(phys_props.v[:,1,1])
     T0_c = phys_props.T[1,1]
 
-    fp_linear!(rng, collision_data_fp, interaction_data[1,1], species_data, particles[1], pia, 1, 1, 1.0, 1.0)
+    fp_linear!(rng, collision_data_fp, interaction_data[1,1], particles[1], pia, 1, 1, species_data, 1.0, 1.0)
 
     compute_props!(particles, pia, species_data, phys_props)
 
@@ -62,7 +62,7 @@
     pia.indexer[1,1].start2 = 41
     pia.indexer[1,1].end2 = 100
 
-    fp_linear!(rng2, collision_data_fp, interaction_data[1,1], species_data, particles[1], pia, 1, 1, 1.0, 1.0)
+    fp_linear!(rng2, collision_data_fp, interaction_data[1,1], particles[1], pia, 1, 1, species_data, 1.0, 1.0)
 
     compute_props!(particles, pia, species_data, phys_props)
 
@@ -88,7 +88,7 @@
     v0_c = copy(phys_props.v[:,1,1])
     T0_c = phys_props.T[1,1]
 
-    fp_linear!(rng3, collision_data_fp, interaction_data[1,1], species_data, particles[1], pia, 1, 1, 1.0, 1.0)
+    fp_linear!(rng3, collision_data_fp, interaction_data[1,1], particles[1], pia, 1, 1, species_data, 1.0, 1.0)
 
     compute_props!(particles, pia, species_data, phys_props)
 
@@ -115,7 +115,7 @@
     pia.indexer[1,1].start2 = 41
     pia.indexer[1,1].end2 = 100
 
-    fp_linear!(rng4, collision_data_fp, interaction_data[1,1], species_data, particles[1], pia, 1, 1, 1.0, 1.0)
+    fp_linear!(rng4, collision_data_fp, interaction_data[1,1], particles[1], pia, 1, 1, species_data, 1.0, 1.0)
 
     compute_props!(particles, pia, species_data, phys_props)
 
@@ -142,14 +142,14 @@
     pia.indexer[1,1].n_group2 = 60
     pia.indexer[1,1].start2 = 41
     pia.indexer[1,1].end2 = 100
-    
+
     compute_props!(particles, pia, species_data, phys_props)
 
     n0_c = phys_props.n[1,1]
     v0_c = copy(phys_props.v[:,1,1])
     T0_c = phys_props.T[1,1]
 
-    fp_linear!(rng5, collision_data_fp, interaction_data[1,1], species_data, particles[1], pia, 1, 1, 1.0, 1.0)
+    fp_linear!(rng5, collision_data_fp, interaction_data[1,1], particles[1], pia, 1, 1, species_data, 1.0, 1.0)
 
     compute_props!(particles, pia, species_data, phys_props)
 
@@ -181,7 +181,7 @@
     v0_c = copy(phys_props.v[:,1,1])
     T0_c = phys_props.T[1,1]
 
-    fp_linear!(rng6, collision_data_fp, interaction_data[1,1], species_data, particles[1], pia, 1, 1, 1.0, 1.0)
+    fp_linear!(rng6, collision_data_fp, interaction_data[1,1], particles[1], pia, 1, 1, species_data, 1.0, 1.0)
 
     compute_props!(particles, pia, species_data, phys_props)
 

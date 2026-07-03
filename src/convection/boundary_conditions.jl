@@ -20,18 +20,18 @@ struct MaxwellWallBC1D <: AbstractBC
     reflection_velocity_sq::Float64
 
     @doc """
-        MaxwellWallBC1D(species_data, species, T::Float64, v, accommodation::Float64)
+        MaxwellWallBC1D(species, species_data, T::Float64, v, accommodation::Float64)
 
     Construct a `MaxwellWallBC1D` instance for a given species.
 
     # Positional arguments
-    * `species_data`: the list of `Species` data
     * `species`: index of the species for which to create the BC
+    * `species_data`: the list of `Species` data
     * `T`: wall temperature
     * `v`: wall velocity vector
     * `accommodation`: accommodation coefficient
     """
-    function MaxwellWallBC1D(species_data, species, T::Float64, v, accommodation::Float64)
+    function MaxwellWallBC1D(species, species_data, T::Float64, v, accommodation::Float64)
         return new(T, v, accommodation,
                    2 * k_B * T / species_data[species].mass)
     end
@@ -54,17 +54,17 @@ struct FullyDiffuseBC1D <: AbstractBC
     reflection_velocity_sq::Float64
 
     @doc """
-        FullyDiffuseBC1D(species_data, species, T::Float64, v)
+        FullyDiffuseBC1D(species, species_data, T::Float64, v)
 
     Construct a `FullyDiffuseBC1D` instance for a given species.
 
     # Positional arguments
-    * `species_data`: the list of `Species` data
     * `species`: index of the species for which to create the BC
+    * `species_data`: the list of `Species` data
     * `T`: wall temperature
     * `v`: wall velocity vector
     """
-    function FullyDiffuseBC1D(species_data, species, T::Float64, v)
+    function FullyDiffuseBC1D(species, species_data, T::Float64, v)
         return new(T, v, 2 * k_B * T / species_data[species].mass)
     end
 end

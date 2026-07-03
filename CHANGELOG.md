@@ -18,6 +18,7 @@ specified. `ParticleVector` now also has a `D` type parameter.
 * `load_electron_neutral_interactions` replaced by an `ElectronNeutralInteractions` constructor
 * `MaxwellWalls1D` removed
 * Boundary conditions now need to be passed to `convect_particles!` or `convect_particles_and_compute_cell!` as a `Tuple` of boundary conditions, one for each surface.
+* Order of parameters passed to `fp_linear!` and `mean_collision_frequency` changed to be consistent with guidelines in `CONTRIBUTING.md`.
 
 ### New functionality
 * `squash_pia!` can be called less frequently, i.e. only before particle convection, as better tracking of last index

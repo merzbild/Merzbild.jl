@@ -178,9 +178,9 @@ convect_particles_and_compute_cell!
 ## Particle-surface interactions
 ```@docs
 MaxwellWallBC1D
-MaxwellWallBC1D(species_data, species, T::Float64, v, accommodation::Float64)
+MaxwellWallBC1D(species, species_data,T::Float64, v, accommodation::Float64)
 FullyDiffuseBC1D
-FullyDiffuseBC1D(species_data, species, T::Float64, v)
+FullyDiffuseBC1D(species, species_data, T::Float64, v)
 FullySpecularBC1D
 ```
 
