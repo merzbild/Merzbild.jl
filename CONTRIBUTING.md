@@ -65,7 +65,7 @@ then everything product-related.
 
 - [ ] Is it documented?
 
-- [ ] Is the documentation added to the correct section in the `docs/src/reference.md` file?
+- [ ] Is the documentation added to the correct section in the API reference? Public (exported) API goes in `docs/src/reference_public.md`, non-exported internals in `docs/src/reference_internal.md`.
 
 # Versioning
 The package uses semantic versioning. The MINOR version number is bumped for breaking changes; the PATCH version number is bumped when new features and/or bug fixes are added.
