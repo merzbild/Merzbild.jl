@@ -128,7 +128,7 @@ function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
         end
 
         for cell in 1:grid.n_cells
-            @timeit "collide" ntc!(rng, collision_factors[1, 1, cell],
+            @timeit "collide" ntc_equal_weight!(rng, collision_factors[1, 1, cell],
                                    collision_data, interaction_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
         end
 
