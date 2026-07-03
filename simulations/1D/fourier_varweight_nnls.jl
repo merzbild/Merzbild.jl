@@ -57,7 +57,7 @@ function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
 
     ndens = p0 / (k_B * T_bg0)
     println("n = $ndens")
-    nu = mean_collision_frequency(interaction_data, species_data, 1, ndens, 0.5*(T_wall1 + T_wall2))
+    nu = mean_collision_frequency(interaction_data, 1, species_data, ndens, 0.5*(T_wall1 + T_wall2))
     lam = mean_free_path(interaction_data, 1, ndens, 0.5*(T_wall1 + T_wall2))
     println("1/ν = $(1/nu)")
     println("n timesteps before avg: $(100 * (1/nu) / Δt)")

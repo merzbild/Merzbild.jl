@@ -78,7 +78,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, merge_threshold, merge_tar
 
         # collide particles
         for cell in 1:grid.n_cells
-            @timeit "collide" fp_linear!(rng, collision_data_fp, interaction_data[1, 1], species_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
+            @timeit "collide" fp_linear!(rng, collision_data_fp, interaction_data[1, 1], particles[1], pia, cell, 1, species_data, Δt, grid.cells[cell].V)
 
             if pia.indexer[cell,1].n_local > merge_threshold
                 println("$(cell) $(pia.indexer[cell,1].n_local) $merge_threshold $merge_target")
