@@ -2,6 +2,52 @@
 
 Various benchmarks and comparisons to other open-source codes are provided here for reference test cases. An overview of benchmarks between different versions of Merzbild is provided in the Summary section.
 
+## Summary
+
+### Couette flow, serial, small grid
+
+|                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
+|:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
+| v0.7.0 (Julia 1.11)     |       33.5s           |    28.4s                              |             33.0s               |
+| v0.8.0 (Julia 1.12)     |       TODO            |    23.4s                              |             TODO                |    
+
+
+### Couette flow, serial, large grid
+
+|                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
+|:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
+| v0.7.0 (Julia 1.11)     |       1164s           |    795s                               |             1467s               |
+| v0.8.0 (Julia 1.12)     |       TODO            |    418s                               |             TODO                |    
+
+### Couette flow threading speed-up
+
+|                     | **M1 Pro, 32 GB RAM, 2/4/8 threads** | **Intel Core i9-13900K, 128 GB RAM, 2/4/8 threads** | **AMD EPYC 9374F, 378 GB RAM 2/4/8/16/32 threads** |
+|:-------------------:|:------------------------------------:|:---------------------------------------------------:|:--------------------------------------------------:|
+| v0.7.0 (Julia 1.11) | 2.3 / 3.8 / 5.8                      |    1.9 / 3.2 / 5.1                                  | 1.9 / 3.9 / 5.2 / 5.7 / 6.5                        |
+| v0.8.0 (Julia 1.12) |       TODO                           |    TODO                                             |             TODO                                   |    
+
+
+### Couette flow, variable-weight particles, octree merging
+
+|                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
+|:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
+| v0.7.9 (Julia 1.12)     |       TODO            |    TODOs                              |             TODOs               |
+| v0.8.0 (Julia 1.12)     |       TODO            |    23.7s                              |             TODO                |    
+
+### 0D ionization, variable-weight particles, octree merging
+
+|                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
+|:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
+| v0.7.9 (Julia 1.12)     |       TODO            |    TODOs                              |             TODOs               |
+| v0.8.0 (Julia 1.12)     |       TODO            |    4.72s                              |             TODO                |    
+
+### 0D ionization, variable-weight particles, NNLS merging
+
+|                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
+|:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
+| v0.7.9 (Julia 1.12)     |       TODO            |    TODOs                              |             TODOs               |
+| v0.8.0 (Julia 1.12)     |       TODO            |    3.98s                              |             TODO                |    
+
 ## Couette flow, serial, small grid
 
 Comparison with SPARTA are provided for a single-species (argon) Couette flow test case with 50000 particles and 50 cells (averaging over 36k timesteps after t>14000). The computation is serial. Timing in Merzbild.jl providedd by [TimerOutputs.jl](https://github.com/KristofferC/TimerOutputs.jl), timing in SPARTA provided by the inbuilt timers. No surface quantities are being computed.
@@ -17,21 +63,22 @@ Ubuntu 22.04.5, Julia version 1.12.5, SPARTA compiled with gcc version 11.4.0.
 
 #### Merzbild.jl
 ```
-──────────────────────────────────────────────────────────────────────────
-                                 Time                    Allocations      
-                        ───────────────────────   ────────────────────────
-   Tot / % measured:         28.4s /  97.3%            126MiB /   9.8%    
+─────────────────────────────────────────────────────────────────────────────
+                                    Time                    Allocations      
+                           ───────────────────────   ────────────────────────
+     Tot / % measured:          23.4s /  94.9%            188MiB /   6.8%    
 
-Section         ncalls     time    %tot     avg     alloc    %tot      avg
-──────────────────────────────────────────────────────────────────────────
-sort             50.0k    10.5s   37.9%   209μs     0.00B    0.0%    0.00B
-convect          50.0k    6.29s   22.8%   126μs     0.00B    0.0%    0.00B
-collide          2.50M    5.90s   21.3%  2.36μs     0.00B    0.0%    0.00B
-props compute    36.0k    4.88s   17.7%   136μs     0.00B    0.0%    0.00B
-I/O                  1   85.4ms    0.3%  85.4ms   9.32MiB   75.3%  9.32MiB
-avg physprops    36.0k   5.54ms    0.0%   154ns     0.00B    0.0%    0.00B
-sampling             1   2.52ms    0.0%  2.52ms   3.05MiB   24.7%  3.05MiB
-──────────────────────────────────────────────────────────────────────────
+Section            ncalls     time    %tot     avg     alloc    %tot      avg
+─────────────────────────────────────────────────────────────────────────────
+sort                50.0k    7.18s   32.4%   144μs     0.00B    0.0%    0.00B
+collide             2.50M    5.96s   26.9%  2.38μs     0.00B    0.0%    0.00B
+convect             50.0k    4.28s   19.3%  85.6μs     0.00B    0.0%    0.00B
+props compute       36.0k    3.72s   16.8%   103μs     0.00B    0.0%    0.00B
+restore ordering    5.00k    949ms    4.3%   190μs     0.00B    0.0%    0.00B
+I/O                     1   90.0ms    0.4%  90.0ms   10.5MiB   82.1%  10.5MiB
+avg physprops       36.0k   5.96ms    0.0%   166ns     0.00B    0.0%    0.00B
+sampling                1   2.44ms    0.0%  2.44ms   2.29MiB   17.9%  2.29MiB
+─────────────────────────────────────────────────────────────────────────────
 ```
 
 #### SPARTA
@@ -106,23 +153,26 @@ Ubuntu 22.04.5, Julia version 1.12.5, SPARTA compiled with gcc version 11.4.0.
 
 #### Merzbild.jl
 ```
-──────────────────────────────────────────────────────────────────────────────────────
-                                             Time                    Allocations      
-                                    ───────────────────────   ────────────────────────
-         Tot / % measured:                795s /  99.5%            192MiB /  17.1%    
+────────────────────────────────────────────────────────────────────────────────────────
+                                               Time                    Allocations      
+                                      ───────────────────────   ────────────────────────
+          Tot / % measured:                 418s /  99.8%            202MiB /  11.7%    
 
-Section                     ncalls     time    %tot     avg     alloc    %tot      avg
-──────────────────────────────────────────────────────────────────────────────────────
-sort                         50.0k     269s   34.0%  5.37ms     0.00B    0.0%    0.00B
-convect + surface compute    36.0k     209s   26.4%  5.80ms   2.20MiB    6.7%    64.0B
-props compute                36.0k     131s   16.6%  3.63ms     0.00B    0.0%    0.00B
-collide                       100M     114s   14.4%  1.14μs     0.00B    0.0%    0.00B
-convect                      14.0k    68.1s    8.6%  4.86ms     0.00B    0.0%    0.00B
-avg physprops                36.0k    196ms    0.0%  5.43μs     0.00B    0.0%    0.00B
-sampling                         1   35.1ms    0.0%  35.1ms   30.5MiB   93.3%  30.5MiB
-avg surfprops                36.0k   12.6ms    0.0%   351ns     0.00B    0.0%    0.00B
-I/O                             15   2.26ms    0.0%   151μs   3.58KiB    0.0%     244B
-──────────────────────────────────────────────────────────────────────────────────────
+Section                       ncalls     time    %tot     avg     alloc    %tot      avg
+────────────────────────────────────────────────────────────────────────────────────────
+main loop                          1     418s  100.0%    418s    631KiB    2.6%   631KiB
+  sort                         50.0k     122s   29.3%  2.44ms     0.00B    0.0%    0.00B
+  collide                       100M     106s   25.5%  1.06μs     0.00B    0.0%    0.00B
+  convect + surface compute    36.0k    69.8s   16.7%  1.94ms     0.00B    0.0%    0.00B
+  props compute                36.0k    64.8s   15.5%  1.80ms     0.00B    0.0%    0.00B
+  convect                      14.0k    28.5s    6.8%  2.04ms     0.00B    0.0%    0.00B
+  restore ordering             5.00k    22.8s    5.5%  4.57ms     0.00B    0.0%    0.00B
+  avg physprops                36.0k    220ms    0.1%  6.12μs     0.00B    0.0%    0.00B
+  avg surfprops                36.0k   6.39ms    0.0%   177ns     0.00B    0.0%    0.00B
+  I/O                             13   1.73ms    0.0%   133μs   3.05KiB    0.0%     240B
+sampling                           1   54.4ms    0.0%  54.4ms   22.9MiB   97.4%  22.9MiB
+I/O final                          2    147μs    0.0%  73.6μs      544B    0.0%     272B
+────────────────────────────────────────────────────────────────────────────────────────
 ```
 
 #### SPARTA
@@ -349,49 +399,3 @@ TODO
 ### AMD EPYC 9374F, 378 GB RAM
 
 TODO
-
-## Summary
-
-### Couette flow, serial, small grid
-
-|                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
-|:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
-| v0.7.0 (Julia 1.11)     |       33.5s           |    28.4s                              |             33.0s               |
-| v0.8.0 (Julia 1.12)     |       TODO            |    TODO                               |             TODO                |    
-
-
-### Couette flow, serial, large grid
-
-|                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
-|:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
-| v0.7.0 (Julia 1.11)     |       1164s           |    795s                               |             1467s               |
-| v0.8.0 (Julia 1.12)     |       TODO            |    TODO                               |             TODO                |    
-
-### Couette flow threading speed-up
-
-|                     | **M1 Pro, 32 GB RAM, 2/4/8 threads** | **Intel Core i9-13900K, 128 GB RAM, 2/4/8 threads** | **AMD EPYC 9374F, 378 GB RAM 2/4/8/16/32 threads** |
-|:-------------------:|:------------------------------------:|:---------------------------------------------------:|:--------------------------------------------------:|
-| v0.7.0 (Julia 1.11) | 2.3 / 3.8 / 5.8                      |    1.9 / 3.2 / 5.1                                  | 1.9 / 3.9 / 5.2 / 5.7 / 6.5                        |
-| v0.8.0 (Julia 1.12) |       TODO                           |    TODO                                             |             TODO                                   |    
-
-
-### Couette flow, variable-weight particles, octree merging
-
-|                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
-|:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
-| v0.7.9 (Julia 1.12)     |       TODO            |    TODOs                              |             TODOs               |
-| v0.8.0 (Julia 1.12)     |       TODO            |    23.7s                              |             TODO                |    
-
-### 0D ionization, variable-weight particles, octree merging
-
-|                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
-|:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
-| v0.7.9 (Julia 1.12)     |       TODO            |    TODOs                              |             TODOs               |
-| v0.8.0 (Julia 1.12)     |       TODO            |    4.72s                              |             TODO                |    
-
-### 0D ionization, variable-weight particles, NNLS merging
-
-|                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
-|:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
-| v0.7.9 (Julia 1.12)     |       TODO            |    TODOs                              |             TODOs               |
-| v0.8.0 (Julia 1.12)     |       TODO            |    3.98s                              |             TODO                |    
