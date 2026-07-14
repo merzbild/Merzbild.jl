@@ -31,21 +31,21 @@ Various benchmarks and comparisons to other open-source codes are provided here 
 
 |                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
 |:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
-| v0.7.9 (Julia 1.12)     |       TODO            |    TODOs                              |             TODOs               |
+| v0.7.9 (Julia 1.12)     |       TODO            |    27.3s                              |             TODOs               |
 | v0.8.0 (Julia 1.12)     |       TODO            |    23.7s                              |             TODO                |    
 
 ### 0D ionization, variable-weight particles, octree merging
 
 |                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
 |:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
-| v0.7.9 (Julia 1.12)     |       TODO            |    TODOs                              |             TODOs               |
+| v0.7.9 (Julia 1.12)     |       TODO            |    15.1s                              |             TODOs               |
 | v0.8.0 (Julia 1.12)     |       TODO            |    4.72s                              |             TODO                |    
 
 ### 0D ionization, variable-weight particles, NNLS merging
 
 |                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
 |:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
-| v0.7.9 (Julia 1.12)     |       TODO            |    TODOs                              |             TODOs               |
+| v0.7.9 (Julia 1.12)     |       TODO            |    17.4s                              |             TODOs               |
 | v0.8.0 (Julia 1.12)     |       TODO            |    3.98s                              |             TODO                |    
 
 ## Couette flow, serial, small grid
@@ -290,7 +290,7 @@ Shown is the speed-up compared to a serial execution on the same computer (see a
 
 ## Couette flow, variable-weight particles, octree merging
 This simulation uses 200 cells, 250 initial particles per cell, octree N:2 merging down to 100 particles when particle count exceeds 150 particles in a cell.
-The simulation file is `simulations/1D/couette_multithreaded.jl`, run with `run(1234, 300.0, 500.0, 5e-4, 5e22, 200, 250, 150, 100, 2.59e-9, 1000, n_t, 14000; debug=false)`.
+The simulation file is `simulations/1D/couette_varweight_octree.jl`, run with `run(1234, 300.0, 500.0, 5e-4, 5e22, 200, 250, 150, 100, 2.59e-9, 1000, n_t, 14000; debug=false)`.
 
 ### Intel Core i9-13900K, 128 GB RAM
 Ubuntu 22.04.5, Julia version 1.12.5.
