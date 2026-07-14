@@ -45,7 +45,7 @@ function run(seed)
     Ntarget = 250
     reset_timer!()
 
-    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
     T0::Float64 = 273.0
     sigma_ref = π * (interaction_data[1,1].vhs_d^2)
@@ -83,7 +83,7 @@ function run(seed)
     Fnum = n_dens/n_sampled  # start with this Fnum estimate
 
     if phys_props.np[1,1] > threshold
-        merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
+        merge_octree!(rng, oc, particles[1], pia, 1, 1, Ntarget)
         Fnum = n_dens/Ntarget  # effective Fnum in case we merged
     end
 
@@ -103,10 +103,10 @@ function run(seed)
         if phys_props.np[1,1] > threshold
             if firstm
                 # first merge is slower since we have a lot more particles at t=0
-                @timeit "merge: 1st time" merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
+                @timeit "merge: 1st time" merge_octree!(rng, oc, particles[1], pia, 1, 1, Ntarget)
                 firstm = false
             else
-                @timeit "merge" merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
+                @timeit "merge" merge_octree!(rng, oc, particles[1], pia, 1, 1, Ntarget)
             end
         end
         if ts % 10 == 0

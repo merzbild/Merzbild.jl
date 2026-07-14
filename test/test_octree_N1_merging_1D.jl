@@ -1,4 +1,4 @@
-@testset "octree_merging 1D" begin
+@testset "N:1 octree_merging 1D" begin
     
     function create_particles_in_2cells()
     # create 4 particles in 2 cells
@@ -54,7 +54,7 @@
     
     particles, pia = create_particles_in_2cells()
     
-    octree = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
+    octree = OctreeMerge{3,1}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
     
     # test that x_mean +- x_std is out of bounds
     for c in [1,2]
@@ -80,15 +80,15 @@
     merge_octree!(rng, octree, particles[1], pia, 1, 1, 2, grid)
     merge_octree!(rng, octree, particles[1], pia, 2, 1, 2, grid)
 
-    @test pia.indexer[1,1].n_local == 2
-    @test pia.indexer[1,1].n_group1 == 2
+    @test pia.indexer[1,1].n_local == 1
+    @test pia.indexer[1,1].n_group1 == 1
     @test pia.indexer[1,1].start1 == 1
-    @test pia.indexer[1,1].end1 == 2
+    @test pia.indexer[1,1].end1 == 1
 
-    @test pia.indexer[2,1].n_local == 2
-    @test pia.indexer[2,1].n_group1 == 2
+    @test pia.indexer[2,1].n_local == 1
+    @test pia.indexer[2,1].n_group1 == 1
     @test pia.indexer[2,1].start1 == 5
-    @test pia.indexer[2,1].end1 == 6
+    @test pia.indexer[2,1].end1 == 5
 
     out_of_bounds = false
     for i in pia.indexer[1,1].start1:pia.indexer[1,1].end1
@@ -112,8 +112,8 @@
     sort_particles!(gridsorter, grid, particles[1], pia, 1)
 
     compute_props!(particles, pia, species_data, phys_props)
-    @test phys_props.np[1,1] == 2
-    @test phys_props.np[2,1] == 2
+    @test phys_props.np[1,1] == 1
+    @test phys_props.np[2,1] == 1
 
     @test phys_props.n[1,1] == 8.0
     @test phys_props.n[2,1] == 12.0

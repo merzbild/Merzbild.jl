@@ -37,7 +37,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, merge_threshold, merge_tar
     collision_data_fp = CollisionDataFP(ppc * 2)
 
     # merging
-    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
     
     # create struct for computation of physical properties
     phys_props = PhysProps(pia)
@@ -55,7 +55,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, merge_threshold, merge_tar
     
     for cell in 1:grid.n_cells
         if pia.indexer[cell,1].n_local > merge_threshold
-            @timeit "merge (t=0)" merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+            @timeit "merge (t=0)" merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
             println("Post (t=0): $(cell) $(pia.indexer[cell,1].n_local) $merge_threshold $merge_target")
             println("t=0: $(pia.n_total[1]/nx) avg")
             @timeit "squash (t=0)" squash_pia!(particles, pia)
@@ -82,7 +82,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, merge_threshold, merge_tar
 
             if pia.indexer[cell,1].n_local > merge_threshold
                 println("$(cell) $(pia.indexer[cell,1].n_local) $merge_threshold $merge_target")
-                @timeit "merge" merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+                @timeit "merge" merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
                 @timeit "squash" squash_pia!(particles, pia)
                 println("Post: $(cell) $(pia.indexer[cell,1].n_local) $merge_threshold $merge_target")
                 println("$(pia.n_total[1]/nx) avg")

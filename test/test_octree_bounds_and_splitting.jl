@@ -78,7 +78,7 @@
 
     particles1 = [create_8particles([1.0, 1.0, 1.0])]
     pia1 = ParticleIndexerArray(8)
-    octree1 = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
+    octree1 = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
 
     # test bounds that are from -speed of light to +speed of light
     Merzbild.init_octree!(octree1, particles1[1], pia1, 1, 1)
@@ -90,7 +90,7 @@
     @test maximum(abs.(octree1.vel_middle)) < 1e-12  # should be almost 0 since everything is symmetric
 
 
-    octree2 = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVelSym)
+    octree2 = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVelSym)
     particles2 = [create_15particles_nested()]
     pia2 = ParticleIndexerArray(15)
     Merzbild.init_octree!(octree2, particles2[1], pia2, 1, 1)
@@ -98,7 +98,7 @@
     @test maximum(abs.(octree2.bins[1].v_max - [3.0, 3.0, 3.0])) < 1e-12  # check bin bounds
 
     # test bounds, non-symmetric octree bin
-    octree3 = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel)
+    octree3 = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel)
     Merzbild.init_octree!(octree3, particles2[1], pia2, 1, 1)
     @test maximum(abs.(octree3.bins[1].v_min - [-3.0, -1.0, -3.0])) < 1e-11  # check bin bounds, non-symmetrized octree bin
     @test maximum(abs.(octree3.bins[1].v_max - [1.0, 3.0, 1.0])) < 1e-11  # check bin bounds, non-symmetrized octree bin
@@ -108,7 +108,7 @@
     # test that the new suboctant bin bounds make sense
 
 
-    octree4 = OctreeN2Merge(OctreeBinMeanSplit; init_bin_bounds=OctreeInitBinMinMaxVel)
+    octree4 = OctreeMerge(OctreeBinMeanSplit; init_bin_bounds=OctreeInitBinMinMaxVel)
     v_mean = SVector{3, Float64}(0.0, 0.0, 0.0)
     for i in 1:15
         v_mean = v_mean + particles2[1][i].v

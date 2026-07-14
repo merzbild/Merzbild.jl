@@ -364,12 +364,12 @@
 
     T_computed = copy(phys_props.T[:,1])
 
-    octree = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
-    merge_octree_N2_based!(rng, octree, particles[1], pia, 1, 1, 16)
+    octree = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
+    merge_octree!(rng, octree, particles[1], pia, 1, 1, 16)
     @test pia.contiguous[1] == false
-    merge_octree_N2_based!(rng, octree, particles[1], pia, 2, 1, 16)
+    merge_octree!(rng, octree, particles[1], pia, 2, 1, 16)
     @test pia.contiguous[1] == false
-    merge_octree_N2_based!(rng, octree, particles[1], pia, 3, 1, 16)
+    merge_octree!(rng, octree, particles[1], pia, 3, 1, 16)
     @test pia.contiguous[1] == false
 
     squash_pia!(particles, pia)
@@ -430,11 +430,11 @@
     @test abs(phys_props.T[2,1] - Ts[2])/Ts[2] < 1.5e-2
     @test abs(phys_props.T[3,1] - Ts[3])/Ts[3] < 6.5e-2
 
-    merge_octree_N2_based!(rng, octree, particles[1], pia, 3, 1, 16)
+    merge_octree!(rng, octree, particles[1], pia, 3, 1, 16)
     @test pia.contiguous[1] == true
-    merge_octree_N2_based!(rng, octree, particles[1], pia, 2, 1, 16)
+    merge_octree!(rng, octree, particles[1], pia, 2, 1, 16)
     @test pia.contiguous[1] == false
-    merge_octree_N2_based!(rng, octree, particles[1], pia, 1, 1, 16)
+    merge_octree!(rng, octree, particles[1], pia, 1, 1, 16)
     @test pia.contiguous[1] == false
 
     squash_pia!(particles, pia)

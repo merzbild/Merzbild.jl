@@ -1,4 +1,4 @@
-@testset "malloc: octree N:2 merging on 1D grid with particles with dim(x)=1,2,3" begin
+@testset "malloc: octree N:1 merging on 1D grid with particles with dim(x)=1,2,3" begin
 
 
     # Important!
@@ -50,7 +50,7 @@
 
     @testset "1D particles, 1D merging" begin
         # 1d particle x vector
-        oc3 = OctreeMerge{1,2}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+        oc3 = OctreeMerge{1,1}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
         target1 = 1000
         target2 = 100
 
@@ -87,7 +87,7 @@
 
     @testset "2D particles, 2D merging" begin
         # 2d particle x vector
-        oc3 = OctreeMerge{2,2}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+        oc3 = OctreeMerge{2,1}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
         target1 = 1000
         target2 = 100
 
@@ -124,7 +124,7 @@
 
     @testset "3D particles, 3D merging" begin
         # 3d particle x vector
-        oc3 = OctreeMerge{3,2}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+        oc3 = OctreeMerge{3,1}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
         target1 = 1000
         target2 = 100
 

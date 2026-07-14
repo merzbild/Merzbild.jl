@@ -69,12 +69,12 @@
                          for pia in pia_chunks]
 
     # create merging structs
-    oc_chunks = [OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000) for cell_chunks in cell_chunks]
+    oc_chunks = [OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000) for cell_chunks in cell_chunks]
 
     # merge and compute data at t=0
     for chunk_id in 1:n_chunks
         for cell in cell_chunks[chunk_id]
-            merge_octree_N2_based!(rng_chunks[chunk_id], oc_chunks[chunk_id], particles_chunks[chunk_id][1], pia_chunks[chunk_id], cell, 1, merge_target, grid)
+            merge_octree!(rng_chunks[chunk_id], oc_chunks[chunk_id], particles_chunks[chunk_id][1], pia_chunks[chunk_id], cell, 1, merge_target, grid)
         end
         squash_pia!(particles_chunks[chunk_id], pia_chunks[chunk_id])
         compute_props_sorted!(particles_chunks[chunk_id], pia_chunks[chunk_id], species_data, phys_props, cell_chunks[chunk_id])
@@ -105,7 +105,7 @@
                                pia_chunks[chunk_id], cell, 1, Δt, grid.cells[cell].V)
 
                 if pia_chunks[chunk_id].indexer[cell,1].n_local > merge_threshold
-                    merge_octree_N2_based!(rng_chunks[chunk_id], oc_chunks[chunk_id], particles_chunks[chunk_id][1], pia_chunks[chunk_id], cell, 1, merge_target, grid)
+                    merge_octree!(rng_chunks[chunk_id], oc_chunks[chunk_id], particles_chunks[chunk_id][1], pia_chunks[chunk_id], cell, 1, merge_target, grid)
                     squash_pia!(particles_chunks[chunk_id], pia_chunks[chunk_id])
                 end
             end

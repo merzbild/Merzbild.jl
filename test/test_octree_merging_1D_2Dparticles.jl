@@ -54,7 +54,7 @@
     
     particles, pia = create_particles_in_2cells()
     
-    octree = OctreeN2Merge{2}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
+    octree = OctreeMerge{2,2}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
     
     # test that x_mean +- x_std is out of bounds
     for c in [1,2]
@@ -77,8 +77,8 @@
     end
     
     # now we make sure particles stay inside grid
-    merge_octree_N2_based!(rng, octree, particles[1], pia, 1, 1, 2, grid)
-    merge_octree_N2_based!(rng, octree, particles[1], pia, 2, 1, 2, grid)
+    merge_octree!(rng, octree, particles[1], pia, 1, 1, 2, grid)
+    merge_octree!(rng, octree, particles[1], pia, 2, 1, 2, grid)
 
     @test pia.indexer[1,1].n_local == 2
     @test pia.indexer[1,1].n_group1 == 2

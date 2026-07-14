@@ -121,7 +121,7 @@ function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
     # because we do a merge at the start need to account for changed average Fnum
     collision_factors = create_collision_factors_array(pia, interaction_data, species_data, T_bg0, Fnum * (merge_threshold / merge_target))
 
-    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
 
     mim = []
@@ -169,7 +169,7 @@ function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
                 end
     
                 if nnls_success_flag == -1
-                    @timeit "merge octree" merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+                    @timeit "merge octree" merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
                 end
                 @timeit "squash" squash_pia!(particles, pia)
             end
@@ -204,7 +204,7 @@ function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
                 end
     
                 if nnls_success_flag == -1
-                    @timeit "merge octree" merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+                    @timeit "merge octree" merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
                 end
                 @timeit "squash" squash_pia!(particles, pia)
             end

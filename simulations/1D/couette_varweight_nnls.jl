@@ -87,7 +87,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     @timeit "NNLSinit backup" mnnls_backup = NNLSMerge(mim_backup, init_np+17; multi_index_moments_pos=pos_moments, matrix_ncol_nprealloc=matrix_ncol_nprealloc)
 
     # this is the fallback merge in case NNLS fails
-    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
     println("# of preserved moments in main merge: ", length(mnnls.rhs_vector), ", in backup merge: ", length(mnnls_backup.rhs_vector))
 
@@ -101,7 +101,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
             end
 
             if nnls_success_flag == -1
-                @timeit "merge octree (t=0)" merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+                @timeit "merge octree (t=0)" merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
             end
         end
     end
@@ -137,7 +137,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
                 end
     
                 if nnls_success_flag == -1
-                    @timeit "merge octree" merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+                    @timeit "merge octree" merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
                 end
                 @timeit "squash" squash_pia!(particles, pia)
             end

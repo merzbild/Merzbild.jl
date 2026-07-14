@@ -142,7 +142,7 @@
     # octants are 8, 7, 6, 5, 4, 3, 3, 2, 1
     particles9 = [create_9particles(3, true)]
     pia = ParticleIndexerArray(9)
-    octree = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
+    octree = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
 
     Merzbild.init_octree!(octree, particles9[1], pia, 1, 1)
     for i in 1:9
@@ -237,7 +237,7 @@
     particles15 = [create_15particles_nested()]
     pia4 = ParticleIndexerArray(15)
 
-    octree2 = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVelSym)
+    octree2 = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVelSym)
 
     # the initial bin will have bounds [-3.0, -3.0, -3.0], [3.0, 3.0, 3.0] 
     Merzbild.init_octree!(octree2, particles15[1], pia4, 1, 1)

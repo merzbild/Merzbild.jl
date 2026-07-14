@@ -137,8 +137,8 @@ function run(seed, E_Tn, n_t,
     np_base_heavy = nv_heavy^3  # some initial guess on # of particles in simulation
     np_base_electrons = nv_electrons^3  # some initial guess on # of particles in simulation
 
-    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
-    oc_electrons = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc_electrons = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
     mg_ions = GridN2Merge(Nmerging_ions, Nmerging_ions, Nmerging_ions, 3.5)
 
     particles = [ParticleVector(np_base_heavy),
@@ -168,7 +168,7 @@ function run(seed, E_Tn, n_t,
     vref = sqrt(2 * k_B * 3 * 11605.0 / species_data[1].mass)
 
     if pia.n_total[1] > threshold_neutrals
-        @timeit "merge n t=0" merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
+        @timeit "merge n t=0" merge_octree!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
     end
 
     if pia.n_total[2] > threshold_ion
@@ -181,7 +181,7 @@ function run(seed, E_Tn, n_t,
         
         if nnls_success_flag == -1
             println("resorting to octree for electrons at t=0")
-            merge_octree_N2_based!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons_octree)
+            merge_octree!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons_octree)
         end
     end
 
@@ -223,7 +223,7 @@ function run(seed, E_Tn, n_t,
         end
 
         if pia.n_total[1] > threshold_neutrals
-            @timeit "merge n" merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
+            @timeit "merge n" merge_octree!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
         end
 
         if pia.n_total[2] > threshold_ion
@@ -257,7 +257,7 @@ function run(seed, E_Tn, n_t,
 
                 if nnls_success_flag == -1
                     println("Resorting to octree merging")
-                    @timeit "Octreemerge e" merge_octree_N2_based!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons_octree)
+                    @timeit "Octreemerge e" merge_octree!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons_octree)
                 end
             end
         end

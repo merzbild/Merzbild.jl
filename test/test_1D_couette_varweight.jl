@@ -61,11 +61,11 @@
     collision_factors = create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum)
 
 
-    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
     for cell in 1:grid.n_cells
         if pia.indexer[cell,1].n_local > merge_threshold
-            merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+            merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
         end
     end
     squash_pia!(particles, pia)
@@ -83,7 +83,7 @@
                  collision_data, interaction_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
         
             if pia.indexer[cell,1].n_local > merge_threshold
-                merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+                merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
                 squash_pia!(particles, pia)
             end
         end

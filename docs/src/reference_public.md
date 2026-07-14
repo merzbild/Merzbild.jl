@@ -146,12 +146,12 @@ merge_nnls_based_rate_preserving!
 Merzbild.OctreeBinSplit
 Merzbild.OctreeInitBin
 Merzbild.OctreeBinBounds
-OctreeN2Merge
-OctreeN2Merge(split::Merzbild.OctreeBinSplit;
+OctreeMerge
+OctreeMerge(split::Merzbild.OctreeBinSplit;
               init_bin_bounds=OctreeInitBinMinMaxVel,
               bin_bounds_compute=OctreeBinBoundsInherit,
               max_Nbins=4096, max_depth=10)
-merge_octree_N2_based!
+merge_octree!
 ```
 
 ### Roulette merging

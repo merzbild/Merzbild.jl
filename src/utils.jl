@@ -50,6 +50,36 @@ function weighted_median_with_interpolation(values, weights)
 end
 
 """
+Relative tolerance below which a post-merge variance is treated as having collapsed to zero,
+see [`variance_scaling`](@ref).
+"""
+const variance_scaling_rel_tol = 1e-10
+
+"""
+    variance_scaling(var_before::SVector{N,Float64}, var_post::SVector{N,Float64})
+
+Scale the the components of a variance vector `var_before` by the square root of the ratio of the components of it and
+a vector `var_post`, checking for zero/negative values in `var_post` and non-finite values in the scaling factor.
+
+A component of `var_post` is treated as zero if it is not larger than `variance_scaling_rel_tol` times the
+corresponding component of `var_before`, and a scaling factor of 1.0 is returned for it. A plain `var_post > 0.0`
+check is not enough: when all post-merge particles collapse onto the mean (e.g. an N:1 merge of a single octree bin),
+`var_post` is zero only in exact arithmetic, and is in practice a round-off residue of order `eps()^2 * var_before`.
+Scaling by `sqrt(var_before / var_post)` would then amplify that residue by ~`1/eps()` and destroy the conservation
+of the mean, instead of restoring a variance that cannot be restored by scaling in the first place.
+
+# Positional arguments
+* `var_before`: variance vector components of which to scale
+* `var_post`: variance vector components by which to scale
+"""
+@inline function variance_scaling(var_before::SVector{N,Float64}, var_post::SVector{N,Float64}) where N
+    map(var_before, var_post) do vb, vp
+        sf = vp > variance_scaling_rel_tol * vb ? sqrt(vb / vp) : 1.0
+        isfinite(sf) ? sf : 1.0
+    end
+end
+
+"""
     vx_sign(octant)
     
 Return sign of velocity vx of an octant in velocity space.

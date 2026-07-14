@@ -1,4 +1,4 @@
-@testset "malloc: grid N:2 merging on 1D grid with particles with dim(x)=0,1,2,3" begin
+@testset "malloc: grid N:2 merging on 1D grid with particles with dim(x)=1,2,3" begin
 
     # Important!
     # The time scaling in the analytical solution is different
