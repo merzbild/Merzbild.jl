@@ -59,53 +59,43 @@ mutable struct OctreeCell
 end
 
 """
-    OctreeFullCell{D}
+    OctreeFullCell{D,M}
 
-Struct holding computed bin properties required to merge the particles in a bin.
+Struct holding computed bin properties required to merge the particles in a bin down
+to M particles.
 
 # Fields
 * `v_mean`: mean velocity of particles in cell
 * `v_std_sq`: variance of velocity of particles in cell
 * `x_mean`: mean position of particles in cell
 * `x_std_sq`: variance of position of particles in cell
-* `particle_index1`: index of first particle in the cell (first as in the first particle that is found to
-    belong to the cell)
-* `particle_index2`: index of second particle in the cell (second as in the second particle that is found to
-    belong to the cell)
-* `w1`: the post-merge weight to assign to the first particle in the cell
-* `w2`: the post-merge weight to assign to the second particle in the cell
-* `v1`: the post-merge velocity to assign to the first particle in the cell
-* `v2`: the post-merge velocity to assign to the second particle in the cell
-* `x1`: the post-merge position to assign to the first particle in the cell
-* `x2`: the post-merge position to assign to the second particle in the cell
+* `particle_indices`: indices of particles in the cell
+* `weights`: the post-merge weights to assign to the particles in the cell
+* `velocities`: the post-merge velocities to assign to the particles in the cell
+* `positions`: the post-merge positions to assign to the particles in the cell
 """
-mutable struct OctreeFullCell{D}
+mutable struct OctreeFullCell{D,M}
     v_mean::SVector{3,Float64}
     v_std_sq::SVector{3,Float64}
     x_mean::SVector{D,Float64}
     x_std_sq::SVector{D,Float64}
-    particle_index1::Int64
-    particle_index2::Int64
-
-    w1::Float64
-    w2::Float64
-    v1::SVector{3,Float64}  # these are for the post-merge quantities
-    v2::SVector{3,Float64}
-    x1::SVector{D,Float64}
-    x2::SVector{D,Float64}
+    particle_indices::MVector{M, Int64}
+    weights::MVector{M, Float64}
+    velocities::MVector{M, SVector{3,Float64}} # two dimensional SVector, first index means which particle in the bin, then is it's velocity
+    positions::MVector{M, SVector{D,Float64}}
 end
 
 # struct for N:2 merge
 """
-    OctreeN2Merge{D}
+    OctreeMerge{D,M}
 
-Struct for N:2 Octree merging for particles with D-dimensional position vectors.
+Struct for N:M Octree merging for particles with D-dimensional position vectors.
 
 # Fields
 * `max_Nbins`: maximum possible number of bins
 * `Nbins`: number of bins currently used
 * `bins`: Vector of `OctreeCell` instances used to compute the properties required for bin refinement
-* `full_bins`: Vector of `OctreeFullCell` instances used to compute the post-merge particles in each bin
+* `full_bins`: Vector of `OctreeFullCell{D,M}` instances used to compute the post-merge particles in each bin
 * `n_particles`: total number of particles being merged
 * `bin_start`: denotes start of indices of particles in bin `i` in the `particle_indexes_sorted` array
 * `bin_end`: denotes end of indices of particles in bin `i` in the `particle_indexes_sorted` array
@@ -128,12 +118,20 @@ Struct for N:2 Octree merging for particles with D-dimensional position vectors.
 * `init_bin_bounds`: enum of `OctreeInitBin` type defining how the bounds of the top-level bin are set
 * `max_depth`: maximum allowed depth of a bin
 * `total_post_merge_np`: used to keep track of number of post-merge particles
+* `v_mean`: used to store mean velocity for conservative N:1 merging
+* `x_mean`: used to store mean position for conservative N:1 merging
+* `v_var_before`: used to store pre-merge variance of velocity for conservative N:1 merging
+* `x_var_before`: used to store pre-merge variance of position for conservative N:1 merging
+* `v_mean_post`: used to store post-merge mean velocity for conservative N:1 merging
+* `x_mean_post`: used to store post-merge mean position for conservative N:1 merging
+* `v_var_post`: used to store post-merge variance of velocity for conservative N:1 merging
+* `x_var_post`: used to store post-merge variance of position for conservative N:1 merging
 """
-mutable struct OctreeN2Merge{D}
+mutable struct OctreeMerge{D,M}
     max_Nbins::Int64
     Nbins::Int64  # actual bins computed
     bins::Vector{OctreeCell}
-    full_bins::Vector{OctreeFullCell{D}}
+    full_bins::Vector{OctreeFullCell{D,M}}
     n_particles::Int64  # particles being sorted
 
     # particles in bins[i] have indices in particle_index_buffer[bin_start[i]:bin_end[i]]
@@ -178,6 +176,16 @@ mutable struct OctreeN2Merge{D}
 
     max_depth::Int64
     total_post_merge_np::Int64 # used to keep track of number of post-merge particles
+
+    # N:1 case --> Pre-allocated fields for compute_new_particles! to avoid allocations
+    v_mean::SVector{3, Float64}
+    x_mean::SVector{D, Float64}
+    v_var_before::SVector{3, Float64}
+    x_var_before::SVector{D, Float64}
+    v_mean_post::SVector{3, Float64}
+    x_mean_post::SVector{D, Float64}
+    v_var_post::SVector{3, Float64}
+    x_var_post::SVector{D, Float64}
 end
 
 """
@@ -196,30 +204,33 @@ function fill_bins(Nbins)
 end
 
 """
-    fill_full_bins(::Val{D}, Nbins)
+    fill_full_bins(::Val{D}, ::Val{M}, Nbins)
 
 Fill the octree bins full structs with zero data, used as a utility function for initialization.
 
 Positional arguments:
 * `D`: dimension of position vectors of particles to be merged
+* `M`: number of post-merge particles in each bin
 * `Nbins`: number of `OctreeFullCell` bins to create
 
 Returns:
 An array of `Nbins` `OctreeFullCell` instances filled with zeros.
 """
-function fill_full_bins(::Val{D}, Nbins) where D
-    return [OctreeFullCell(SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0),
+function fill_full_bins(::Val{D}, ::Val{M}, Nbins) where {D, M}
+    return [OctreeFullCell{D,M}(SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0),
                            zero(SVector{D,Float64}), zero(SVector{D,Float64}),
-                           0, 0, 0.0, 0.0, 
-                           SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0),
-                           zero(SVector{D,Float64}), zero(SVector{D,Float64})) for _ in 1:Nbins]
+                           MVector{M, Int64}(zeros(Int64, M)),
+                           MVector{M, Float64}(zeros(Float64, M)), # weights
+                           MVector{M, SVector{3,Float64}}([SVector{3,Float64}(0.0, 0.0, 0.0) for _ in 1:M]),
+                           MVector{M, SVector{D,Float64}}([zero(SVector{D,Float64}) for _ in 1:M]))
+                           for _ in 1:Nbins]
 end
 
 """
-    OctreeN2Merge{D}(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit,
+    OctreeMerge{D,M}(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit,
               max_Nbins=4096, max_depth=10)
     
-Create an Octree N:2 merging instance for particles with D-dimensional position vectors.
+Create an Octree N:M merging instance for particles with D-dimensional position vectors.
 
 Positional arguments:
 * `split`: a enum of `OctreeBinSplit` type which tells how to split a bin into sub-bins
@@ -233,12 +244,12 @@ Keyword arguments:
 * `max_depth`: maximum depth of a sub-bin starting from the top-level bin containing all particles (which has a depth of 0)
 
 Returns:
-`OctreeN2Merge` instance with everything set to 0.
+`OctreeMerge` instance with everything set to 0.
 """
-function OctreeN2Merge{D}(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit,
-                 max_Nbins=4096, max_depth=10) where D
-    return OctreeN2Merge{D}(max_Nbins, 0, fill_bins(max_Nbins),
-                            fill_full_bins(Val(D), max_Nbins), 0,
+function OctreeMerge{D,M}(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit,
+                 max_Nbins=4096, max_depth=10) where {D, M}
+    return OctreeMerge{D,M}(max_Nbins, 0, fill_bins(max_Nbins),
+                            fill_full_bins(Val(D), Val(M), max_Nbins), 0,
                             zeros(max_Nbins), zeros(max_Nbins),  # bin_start, bin_end
                             zeros(8192), zeros(8192), zeros(8192),
                             MVector{8, Int64}(0, 0, 0, 0, 0, 0, 0, 0),
@@ -249,13 +260,21 @@ function OctreeN2Merge{D}(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMi
                             SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0), SVector{3,Float64}(0.0, 0.0, 0.0),
                             zero(SVector{3,Float64}),
                             zero(SVector{D,Float64}),
-                            init_bin_bounds, max_depth, 0)
+                            init_bin_bounds, max_depth, 0,    
+                            SVector{3,Float64}(0.0, 0.0, 0.0),  # v_mean
+                            zero(SVector{D,Float64}),  # x_mean
+                            SVector{3,Float64}(0.0, 0.0, 0.0),  # v_var_before
+                            zero(SVector{D,Float64}),  # x_var_before
+                            SVector{3,Float64}(0.0, 0.0, 0.0),  # v_mean_post
+                            zero(SVector{D,Float64}),  # x_mean_post
+                            SVector{3,Float64}(0.0, 0.0, 0.0),  # v_var_post
+                            zero(SVector{D,Float64})   # x_var_post
+)
 end
 
 
-
 """
-    OctreeN2Merge(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit,
+    OctreeMerge(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit,
               max_Nbins=4096, max_depth=10)
     
 Create an Octree N:2 merging instance for particles with 3-dimensional position vectors.
@@ -272,10 +291,10 @@ Keyword arguments:
 * `max_depth`: maximum depth of a sub-bin starting from the top-level bin containing all particles (which has a depth of 0)
 
 Returns:
-`OctreeN2Merge` instance with everything set to 0.
+`OctreeMerge` instance with everything set to 0.
 """
-OctreeN2Merge(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit,
-              max_Nbins=4096, max_depth=10) = OctreeN2Merge{3}(split::OctreeBinSplit; init_bin_bounds=init_bin_bounds, bin_bounds_compute=bin_bounds_compute,
+OctreeMerge(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit,
+              max_Nbins=4096, max_depth=10) = OctreeMerge{3,2}(split::OctreeBinSplit; init_bin_bounds=init_bin_bounds, bin_bounds_compute=bin_bounds_compute,
                  max_Nbins=max_Nbins, max_depth=max_depth)
 
 """
@@ -284,7 +303,7 @@ OctreeN2Merge(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin
 Reset octree before doing a new merge.
 
 # Positional arguments:
-* `octree`: the `OctreeN2Merge` instance
+* `octree`: the `OctreeMerge` instance
 """
 function clear_octree!(octree)
     octree.Nbins = 0
@@ -297,7 +316,7 @@ Check and resize octree buffers if needed to accommodate a larger number of part
 is set to `n_particles + DELTA_PARTICLES` if the their sizes are smaller than `n_particles`.
 
 # Positional arguments:
-* `octree`: the `OctreeN2Merge` instance
+* `octree`: the `OctreeMerge` instance
 * `n_particles`: the current number of particles being merged
 """
 function resize_octree_buffers!(octree, n_particles)
@@ -335,17 +354,7 @@ The order of the octants is:
 The octant number
 """
 @inline function compute_octant(particle_v, v_middle)
-    oct = 1
-    @inbounds if (particle_v[1] > v_middle[1])
-        oct += 1
-    end
-    @inbounds if (particle_v[2] > v_middle[2])
-        oct += 2
-    end
-    @inbounds if (particle_v[3] > v_middle[3])
-        oct += 4
-    end
-    return oct
+    @inbounds return 1 + (particle_v[1] > v_middle[1]) + 2 * (particle_v[2] > v_middle[2]) + 4 * (particle_v[3] > v_middle[3])
 end
 
 """
@@ -364,7 +373,7 @@ The order of the octants is
     8. + + +
 
 # Positional arguments:
-* `octree`: the `OctreeN2Merge` instance
+* `octree`: the `OctreeMerge` instance
 * `bin_id`: the index of the bin for which the velocity bounds are being recomputed
 * `v_min_parent`: the velocity vector of the lower bound of the velocities of the parent bin
 * `v_max_parent`: the velocity vector of the upper bound of the velocities of the parent bin
@@ -408,7 +417,7 @@ Recompute bin bounds based on particle velocities by setting them to the smalles
 velocities of the particles in each velocity direction.
 
 # Positional arguments:
-* `octree`: the `OctreeN2Merge` instance
+* `octree`: the `OctreeMerge` instance
 * `bin_id`: the index of the bin for which the velocity bounds are being recomputed
 * `bs`: index of the first particle in bin
 * `be`: index of the last particle in bin
@@ -449,10 +458,10 @@ function bin_bounds_recompute!(octree, bin_id, bs, be, particles::ParticleVector
         if (pv[3] > maxvz)
             maxvz = pv[3]
         end
-
-        octree.bins[bin_id].v_min = SVector{3, Float64}(minvx, minvy, minvz)
-        octree.bins[bin_id].v_max = SVector{3, Float64}(maxvx, maxvy, maxvz)
     end
+
+    @inbounds octree.bins[bin_id].v_min = SVector{3, Float64}(minvx, minvy, minvz)
+    @inbounds octree.bins[bin_id].v_max = SVector{3, Float64}(maxvx, maxvy, maxvz)
 end
 
 """
@@ -461,19 +470,20 @@ end
 Compute mean velocity of particles in a bin.
 
 # Positional arguments:
-* `octree`: the `OctreeN2Merge` instance
+* `octree`: the `OctreeMerge` instance
 * `bs`: index of the first particle in bin
 * `be`: index of the last particle in bin
 * `particles`: the `ParticleVector` instance of the particles to be merged
 """
 @inline function compute_v_mean!(octree, bs, be, particles::ParticleVector{D}) where D
     n_tot = 0.0
+    v_mean = SVector{3,Float64}(0.0, 0.0, 0.0)
     @inbounds for i in bs:be
-        pin = octree.particle_indexes_sorted[i]
-        n_tot += particles[pin].w
-        octree.vel_middle = octree.vel_middle + particles[pin].w * particles[pin].v
+        p = particles[octree.particle_indexes_sorted[i]]
+        n_tot += p.w
+        v_mean = v_mean + p.w * p.v
     end
-    octree.vel_middle = octree.vel_middle / n_tot
+    octree.vel_middle = v_mean / n_tot
 end
 
 """
@@ -482,7 +492,7 @@ end
 Compute median velocity of particles in a bin. NOTE: allocates memory and is probably not fully correct!
 
 # Positional arguments:
-* `octree`: the `OctreeN2Merge` instance
+* `octree`: the `OctreeMerge` instance
 * `bs`: index of the first particle in bin
 * `be`: index of the last particle in bin
 * `particles`: the `ParticleVector` instance of the particles to be merged
@@ -527,18 +537,18 @@ Index of a newly created bin corresponding to a bin created from sub-octant `i` 
 end
 
 """
-    split_bin!(octree, bin_id, particles::ParticleVector{D})
+    split_bin!(octree::OctreeMerge{D,M}, bin_id, particles::ParticleVector{D})
 
 Sort particles into sub-bins of a bin with index `bin_id` (by splitting it into octants),
 keeping track of which sub-bins particles end up in.
 Also sets the velocity bounds of the new bins.
 
 # Positional arguments:
-* `octree`: the `OctreeN2Merge` instance
+* `octree`: the `OctreeMerge` instance
 * `bin_id`: octree bin index
 * `particles`: the `ParticleVector` instance of the particles to be merged
 """
-function split_bin!(octree, bin_id, particles::ParticleVector{D}) where D
+function split_bin!(octree::OctreeMerge{D,M}, bin_id, particles::ParticleVector{D}) where {D,M}
     n_nonempty_bins = 0
     
     # the bin we're splitting
@@ -573,12 +583,15 @@ function split_bin!(octree, bin_id, particles::ParticleVector{D}) where D
         compute_v_median!(octree, bs, be, particles)
     end
 
+    vel_middle = octree.vel_middle
+    particle_octants = octree.particle_octants
+    particle_indexes_sorted = octree.particle_indexes_sorted
     @inbounds for i in bs:be
-        pin = octree.particle_indexes_sorted[i]
-        oct = compute_octant(particles[pin].v, octree.vel_middle)
+        p = particles[particle_indexes_sorted[i]]
+        oct = compute_octant(p.v, vel_middle)
         particle_in_bin_counter[oct] += 1
-        octree.particle_octants[i-bs+1] = oct
-        ndens_counter[oct] += particles[pin].w
+        particle_octants[i-bs+1] = oct
+        ndens_counter[oct] += p.w
     end
 
     n_eb = 0
@@ -612,9 +625,9 @@ function split_bin!(octree, bin_id, particles::ParticleVector{D}) where D
         octree.bin_end[bi] = octree.bin_start[bi] + nonempty_counter[i] - 1
     end
 
-    # we had a bin that would've produced 2 particles
-    # now we replaced ith with n_nonempty_bins bins that each produce 1 or 2 particles
-    octree.total_post_merge_np -= 2
+    # we had a bin that would've produced M particles
+    # now we replaced ith with n_nonempty_bins bins that each produce 1 to M particles
+    octree.total_post_merge_np -= M
     if (octree.bin_bounds_compute == OctreeBinBoundsInherit)
         @inbounds octree.v_min_parent = bin0.v_min
         @inbounds octree.v_max_parent = bin0.v_max
@@ -635,7 +648,7 @@ function split_bin!(octree, bin_id, particles::ParticleVector{D}) where D
 
             octree.total_post_merge_np += get_bin_post_merge_np(octree, bi)
             # octree.bins[bin_id + i - 1].post_merge_np = get_bin_post_merge_np(octree, bin_id + i - 1)
-            if (bin.np > 2) && (bin.depth < octree.max_depth)
+            if (bin.np > M) && (bin.depth < octree.max_depth)
                 bin.can_be_refined = true
             else
                 bin.can_be_refined = false
@@ -654,7 +667,7 @@ function split_bin!(octree, bin_id, particles::ParticleVector{D}) where D
             # we had a bin that would've produced 2 particles
             # now we replaced ith with n_nonempty_bins bins that each produce 1 or 2 particles
             octree.total_post_merge_np += get_bin_post_merge_np(octree, bi)
-            if (bin.np > 2) && (bin.depth < octree.max_depth)
+            if (bin.np > M) && (bin.depth < octree.max_depth)
                 bin.can_be_refined = true
             else
                 bin.can_be_refined = false
@@ -662,34 +675,32 @@ function split_bin!(octree, bin_id, particles::ParticleVector{D}) where D
         end
     end
 
+    particles_sort_output = octree.particles_sort_output
     @inbounds for i in bs:be
-        pin = octree.particle_indexes_sorted[i]
-        j = octree.particle_octants[i - bs + 1]
-        octree.particles_sort_output[particle_in_bin_counter[j]] = pin
+        pin = particle_indexes_sorted[i]
+        j = particle_octants[i - bs + 1]
+        particles_sort_output[particle_in_bin_counter[j]] = pin
         particle_in_bin_counter[j] -= 1
     end
 
     # write sorted indices
-    # octree.particle_indexes_sorted[bs:be] = octree.particles_sort_output[1:be-bs+1]
-    @inbounds @simd for i in bs:be
-        octree.particle_indexes_sorted[i] = octree.particles_sort_output[i-bs+1]
-    end
+    unsafe_copyto!(particle_indexes_sorted, bs, particles_sort_output, 1, be - bs + 1)
 
     octree.Nbins += n_nonempty_bins - 1
 end
 
 """
-    compute_bin_props!(octree::OctreeN2Merge{D}, bin_id, particles::ParticleVector{D})
+    compute_bin_props!(octree::OctreeMerge{D,M}, bin_id, particles::ParticleVector{D})
 
 Compute properties in a bin required for merging: total computational weight, mean velocity and position,
 standard deviation of particle velocities and positions.
 
 # Positional arguments:
-* `octree`: the `OctreeN2Merge` instance
+* `octree`: the `OctreeMerge` instance
 * `bin_id`: octree bin index
 * `particles`: the `ParticleVector` instance of the particles to be merged
 """
-function compute_bin_props!(octree::OctreeN2Merge{D}, bin_id, particles::ParticleVector{D}) where D
+function compute_bin_props!(octree::OctreeMerge{D,M}, bin_id, particles::ParticleVector{D}) where {D,M}
     @inbounds bs = octree.bin_start[bin_id]
     @inbounds be = octree.bin_end[bin_id]
 
@@ -702,18 +713,16 @@ function compute_bin_props!(octree::OctreeN2Merge{D}, bin_id, particles::Particl
         return 
     end
 
-    # store indices of the first 1/2 particles in octree bin so that we
+    # store indices of the first M particles in octree bin so that we
     # have somewhere to write post-merge data
-    # but also so that we don't do unnecessary merging (2:2, 1:2)
-    @inbounds if (bin.np == 1)
-        @inbounds full_bin.particle_index1 = octree.particle_indexes_sorted[bs]
-    elseif (bin.np >= 2)
-        @inbounds full_bin.particle_index1 = octree.particle_indexes_sorted[bs]
-        @inbounds full_bin.particle_index2 = octree.particle_indexes_sorted[bs + 1]
+    @inbounds actual_n = get_bin_post_merge_np(octree, bin_id)
+    # for general M particles - mutate the MVector in place to avoid allocating a new one
+    @inbounds for i in 1:M
+        full_bin.particle_indices[i] = i <= actual_n ? octree.particle_indexes_sorted[bs + i - 1] : 0
     end
 
-    # if only 2 or fewer particles in bin then we don't need to compute any properties
-    @inbounds if (bin.np <= 2)
+    # if only M or fewer particles in bin then we don't need to compute any properties
+    @inbounds if (octree.bins[bin_id].np <= M)
         return
     end
 
@@ -749,40 +758,41 @@ function compute_bin_props!(octree::OctreeN2Merge{D}, bin_id, particles::Particl
 end
 
 """
-    get_bin_post_merge_np(octree, bin_id)
+    get_bin_post_merge_np(octree::OctreeMerge{D,M}, bin_id)
 
-Get number of post-merge particles in a bin: 2 if the number of particles in the bin is >= 2, otherwise
-the number of particles in the bin (0 or 1) is returned.
+Get number of post-merge particles in a bin: M if the number of particles in the bin is >= M, otherwise
+the number of particles in the bin is returned.
 
 # Positional arguments:
-* `octree`: the `OctreeN2Merge` instance
+* `octree`: the `OctreeMerge` instance
 * `bin_id`: octree bin index
 
 # Returns
 The number of post-merge particles in a single octree bin (0, 1, or 2).
 """
-@inline function get_bin_post_merge_np(octree, bin_id)
+@inline function get_bin_post_merge_np(octree::OctreeMerge{D,M}, bin_id) where {D,M}
     # how many particles will we get after merging in the bin:
-    # 2 if np >= 2
-    # np otherwise (0 or 1)
-    @inbounds return octree.bins[bin_id].np >= 2 ? 2 : octree.bins[bin_id].np
+    # M if np >= M
+    # np otherwise
+    @inbounds return octree.bins[bin_id].np >= M ? M : octree.bins[bin_id].np
 end
 
 """
-    compute_new_particles!(rng, octree::OctreeN2Merge{D}, particles::ParticleVector{D}, pia, cell, species)
+    compute_new_particles!(rng, octree::OctreeMerge{D,2}, particles::ParticleVector{D}, pia, cell, species)
 
-Compute post-merge particles particles based on octree bin properties without checking particle locations.
-So particles may end up outside of the domain.
+Compute post-merge particles with particles based on octree bin properties without checking or setting particle locations
+(for spatially homogeneous merging).
+N:2 merging in each bin.
 
 # Positional arguments:
 * `rng`: the random number generator instance
-* `octree`: the `OctreeN2Merge` instance
+* `octree`: the `OctreeMerge` instance
 * `particles`: the `ParticleVector` instance of the particles to be merged
 * `pia`: the `ParticleIndexerArray` instance
 * `cell`: the cell index
 * `species`: the species index
 """
-function compute_new_particles!(rng, octree::OctreeN2Merge{D}, particles::ParticleVector{D}, pia, cell, species) where D
+function compute_new_particles!(rng, octree::OctreeMerge{D,2}, particles::ParticleVector{D}, pia, cell, species) where D
     # given computed Octree, create new particles instead of the old ones
     
     Nbins = octree.Nbins
@@ -791,66 +801,42 @@ function compute_new_particles!(rng, octree::OctreeN2Merge{D}, particles::Partic
         loc_np = bin.np
         full_bin = octree.full_bins[bin_id]
         if (loc_np > 2)
-            full_bin.w1 = 0.5 * bin.w
-            full_bin.w2 = full_bin.w1
+            full_bin.weights[1] = 0.5 * bin.w
+            full_bin.weights[2] = full_bin.weights[1]
 
             full_bin.v_std_sq = sqrt.(full_bin.v_std_sq)
             # full_bin.x_std_sq = sqrt.(full_bin.x_std_sq)
             
             octree.direction_vec3 = @SVector rand(rng, direction_signs, 3)
-            full_bin.v1 = full_bin.v_mean + octree.direction_vec3 .* full_bin.v_std_sq
-            full_bin.v2 = full_bin.v_mean - octree.direction_vec3 .* full_bin.v_std_sq
+            full_bin.velocities[1] = full_bin.v_mean + octree.direction_vec3 .* full_bin.v_std_sq
+            full_bin.velocities[2] = full_bin.v_mean - octree.direction_vec3 .* full_bin.v_std_sq
 
             # octree.direction_vec = @SVector rand(rng, direction_signs, 3)
             # octree.full_bins[bin_id].x1 = octree.full_bins[bin_id].x_mean + octree.direction_vec .* octree.full_bins[bin_id].x_std_sq
             # octree.full_bins[bin_id].x2 = octree.full_bins[bin_id].x_mean - octree.direction_vec .* octree.full_bins[bin_id].x_std_sq
         elseif (loc_np == 2)
             # get the particle indices we saved and just write data based on them
-            i = full_bin.particle_index1
-            full_bin.w1 = particles[i].w
-            full_bin.v1 = particles[i].v
-            # full_bin.x1 = particles[i].x
+            i = full_bin.particle_indices[1]
+            full_bin.weights[1] = particles[i].w
+            full_bin.velocities[1] = particles[i].v
+            # full_bin.positions[1] = particles[i].x
 
-            i = full_bin.particle_index2
-            full_bin.w2 = particles[i].w
-            full_bin.v2 = particles[i].v
-            # full_bin.x2 = particles[i].x
+            i = full_bin.particle_indices[2]
+            full_bin.weights[2] = particles[i].w
+            full_bin.velocities[2] = particles[i].v
+            # full_bin.positions[2] = particles[i].x
         elseif (loc_np == 1)
             # get the particle indices we saved and just write data based on them
-            i = full_bin.particle_index1
-            full_bin.w1 = particles[i].w
-            full_bin.v1 = particles[i].v
-            # full_bin.x1 = particles[i].x
+            i = full_bin.particle_indices[1]
+            full_bin.weights[1] = particles[i].w
+            full_bin.velocities[1] = particles[i].v
+            # full_bin.positions[1] = particles[i].x
         end
     end
+
+    curr_particle_index = write_back_to_particles!(octree, particles, pia, cell, species)
 
     @inbounds indexer = pia.indexer[cell,species]
-    curr_particle_index = 0
-    @inbounds for bin_id in 1:octree.Nbins
-        loc_np = octree.bins[bin_id].np
-
-        full_bin = octree.full_bins[bin_id]
-        if (loc_np >= 2)
-            i = map_cont_index(indexer, curr_particle_index)
-            curr_particle_index += 1
-            particles[i].w = full_bin.w1
-            particles[i].v = full_bin.v1
-            # particles[i].x = full_bin.x1
-
-            i = map_cont_index(indexer, curr_particle_index)
-            curr_particle_index += 1
-            particles[i].w = full_bin.w2
-            particles[i].v = full_bin.v2
-            # particles[i].x = full_bin.x2
-        elseif (octree.bins[bin_id].np == 1)
-            i = map_cont_index(indexer, curr_particle_index)
-            curr_particle_index += 1
-            particles[i].w = full_bin.w1
-            particles[i].v = full_bin.v1
-            # particles[i].x = full_bin.x1
-        end
-    end
-
     @inbounds old_count = indexer.n_local
     n_particles_to_delete = old_count - curr_particle_index
 
@@ -866,22 +852,22 @@ function compute_new_particles!(rng, octree::OctreeN2Merge{D}, particles::Partic
     end
 end
 
-
 """
-    compute_new_particles!(rng, octree::OctreeN2Merge{D}, particles::ParticleVector{D}, pia, cell, species, grid::Grid1DUniform)
+    compute_new_particles!(rng, octree::OctreeMerge{D,2}, particles::ParticleVector{D}, pia, cell, species, grid::Grid1DUniform)
 
 Compute post-merge particles particles based on octree bin properties; placing out-of-domain particles back into the domain.
+N:2 merging in each bin.
 
 # Positional arguments:
 * `rng`: the random number generator instance
-* `octree`: the `OctreeN2Merge` instance
+* `octree`: the `OctreeMerge` instance
 * `particles`: the `ParticleVector` instance of the particles to be merged
 * `pia`: the `ParticleIndexerArray` instance
 * `cell`: the cell index
 * `species`: the species index
 * `grid`: the `Grid1DUniform` grid
 """
-function compute_new_particles!(rng, octree::OctreeN2Merge{D}, particles::ParticleVector{D}, pia, cell, species, grid::Grid1DUniform) where D
+function compute_new_particles!(rng, octree::OctreeMerge{D,2}, particles::ParticleVector{D}, pia, cell, species, grid::Grid1DUniform) where D
     # given computed Octree, create new particles instead of the old ones
     
     @inbounds for bin_id in 1:octree.Nbins
@@ -889,88 +875,42 @@ function compute_new_particles!(rng, octree::OctreeN2Merge{D}, particles::Partic
         loc_np = bin.np
         full_bin = octree.full_bins[bin_id]
         if (loc_np > 2)
-            full_bin.w1 = 0.5 * bin.w
-            full_bin.w2 = full_bin.w1
+            full_bin.weights[1] = 0.5 * bin.w
+            full_bin.weights[2] = full_bin.weights[1]
 
             full_bin.v_std_sq = sqrt.(full_bin.v_std_sq)
             full_bin.x_std_sq = sqrt.(full_bin.x_std_sq)
             
             octree.direction_vec3 = @SVector rand(rng, direction_signs, 3)
-            full_bin.v1 = full_bin.v_mean + octree.direction_vec3 .* full_bin.v_std_sq
-            full_bin.v2 = full_bin.v_mean - octree.direction_vec3 .* full_bin.v_std_sq
+            full_bin.velocities[1] = full_bin.v_mean + octree.direction_vec3 .* full_bin.v_std_sq
+            full_bin.velocities[2] = full_bin.v_mean - octree.direction_vec3 .* full_bin.v_std_sq
 
             octree.direction_vecD = @SVector rand(rng, direction_signs, D)
-            full_bin.x1 = full_bin.x_mean + octree.direction_vecD .* full_bin.x_std_sq
-            full_bin.x2 = full_bin.x_mean - octree.direction_vecD .* full_bin.x_std_sq
+            full_bin.positions[1] = full_bin.x_mean + octree.direction_vecD .* full_bin.x_std_sq
+            full_bin.positions[2] = full_bin.x_mean - octree.direction_vecD .* full_bin.x_std_sq
         elseif (loc_np == 2)
             # get the particle indices we saved and just write data based on them
-            i = full_bin.particle_index1
-            full_bin.w1 = particles[i].w
-            full_bin.v1 = particles[i].v
-            full_bin.x1 = particles[i].x
+            i = full_bin.particle_indices[1]
+            full_bin.weights[1] = particles[i].w
+            full_bin.velocities[1] = particles[i].v
+            full_bin.positions[1] = particles[i].x
 
-            i = full_bin.particle_index2
-            full_bin.w2 = particles[i].w
-            full_bin.v2 = particles[i].v
-            full_bin.x2 = particles[i].x
+            i = full_bin.particle_indices[2]
+            full_bin.weights[2] = particles[i].w
+            full_bin.velocities[2] = particles[i].v
+            full_bin.positions[2] = particles[i].x
         elseif (loc_np == 1)
             # get the particle indices we saved and just write data based on them
-            i = full_bin.particle_index1
-            full_bin.w1 = particles[i].w
-            full_bin.v1 = particles[i].v
-            full_bin.x1 = particles[i].x
+            i = full_bin.particle_indices[1]
+            full_bin.weights[1] = particles[i].w
+            full_bin.velocities[1] = particles[i].v
+            full_bin.positions[1] = particles[i].x
         end
     end
 
-    curr_particle_index = 0
+    curr_particle_index = write_back_to_particles!(octree, particles, pia, cell, species, grid)
+
     @inbounds indexer = pia.indexer[cell,species]
-    @inbounds for bin_id in 1:octree.Nbins
-        bin = octree.bins[bin_id]
-        full_bin = octree.full_bins[bin_id]
-        loc_np = bin.np
-        if (loc_np > 2)
-            i = map_cont_index(indexer, curr_particle_index)
-            curr_particle_index += 1
-
-            particles[i].w = full_bin.w1
-            particles[i].v = full_bin.v1
-
-            val = full_bin.x1
-            clamped_x = clamp(val[1], grid.min_x, grid.max_x)
-
-            particles[i].x = set_x(val, clamped_x)
-
-            i = map_cont_index(indexer, curr_particle_index)
-            curr_particle_index += 1
-            particles[i].w = full_bin.w2
-            particles[i].v = full_bin.v2
-
-            val = full_bin.x2
-            clamped_x = clamp(val[1], grid.min_x, grid.max_x)
-
-            particles[i].x = set_x(val, clamped_x)
-        elseif (loc_np == 2)
-            # we had 2 pre-merge particles, we don't need to check their positions
-            i = map_cont_index(indexer, curr_particle_index)
-            curr_particle_index += 1
-            particles[i].w = full_bin.w1
-            particles[i].v = full_bin.v1
-            particles[i].x = full_bin.x1
-
-            i = map_cont_index(indexer, curr_particle_index)
-            curr_particle_index += 1
-            particles[i].w = full_bin.w2
-            particles[i].v = full_bin.v2
-            particles[i].x = full_bin.x2
-        elseif (loc_np == 1)
-            i = map_cont_index(indexer, curr_particle_index)
-            curr_particle_index += 1
-            particles[i].w = full_bin.w1
-            particles[i].v = full_bin.v1
-            particles[i].x = full_bin.x1
-        end
-    end
-
     @inbounds old_count = indexer.n_local
     n_particles_to_delete = old_count - curr_particle_index
 
@@ -987,18 +927,322 @@ function compute_new_particles!(rng, octree::OctreeN2Merge{D}, particles::Partic
 end
 
 """
-    init_octree!(octree::OctreeN2Merge{D}, particles::ParticleVector{D}, pia, cell, species)
+    compute_new_particles!(rng, octree::OctreeMerge{D,1}, particles::ParticleVector{D}, pia, cell, species)
+
+Compute post-merge particles with particles based on octree bin properties without checking or setting particle locations
+(for spatially homogeneous merging).
+N:1 merging in each bin.
+It computes properties of all particles. And after the first merge, it scales the particles' velocities based on these properties to achieve conservation.
+
+# Positional arguments:
+* `rng`: the random number generator instance
+* `octree`: the `OctreeMerge` instance
+* `particles`: the `ParticleVector` instance of the particles to be merged
+* `pia`: the `ParticleIndexerArray` instance
+* `cell`: the index of the grid cell in which particles are being merged
+* `species`: the index of the species being merged
+"""
+function compute_new_particles!(rng, octree::OctreeMerge{D,1}, particles::ParticleVector{D}, pia, cell, species) where D
+    # --- 1. Compute statistics before merging ---
+    # bin-level properties cannot be used here: compute_bin_props! skips bins with np <= M,
+    # so full_bins[bin_id].v_mean is stale for single-particle bins when M == 1
+    w_total = 0.0
+    octree.v_mean = SVector{3,Float64}(0.0, 0.0, 0.0)
+
+    @inbounds for bin_id in 1:octree.Nbins
+        bs, be = octree.bin_start[bin_id], octree.bin_end[bin_id]
+        for i in bs:be
+            p_i = particles[octree.particle_indexes_sorted[i]]
+            w_total += p_i.w
+            octree.v_mean = octree.v_mean + p_i.w * p_i.v
+        end
+    end
+
+    octree.v_mean = octree.v_mean / w_total
+
+    octree.v_var_before = SVector{3,Float64}(0.0, 0.0, 0.0)
+
+    @inbounds for bin_id in 1:octree.Nbins
+        bs, be = octree.bin_start[bin_id], octree.bin_end[bin_id]
+        for i in bs:be
+            p_i = particles[octree.particle_indexes_sorted[i]]
+            octree.v_var_before = octree.v_var_before + p_i.w * (p_i.v - octree.v_mean).^2
+        end
+    end
+
+    octree.v_var_before = octree.v_var_before / w_total
+
+    # --- 2. Generate post-merge particle data into full_bins ---
+    @inbounds for bin_id in 1:octree.Nbins
+        loc_np = octree.bins[bin_id].np
+        fb = octree.full_bins[bin_id]
+        if (loc_np > 1)
+            # N:1 merge
+            fb.weights[1] = octree.bins[bin_id].w
+            fb.velocities[1] = fb.v_mean
+        elseif (loc_np == 1)
+            # no merge, just copy over
+            indices = fb.particle_indices
+            fb.weights[1] = particles[indices[1]].w
+            fb.velocities[1] = particles[indices[1]].v
+        end
+    end
+
+    # --- 3. Compute post-merge statistics ---
+    # mean and total weight are conserved by construction
+    octree.v_var_post = SVector{3,Float64}(0.0, 0.0, 0.0)
+
+    @inbounds for bin_id in 1:octree.Nbins
+        if octree.bins[bin_id].np > 0
+            fb = octree.full_bins[bin_id]
+            octree.v_var_post += fb.weights[1] * (fb.velocities[1] - octree.v_mean).^2
+        end
+    end
+
+    octree.v_var_post = octree.v_var_post / w_total
+
+    # --- 4. Compute scaling factors and scale data in full_bins ---
+    scaling_factor_v = variance_scaling(octree.v_var_before, octree.v_var_post)
+
+    @inbounds for bin_id in 1:octree.Nbins
+        if octree.bins[bin_id].np > 0
+            fb = octree.full_bins[bin_id]
+            fb.velocities[1] = (fb.velocities[1] - octree.v_mean) .* scaling_factor_v + octree.v_mean
+        end
+    end
+
+    # --- 5. write back to particles ---
+    curr_particle_index = write_back_to_particles!(octree, particles, pia, cell, species)
+
+    # --- 6. delete extra particles ---
+    @inbounds old_count = pia.indexer[cell, species].n_local
+    n_particles_to_delete = old_count - curr_particle_index
+
+    @inbounds if !(cell == size(pia.indexer)[1]) || (n_particles_to_delete > pia.indexer[cell, species].n_group2)
+        pia.contiguous[species] = false
+    end
+
+    for _ in 1:n_particles_to_delete
+        delete_particle_end!(particles, pia, cell, species)
+    end
+end
+
+"""
+    compute_new_particles!(rng, octree::OctreeMerge{D,1}, particles::ParticleVector{D}, pia, cell, species, grid::Grid1DUniform)
+
+Compute post-merge particles with particles based on octree bin properties, N:1 merging in each bin; placing out-of-domain particles back into the domain..
+It computes properties of all particles. And after the first merge, it scales the particles based on these properties to achieve conservation.
+
+# Positional arguments:
+* `rng`: the random number generator instance
+* `octree`: the `OctreeMerge` instance
+* `particles`: the `ParticleVector` instance of the particles to be merged
+* `pia`: the `ParticleIndexerArray` instance
+* `cell`: the index of the grid cell in which particles are being merged
+* `species`: the index of the species being merged
+"""
+function compute_new_particles!(rng, octree::OctreeMerge{D,1}, particles::ParticleVector{D}, pia, cell, species, grid::Grid1DUniform) where D
+    # --- 1. Compute statistics before merging ---
+    # bin-level properties cannot be used here: compute_bin_props! skips bins with np <= M,
+    # so full_bins[bin_id].v_mean is stale for single-particle bins when M == 1
+    w_total = 0.0
+    octree.v_mean = SVector{3,Float64}(0.0, 0.0, 0.0)
+    octree.x_mean = zero(SVector{D,Float64})
+
+    @inbounds for bin_id in 1:octree.Nbins
+        bs, be = octree.bin_start[bin_id], octree.bin_end[bin_id]
+        for i in bs:be
+            p_i = particles[octree.particle_indexes_sorted[i]]
+            w_total += p_i.w
+            octree.v_mean = octree.v_mean + p_i.w * p_i.v
+            octree.x_mean = octree.x_mean + p_i.w * p_i.x
+        end
+    end
+
+    octree.v_mean = octree.v_mean / w_total
+    octree.x_mean = octree.x_mean / w_total
+
+    octree.v_var_before = SVector{3,Float64}(0.0, 0.0, 0.0)
+    octree.x_var_before = zero(SVector{D,Float64})
+
+    @inbounds for bin_id in 1:octree.Nbins
+        bs, be = octree.bin_start[bin_id], octree.bin_end[bin_id]
+        for i in bs:be
+            p_i = particles[octree.particle_indexes_sorted[i]]
+            octree.v_var_before = octree.v_var_before + p_i.w * (p_i.v - octree.v_mean).^2
+            octree.x_var_before = octree.x_var_before + p_i.w * (p_i.x - octree.x_mean).^2
+        end
+    end
+
+    octree.v_var_before = octree.v_var_before / w_total
+    octree.x_var_before = octree.x_var_before / w_total
+
+    # --- 2. Generate post-merge particle data into full_bins ---
+    @inbounds for bin_id in 1:octree.Nbins
+        loc_np = octree.bins[bin_id].np
+        fb = octree.full_bins[bin_id]
+        if (loc_np > 1)
+            # N:1 merge
+            fb.weights[1] = octree.bins[bin_id].w
+            fb.velocities[1] = fb.v_mean
+            fb.positions[1] = fb.x_mean
+        elseif (loc_np == 1)
+            # no merge, just copy over
+            indices = fb.particle_indices
+            fb.weights[1] = particles[indices[1]].w
+            fb.velocities[1] = particles[indices[1]].v
+            fb.positions[1] = particles[indices[1]].x
+        end
+    end
+
+    # --- 3. Compute post-merge statistics ---
+    # mean and total weight are conserved by construction
+    octree.v_var_post = SVector{3,Float64}(0.0, 0.0, 0.0)
+    octree.x_var_post = zero(SVector{D,Float64})
+
+    @inbounds for bin_id in 1:octree.Nbins
+        if octree.bins[bin_id].np > 0
+            fb = octree.full_bins[bin_id]
+            octree.v_var_post += fb.weights[1] * (fb.velocities[1] - octree.v_mean).^2
+            octree.x_var_post += fb.weights[1] * (fb.positions[1] - octree.x_mean).^2
+        end
+    end
+
+    octree.v_var_post = octree.v_var_post / w_total
+    octree.x_var_post = octree.x_var_post / w_total
+
+    # --- 4. Compute scaling factors and scale data in full_bins ---
+    scaling_factor_v = variance_scaling(octree.v_var_before, octree.v_var_post)
+    scaling_factor_x = variance_scaling(octree.x_var_before, octree.x_var_post)
+
+    @inbounds for bin_id in 1:octree.Nbins
+        if octree.bins[bin_id].np > 0
+            fb = octree.full_bins[bin_id]
+            fb.velocities[1] = (fb.velocities[1] - octree.v_mean) .* scaling_factor_v + octree.v_mean
+            fb.positions[1] = (fb.positions[1] - octree.x_mean) .* scaling_factor_x + octree.x_mean
+        end
+    end
+
+    # --- 5. write back to particles ---
+    curr_particle_index = write_back_to_particles!(octree, particles, pia, cell, species, grid)
+
+    # --- 6. delete extra particles ---
+    @inbounds old_count = pia.indexer[cell, species].n_local
+    n_particles_to_delete = old_count - curr_particle_index
+
+    @inbounds if !(cell == size(pia.indexer)[1]) || (n_particles_to_delete > pia.indexer[cell, species].n_group2)
+        pia.contiguous[species] = false
+    end
+
+    for _ in 1:n_particles_to_delete
+        delete_particle_end!(particles, pia, cell, species)
+    end
+end
+
+"""
+    write_back_to_particles!(octree::OctreeMerge{D,M}, particles::ParticleVector{D}, pia, cell, species) where {D,M}
+
+Write back merged particles to the particle array (0D case - position of particles not set).
+It will only be used in the function compute_new_particles! without a grid argument, which means no boundary handling is needed.
+
+# Positional arguments:
+* `particles`: the `ParticleVector` instance containing the particles to be merged
+* `pia`: the `ParticleIndexerArray` instance
+* `cell`: the index of the grid cell in which particles are being merged
+* `species`: the index of the species being merged
+* `octree`: the `OctreeMerge` instance
+
+# Returns
+The current particle index after writing.
+"""
+function write_back_to_particles!(octree::OctreeMerge{D,M}, particles::ParticleVector{D}, pia, cell, species) where {D,M}
+    curr_particle_index = 0
+    @inbounds indexer = pia.indexer[cell,species]
+    @inbounds for bin_id in 1:octree.Nbins
+        loc_np = octree.bins[bin_id].np
+        full_bin = octree.full_bins[bin_id]
+        if (loc_np >= M)
+            @inbounds for j in 1:M
+                i = map_cont_index(indexer, curr_particle_index)
+                curr_particle_index += 1
+                particles[i].w = full_bin.weights[j]
+                particles[i].v = full_bin.velocities[j]
+            end
+        elseif (loc_np > 0)
+            @inbounds for j in 1:loc_np
+                i = map_cont_index(indexer, curr_particle_index)
+                curr_particle_index += 1
+                particles[i].w = full_bin.weights[j]
+                particles[i].v = full_bin.velocities[j]
+            end
+        end
+    end
+    return curr_particle_index
+end
+
+
+"""
+    write_back_to_particles!(octree::OctreeMerge{D,M}, particles::ParticleVector{D}, pia, cell, species, grid::Grid1DUniform) where N
+
+Write back merged particles to the particle array with boundary clamping (1D case).
+Particles positioned outside the grid boundaries (`grid.min_x`, `grid.max_x`) are clamped to the boundary.
+It will only be used in the function compute_new_particles! with grid::Grid1DUniform argument.
+
+# Positional arguments:
+* `particles`: the `ParticleVector` instance containing the particles to be merged
+* `pia`: the `ParticleIndexerArray` instance
+* `cell`: the index of the grid cell in which particles are being merged
+* `species`: the index of the species being merged
+* `octree`: the `OctreeMerge` instance
+* `grid`: the `Grid1DUniform` instance
+
+# Returns
+The current particle index after writing.
+"""
+function write_back_to_particles!(octree::OctreeMerge{D,M}, particles::ParticleVector{D}, pia, cell, species, grid::Grid1DUniform) where {D,M}
+    curr_particle_index = 0
+    @inbounds indexer = pia.indexer[cell,species]
+    @inbounds for bin_id in 1:octree.Nbins
+        loc_np = octree.bins[bin_id].np
+        full_bin = octree.full_bins[bin_id]
+        if (loc_np >= M) 
+            @inbounds for j in 1:M
+                i = map_cont_index(indexer, curr_particle_index)
+                curr_particle_index += 1
+                particles[i].w = full_bin.weights[j]
+                particles[i].v = full_bin.velocities[j]
+                val = full_bin.positions[j]
+                clamped_x = clamp(val[1], grid.min_x, grid.max_x)
+
+                particles[i].x = set_x(val, clamped_x)
+            end
+        elseif (loc_np > 0)
+            @inbounds for j in 1:loc_np
+                i = map_cont_index(indexer, curr_particle_index)
+                curr_particle_index += 1
+                particles[i].w = full_bin.weights[j]
+                particles[i].v = full_bin.velocities[j]
+                particles[i].x = full_bin.positions[j]
+            end
+        end
+    end
+    return curr_particle_index
+end
+
+
+"""
+    init_octree!(octree::OctreeMerge{D,M}, particles::ParticleVector{D}, pia, cell, species)
 
 Initialize the top bin in an octree by copying particle indices and setting bin bounds.
 
 # Positional arguments
-* `octree`: the `OctreeN2Merge` instance
+* `octree`: the `OctreeMerge` instance
 * `particles`: the `ParticleVector` instance containing the particles to be merged
 * `pia`: the `ParticleIndexerArray` instance
 * `cell`: the index of the grid cell in which particles are being merged
 * `species`: the index of the species being merged
 """
-function init_octree!(octree::OctreeN2Merge{D}, particles::ParticleVector{D}, pia, cell, species) where D
+function init_octree!(octree::OctreeMerge{D,M}, particles::ParticleVector{D}, pia, cell, species) where {D,M}
     octree.Nbins = 1
     @inbounds octree.particle_indexes_sorted[1:pia.indexer[cell,species].n_group1] = pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
 
@@ -1015,7 +1259,7 @@ function init_octree!(octree::OctreeN2Merge{D}, particles::ParticleVector{D}, pi
     @inbounds octree.bins[1].w = 1e50  # just do a large estimate, we will be splitting this bin anyway
 
     octree.total_post_merge_np = get_bin_post_merge_np(octree, 1)
-    @inbounds if (octree.bins[1].np > 2) && (octree.max_depth > 0)
+    @inbounds if (octree.bins[1].np > M) && (octree.max_depth > 0)
         @inbounds octree.bins[1].can_be_refined = true
     else
         @inbounds octree.bins[1].can_be_refined = false
@@ -1039,17 +1283,17 @@ end
 
 
 """
-    compute_octree!(octree::OctreeN2Merge{D}, particles::ParticleVector{D}, target_np)
+    compute_octree!(octree::OctreeMerge{D,M}, particles::ParticleVector{D}, target_np)
 
 Perform refinement of an octree for N:2 merging until target number of particles reached or nothing left to refine.
 
 # Positional arguments
-* `octree`: the `OctreeN2Merge` instance
+* `octree`: the `OctreeMerge` instance
 * `particles`: the `ParticleVector` instance containing the particles to be merged
 * `target_np`: the target post-merge number of particles; the post-merge number of particles will not exceed this value
     but may be not exactly equal to it 
 """
-function compute_octree!(octree::OctreeN2Merge{D}, particles::ParticleVector{D}, target_np) where D
+function compute_octree!(octree::OctreeMerge{D,M}, particles::ParticleVector{D}, target_np) where {D,M}
     while true
         refine_id = -1
         max_w = -1.0
@@ -1065,10 +1309,10 @@ function compute_octree!(octree::OctreeN2Merge{D}, particles::ParticleVector{D},
         if refine_id == -1
             # found no bin to refine, i.e. ran out of particles
             break
-        elseif (octree.total_post_merge_np + 14 > target_np)
-            # refining a bin can produce up to 16 particles, so we don't do it if threshold exceeded
-            # but if we have a bin it has potentially 2 particles already, so refinement increases count
-            # only by 14
+        elseif (octree.total_post_merge_np + 7*M > target_np)
+            # refining a bin can produce up to 8*M particles, so we don't do it if threshold exceeded
+            # but if we have a bin it has potentially M particles already, so refinement increases count
+            # only by 7*M
             break
         else
             split_bin!(octree, refine_id, particles)
@@ -1094,13 +1338,13 @@ function compute_octree!(octree::OctreeN2Merge{D}, particles::ParticleVector{D},
 end
 
 """
-    merge_octree_N2_based!(rng, octree::OctreeN2Merge{D}, particles::ParticleVector{D}, pia, cell, species, target_np)
+    merge_octree!(rng, octree::OctreeMerge{D,M}, particles::ParticleVector{D}, pia, cell, species, target_np)
 
-Perform octree N:2 merging without checking whether particle positions end up outside of the simulation domain.
+Perform octree N:M merging without checking whether particle positions end up outside of the simulation domain.
 
 # Positional arguments
 * `rng`: the random number generator instance
-* `octree`: the `OctreeN2Merge` instance
+* `octree`: the `OctreeMerge` instance
 * `particles`: the `ParticleVector` instance containing the particles to be merged
 * `pia`: the `ParticleIndexerArray` instance
 * `cell`: the index of the grid cell in which particles are being merged
@@ -1112,7 +1356,7 @@ Perform octree N:2 merging without checking whether particle positions end up ou
 * R.S. Martin, J.-L. Cambier, Octree particle management for DSMC and PIC simulations.
     [J. Comput. Phys., 2016](https://doi.org/10.1016/j.jcp.2016.01.020).
 """
-function merge_octree_N2_based!(rng, octree::OctreeN2Merge{D}, particles::ParticleVector{D}, pia, cell, species, target_np) where D
+function merge_octree!(rng, octree::OctreeMerge{D,M}, particles::ParticleVector{D}, pia, cell, species, target_np) where {D,M}
     clear_octree!(octree)
     @inbounds resize_octree_buffers!(octree, pia.indexer[cell,species].n_local)
     init_octree!(octree, particles, pia, cell, species)
@@ -1121,14 +1365,14 @@ function merge_octree_N2_based!(rng, octree::OctreeN2Merge{D}, particles::Partic
 end
 
 """
-    merge_octree_N2_based!(rng, octree::OctreeN2Merge{D}, particles::ParticleVector{D}, pia, cell, species, target_np, grid::Grid1DUniform)
+    merge_octree!(rng, octree::OctreeMerge{D,M}, particles::ParticleVector{D}, pia, cell, species, target_np, grid::Grid1DUniform)
 
-Perform octree N:2 merging, checking whether particle positions end up outside of the simulation domain, and placing them back into the domain
+Perform octree N:M merging, checking whether particle positions end up outside of the simulation domain, and placing them back into the domain
 if needed.
 
 # Positional arguments
 * `rng`: the random number generator instance
-* `octree`: the `OctreeN2Merge` instance
+* `octree`: the `OctreeMerge` instance
 * `particles`: the `ParticleVector` instance containing the particles to be merged
 * `pia`: the `ParticleIndexerArray` instance
 * `cell`: the index of the grid cell in which particles are being merged
@@ -1140,7 +1384,7 @@ if needed.
 * R.S. Martin, J.-L. Cambier, Octree particle management for DSMC and PIC simulations.
     [J. Comput. Phys., 2016](https://doi.org/10.1016/j.jcp.2016.01.020).
 """
-function merge_octree_N2_based!(rng, octree::OctreeN2Merge{D}, particles::ParticleVector{D}, pia, cell, species, target_np, grid::Grid1DUniform) where D
+function merge_octree!(rng, octree::OctreeMerge{D,M}, particles::ParticleVector{D}, pia, cell, species, target_np, grid::Grid1DUniform) where {D,M}
     clear_octree!(octree)
     @inbounds resize_octree_buffers!(octree, pia.indexer[cell,species].n_local)
     init_octree!(octree, particles, pia, cell, species)

@@ -11,6 +11,11 @@ include("test_octree_merging_2Dparticles.jl")  # then we test computation of pro
 include("test_octree_merging_1Dparticles.jl")  # then we test computation of props and octree merging, Particle{1}
 include("test_octree_merging_0Dparticles.jl")  # then we test computation of props and octree merging, Particle{0}
 include("test_octree_merging_buffer_sorting.jl")  # then we test that particles are freed correctly in octree merging
+include("test_octree_N1_merging.jl")  # then we test computation of props and octree merging, N:1 bin merging
+include("test_octree_N1_merging_2Dparticles.jl")  # then we test computation of props and octree merging, Particle{2}, N:1 bin merging
+include("test_octree_N1_merging_1Dparticles.jl")  # then we test computation of props and octree merging, Particle{1}, N:1 bin merging
+include("test_octree_N1_merging_0Dparticles.jl")  # then we test computation of props and octree merging, Particle{0}, N:1 bin merging
+include("test_octree_N1_merging_buffer_sorting.jl")  # then we test that particles are freed correctly in octree merging, N:1 bin merging
 include("test_nnls_utils.jl")  # test NNLS-based merging utils first
 include("test_nnls_merging.jl")  # test NNLS-based merging
 include("test_nnls_merging_2Dparticles.jl")  # test NNLS for Particle{2}
@@ -26,6 +31,9 @@ include("test_merging_grid_merging_1D_1Dparticles.jl")  # test grid-based mergin
 include("test_octree_merging_1D.jl")  # test octree merging in 1-D
 include("test_octree_merging_1D_2Dparticles.jl")  # test octree merging in 1-D, 2-D particles
 include("test_octree_merging_1D_1Dparticles.jl")  # test octree merging in 1-D, 1-D particles
+include("test_octree_N1_merging_1D.jl")  # test octree N:1 merging in 1-D
+include("test_octree_N1_merging_1D_2Dparticles.jl")  # test octree N:1 merging in 1-D, 2-D particles
+include("test_octree_N1_merging_1D_1Dparticles.jl")  # test octree N:1 merging in 1-D, 1-D particles
 
 # tests assume that VHS data for Ar, He is
 # ["Ar,Ar"]

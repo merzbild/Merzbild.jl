@@ -48,7 +48,7 @@ function run(seed::Int64, threshold::Int64, ntarget::Int64)
     nv = 32
     np_base = 40^3  # some initial guess on # of particle in simulation
 
-    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
     T0::Float64 = 273.0
     sigma_ref = π * (interaction_data[1,1].vhs_d^2)
@@ -84,7 +84,7 @@ function run(seed::Int64, threshold::Int64, ntarget::Int64)
     write_netcdf(ds_moments, mvals_list, 0)
 
     if phys_props.np[1,1] > threshold
-        merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, ntarget)
+        merge_octree!(rng, oc, particles[1], pia, 1, 1, ntarget)
     end
 
     collision_factors::CollisionFactors = CollisionFactors()
@@ -99,7 +99,7 @@ function run(seed::Int64, threshold::Int64, ntarget::Int64)
         ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
 
         if pia.indexer[1,1].n_local > threshold
-            merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, ntarget)
+            merge_octree!(rng, oc, particles[1], pia, 1, 1, ntarget)
         end
         squash_pia!(particles, pia)
         

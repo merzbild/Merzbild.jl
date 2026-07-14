@@ -1,4 +1,4 @@
-@testset "octree_merging_buffer_sorting" begin
+@testset "conservative N:1 octree_merging_buffer_sorting" begin
     # test that buffers and indices work correctly in octree merging
     # and that sorting restores proper indexing in pia
     function create_particles_and_pia(n_gr1)
@@ -64,20 +64,20 @@
 
     @test pia.contiguous[1] == true
 
-    octree = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel)
+    octree = OctreeMerge{3,1}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel)
     merge_octree!(rng, octree, particles[1], pia, 1, 1, 6)
 
     compute_props!(particles, pia, species_data, phys_props)
 
     @test pia.contiguous[1] == false
 
-    @test phys_props.np[1, 1] == 2
+    @test phys_props.np[1, 1] == 1
     @test phys_props.np[2, 1] == 10
 
     @test phys_props.n[1, 1] == 90 * 1.0
     @test phys_props.n[2, 1] == 10 * 1000.0
 
-    @test particles[1].nbuffer == 88
+    @test particles[1].nbuffer == 89
 
     # now we test what happend to the buffer
     buffer_part1 = true
@@ -89,17 +89,17 @@
     @test buffer_part1 == true
 
     buffer_part2 = true
-    for i in 41:88
+    for i in 41:89
         if particles[1].buffer[i] != 50-i+41
             buffer_part1 = false
         end
     end
     @test buffer_part2 == true
 
-    @test pia.indexer[1,1].n_local == 2
-    @test pia.indexer[1,1].n_group1 == 2
+    @test pia.indexer[1,1].n_local == 1
+    @test pia.indexer[1,1].n_group1 == 1
     @test pia.indexer[1,1].start1 == 1
-    @test pia.indexer[1,1].end1 == 2
+    @test pia.indexer[1,1].end1 == 1
     @test pia.indexer[1,1].n_group2 <= 0
     @test pia.indexer[1,1].start2 <= 0
 
@@ -123,23 +123,23 @@
 
     @test pia.contiguous[1] == true
 
-    @test phys_props.np[1, 1] == 2
+    @test phys_props.np[1, 1] == 1
     @test phys_props.np[2, 1] == 10
 
     @test phys_props.n[1, 1] == 90 * 1.0
     @test phys_props.n[2, 1] == 10 * 1000.0
 
-    @test pia.indexer[1,1].n_local == 2
-    @test pia.indexer[1,1].n_group1 == 2
+    @test pia.indexer[1,1].n_local == 1
+    @test pia.indexer[1,1].n_group1 == 1
     @test pia.indexer[1,1].start1 == 1
-    @test pia.indexer[1,1].end1 == 2
+    @test pia.indexer[1,1].end1 == 1
     @test pia.indexer[1,1].n_group2 == 0
     @test pia.indexer[1,1].start2 == 0
 
     @test pia.indexer[2,1].n_local == 10
     @test pia.indexer[2,1].n_group1 == 10
-    @test pia.indexer[2,1].start1 == 3
-    @test pia.indexer[2,1].end1 == 12
+    @test pia.indexer[2,1].start1 == 2
+    @test pia.indexer[2,1].end1 == 11
     @test pia.indexer[2,1].n_group2 == 0
     @test pia.indexer[2,1].start2 == 0
 
@@ -159,7 +159,7 @@
 
     @test pia.contiguous[1] == true
 
-    octree = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel)
+    octree = OctreeMerge{3,1}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel)
 
     # 16 is the target particle number but we will get 12 post-merge particles
     merge_octree!(rng, octree, particles[1], pia, 1, 1, 16)
@@ -168,13 +168,13 @@
 
     @test pia.contiguous[1] == false
 
-    @test phys_props.np[1, 1] == 12
+    @test phys_props.np[1, 1] == 10
     @test phys_props.np[2, 1] == 10
 
     @test phys_props.n[1, 1] == 90 * 1.0
     @test phys_props.n[2, 1] == 10 * 1000.0
 
-    @test particles[1].nbuffer == 78
+    @test particles[1].nbuffer == 80
 
     # now we test what happend to the buffer
     buffer_part1 = true
@@ -185,13 +185,13 @@
     end
     @test buffer_part1 == true
 
-    @test pia.indexer[1,1].n_local == 12
+    @test pia.indexer[1,1].n_local == 10
     @test pia.indexer[1,1].n_group1 == 5
     @test pia.indexer[1,1].start1 == 1
     @test pia.indexer[1,1].end1 == 5
-    @test pia.indexer[1,1].n_group2 == 7
+    @test pia.indexer[1,1].n_group2 == 5
     @test pia.indexer[1,1].start2 == 16
-    @test pia.indexer[1,1].end2 == 22
+    @test pia.indexer[1,1].end2 == 20
 
     @test pia.indexer[2,1].n_local == 10
     @test pia.indexer[2,1].n_group1 == 10

@@ -54,8 +54,8 @@
     np_base_heavy = nv_heavy^3  # some initial guess on # of particles in simulation
     np_base_electrons = nv_electrons^3  # some initial guess on # of particles in simulation
 
-    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
-    oc_electrons = OctreeN2Merge(merging_bin_split; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc_electrons = OctreeMerge(merging_bin_split; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
     mg_ions = GridN2Merge(Nmerging_ions, Nmerging_ions, Nmerging_ions, 3.5)
 
    
@@ -82,7 +82,7 @@
     collision_data = CollisionData()
 
     if pia.n_total[1] > threshold_neutrals
-        merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
+        merge_octree!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
     end
 
     if pia.n_total[2] > threshold_ion
@@ -90,7 +90,7 @@
     end
 
     if pia.n_total[3] > threshold_electrons
-        merge_octree_N2_based!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
+        merge_octree!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
     end
 
     # neutral-neutral
@@ -127,7 +127,7 @@
 
 
         if pia.n_total[1] > threshold_neutrals
-            merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
+            merge_octree!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
         end
 
         if pia.n_total[2] > threshold_ion
@@ -135,7 +135,7 @@
         end
 
         if pia.n_total[3] > threshold_electrons
-            merge_octree_N2_based!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
+            merge_octree!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
         end
 
         accelerate_constant_field_x!(particles[index_electron],
@@ -154,7 +154,7 @@
         @test bytes == 0
 
         if pia.n_total[1] > threshold_neutrals
-            merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
+            merge_octree!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
         end
 
         if pia.n_total[2] > threshold_ion
@@ -162,7 +162,7 @@
         end
 
         if pia.n_total[3] > threshold_electrons
-            merge_octree_N2_based!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
+            merge_octree!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
         end
 
         bytes = @allocated accelerate_constant_field_x!(particles[index_electron],

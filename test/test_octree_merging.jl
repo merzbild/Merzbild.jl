@@ -71,9 +71,9 @@
     pia = ParticleIndexerArray(24)
 
     # symmetric octree with split at v0 = (0.0, 0.0, 0.0)
-    octree = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
+    octree = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
 
-    @test typeof(octree) == OctreeN2Merge{3}
+    @test typeof(octree) == OctreeMerge{3,2}
 
     Merzbild.init_octree!(octree, particles24[1], pia, 1, 1)
     
@@ -128,8 +128,8 @@
     v0_computed = phys_props.v[:,1,1]
     @test n0_computed == total_w
 
-    octree2 = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
-    merge_octree_N2_based!(rng, octree2, particles24[1], pia, 1, 1, 16)
+    octree2 = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
+    merge_octree!(rng, octree2, particles24[1], pia, 1, 1, 16)
 
     @test octree2.Nbins == 8
     @test pia.n_total[1] == 16
@@ -146,7 +146,7 @@
     @test abs(v0_computed[2] - phys_props.v[2,1,1]) < 1e-14
     @test abs(v0_computed[3] - phys_props.v[3,1,1]) < 1e-14
 
-    merge_octree_N2_based!(rng,octree2, particles24[1], pia, 1, 1, 2)
+    merge_octree!(rng,octree2, particles24[1], pia, 1, 1, 2)
 
     @test octree2.Nbins == 1
     @test pia.n_total[1] == 2
@@ -174,7 +174,7 @@
     T0_computed = phys_props.T[1,1]
     v0_computed = phys_props.v[:,1,1]
 
-    merge_octree_N2_based!(rng, octree2, particles24[1], pia, 1, 1, 16)
+    merge_octree!(rng, octree2, particles24[1], pia, 1, 1, 16)
     compute_props!(particles24, pia, species_data, phys_props)
     @test pia.n_total[1] == 2 * sum(weights_arr .> 0.0) # we should skip bins with weight 0.0
     @test pia.n_total[1] == phys_props.np[1,1]
@@ -243,7 +243,7 @@
     T0_computed = phys_props.T[1,1]
     v0_computed = phys_props.v[:,1,1]
 
-    merge_octree_N2_based!(rng, octree2, particles24[1], pia, 1, 1, 16)
+    merge_octree!(rng, octree2, particles24[1], pia, 1, 1, 16)
     compute_props!(particles24, pia, species_data, phys_props)
     @test pia.n_total[1] == 2 * sum(weights_arr .> 0.0) # we should skip bins with weight 0.0
     @test pia.n_total[1] == phys_props.np[1,1]
@@ -286,7 +286,7 @@
     pia.indexer[1,1].end2 = -1
 
     # even the top-level bin cannot be refined
-    merge_octree_N2_based!(rng, octree2, particles2[1], pia, 1, 1, 16)
+    merge_octree!(rng, octree2, particles2[1], pia, 1, 1, 16)
     @test octree2.bins[1].np == 2
     @test octree2.n_particles == 2
     @test octree2.bins[1].can_be_refined == false
@@ -296,8 +296,8 @@
     pia = ParticleIndexerArray(24)
 
     # symmetric octree with split at v0 = (0.0, 0.0, 0.0)
-    octree = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC, bin_bounds_compute=OctreeBinBoundsInherit)
-    merge_octree_N2_based!(rng, octree, particles24[1], pia, 1, 1, 16)
+    octree = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC, bin_bounds_compute=OctreeBinBoundsInherit)
+    merge_octree!(rng, octree, particles24[1], pia, 1, 1, 16)
     compute_props!(particles24, pia, species_data, phys_props)
 
     n0_computed = phys_props.n[1,1]

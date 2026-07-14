@@ -46,7 +46,7 @@
     threshold = 10000
     Ntarget = 8000
 
-    oc = OctreeN2Merge{0}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = OctreeMerge{0,2}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
     T0::Float64 = 273.0
     sigma_ref = π * (interaction_data[1,1].vhs_d^2)
@@ -100,7 +100,7 @@
         ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
 
         if pia.n_total[1] > threshold
-            merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
+            merge_octree!(rng, oc, particles[1], pia, 1, 1, Ntarget)
         end
         
         compute_props!(particles, pia, species_data, phys_props)

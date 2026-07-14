@@ -53,7 +53,7 @@ then everything product-related.
 3. Electron-neutral ionizing collision routine with even splitting: `ntc_n_e_es!(rng, collision_factors, collision_data, interaction n_e_interactions, n_e_cs, particles_n, particles_e, particles_ion, pia, cell, species_n, species_e, species_ion, Δt, V)`
 
 4. Getting electron-neutral cross-section data: `get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index)`
-5. Octree-based N:2 merging: `merge_octree_N2_based!(octree, particles, pia, cell, species, target_np)`
+5. Octree-based N:2 merging: `merge_octree!(octree, particles, pia, cell, species, target_np)`
 
 6. Computation of physical properties: `compute_props!(particles, pia, species_data, phys_props)`
 

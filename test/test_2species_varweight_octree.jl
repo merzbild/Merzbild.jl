@@ -10,7 +10,7 @@
     interaction_data::Array{Interaction, 2} = load_interaction_data(interaction_data_path, species_data)
     n_species = length(species_data)
 
-    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
     n_t = 800
 
@@ -69,11 +69,11 @@
         end
 
         if pia.indexer[1,1].n_local > threshold_Ar
-            merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, n_particles_Ar)
+            merge_octree!(rng, oc, particles[1], pia, 1, 1, n_particles_Ar)
         end
 
         if pia.indexer[1,2].n_local > threshold_He
-            merge_octree_N2_based!(rng, oc, particles[2], pia, 1, 2, n_particles_He)
+            merge_octree!(rng, oc, particles[2], pia, 1, 2, n_particles_He)
         end
 
         for s1 in [1,2]

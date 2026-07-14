@@ -1,6 +1,7 @@
 module Merzbild
 
 using MuladdMacro
+using StaticArrays
 
 include("abstract_types.jl")
 include("constants.jl")
@@ -58,10 +59,10 @@ export estimate_sigma_g_w_max, estimate_sigma_g_w_max!, estimate_sigma_g_max!
 export ntc!, fp_linear!, swpm!, ntc_equal_weight!
 export k_B
 export GridN2Merge, merge_grid_based!
-export OctreeN2Merge, OctreeBinMidSplit, OctreeBinMeanSplit, OctreeBinMedianSplit
+export OctreeMerge, OctreeBinMidSplit, OctreeBinMeanSplit, OctreeBinMedianSplit
 export OctreeInitBinMinMaxVel, OctreeInitBinMinMaxVelSym, OctreeInitBinC
 export OctreeBinBoundsInherit, OctreeBinBoundsRecompute
-export merge_octree_N2_based!
+export merge_octree!
 export merge_roulette!
 export NNLSMerge, compute_multi_index_moments, merge_nnls_based!
 export merge_nnls_based_rate_preserving!

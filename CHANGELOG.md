@@ -19,6 +19,7 @@ specified. `ParticleVector` now also has a `D` type parameter.
 * `MaxwellWalls1D` removed
 * Boundary conditions now need to be passed to `convect_particles!` or `convect_particles_and_compute_cell!` as a `Tuple` of boundary conditions, one for each surface.
 * Order of parameters passed to `fp_linear!` and `mean_collision_frequency` changed to be consistent with guidelines in `CONTRIBUTING.md`.
+* `merge_octree_N2_based!` renamed to `merge_octree!`
 
 ### New functionality
 * `squash_pia!` can be called less frequently, i.e. only before particle convection, as better tracking of last index
@@ -29,6 +30,7 @@ in particle arrays has been implemented. See documentaton on contiguous indexing
 * More specialized boundary conditions added for 1D simulations: `FullyDiffuseBC1D`, `MaxwellWallBC1D`, `SpecularWallBC1D`
 * The `ParticleIndexerArray` type now directly stores number of cells and species it is tracking (`.n_cells`, `.n_species`)
 * `MERZBILD_DATA_PATH` now exported for easier loading of particle and interaction data bundled with Merzbild.jl
+* Octree-based merging now supports N:M merging in each bin (currently, only conservative N:1 and N:2 merging implemented)
 
 ### Misc
 * Added tests that check that for unexpected memory allocations

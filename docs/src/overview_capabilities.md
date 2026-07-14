@@ -20,21 +20,21 @@ Event splitting ([Oblapenko et al. (2022)](https://doi.org/10.1016/j.jcp.2022.11
 
 ## Fokker-Planck collisions
 As an alternative to DSMC, one can use the stochastic Fokker-Planck algorithm to simulate the particle collisions.
-Currently, the linear Fokker-Planck model of [Gorji, Torrilhon, and Jenny (2011)](https://doi.org/10.1017/jfm.2011.188) is implemented for fixed-weight particles (currently single-species only)..
+Currently, the linear Fokker-Planck model of [Gorji, Torrilhon, and Jenny (2011)](https://doi.org/10.1017/jfm.2011.188) is implemented (currently single-species only).
 
 |                        | **Linear**                                        | **Cubic** |
 |:----------------------:|:-----------------------------------------:|:----:|
 | Fixed-weight Fokker-Planck      | ✅                                        | ❌ |
-| Variable-weight Fokker-Planck   | ❌ | ❌ |
+| Variable-weight Fokker-Planck   | ✅ | ❌ |
 
 ## Particle merging algorithms
 The following particle merging algorithms are available for variable-weight DSMC
 simulations:
 
-  1. A grid-based merging algorithm as described in [Oblapenko et al. (2020)](https://doi.org/10.1016/j.jcp.2020.109302) (see also [Vranic et al. (2015)](https://doi.org/10.1016/j.cpc.2015.01.020))
-  2. The octree merging algorithm of [Martin and Cambier (2016)](https://doi.org/10.1016/j.jcp.2016.01.020)
+  1. A grid-based merging algorithm as described in [Oblapenko et al. (2020)](https://doi.org/10.1016/j.jcp.2020.109302) (see also [Vranic et al. (2015)](https://doi.org/10.1016/j.cpc.2015.01.020)), supporting `N:2`
+  2. The octree merging algorithm of [Martin and Cambier (2016)](https://doi.org/10.1016/j.jcp.2016.01.020), supporting `N:2` and conservative `N:1` merging
   3. A Non-Negative Least Squares (NNLS)-based merging approach described in [Oblapenko and Torrilhon (2026)](https://doi.org/10.48550/arXiv.2604.00668)
-  4. The roulette merge of [Watrous, Seidel et al (2023)](https://www.osti.gov/servlets/purl/2431184)
+  4. The roulette merge of [Watrous, Seidel et al (2023)](https://www.osti.gov/servlets/purl/2431184), supporting a conservative re-scaling of post-merge particles
 
 ## Cross-sections
 The Variable-Hard Sphere (VHS) model is implemented for collisions of neutral particles.

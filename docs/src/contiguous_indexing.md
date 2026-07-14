@@ -93,7 +93,7 @@ for cell in 1:grid.n_cells
 
     if pia.indexer[cell,1].n_local > merge_threshold
         # we need to merge
-        merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+        merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
         # restore continuity of pia
         squash_pia!(particles, pia)
     end

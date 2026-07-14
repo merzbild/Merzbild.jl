@@ -1,4 +1,4 @@
-@testset "malloc: bkw variable weight + octree N:2 merging with particles with dim(x)=0,1,2,3" begin
+@testset "malloc: bkw variable weight + octree N:1 merging with particles with dim(x)=0,1,2,3" begin
 
 
     # Important!
@@ -40,7 +40,7 @@
     Ntarget = 5000
 
     @testset "0D particles, 0D merging" begin
-        oc = OctreeMerge{0,2}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+        oc = OctreeMerge{0,1}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
         T0::Float64 = 273.0
         moments_list = [4, 6, 8, 10]
@@ -120,7 +120,7 @@
 
     @testset "1D particles, 1D merging" begin
         # 1d particle x vector
-        oc1 = OctreeMerge{1,2}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+        oc1 = OctreeMerge{1,1}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
         particles3 = [ParticleVector{1}(np_base)]
 
         T0 = 273.0
@@ -197,7 +197,7 @@
 
     @testset "2D particles, 2D merging" begin
         # 2d particle x vector
-        oc2 = OctreeMerge{2,2}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+        oc2 = OctreeMerge{2,1}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
         particles3 = [ParticleVector{2}(np_base)]
 
         T0 = 273.0
@@ -274,7 +274,7 @@
 
     @testset "3D particles, 3D merging" begin
         # 3d particle x vector
-        oc3 = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+        oc3 = OctreeMerge{3,1}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
         threshold = 6000
         Ntarget = 5000
         particles3 = [ParticleVector{3}(np_base)]

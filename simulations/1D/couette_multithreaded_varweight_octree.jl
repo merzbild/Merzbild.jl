@@ -83,12 +83,12 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
                                    species_data, surf_props_avg)
 
     # create merging structs
-    oc_chunks = [OctreeN2Merge{1}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000) for cell_chunks in cell_chunks]
+    oc_chunks = [OctreeMerge{1,2}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000) for cell_chunks in cell_chunks]
 
     # merge and compute data at t=0
     @threads for chunk_id in 1:n_chunks
         for cell in cell_chunks[chunk_id]
-            merge_octree_N2_based!(rng_chunks[chunk_id], oc_chunks[chunk_id], particles_chunks[chunk_id][1], pia_chunks[chunk_id], cell, 1, merge_target, grid)
+            merge_octree!(rng_chunks[chunk_id], oc_chunks[chunk_id], particles_chunks[chunk_id][1], pia_chunks[chunk_id], cell, 1, merge_target, grid)
         end
         squash_pia!(particles_chunks[chunk_id], pia_chunks[chunk_id])
         compute_props_sorted!(particles_chunks[chunk_id], pia_chunks[chunk_id], species_data, phys_props, cell_chunks[chunk_id])
@@ -134,7 +134,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
                                pia_local, cell, 1, Δt, grid.cells[cell].V)
 
                 if pia_local.indexer[cell,1].n_local > merge_threshold
-                    @timeit local_timer "merge (t)" merge_octree_N2_based!(rng_local, oc_chunks[chunk_id], particles_local[1], pia_local, cell, 1, merge_target, grid)
+                    @timeit local_timer "merge (t)" merge_octree!(rng_local, oc_chunks[chunk_id], particles_local[1], pia_local, cell, 1, merge_target, grid)
                 end
             end
 

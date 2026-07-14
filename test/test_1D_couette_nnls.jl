@@ -64,7 +64,7 @@
     # init collision factors
     collision_factors = create_collision_factors_array(pia, interaction_data, species_data, T_wall, Fnum)
 
-    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
 
     mim = []
@@ -91,9 +91,9 @@
 
             if nnls_success_flag == -1
                 fails += 1
-                merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+                merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
             end
-            # merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+            # merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
         end
     end
     squash_pia!(particles, pia)
@@ -114,7 +114,7 @@
                 nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1; w_threshold=1e-12)
     
                 if nnls_success_flag == -1
-                    merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+                    merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
                 end
                 squash_pia!(particles, pia)
             end

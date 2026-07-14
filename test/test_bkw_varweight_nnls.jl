@@ -61,7 +61,7 @@
     end
 
     mnnls = NNLSMerge(mim, threshold)
-    ocm = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    ocm = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
     T0::Float64 = 273.0
     sigma_ref = π * (interaction_data[1,1].vhs_d^2)
@@ -125,7 +125,7 @@
             total_merges += 1
             if nnls_success_flag == -1
                 failed_merges += 1
-                merge_octree_N2_based!(rng, ocm, particles[1], pia, 1, 1, ntarget_octree)
+                merge_octree!(rng, ocm, particles[1], pia, 1, 1, ntarget_octree)
             end
         end
         

@@ -85,15 +85,17 @@ In order to merge variable-weight particles, one needs to set up a merging algor
 data structures and parameters. A more detailed overview of merging algorithms will appear later in a Tutorials
 section; here, the Octree merging approach of [Martin and Cambier (2016)](https://doi.org/10.1016/j.jcp.2016.01.020)
 is used. The algorithm groups particles into bins in velocity space, recursively refining the bins until
-the number of post-merge particles reaches the prescribed value. It then performs an ``N:2`` merge in each bin,
-replacing all particles in a bin with 2 particles.
+the number of post-merge particles reaches the prescribed value. It then performs an ``N:M`` merge in each bin,
+replacing all particles in a bin with M particles (currently, `M=1` and `M=2` are supported, `N:1` merging is made conservative via re-scaling
+of post-merge particles' properties).
 
-To set up this merging algorithm, one needs to create a `OctreeN2Merge{D}` instance, specifying
+To set up this merging algorithm, one needs to create a `OctreeMerge{D,M}` instance, specifying
 - The extent of the first (root) bin - whether it accounts for the extent of the particles or whether it is just taken to be very large
 - How bins are split (along the middle velocity, the mean velocity, or the median velocity)
 - Whether the velocity bounds of each sub-bin are recomputed based on the particles in the bin or are based purely on the bounds of the parent bin and the splitting velocity
 - Maximum number of bins
 - Maximum refinement depth
+- `M`: the number of post-merge particles in a bin (defaults to 2)
 
 It is important that the dimension `D` of the merging instance coincides with that used for the particle positions.
 For example, we can create an octree merging instance that splits velocity bins across the middle,
@@ -101,15 +103,15 @@ sets the root bin bounds to the bounding box of the particle velocities, and inh
 bin when splitting a bin. We also immediately merge our particles, setting a target particle number of 100.
 
 ```julia
-# set up the merging algorithm
-oc = OctreeN2Merge{0}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel,
+# set up the merging algorithm: 0-D particles, 2 post-merge particles in a bin
+oc = OctreeMerge{0,2}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel,
                    bin_bounds_compute=OctreeBinBoundsInherit, max_Nbins=6000)
 
 # set Ntarget
 Ntarget = 100
 
 # perform merging
-merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
+merge_octree!(rng, oc, particles[1], pia, 1, 1, Ntarget)
 ```
 
 We can check the number of particles after the merging procedure by looking at `pia.indexer[1,1].n_local` (the number of particles
@@ -159,8 +161,8 @@ n_sampled = sample_on_grid!(rng, vdf0, particles[1], nv, species_data[1].mass, T
 # create the ParticleIndexerArray
 pia = ParticleIndexerArray(n_sampled)
 
-# set up the merging algorithm
-oc = OctreeN2Merge{0}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel,
+# set up the merging algorithm: 0-D particles, 2 post-merge particles in a bin
+oc = OctreeMerge{0,2}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel,
                    bin_bounds_compute=OctreeBinBoundsInherit, max_Nbins=6000)
 
 # set Ntarget for merging
@@ -170,7 +172,7 @@ Ntarget = 100
 Nthreshold = 120
 
 # perform initial merge
-merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
+merge_octree!(rng, oc, particles[1], pia, 1, 1, Ntarget)
 
 # set some reference values
 sigma_ref = π * (interaction_data[1,1].vhs_d^2)
@@ -210,7 +212,7 @@ for ts in 1:n_t
 
     # check if we need to merge
     if pia.indexer[1,1].n_local > Nthreshold
-        merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
+        merge_octree!(rng, oc, particles[1], pia, 1, 1, Ntarget)
     end
 
     # print number of particles every 10 timesteps
