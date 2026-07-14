@@ -4,7 +4,7 @@ using Merzbild
 using Random
 using TimerOutputs
 
-function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, merge_target, Δt, output_freq, n_timesteps, avg_start)
+function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, merge_target, Δt, output_freq, n_timesteps, avg_start; debug=false)
     reset_timer!()
 
     Random.seed!(seed)
@@ -95,9 +95,10 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
 
             if pia.indexer[cell,1].n_local > merge_threshold
                 @timeit "merge" merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
-                @timeit "squash" squash_pia!(particles, pia)
             end
         end
+
+        @timeit "squash" squash_pia!(particles, pia)
 
         # convect particles
         if (t < avg_start)
@@ -111,7 +112,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
         @timeit "sort" sort_particles!(gridsorter, grid, particles[1], pia, 1)
 
         # count % of particles where indexing is disordered
-        if t % 1000 == 0
+        if debug && (t % 1000 == 0)
             @timeit "disordered count" println(count_disordered_particles(particles[1], pia, 1) / pia.n_total[1] * 100.0)
         end
 
@@ -135,6 +136,12 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
         end
     end
 
+    if debug
+        println(check_pia_is_correct(pia, 1))
+        println(check_unique_buffer(particles[1]))
+        println(check_unique_index(particles[1], pia, 1))
+    end
+
     @timeit "I/O" write_netcdf(ds_avg, phys_props_avg, n_timesteps)
     @timeit "I/O" write_netcdf(ds_surf_avg, surf_props_avg, n_timesteps)
 
@@ -149,3 +156,6 @@ const n_t = 50000
 # run(1234, 300.0, 500.0, 5e-4, 5e22, 1000, 250, 150, 100, 2.59e-9, 1000, 5000, 14000)
 run(1234, 300.0, 500.0, 5e-4, 5e22, 50, 250, 150, 80, 2.59e-9, 1000, n_t, 14000)
 # run(1234, 300.0, 500.0, 5e-4, 5e22, 8, 200, 20, 16, 1e-1, 1000, 1, 14000)
+
+#### Benchmarking run
+# run(1234, 300.0, 500.0, 5e-4, 5e22, 200, 250, 150, 100, 2.59e-9, 1000, n_t, 14000; debug=false)

@@ -130,15 +130,15 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons,
     compute_props!(particles, pia, species_data, phys_props)
 
     if pia.n_total[1] > threshold_neutrals
-        @timeit "merge n" merge_octree!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
+        @timeit "merge n (t=0)" merge_octree!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
     end
 
     if pia.n_total[2] > threshold_ion
-        @timeit "merge i" merge_grid_based!(rng, mg_ions, particles[2], pia, 1, 2, species_data, phys_props)
+        @timeit "merge i (t=0)" merge_grid_based!(rng, mg_ions, particles[2], pia, 1, 2, species_data, phys_props)
     end
 
     if pia.n_total[3] > threshold_electrons
-        @timeit "merge e" merge_octree!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
+        @timeit "merge e (t=0)" merge_octree!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
     end
 
     squash_pia!(particles, pia)
@@ -218,7 +218,6 @@ for do_event_splitting in [false, true]  # try out different collision schemes
     run(1234, external_E_field_Tn, n_t, paramset[1], paramset[2], cs_n_e_filepath; merging_bin_split=OctreeBinMidSplit, adds=0, do_es=do_event_splitting)
 end
 
-
 #  # Uncomment set-up below to run over the parameter sets used for "Moment-preserving particle merging via non-negative least squares"
 #  # the 3rd value in each parameter list is the number of ensembles that are run with different random seeds 
 
@@ -249,3 +248,7 @@ end
 #         end
 #     end
 # end
+
+
+#### Benchmarking run
+# run(1234, 400.0, 500000, 2000, 1500, cs_n_e_filepath; merging_bin_split=OctreeBinMidSplit, adds=0, do_es=true)

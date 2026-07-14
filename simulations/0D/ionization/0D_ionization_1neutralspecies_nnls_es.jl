@@ -326,3 +326,7 @@ end
 #         end
 #     end
 # end
+
+#### Benchmarking run
+# run(1234, 400.0, 500000, 6, 95, 88,
+#     cs_n_e_filepath; adds=0, rate_preserving=:off, do_es=true)
