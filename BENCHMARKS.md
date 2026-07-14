@@ -24,7 +24,7 @@ Various benchmarks and comparisons to other open-source codes are provided here 
 |                     | **M1 Pro, 32 GB RAM, 2/4/8 threads** | **Intel Core i9-13900K, 128 GB RAM, 2/4/8 threads** | **AMD EPYC 9374F, 378 GB RAM 2/4/8/16/32 threads** |
 |:-------------------:|:------------------------------------:|:---------------------------------------------------:|:--------------------------------------------------:|
 | v0.7.0 (Julia 1.11) | 2.3 / 3.8 / 5.8                      |    1.9 / 3.2 / 5.1                                  | 1.9 / 3.9 / 5.2 / 5.7 / 6.5                        |
-| v0.8.0 (Julia 1.12) |       TODO                           |    TODO                                             |             TODO                                   |    
+| v0.8.0 (Julia 1.12) |       TODO                           |    1.6 / 2.7 / 3.7                                  |             TODO                                   |    
 
 
 ### Couette flow, variable-weight particles, octree merging
