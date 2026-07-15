@@ -85,6 +85,9 @@ Merzbild.compute_grid_index
 Merzbild.clear_merging_grid!
 Merzbild.compute_grid!
 Merzbild.compute_new_particles!
+Merzbild.write_back_to_particles!
+Merzbild.variance_scaling_rel_tol
+Merzbild.variance_scaling
 Merzbild.vx_sign
 Merzbild.vy_sign
 Merzbild.vz_sign

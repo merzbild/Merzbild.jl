@@ -50,12 +50,6 @@ function weighted_median_with_interpolation(values, weights)
 end
 
 """
-Relative tolerance below which a post-merge variance is treated as having collapsed to zero,
-see [`variance_scaling`](@ref).
-"""
-const variance_scaling_rel_tol = 1e-10
-
-"""
     variance_scaling(var_before::SVector{N,Float64}, var_post::SVector{N,Float64})
 
 Scale the the components of a variance vector `var_before` by the square root of the ratio of the components of it and

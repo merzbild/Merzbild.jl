@@ -36,6 +36,13 @@ bundled data independently of the current working directory, e.g.
 const MERZBILD_DATA_PATH = joinpath(pkgdir(Merzbild), "data")
 export MERZBILD_DATA_PATH
 
+
+"""
+Relative tolerance below which a post-merge variance is treated as having collapsed to zero,
+see [`variance_scaling`](@ref).
+"""
+const variance_scaling_rel_tol = 1e-10
+
 export sample_maxwellian_on_grid!, sample_on_grid!, bkw, maxwellian
 export load_species_data, Particle, sample_particles_equal_weight!
 export sample_particles_phase_box_weighted!
