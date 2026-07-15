@@ -9,7 +9,7 @@ Various benchmarks and comparisons to other open-source codes are provided here 
 |                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
 |:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
 | v0.7.0 (Julia 1.11)     |       33.5s           |    28.4s                              |             33.0s               |
-| v0.8.0 (Julia 1.12)     |       TODO            |    23.4s                              |             TODO                |    
+| v0.8.0 (Julia 1.12)     |       TODO            |    23.4s                              |             31.1s               |    
 
 
 ### Couette flow, serial, large grid
@@ -17,37 +17,38 @@ Various benchmarks and comparisons to other open-source codes are provided here 
 |                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
 |:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
 | v0.7.0 (Julia 1.11)     |       1164s           |    795s                               |             1467s               |
-| v0.8.0 (Julia 1.12)     |       TODO            |    418s                               |             TODO                |    
+| v0.8.0 (Julia 1.12)     |       TODO            |    418s                               |             902s                |    
 
 ### Couette flow threading speed-up
-Note that this is without any dynamical load-balancing, and therefore, speed-up is less than expected, due to density changes in the domain.
+Note that this is 1) without any dynamical load-balancing (speed-up is less than expected due to density changes in the domain leading to different amount of work spent on collisions)
+2) using a serial particle exchange procedure.
 
 |                     | **M1 Pro, 32 GB RAM, 2/4/8 threads** | **Intel Core i9-13900K, 128 GB RAM, 2/4/8 threads** | **AMD EPYC 9374F, 378 GB RAM 2/4/8/16/32 threads** |
 |:-------------------:|:------------------------------------:|:---------------------------------------------------:|:--------------------------------------------------:|
 | v0.7.0 (Julia 1.11) | 2.3 / 3.8 / 5.8                      |    1.9 / 3.2 / 5.1                                  | 1.9 / 3.9 / 5.2 / 5.7 / 6.5                        |
-| v0.8.0 (Julia 1.12) |       TODO                           |    1.6 / 2.7 / 3.7                                  |             TODO                                   |    
+| v0.8.0 (Julia 1.12) |       TODO                           |    1.6 / 2.7 / 3.7                                  | 1.7 / 3.3 / 3.6 / 4.1 / 3.6                        |    
 
 
 ### Couette flow, variable-weight particles, octree merging
 
 |                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
 |:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
-| v0.7.9 (Julia 1.12)     |       TODO            |    27.3s                              |             TODOs               |
-| v0.8.0 (Julia 1.12)     |       TODO            |    23.7s                              |             TODO                |    
+| v0.7.10 (Julia 1.12)    |       TODO            |    27.3s                              |             38.6s               |
+| v0.8.0 (Julia 1.12)     |       TODO            |    23.7s                              |             31.8s               |    
 
 ### 0D ionization, variable-weight particles, octree merging
 
 |                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
 |:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
-| v0.7.9 (Julia 1.12)     |       TODO            |    15.1s                              |             TODOs               |
-| v0.8.0 (Julia 1.12)     |       TODO            |    4.72s                              |             TODO                |    
+| v0.7.10 (Julia 1.12)    |       TODO            |    15.1s                              |             23.0s               |
+| v0.8.0 (Julia 1.12)     |       TODO            |    4.72s                              |             6.83s               |    
 
 ### 0D ionization, variable-weight particles, NNLS merging
 
 |                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
 |:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
-| v0.7.9 (Julia 1.12)     |       TODO            |    17.4s                              |             TODOs               |
-| v0.8.0 (Julia 1.12)     |       TODO            |    3.98s                              |             TODO                |    
+| v0.7.10 (Julia 1.12)    |       TODO            |    17.4s                              |             26.5s               |
+| v0.8.0 (Julia 1.12)     |       TODO            |    3.98s                              |             5.98s               |    
 
 ## Couette flow, serial, small grid
 
