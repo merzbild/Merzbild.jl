@@ -20,6 +20,7 @@ Various benchmarks and comparisons to other open-source codes are provided here 
 | v0.8.0 (Julia 1.12)     |       TODO            |    418s                               |             TODO                |    
 
 ### Couette flow threading speed-up
+Note that this is without any dynamical load-balancing, and therefore, speed-up is less than expected, due to density changes in the domain.
 
 |                     | **M1 Pro, 32 GB RAM, 2/4/8 threads** | **Intel Core i9-13900K, 128 GB RAM, 2/4/8 threads** | **AMD EPYC 9374F, 378 GB RAM 2/4/8/16/32 threads** |
 |:-------------------:|:------------------------------------:|:---------------------------------------------------:|:--------------------------------------------------:|
