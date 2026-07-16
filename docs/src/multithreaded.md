@@ -118,7 +118,8 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
 
     # create our grid and BCs
     grid = Grid1DUniform(L, nx)
-    boundaries = MaxwellWalls1D(species_data, T_wall, T_wall, -v_wall, v_wall, 1.0, 1.0)
+    bc_list = (FullyDiffuseBC1D(1, species_data, T_wall, [0.0, -v_wall, 0.0]),
+               FullyDiffuseBC1D(1, species_data, T_wall, [0.0, v_wall, 0.0]))
 
     # split cell indices into chunks
     cell_indices = Vector(1:nx)
@@ -196,12 +197,12 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
             end
 
             if (t >= avg_start)
-                @inbounds convect_particles!(rng_chunks[chunk_id], grid, boundaries,
+                @inbounds convect_particles!(rng_chunks[chunk_id], grid, bc_list,
                                     particles_chunks[chunk_id][1], pia_chunks[chunk_id],
                                     1, species_data, surf_props_chunks[chunk_id], Δt)
             else
                 # we don't need to compute surface properties before we start averaging
-                @inbounds convect_particles!(rng_chunks[chunk_id], grid, boundaries,
+                @inbounds convect_particles!(rng_chunks[chunk_id], grid, bc_list,
                                     particles_chunks[chunk_id][1], pia_chunks[chunk_id],
                                     1, species_data, Δt)
             end
@@ -244,5 +245,5 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
     print_timer()
 end
 
-run(1234, 300.0, 500.0, 5e-4, 5e22, 500, 500, 2.59e-9, 50000, 14000; chunk_count_multiplier=1, preallocation_margin_multiplier=1.5)
+run(1234, 300.0, 500.0, 5e-4, 5e22, 100, 100, 2.59e-9, 50000, 14000; chunk_count_multiplier=1, preallocation_margin_multiplier=1.5)
 ```

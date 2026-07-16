@@ -181,7 +181,7 @@ Lref = 1.0 / (ndens * sigma_ref)
 tref = Lref / vref
 
 # set up computation of physical properties
-phys_props = PhysProps(1, 1, [], Tref=T0)
+phys_props = PhysProps(1, 1)
 compute_props!(particles, pia, species_data, phys_props)
 
 ds = NCDataHolder("output_bkw_octree.nc", species_data, phys_props)

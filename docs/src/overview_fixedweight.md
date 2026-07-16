@@ -116,7 +116,7 @@ sample_particles_equal_weight!(rng, particles[2], pia, 1, 2, n_particles_He,
 
 
 # create the PhysProps instance to store computed properties
-phys_props = PhysProps(1, 2, [], Tref=T0_Ar)
+phys_props = PhysProps(1, 2)
 
 # create struct for I/O
 ds = NCDataHolder("2species.nc", species_data, phys_props)

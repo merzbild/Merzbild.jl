@@ -174,7 +174,7 @@ so care must be taken, and particles might need to be merged immediately after h
 
 ## Computing macroscopic physical properties: PhysProps
 Now that we have a vector of particles, we can compute some macroscopic properties (density, velocity, etc.).
-To store and use these properties where they might be needed, the `PhysProps` struct is provided.
+To store and use these properties where they might be needed, the [`PhysProps`](@ref) struct is provided.
 An instance of `PhysProps` has the following fields:
 - `ndens_not_Np`: a boolean value used to distinguish between the meanings of the `n` field (see below) and ensure consistency
 - `n_cells`: number of grid cells
@@ -248,8 +248,8 @@ close_netcdf(ds)
 
 ## Computing surface properties due to particle-surface interactions: SurfProps
 Details on calculation of surface properties due to particle-surface interactions can be found in the section on [1D DSMC simulations](@ref "1D DSMC simulations").
-Time-averaging works exactly the same as for `PhysProps`, via use of the `avg_props` function. Output is performed similarly,
-via an `NCDataHolderSurf` struct and calls to `write_netcdf_surf_props`.
+Time-averaging works exactly the same as for `PhysProps`, via use of the [`avg_props!`](@ref) function. Output is performed similarly,
+via an `NCDataHolderSurf` struct and calls to [`write_netcdf`](@ref).
 
 ## Example: bringing it all together
 An example of particle sampling, property computation, and output for a 0-D single-species gas is presented here.
@@ -297,7 +297,7 @@ ds = NCDataHolder("output.nc", species_data, phys_props)
 compute_props!(particles, pia, species_data, phys_props)
 
 # and output them (t=0)
-write_netcdf_phys_props(ds, phys_props, 0)
+write_netcdf(ds, phys_props, 0)
 close_netcdf(ds)
 ```
 

@@ -112,7 +112,7 @@ ds_surf = NCDataHolderSurf("scratch/data/couette_example_surf.nc", species_data,
 
 for t in 1:n_timesteps
 # simulation loop here
-    write_netcdf_surf_props(ds_surf, surf_props, t)  # write computed surface properties to file
+    write_netcdf(ds_surf, surf_props, t)  # write computed surface properties to file
 end
 ```
 

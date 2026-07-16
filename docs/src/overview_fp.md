@@ -85,8 +85,8 @@ interaction_data = load_interaction_data(joinpath(MERZBILD_DATA_PATH, "vhs.toml"
 
 # create our grid and BCs
 grid = Grid1DUniform(L, nx)
-bc_list = (FullyDiffuseBC1D(species_data, 1, T_wall, [0.0, -v_wall, 0.0]),
-           FullyDiffuseBC1D(species_data, 1, T_wall, [0.0, v_wall, 0.0]))
+bc_list = (FullyDiffuseBC1D(1, species_data, T_wall, [0.0, -v_wall, 0.0]),
+           FullyDiffuseBC1D(1, species_data, T_wall, [0.0, v_wall, 0.0]))
 
 # init particle vector, particle indexer, grid particle sorter
 # we will not be creating or destroying any particles, so we can compute the exact number
