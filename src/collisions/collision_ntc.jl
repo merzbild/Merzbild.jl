@@ -198,7 +198,7 @@ end
 
 """
     collide_2particles_vhs!(rng, collision_data, collision_factors, interaction_l, pa_i::Particle{D}, pa_k::Particle{D},
-                            particles_1::ParticleVector{D}, particles_2::ParticleVector{D}, pia, cell, species1, species2; dw_tol=1e-16)
+                            particles_1::ParticleVector{D}, particles_2::ParticleVector{D}, pia, cell, species1, species2; dw_tol=1e-16) where D
 
 Collide two particles elastically using the VHS model. Particles can be of same or different species.
 If particles' weights differ by less than `dw_tol`, an equal-weight collision is performed and no particles are split.
@@ -274,7 +274,7 @@ and no particle splitting is performed
 end
 
 """
-    collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction, pa_i::Particle{D}, pa_k::Particle{D})
+    collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction, pa_i::Particle{D}, pa_k::Particle{D}) where D
 
 Collide two particles elastically using the VHS model, assuming equal weights - no particle splitting is performed even
 if weights are unequal. Particles can be of same or different species.
@@ -306,7 +306,7 @@ end
 
 """
     ntc!(rng, collision_factors, collision_data, interaction, particles::ParticleVector{D}, pia,
-         cell, species, Δt, V; dw_tol=1e-16)
+         cell, species, Δt, V; dw_tol=1e-16) where D
 
 Perform elastic collisions between particles of same species using the NTC algorithm
 and the VHS cross-section model.
@@ -383,7 +383,7 @@ end
 """
     ntc!(rng, collision_factors, collision_data, interaction,
          particles_1::ParticleVector{D}, particles_2::ParticleVector{D}, pia,
-         cell, species1, species2, Δt, V; dw_tol=1e-16)
+         cell, species1, species2, Δt, V; dw_tol=1e-16) where D
 
 Perform elastic collisions between particles of different species using the NTC algorithm
 and the VHS cross-section model.
@@ -460,7 +460,7 @@ end
 
 """
     ntc_equal_weight!(rng, collision_factors, collision_data, interaction, particles::ParticleVector{D}, pia,
-                      cell, species, Δt, V)
+                      cell, species, Δt, V) where D
 
 Perform elastic collisions between particles of same species using the NTC algorithm
 and the VHS cross-section model. Particle weights are assumed to be equal,

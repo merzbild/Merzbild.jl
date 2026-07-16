@@ -57,7 +57,7 @@ Construct a `FluxProps` instance given a `ParticleIndexerArray` instance.
 FluxProps(pia) = FluxProps(pia.n_cells, pia.n_species)
 
 """
-    compute_flux_props!(particles, pia, species_data, phys_props::PhysProps, flux_props::FluxProps, grid::G) where {G<:AbstractGrid}
+    compute_flux_props!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props::PhysProps, flux_props::FluxProps, grid::G) where {G<:AbstractGrid,D}
 
 Compute the fluxes of all species in all cells and store the result in a `FluxProps` instance.
 This uses the pre-computed species-wise mean velocities from a `PhysProps` instance, which needs to be computed

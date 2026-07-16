@@ -178,7 +178,7 @@ function bkw(vx, vy, vz, m, T, scaled_time)
 end
 
 """
-    sample_bkw!(rng, particles::ParticleVector{D}, nparticles, offset, m, T, v0)
+    sample_bkw!(rng, particles::ParticleVector{D}, nparticles, offset, m, T, v0) where D
 
 Sample particle velocities from the BKW distribution with temperature `T` for a species with mass `m`
 at `t=0` and add a velocity offset.
@@ -214,7 +214,7 @@ function sample_bkw!(rng, particles::ParticleVector{D}, nparticles, offset, m, T
 end
 
 """
-    sample_bkw!(rng, particles::ParticleVector{D}, nparticles, m, T, v0)
+    sample_bkw!(rng, particles::ParticleVector{D}, nparticles, m, T, v0) where D
 
 Sample particles' velocities from the BKW distribution with temperature `T` for a species with mass `m`
     at `t=0` and add a velocity offset. This does not update the particle weights, positions, or any indexing structures.
@@ -270,7 +270,7 @@ end
 
 
 """
-    create_position_vector_D(rng, ::Val{D}, xlo, xhi, ylo, yhi, zlo, zhi)
+    create_position_vector_D(rng, ::Val{D}, xlo, xhi, ylo, yhi, zlo, zhi) where D
 
 Helper function to create D-dimensional position vectors for particle sampling in a 0/1/2/3-dimensional box
 with extent xlo:xhi, ylo:yhi, zlo:zhi; positions are uniformly distributed.

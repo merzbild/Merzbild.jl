@@ -67,7 +67,7 @@ function reset!(chunk_exchanger, chunk_id)
 end
 
 """
-    push_particles!(chunk_exchanger, particles_chunks::Vector{Vector{ParticleVector{D}}}, pia_chunks, species, i, j, offset_ij, s_ci_ij2, e_ci_ij)
+    push_particles!(chunk_exchanger, particles_chunks::Vector{Vector{ParticleVector{D}}}, pia_chunks, species, i, j, offset_ij, s_ci_ij2, e_ci_ij) where D
 
 Pushes particles of the specified `species` from chunk `i` to the end of chunk `j`,
 handling partial (unfinished) swaps.
@@ -267,7 +267,7 @@ end
 
 
 """
-    exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{ParticleVector{D}}}, pia_chunks, cell_chunks, species, i, j)
+    exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{ParticleVector{D}}}, pia_chunks, cell_chunks, species, i, j) where D
 
 Redistribute particles between chunks `i` and `j` based on their spatial cell ownership.
 
@@ -435,7 +435,7 @@ function exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{Pa
 end
 
 """
-    exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{ParticleVector{D}}}, pia_chunks, cell_chunks, species)
+    exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{ParticleVector{D}}}, pia_chunks, cell_chunks, species) where D
 
 Redistribute particles between chunks based on their spatial cell ownership.
 
@@ -471,7 +471,7 @@ function exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{Pa
 end
 
 """
-    sort_particles_after_exchange!(chunk_exchanger, gridsort, particles::ParticleVector{D}, pia, cell_chunk, species)
+    sort_particles_after_exchange!(chunk_exchanger, gridsort, particles::ParticleVector{D}, pia, cell_chunk, species) where D
 
 Restore indexing of a `ParticleVector` and the associated `ParticleIndexerArray`
 after particles have been swapped and pushed between chunks.

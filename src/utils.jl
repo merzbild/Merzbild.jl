@@ -50,7 +50,7 @@ function weighted_median_with_interpolation(values, weights)
 end
 
 """
-    variance_scaling(var_before::SVector{N,Float64}, var_post::SVector{N,Float64})
+    variance_scaling(var_before::SVector{N,Float64}, var_post::SVector{N,Float64}) where N
 
 Scale the the components of a variance vector `var_before` by the square root of the ratio of the components of it and
 a vector `var_post`, checking for zero/negative values in `var_post` and non-finite values in the scaling factor.

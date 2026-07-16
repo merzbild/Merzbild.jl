@@ -90,7 +90,7 @@ mutable struct GridN2Merge{D}
     cells::Vector{GridCell{D}}
 
     @doc """
-        GridN2Merge{D}(Nx::Int, Ny::Int, Nz::Int, extent_multiplier::T) where T <: AbstractArray
+        GridN2Merge{D}(Nx::Int, Ny::Int, Nz::Int, extent_multiplier::T) where {D, T <: AbstractArray}
 
     Create velocity grid-based merging for particles with D-dimensional position vectors.
 
@@ -116,7 +116,7 @@ mutable struct GridN2Merge{D}
 end
 
 """
-    GridN2Merge{D}(N::Int, extent_multiplier::T) where T <: AbstractArray 
+    GridN2Merge{D}(N::Int, extent_multiplier::T) where {D, T <: AbstractArray}
 
 Create velocity grid-based merging for particles with D-dimensional position vectors with an equal number of cells in each direction.
 
@@ -128,7 +128,7 @@ in each velocity direction
 GridN2Merge{D}(N::Int, extent_multiplier::T) where {D, T <: AbstractArray} = GridN2Merge{D}(N, N, N, extent_multiplier)
 
 """
-    GridN2Merge{D}(Nx::Int, Ny::Int, Nz::Int, extent_multiplier::Float64)
+    GridN2Merge{D}(Nx::Int, Ny::Int, Nz::Int, extent_multiplier::Float64) where D
 
 Create velocity grid-based merging for particles with D-dimensional position vectors with equal extent multipliers in each direction.
 
@@ -145,7 +145,7 @@ GridN2Merge{D}(Nx::Int, Ny::Int, Nz::Int, extent_multiplier::Float64) where D = 
     GridN2Merge{D}(Nx::Int, Ny::Int, Nz::Int,
                 extent_multiplier_x::Float64,
                 extent_multiplier_y::Float64,
-                extent_multiplier_z::Float64) 
+                extent_multiplier_z::Float64) where D
 
 Create velocity grid-based for merging particles with D-dimensional position vectors
 
@@ -168,7 +168,7 @@ GridN2Merge{D}(Nx::Int, Ny::Int, Nz::Int,
                                                                      extent_multiplier_z])
 
 """
-    GridN2Merge{D}(N::Int, extent_multiplier::Float64)
+    GridN2Merge{D}(N::Int, extent_multiplier::Float64) where D
 
 Create velocity grid-based merging for particles with D-dimensional position vectors with an equal number of cells in each direction and equal extent multipliers
 in each direction.
@@ -246,7 +246,7 @@ in each velocity direction
 GridN2Merge(N::Int, extent_multiplier::Float64) = GridN2Merge{3}(N, N, N, extent_multiplier)
 
 """
-    compute_velocity_extent!(merging_grid::GridN2Merge{D}, cell, species, species_data, phys_props::PhysProps)
+    compute_velocity_extent!(merging_grid::GridN2Merge{D}, cell, species, species_data, phys_props::PhysProps) where D
 
 Compute extent of velocity grid based on temperature in the cell.
 
@@ -269,7 +269,7 @@ function compute_velocity_extent!(merging_grid::GridN2Merge{D}, cell, species, s
 end
 
 """
-    compute_velocity_extent!(merging_grid::GridN2Merge{D}, vx_extent, vy_extent, vz_extent)
+    compute_velocity_extent!(merging_grid::GridN2Merge{D}, vx_extent, vy_extent, vz_extent) where D
 
 Compute extent of velocity grid based on explicitly set extents.
 
@@ -292,7 +292,7 @@ function compute_velocity_extent!(merging_grid::GridN2Merge{D}, vx_extent, vy_ex
 end
 
 """
-    compute_grid_index(merging_grid::GridN2Merge{D}, v)
+    compute_grid_index(merging_grid::GridN2Merge{D}, v) where D
 
 Compute index of cell on the merging grid in which a velocity is located (the last 8 indices
 correspond to the velocity octants outside the grid).
@@ -340,7 +340,7 @@ function compute_grid_index(merging_grid::GridN2Merge{D}, v) where D
 end
 
 """
-    clear_merging_grid!(merging_grid::GridN2Merge{D})
+    clear_merging_grid!(merging_grid::GridN2Merge{D}) where D
 
 Resets all data for a merging grid instance.
 
@@ -363,7 +363,7 @@ function clear_merging_grid!(merging_grid::GridN2Merge{D}) where D
 end
 
 """
-    compute_grid!(merging_grid::GridN2Merge{D}, particles::ParticleVector{D}, pia, cell, species)
+    compute_grid!(merging_grid::GridN2Merge{D}, particles::ParticleVector{D}, pia, cell, species) where D
 
 Compute all the required cell properties for a grid-based merge.
 
@@ -454,7 +454,7 @@ function compute_grid!(merging_grid::GridN2Merge{D}, particles::ParticleVector{D
 end
 
 """
-    compute_new_particles!(rng, merging_grid::GridN2Merge{D}, particles::ParticleVector{D}, pia, cell, species)
+    compute_new_particles!(rng, merging_grid::GridN2Merge{D}, particles::ParticleVector{D}, pia, cell, species) where D
 
 Compute new particles based on the grid cell properties without checking particle locations.
 So particles may end up outside of the domain.
@@ -545,7 +545,7 @@ function compute_new_particles!(rng, merging_grid::GridN2Merge{D}, particles::Pa
 end
 
 """
-    compute_new_particles!(rng, merging_grid::GridN2Merge{D}, particles::ParticleVector{D}, pia, cell, species, grid::Grid1DUniform)
+    compute_new_particles!(rng, merging_grid::GridN2Merge{D}, particles::ParticleVector{D}, pia, cell, species, grid::Grid1DUniform) where D
 
 Compute new particles based on the grid cell properties; placing out-of-domain particles back into the domain.
 
@@ -645,7 +645,7 @@ function compute_new_particles!(rng, merging_grid::GridN2Merge{D}, particles::Pa
 end
 
 """
-    merge_grid_based!(rng, merging_grid::GridN2Merge{D}, particles::ParticleVector{D}, pia, cell, species, species_data, phys_props::PhysProps)
+    merge_grid_based!(rng, merging_grid::GridN2Merge{D}, particles::ParticleVector{D}, pia, cell, species, species_data, phys_props::PhysProps) where D
 
 Merge particles using a velocity grid-based merging approach. A Cartesian grid in velocity
 space is used to group particles together (particles outside of the grid are group by velocity
@@ -708,7 +708,7 @@ function merge_grid_based!(rng, merging_grid::GridN2Merge{D}, particles::Particl
 end
 
 """
-    merge_grid_based!(rng, merging_grid::GridN2Merge{D}, particles::ParticleVector{D}, pia, cell, species, species_data, phys_props::PhysProps, grid::Grid1DUniform)
+    merge_grid_based!(rng, merging_grid::GridN2Merge{D}, particles::ParticleVector{D}, pia, cell, species, species_data, phys_props::PhysProps, grid::Grid1DUniform) where D
 
 Merge particles using a velocity grid-based merging approach. A Cartesian grid in velocity
 space is used to group particles together (particles outside of the grid are group by velocity
@@ -740,7 +740,7 @@ function merge_grid_based!(rng, merging_grid::GridN2Merge{D}, particles::Particl
 end
 
 """
-    merge_grid_based!(rng, merging_grid::GridN2Merge{D}, particles::ParticleVector{D}, pia, cell, species, species_data, vx_extent, vy_extent, vz_extent, grid::Grid1DUniform)
+    merge_grid_based!(rng, merging_grid::GridN2Merge{D}, particles::ParticleVector{D}, pia, cell, species, species_data, vx_extent, vy_extent, vz_extent, grid::Grid1DUniform) where D
 
 Merge particles using a velocity grid-based merging approach. A Cartesian grid in velocity
 space is used to group particles together (particles outside of the grid are group by velocity

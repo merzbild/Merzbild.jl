@@ -66,7 +66,7 @@ mutable struct NNLSMerge{D}
     work::Vector{NNLSWorkspace}
 
     @doc """
-        NNLSMerge{D}(multi_index_moments, init_np; rate_preserving=false, multi_index_moments_pos=[], matrix_ncol_nprealloc=0)
+        NNLSMerge{D}(multi_index_moments, init_np; rate_preserving=false, multi_index_moments_pos=[], matrix_ncol_nprealloc=0) where D
 
     Create NNLS-based merging. Mass, momentum, directional energy are always conserved:
     if not in the list `multi_index_moments` of moments to preserve, the corresponding
@@ -171,6 +171,36 @@ mutable struct NNLSMerge{D}
                       nnls_ws_preallocated)
     end
 
+     @doc """
+        NNLSMerge(multi_index_moments, init_np; rate_preserving=false, multi_index_moments_pos=[], matrix_ncol_nprealloc=0)
+
+    Create NNLS-based merging for particles with a 3-dimensional position vector. Mass, momentum, directional energy are always conserved:
+    if not in the list `multi_index_moments` of moments to preserve, the corresponding
+    moment multi-indices will be added automatically. These indices are `(0,0,0)` for mass,
+    `(1,0,0)`, `(0,1,0)`, `(0,0,1)` for momentum, and `(2,0,0)`, `(0,2,0)`, `(0,0,2)`
+    for directional energies. Spatial moments can be preserved by setting `multi_index_moments_pos`.
+    If `multi_index_moments_pos` is non-empty, it is currently left to the user to include any relevant 1st order moments
+    (corresponding center of mass conservation) i.e. `(1, 0, 0)`, `(0, 1, 0)`, `(0, 0, 1)`; otherwise
+    the corresponding spatial moments including higher-order ones will not be conserved.
+    By default, a single `NNLSWorkspace` is pre-allocated for the system, and no LHS matrices are pre-allocated.
+    The number of columns in the LHS matrix is the number of particles to be merged (+ any fictitious particles);
+    so it cannot be fixed in advance. By setting `matrix_ncol_nprealloc` to a value larger than 0,
+    one can pre-allocate a range of matrices and
+    corresponding workspaces with a fixed number of columns spanning `[init_np, init_np+matrix_ncol_nprealloc]`.
+    In this case, `matrix_ncol_nprealloc+1` `NNLSWorkspace` instances are pre-allocated, with the last one being used
+    in case the number of columns is not in the range (and the LHS matrix is constructed on the fly).
+    A vector `column_norms` is also then pre-allocated, which is a vector of vectors, each containing the inverses of the
+    column-wise norms of the LHS matrices, used for their scaling.
+
+    # Positional arguments
+    * `multi_index_moments`: vector of mixed moments to preserve of the form `[(i1, j1, k1), (i2, j2, k2), ...]``
+    * `init_np`: assumption on pre-merge number of particles to pre-allocate memory for
+    
+    Keyword arguments:
+    * `rate_preserving`: used for rate-preserving merging of electrons, preserves approximate elastic collision and ionization rates
+    * `multi_index_moments_pos`: list of spatial moments to preserve
+    * `matrix_ncol_nprealloc`: number of LHS matrices and NNLS workspaces with a fixed number of columns to pre-allocate
+    """
     function NNLSMerge(multi_index_moments, init_np; rate_preserving=false, multi_index_moments_pos=[], matrix_ncol_nprealloc=0)
         return NNLSMerge{3}(multi_index_moments, init_np; rate_preserving=rate_preserving, multi_index_moments_pos=multi_index_moments_pos, matrix_ncol_nprealloc=matrix_ncol_nprealloc)
     end
@@ -220,7 +250,7 @@ function compute_multi_index_moments(n)
 end
 
 """
-    compute_w_total_v0!(nnls_merging, particles::ParticleVector{D}, pia, cell, species)
+    compute_w_total_v0!(nnls_merging, particles::ParticleVector{D}, pia, cell, species) where D
 
 Compute total computational weight of particles and mean velocity, as well as velocity bounds of the
 set of particles in each velocity direction.
@@ -321,7 +351,7 @@ end
 
 
 """
-    compute_lhs_and_rhs!(nnls_merging::NNLSMerge{D}, lhs_matrix, vel_pos_matrix, particles::ParticleVector{D}, pia, cell, species)
+    compute_lhs_and_rhs!(nnls_merging::NNLSMerge{D}, lhs_matrix, vel_pos_matrix, particles::ParticleVector{D}, pia, cell, species) where D
 
 Compute LHS matrix and RHS vector for NNLS merging. Returns the pre-merge number of particles.
 
@@ -438,7 +468,7 @@ end
 """
     compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_matrix, vel_pos_matrix,
                                          interaction, electron_neutral_interactions, computed_cs,
-                                         particles::ParticleVector{D}, pia, cell, species, neutral_species_index, extend)
+                                         particles::ParticleVector{D}, pia, cell, species, neutral_species_index, extend) where D
 
 Compute LHS matrix and RHS vector for the rate-preserving NNLS merging (for electrons). Approximate
     elastic scattering and electron-impact ionization rates are conserved.
@@ -570,7 +600,7 @@ end
 """
     compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_matrix, vel_pos_matrix,
                                          interaction, electron_neutral_interactions, computed_cs,
-                                         particles::ParticleVector{D}, particles_neutral::ParticleVector{D}, pia, cell, species, neutral_species_index, extend)
+                                         particles::ParticleVector{D}, particles_neutral::ParticleVector{D}, pia, cell, species, neutral_species_index, extend) where D
 
 Compute LHS matrix and RHS vector for the rate-preserving NNLS merging (for electrons). Exact
     elastic scattering and electron-impact ionization rates are conserved.
@@ -753,7 +783,7 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
 end
 
 """
-    scale_lhs_rhs_vref!(nnls_merging::NNLSMerge{D}, lhs_matrix, lhs_ncols)
+    scale_lhs_rhs_vref!(nnls_merging::NNLSMerge{D}, lhs_matrix, lhs_ncols) where D
 
 Scale the LHS and RHS of the NNLS system using the reference velocity ``v_{ref}``. Each moment is scaled
 by ``(1/v_{ref})^{n_{tot}}``, where ``n_{tot}`` is the total order of the moment (i.e. for
@@ -777,7 +807,7 @@ function scale_lhs_rhs_vref!(nnls_merging::NNLSMerge{D}, lhs_matrix, lhs_ncols) 
 end
 
 """
-    scale_lhs_rhs_variance!(nnls_merging::NNLSMerge{D}, lhs_matrix, lhs_ncols)
+    scale_lhs_rhs_variance!(nnls_merging::NNLSMerge{D}, lhs_matrix, lhs_ncols) where D
 
 Scale the LHS and RHS of the NNLS system using the computed variances of the particles velocities
 in the ``x``, ``y``, ``z`` directions. If any of the variances is smaller than 1e-6, then
@@ -804,7 +834,7 @@ function scale_lhs_rhs_variance!(nnls_merging::NNLSMerge{D}, lhs_matrix, lhs_nco
 end
 
 """
-    scale_lhs_rhs_spatial_variance!(nnls_merging::NNLSMerge{D}, lhs_matrix, lhs_ncols)
+    scale_lhs_rhs_spatial_variance!(nnls_merging::NNLSMerge{D}, lhs_matrix, lhs_ncols) where D
 
 Scale the spatial moments in the LHS and RHS of the NNLS system using the computed variances of the particles positions
 in the ``x``, ``y``, ``z`` directions. If any of the variances is smaller than 1e-6, then
@@ -835,7 +865,7 @@ function scale_lhs_rhs_spatial_variance!(nnls_merging::NNLSMerge{D}, lhs_matrix,
 end
 
 """
-    scale_lhs_rhs!(nnls_merging::NNLSMerge{D}, lhs_matrix, scaling, lhs_ncols)
+    scale_lhs_rhs!(nnls_merging::NNLSMerge{D}, lhs_matrix, scaling, lhs_ncols) where D
 
 Scale the LHS and RHS of the NNLS system using either the reference velocity or the computed variances of the velocity
 in each direction.
@@ -857,7 +887,7 @@ function scale_lhs_rhs!(nnls_merging::NNLSMerge{D}, lhs_matrix, scaling, lhs_nco
 end
 
 """
-    scale_lhs_rhs_rate_preserving!(nnls_merging, lhs_matrix, ref_k_elastic, ref_k_ion, scaling, lhs_ncols)
+    scale_lhs_rhs_rate_preserving!(nnls_merging, lhs_matrix, ref_k_elastic, ref_k_ion, scaling, lhs_ncols) where D
 
 Scale the LHS and RHS of the NNLS system for the rate-preserving electron merging
 using the reference velocity ``v_{ref}`` and
@@ -1289,7 +1319,7 @@ end
 """
     merge_nnls_based!(rng, nnls_merging::NNLSMerge{D}, particles::ParticleVector{D}, pia, cell, species;
                       vref=1.0, scaling=:variance,
-                      max_err=1e-11, iteration_mult=2, w_threshold=0.0)
+                      max_err=1e-11, iteration_mult=2, w_threshold=0.0) where D
 
 Perform NNLS-based merging.
 The NNLS system is scaled to improve numerical stability, the scaling algorithm is set by the `scaling` parameter.
@@ -1377,7 +1407,7 @@ end
                                       ref_cs_elastic, ref_cs_ion; scaling=:variance,
                                       vref=1.0,  max_err=1e-11,
                                       iteration_mult=2,
-                                      extend::CSExtend=CSExtendConstant)
+                                      extend::CSExtend=CSExtendConstant) where D
 
 Perform NNLS-based merging of electrons that conserves approximate elastic scattering and electron-impact ionization rates.
 The NNLS system is scaled to improve numerical stability, the scaling algorithm is set by the `scaling` parameter.
@@ -1496,7 +1526,7 @@ end
                                       ref_cs_elastic, ref_cs_ion; vref=1.0, scaling=:variance,
                                       max_err=1e-11,
                                       iteration_mult=2, w_threshold=0.0,
-                                      extend::CSExtend=CSExtendConstant)
+                                      extend::CSExtend=CSExtendConstant) where D
 
 Perform NNLS-based merging of electrons that conserves **exact** elastic scattering and electron-impact ionization rates
 for one specific neutral species.

@@ -216,7 +216,7 @@ mutable struct NCDataHolder <: AbstractNCDataHolder
 end
 
 """
-    close_netcdf(ds::AbstractNCDataHolder)
+    close_netcdf(ds::T) where {T<:AbstractNCDataHolder}
 
 Close NetCDF file.
 
