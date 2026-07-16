@@ -125,11 +125,15 @@ Merzbild.CSExtend
 ```@docs
 GridN2Merge{D}
 GridN2Merge{D}(Nx::Int, Ny::Int, Nz::Int, extent_multiplier::T) where {D, T <: AbstractArray}
-GridN2Merge(N::Int, extent_multiplier::T) where T <: AbstractArray
+GridN2Merge{D}(N::Int, extent_multiplier::T) where {D, T <: AbstractArray}
+GridN2Merge{D}(Nx::Int, Ny::Int, Nz::Int, extent_multiplier::Float64) where D
+GridN2Merge{D}(Nx::Int, Ny::Int, Nz::Int, extent_multiplier_x::Float64, extent_multiplier_y::Float64, extent_multiplier_z::Float64) where D
+GridN2Merge{D}(N::Int, extent_multiplier::Float64) where D
+GridN2Merge(N::Int, extent_multiplier::T) where T <: AbstractArray 
 GridN2Merge(Nx::Int, Ny::Int, Nz::Int, extent_multiplier::Float64)
 GridN2Merge(Nx::Int, Ny::Int, Nz::Int, extent_multiplier_x::Float64, extent_multiplier_y::Float64, extent_multiplier_z::Float64)
-GridN2Merge(N::Int, extent_multiplier::Float64)
 merge_grid_based!
+GridN2Merge(N::Int, extent_multiplier::Float64)
 ```
 
 ### NNLS merging
@@ -147,11 +151,11 @@ merge_nnls_based_rate_preserving!
 Merzbild.OctreeBinSplit
 Merzbild.OctreeInitBin
 Merzbild.OctreeBinBounds
-OctreeMerge{D,M}
-OctreeMerge(split::Merzbild.OctreeBinSplit;
-              init_bin_bounds=OctreeInitBinMinMaxVel,
-              bin_bounds_compute=OctreeBinBoundsInherit,
-              max_Nbins=4096, max_depth=10)
+OctreeMerge
+OctreeMerge{D,M}(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit,
+            max_Nbins=4096, max_depth=10)
+OctreeMerge(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit,
+            max_Nbins=4096, max_depth=10) 
 merge_octree!
 ```
 
