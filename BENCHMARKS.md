@@ -33,22 +33,22 @@ Note that this is 1) without any dynamical load-balancing (speed-up is less than
 
 |                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
 |:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
-| v0.7.10 (Julia 1.12)    |       TODO            |    27.3s                              |             38.6s               |
-| v0.8.0 (Julia 1.12)     |       TODO            |    23.7s                              |             31.8s               |    
+| v0.7.10 (Julia 1.12)    |       TODOs           |    27.3s                              |             38.6s               |
+| v0.8.0 (Julia 1.12)     |       28.1s           |    23.7s                              |             31.8s               |    
 
 ### 0D ionization, variable-weight particles, octree merging
 
 |                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
 |:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
-| v0.7.10 (Julia 1.12)    |       TODO            |    15.1s                              |             23.0s               |
-| v0.8.0 (Julia 1.12)     |       TODO            |    4.72s                              |             6.83s               |    
+| v0.7.10 (Julia 1.12)    |       TODOs           |    15.1s                              |             23.0s               |
+| v0.8.0 (Julia 1.12)     |       6.62s           |    4.72s                              |             6.83s               |    
 
 ### 0D ionization, variable-weight particles, NNLS merging
 
 |                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
 |:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
-| v0.7.10 (Julia 1.12)    |       TODO            |    17.4s                              |             26.5s               |
-| v0.8.0 (Julia 1.12)     |       TODO            |    3.98s                              |             5.98s               |    
+| v0.7.10 (Julia 1.12)    |       TODOs           |    17.4s                              |             26.5s               |
+| v0.8.0 (Julia 1.12)     |       4.95s           |    3.98s                              |             5.98s               |    
 
 ## Couette flow, serial, small grid
 
@@ -200,23 +200,7 @@ MacOS 15.4.1, Julia version 1.12.5, SPARTA compiled with Apple clang version 17.
 
 #### Merzbild.jl
 ```
-──────────────────────────────────────────────────────────────────────────────────────
-                                             Time                    Allocations      
-                                    ───────────────────────   ────────────────────────
-         Tot / % measured:               1164s /  99.5%            190MiB /  17.2%    
-
-Section                     ncalls     time    %tot     avg     alloc    %tot      avg
-──────────────────────────────────────────────────────────────────────────────────────
-convect + surface compute    36.0k     359s   31.0%  10.0ms   2.20MiB    6.7%    64.0B
-sort                         50.0k     337s   29.0%  6.73ms     0.00B    0.0%    0.00B
-props compute                36.0k     181s   15.6%  5.02ms     0.00B    0.0%    0.00B
-collide                       100M     171s   14.8%  1.71μs     0.00B    0.0%    0.00B
-convect                      14.0k     110s    9.5%  7.87ms     0.00B    0.0%    0.00B
-avg physprops                36.0k    198ms    0.0%  5.51μs     0.00B    0.0%    0.00B
-sampling                         1   26.1ms    0.0%  26.1ms   30.5MiB   93.3%  30.5MiB
-avg surfprops                36.0k   14.8ms    0.0%   410ns     0.00B    0.0%    0.00B
-I/O                             15   1.77ms    0.0%   118μs   3.58KiB    0.0%     244B
-──────────────────────────────────────────────────────────────────────────────────────
+TODO
 ```
 
 #### SPARTA
@@ -240,56 +224,8 @@ Ubuntu 24.04.3, Julia version 1.12.5.
 
 #### Merzbild.jl
 ```
-──────────────────────────────────────────────────────────────────────────────────────
-                                             Time                    Allocations      
-                                    ───────────────────────   ────────────────────────
-         Tot / % measured:               1467s /  99.5%            192MiB /  17.0%    
-
-Section                     ncalls     time    %tot     avg     alloc    %tot      avg
-──────────────────────────────────────────────────────────────────────────────────────
-convect + surface compute    36.0k     584s   40.0%  16.2ms   2.20MiB    6.7%    64.0B
-sort                         50.0k     369s   25.3%  7.39ms     0.00B    0.0%    0.00B
-collide                       100M     173s   11.8%  1.73μs     0.00B    0.0%    0.00B
-convect                      14.0k     170s   11.6%  12.1ms     0.00B    0.0%    0.00B
-props compute                36.0k     164s   11.2%  4.54ms     0.00B    0.0%    0.00B
-avg physprops                36.0k    306ms    0.0%  8.51μs     0.00B    0.0%    0.00B
-sampling                         1   31.4ms    0.0%  31.4ms   30.5MiB   93.3%  30.5MiB
-avg surfprops                36.0k   21.8ms    0.0%   605ns     0.00B    0.0%    0.00B
-I/O                             15   7.44ms    0.0%   496μs   3.58KiB    0.0%     244B
-──────────────────────────────────────────────────────────────────────────────────────
+TODO
 ```
-
-## Couette flow, multi-threaded, large grid
-The numerical and physical parameters are the same as for the serial large grid case (2000 cells, 250 particles per cell at `t=0`).
-The simulation file is `simulations/1D/couette_multithreaded.jl`.
-
-### Intel Core i9-13900K, 128 GB RAM
-Ubuntu 22.04.5, Julia version 1.12.5.
-Shown is the speed-up compared to a serial execution on the same computer (see above). `DLB` denotes dynamic load balancing (currently not used).
-
-|                               | **2 cores** |  **4 cores** |  **8 cores** |
-|:-----------------------------:|:-----------:|:------------:|:------------:|
-| `n_chunks=n_threads`, no DLB  |   1.85      |    3.24      |     5.06     |         
-
-
-
-### M1 Pro (Macbook Pro), 32 GB RAM
-MacOS 15.4.1, Julia version 1.12.5.
-Shown is the speed-up compared to a serial execution on the same computer (see above). `DLB` denotes dynamic load balancing (currently not used).
-
-|                               | **2 cores** |  **4 cores** |  **8 cores** |
-|:-----------------------------:|:-----------:|:------------:|:------------:|
-| `n_chunks=n_threads`, no DLB  |    2.27     |    3.75      |     5.76     |      
-
-
-
-### AMD EPYC 9374F, 378 GB RAM
-Ubuntu 24.04.3, Julia version 1.12.5.
-Shown is the speed-up compared to a serial execution on the same computer (see above). `DLB` denotes dynamic load balancing (currently not used).
-
-|                               | **2 cores** |  **4 cores** |  **8 cores** |  **16 cores** | **32 cores** |
-|:-----------------------------:|:-----------:|:------------:|:------------:|:-------------:|:-------------:|
-| `n_chunks=n_threads`, no DLB  |   1.88      |    3.68      |     5.24     |      5.70     |     6.57      |
 
 ## Couette flow, variable-weight particles, octree merging
 This simulation uses 200 cells, 250 initial particles per cell, octree N:2 merging down to 100 particles when particle count exceeds 150 particles in a cell.
@@ -321,8 +257,28 @@ squash (t=0)                     1   21.1μs    0.0%  21.1μs     0.00B    0.0% 
 ```
 
 ### M1 Pro (Macbook Pro), 32 GB RAM
+```
+──────────────────────────────────────────────────────────────────────────────────────
+                                             Time                    Allocations      
+                                    ───────────────────────   ────────────────────────
+         Tot / % measured:               28.1s /  95.8%            145MiB /   2.1%    
 
-TODO
+Section                     ncalls     time    %tot     avg     alloc    %tot      avg
+──────────────────────────────────────────────────────────────────────────────────────
+collide                      10.0M    11.7s   43.3%  1.17μs     0.00B    0.0%    0.00B
+sort                         50.0k    5.33s   19.8%   107μs     0.00B    0.0%    0.00B
+merge                         569k    3.28s   12.2%  5.77μs     0.00B    0.0%    0.00B
+props compute                36.0k    2.22s    8.2%  61.6μs     0.00B    0.0%    0.00B
+convect + surface compute    36.0k    2.19s    8.1%  60.9μs     0.00B    0.0%    0.00B
+restore ordering             5.00k    915ms    3.4%   183μs     0.00B    0.0%    0.00B
+convect                      14.0k    713ms    2.6%  50.9μs     0.00B    0.0%    0.00B
+squash                       50.0k    628ms    2.3%  12.6μs     0.00B    0.0%    0.00B
+I/O                             52   3.00ms    0.0%  57.7μs   12.2KiB    0.4%     241B
+sampling                         1   2.65ms    0.0%  2.65ms   3.05MiB   99.6%  3.05MiB
+merge (t=0)                    200   1.60ms    0.0%  7.98μs     0.00B    0.0%    0.00B
+squash (t=0)                     1   26.4μs    0.0%  26.4μs     0.00B    0.0%    0.00B
+──────────────────────────────────────────────────────────────────────────────────────
+```
 
 ### AMD EPYC 9374F, 378 GB RAM
 
@@ -358,7 +314,27 @@ merge n (t=0)        1    123μs    0.0%   123μs     0.00B    0.0%    0.00B
 
 ### M1 Pro (Macbook Pro), 32 GB RAM
 
-TODO
+```
+──────────────────────────────────────────────────────────────────────────
+                                 Time                    Allocations      
+                        ───────────────────────   ────────────────────────
+   Tot / % measured:         6.62s /  86.8%            245MiB /  41.1%    
+
+Section         ncalls     time    %tot     avg     alloc    %tot      avg
+──────────────────────────────────────────────────────────────────────────
+props             500k    2.48s   43.0%  4.95μs     0.00B    0.0%    0.00B
+acc e             500k    1.09s   19.0%  2.19μs     0.00B    0.0%    0.00B
+I/O               500k    1.01s   17.6%  2.02μs   99.2MiB   98.5%     208B
+coll n-e ES       500k    973ms   16.9%  1.95μs     0.00B    0.0%    0.00B
+merge e            697    132ms    2.3%   190μs     0.00B    0.0%    0.00B
+merge n          6.10k   40.4ms    0.7%  6.62μs     0.00B    0.0%    0.00B
+coll n-n          500k   17.5ms    0.3%  35.0ns     0.00B    0.0%    0.00B
+merge i          1.80k   5.45ms    0.1%  3.02μs     0.00B    0.0%    0.00B
+merge e (t=0)        1   1.70ms    0.0%  1.70ms   1.50MiB    1.5%  1.50MiB
+merge i (t=0)        1    239μs    0.0%   239μs     0.00B    0.0%    0.00B
+merge n (t=0)        1    203μs    0.0%   203μs     0.00B    0.0%    0.00B
+──────────────────────────────────────────────────────────────────────────
+```
 
 ### AMD EPYC 9374F, 378 GB RAM
 
@@ -397,7 +373,29 @@ NNLSinit RP        1   16.6μs    0.0%  16.6μs    142KiB    0.0%   142KiB
 
 ### M1 Pro (Macbook Pro), 32 GB RAM
 
-TODO
+```
+────────────────────────────────────────────────────────────────────────
+                               Time                    Allocations      
+                      ───────────────────────   ────────────────────────
+  Tot / % measured:        4.95s /  79.6%            809MiB /  80.5%    
+
+Section       ncalls     time    %tot     avg     alloc    %tot      avg
+────────────────────────────────────────────────────────────────────────
+NNLSmerge e    3.03k    1.46s   37.1%   483μs    396MiB   60.8%   134KiB
+I/O             500k    1.08s   27.5%  2.16μs    114MiB   17.6%     240B
+merge e t=0        1    809ms   20.5%   809ms    127MiB   19.5%   127MiB
+props           500k    384ms    9.8%   769ns     0.00B    0.0%    0.00B
+coll n-e ES     500k   76.0ms    1.9%   152ns     0.00B    0.0%    0.00B
+NNLSinit           2   57.4ms    1.5%  28.7ms   13.3MiB    2.0%  6.64MiB
+acc e           500k   51.5ms    1.3%   103ns     0.00B    0.0%    0.00B
+coll n-n        500k   12.1ms    0.3%  24.3ns     0.00B    0.0%    0.00B
+merge n          393   3.12ms    0.1%  7.95μs     0.00B    0.0%    0.00B
+merge i          183    714μs    0.0%  3.90μs     0.00B    0.0%    0.00B
+merge i t=0        1    246μs    0.0%   246μs     0.00B    0.0%    0.00B
+merge n t=0        1    237μs    0.0%   237μs     0.00B    0.0%    0.00B
+NNLSinit RP        1   12.8μs    0.0%  12.8μs    142KiB    0.0%   142KiB
+────────────────────────────────────────────────────────────────────────
+```
 
 ### AMD EPYC 9374F, 378 GB RAM
 
