@@ -11,7 +11,6 @@ Various benchmarks and comparisons to other open-source codes are provided here 
 | v0.7.0 (Julia 1.11)     |       33.5s           |    28.4s                              |             33.0s               |
 | v0.8.0 (Julia 1.12)     |       30.0s           |    23.4s                              |             31.1s               |    
 
-
 ### Couette flow, serial, large grid
 
 |                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
@@ -27,7 +26,6 @@ Note that this is 1) without any dynamical load-balancing (speed-up is less than
 |:-------------------:|:------------------------------------:|:---------------------------------------------------:|:--------------------------------------------------:|
 | v0.7.0 (Julia 1.11) | 2.3 / 3.8 / 5.8                      |    1.9 / 3.2 / 5.1                                  | 1.9 / 3.9 / 5.2 / 5.7 / 6.5                        |
 | v0.8.0 (Julia 1.12) |       2.0 / 3.3 / 4.5                |    1.6 / 2.7 / 3.7                                  | 1.7 / 3.3 / 3.6 / 4.1 / 3.6                        |    
-
 
 ### Couette flow, variable-weight particles, octree merging
 
