@@ -4,5 +4,5 @@
 - [Georgii Oblapenko](https://www.acom.rwth-aachen.de/the-lab/team-people/name:georgii_oblapenko), Applied and Computational Mathematics, RWTH Aachen
 
 ## Contributors
-- Yanliang Zhu, RWTH Aachen (yanliang<dot>zhu<at>rwth-aachen<dot>de)
+- Yanliang Zhu, RWTH Aachen (yanliang.zhu@rwth-aachen.de)
 - [Leo Basov](https://www.linkedin.com/in/leo-basov-31374110b/), German Aerospace Center
