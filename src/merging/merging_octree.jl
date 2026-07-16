@@ -204,7 +204,7 @@ function fill_bins(Nbins)
 end
 
 """
-    fill_full_bins(::Val{D}, ::Val{M}, Nbins)
+    fill_full_bins(::Val{D}, ::Val{M}, Nbins) where {D,M}
 
 Fill the octree bins full structs with zero data, used as a utility function for initialization.
 
@@ -411,7 +411,7 @@ function bin_bounds_inherit!(octree, bin_id, v_min_parent, v_max_parent, v_middl
 end
 
 """
-    bin_bounds_recompute!(octree, bin_id, bs, be, particles)
+    bin_bounds_recompute!(octree, bin_id, bs, be, particles::ParticleVector{D}) where D
 
 Recompute bin bounds based on particle velocities by setting them to the smallest and largest
 velocities of the particles in each velocity direction.
@@ -465,7 +465,7 @@ function bin_bounds_recompute!(octree, bin_id, bs, be, particles::ParticleVector
 end
 
 """
-    compute_v_mean!(octree, bs, be, particles)
+    compute_v_mean!(octree, bs, be, particles::ParticleVector{D}) where D
 
 Compute mean velocity of particles in a bin.
 
@@ -487,7 +487,7 @@ Compute mean velocity of particles in a bin.
 end
 
 """
-    compute_v_median!(octree, bs, be, particles)
+    compute_v_median!(octree, bs, be, particles::ParticleVector{D}) where D
 
 Compute median velocity of particles in a bin. NOTE: allocates memory and is probably not fully correct!
 
@@ -537,7 +537,7 @@ Index of a newly created bin corresponding to a bin created from sub-octant `i` 
 end
 
 """
-    split_bin!(octree::OctreeMerge{D,M}, bin_id, particles::ParticleVector{D})
+    split_bin!(octree::OctreeMerge{D,M}, bin_id, particles::ParticleVector{D}) where {D,M}
 
 Sort particles into sub-bins of a bin with index `bin_id` (by splitting it into octants),
 keeping track of which sub-bins particles end up in.
@@ -690,7 +690,7 @@ function split_bin!(octree::OctreeMerge{D,M}, bin_id, particles::ParticleVector{
 end
 
 """
-    compute_bin_props!(octree::OctreeMerge{D,M}, bin_id, particles::ParticleVector{D})
+    compute_bin_props!(octree::OctreeMerge{D,M}, bin_id, particles::ParticleVector{D}) where {D,M}
 
 Compute properties in a bin required for merging: total computational weight, mean velocity and position,
 standard deviation of particle velocities and positions.
@@ -758,7 +758,7 @@ function compute_bin_props!(octree::OctreeMerge{D,M}, bin_id, particles::Particl
 end
 
 """
-    get_bin_post_merge_np(octree::OctreeMerge{D,M}, bin_id)
+    get_bin_post_merge_np(octree::OctreeMerge{D,M}, bin_id) where {D,M}
 
 Get number of post-merge particles in a bin: M if the number of particles in the bin is >= M, otherwise
 the number of particles in the bin is returned.
@@ -778,7 +778,7 @@ The number of post-merge particles in a single octree bin (0, 1, or 2).
 end
 
 """
-    compute_new_particles!(rng, octree::OctreeMerge{D,2}, particles::ParticleVector{D}, pia, cell, species)
+    compute_new_particles!(rng, octree::OctreeMerge{D,2}, particles::ParticleVector{D}, pia, cell, species) where D
 
 Compute post-merge particles with particles based on octree bin properties without checking or setting particle locations
 (for spatially homogeneous merging).
@@ -853,7 +853,7 @@ function compute_new_particles!(rng, octree::OctreeMerge{D,2}, particles::Partic
 end
 
 """
-    compute_new_particles!(rng, octree::OctreeMerge{D,2}, particles::ParticleVector{D}, pia, cell, species, grid::Grid1DUniform)
+    compute_new_particles!(rng, octree::OctreeMerge{D,2}, particles::ParticleVector{D}, pia, cell, species, grid::Grid1DUniform) where D
 
 Compute post-merge particles particles based on octree bin properties; placing out-of-domain particles back into the domain.
 N:2 merging in each bin.
@@ -927,7 +927,7 @@ function compute_new_particles!(rng, octree::OctreeMerge{D,2}, particles::Partic
 end
 
 """
-    compute_new_particles!(rng, octree::OctreeMerge{D,1}, particles::ParticleVector{D}, pia, cell, species)
+    compute_new_particles!(rng, octree::OctreeMerge{D,1}, particles::ParticleVector{D}, pia, cell, species) where D
 
 Compute post-merge particles with particles based on octree bin properties without checking or setting particle locations
 (for spatially homogeneous merging).
@@ -1028,7 +1028,7 @@ function compute_new_particles!(rng, octree::OctreeMerge{D,1}, particles::Partic
 end
 
 """
-    compute_new_particles!(rng, octree::OctreeMerge{D,1}, particles::ParticleVector{D}, pia, cell, species, grid::Grid1DUniform)
+    compute_new_particles!(rng, octree::OctreeMerge{D,1}, particles::ParticleVector{D}, pia, cell, species, grid::Grid1DUniform) where D
 
 Compute post-merge particles with particles based on octree bin properties, N:1 merging in each bin; placing out-of-domain particles back into the domain..
 It computes properties of all particles. And after the first merge, it scales the particles based on these properties to achieve conservation.
@@ -1231,7 +1231,7 @@ end
 
 
 """
-    init_octree!(octree::OctreeMerge{D,M}, particles::ParticleVector{D}, pia, cell, species)
+    init_octree!(octree::OctreeMerge{D,M}, particles::ParticleVector{D}, pia, cell, species) where {D,M}
 
 Initialize the top bin in an octree by copying particle indices and setting bin bounds.
 
@@ -1283,7 +1283,7 @@ end
 
 
 """
-    compute_octree!(octree::OctreeMerge{D,M}, particles::ParticleVector{D}, target_np)
+    compute_octree!(octree::OctreeMerge{D,M}, particles::ParticleVector{D}, target_np) where {D,M}
 
 Perform refinement of an octree for N:2 merging until target number of particles reached or nothing left to refine.
 
@@ -1338,7 +1338,7 @@ function compute_octree!(octree::OctreeMerge{D,M}, particles::ParticleVector{D},
 end
 
 """
-    merge_octree!(rng, octree::OctreeMerge{D,M}, particles::ParticleVector{D}, pia, cell, species, target_np)
+    merge_octree!(rng, octree::OctreeMerge{D,M}, particles::ParticleVector{D}, pia, cell, species, target_np) where {D,M}
 
 Perform octree N:M merging without checking whether particle positions end up outside of the simulation domain.
 
@@ -1365,7 +1365,7 @@ function merge_octree!(rng, octree::OctreeMerge{D,M}, particles::ParticleVector{
 end
 
 """
-    merge_octree!(rng, octree::OctreeMerge{D,M}, particles::ParticleVector{D}, pia, cell, species, target_np, grid::Grid1DUniform)
+    merge_octree!(rng, octree::OctreeMerge{D,M}, particles::ParticleVector{D}, pia, cell, species, target_np, grid::Grid1DUniform) where {D,M}
 
 Perform octree N:M merging, checking whether particle positions end up outside of the simulation domain, and placing them back into the domain
 if needed.
