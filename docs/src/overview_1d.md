@@ -94,6 +94,11 @@ bc_list = (FullyDiffuseBC1D(1, species_data, T_wall, [0.0, -v_wall, 0.0]),
            FullyDiffuseBC1D(1, species_data, T_wall, [0.0, v_wall, 0.0]))
 ```
 
+Currently, the following 1D boundary conditions have been implemented:
+- [`FullyDiffuseBC1D`](@ref) - fully diffuse reflection with boundary orthogonal to the x-axis
+- [`FullySpecularBC1D`](@ref) - fully specular reflection with boundary orthogonal to the x-axis
+- [`MaxwellWallBC1D`](@ref) - Maxwell model (linear mixture of fully diffuse and specular reflection) with boundary orthogonal to the x-axis
+
 ## Calculation of surface properties
 To compute surface properties due to particle-surface interactions, one needs to first set up the corresponding struct
 that will hold the computed values. This is done by.
