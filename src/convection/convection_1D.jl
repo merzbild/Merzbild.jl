@@ -3,7 +3,7 @@
 using StaticArrays
 
 """
-    convect_single_particle!(rng, grid::Grid1DUniform, bc_list, particle::Particle{D}, species, Δt)
+    convect_single_particle!(rng, grid::Grid1DUniform, bc_list, particle::Particle{D}, species, Δt) where D
 
 Convect a singe particle on a 1-D uniform grid.
 
@@ -43,7 +43,7 @@ Convect a singe particle on a 1-D uniform grid.
 end
 
 """
-    convect_single_particle!(rng, grid::Grid1DUniform, bc_list, particle::Particle{D}, species, surf_props::SurfProps, mass, Δt)
+    convect_single_particle!(rng, grid::Grid1DUniform, bc_list, particle::Particle{D}, species, surf_props::SurfProps, mass, Δt) where D
 
 Convect a singe particle on a 1-D uniform grid, updating surface properties if it collides with a wall.
 
@@ -87,7 +87,7 @@ Convect a singe particle on a 1-D uniform grid, updating surface properties if i
 end
 
 """
-    convect_particles!(rng, grid::Grid1DUniform, bc_list, particles::ParticleVector{D}, pia, species, species_data, Δt)
+    convect_particles!(rng, grid::Grid1DUniform, bc_list, particles::ParticleVector{D}, pia, species, species_data, Δt) where D
 
 Convect particles on a 1-D uniform grid.
 
@@ -129,7 +129,7 @@ function convect_particles!(rng, grid::Grid1DUniform, bc_list, particles::Partic
 end
 
 """
-    convect_particles!(rng, grid::Grid1DUniform, bc_list, surf_props::SurfProps, particles::ParticleVector{D}, pia, species, species_data, Δt)
+    convect_particles!(rng, grid::Grid1DUniform, bc_list, surf_props::SurfProps, particles::ParticleVector{D}, pia, species, species_data, Δt) where D
 
 Convect particles on a 1-D uniform grid, computing surface properties if particles hit a surface.
 
@@ -177,7 +177,7 @@ end
 
 
 """
-    convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, bc_list, particles::ParticleVector{D}, pia, species, species_data, Δt)
+    convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, bc_list, particles::ParticleVector{D}, pia, species, species_data, Δt) where D
 
 Convect particles on a 1-D uniform grid and write post-convection cell index to `particles.cell`.
 
@@ -223,7 +223,7 @@ function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, bc_list, 
 end
 
 """
-    convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, bc_list, surf_props::SurfProps, particles::ParticleVector{D}, pia, species, species_data, Δt)
+    convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, bc_list, surf_props::SurfProps, particles::ParticleVector{D}, pia, species, species_data, Δt) where D
 
 Convect particles on a 1-D uniform grid and write post-convection cell index to `particles.cell`, computing surface properties if particles hit a surface.
 

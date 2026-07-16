@@ -127,7 +127,7 @@ function diffuse_reflection_x!(rng, particle, wall_reflection_v_sq, wall_normal_
 end
 
 """
-    apply_bc!(rng, particle::Particle{D}, wallbc::MaxwellWallBC1D, surface_normal::SVector{3,Float64}, Δt)
+    apply_bc!(rng, particle::Particle{D}, wallbc::MaxwellWallBC1D, surface_normal::SVector{3,Float64}, Δt) where D
 
 Apply a Maxwell 1D boundary condition.
 
@@ -158,7 +158,7 @@ Unchanged value of `Δt`.
 end
 
 """
-    apply_bc!(rng, particle::Particle{D}, wallbc::FullyDiffuseBC1D, surface_normal::SVector{3,Float64}, Δt)
+    apply_bc!(rng, particle::Particle{D}, wallbc::FullyDiffuseBC1D, surface_normal::SVector{3,Float64}, Δt) where D
 
 Apply a fully diffuse 1D boundary condition.
 
@@ -177,7 +177,7 @@ Unchanged value of `Δt`.
 end
 
 """
-    apply_bc!(rng, particle::Particle{D}, wallbc::FullySpecularBC1D, Δt)
+    apply_bc!(rng, particle::Particle{D}, wallbc::FullySpecularBC1D, surface_normal::SVector{3,Float64}, Δt) where D
 
 Apply a fully specular 1D boundary condition.
 
@@ -196,7 +196,7 @@ Unchanged value of `Δt`.
 end
 
 """
-    apply_bc_dispatched!(rng, particle::Particle{D}, bcs::Tuple, i::Int, surface_normal::SVector{3,Float64}, Δt::Float64)
+    apply_bc_dispatched!(rng, particle::Particle{D}, bcs::Tuple, i::Int, surface_normal::SVector{3,Float64}, Δt::Float64) where D
 
 Generates a function that dispatches to the correct boundary condition function based on the index `i`. For use in a particle
 convection routine.
