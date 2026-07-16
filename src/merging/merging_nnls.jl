@@ -17,7 +17,6 @@ Struct for keeping track of merging-related quantities for NNLS-based merging of
 * `n_total_conserved`: total number of moments conserved
 * `n_moments_vel`: number of velocity moments to preserve
 * `rhs_vector`: vector of computed moments
-* `residual`: residual of solution
 * `mim`: vector of 3-tuples of multi-indices for the velocity moments to preserve
 * `tot_order`: vector of total orders of the velocity moments to preserve
 * `n_moments_pos`: number of spatial moments to preserve
@@ -437,7 +436,9 @@ function compute_lhs_and_rhs!(nnls_merging::NNLSMerge{D}, lhs_matrix, vel_pos_ma
 end
 
 """
-    compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_matrix, vel_pos_matrix, particles::ParticleVector{D}, pia, cell, species, extend)
+    compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_matrix, vel_pos_matrix,
+                                         interaction, electron_neutral_interactions, computed_cs,
+                                         particles::ParticleVector{D}, pia, cell, species, neutral_species_index, extend)
 
 Compute LHS matrix and RHS vector for the rate-preserving NNLS merging (for electrons). Approximate
     elastic scattering and electron-impact ionization rates are conserved.
@@ -856,7 +857,7 @@ function scale_lhs_rhs!(nnls_merging::NNLSMerge{D}, lhs_matrix, scaling, lhs_nco
 end
 
 """
-    scale_lhs_rhs_rate_preserving!(nnls_merging, lhs_matrix, ref_k_elastic, ref_k_ion)
+    scale_lhs_rhs_rate_preserving!(nnls_merging, lhs_matrix, ref_k_elastic, ref_k_ion, scaling, lhs_ncols)
 
 Scale the LHS and RHS of the NNLS system for the rate-preserving electron merging
 using the reference velocity ``v_{ref}`` and

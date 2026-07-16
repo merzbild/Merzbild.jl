@@ -39,7 +39,7 @@ end
 
 # Fields
 * `L`: length of the domain
-* `nx`: number of cells
+* `n_cells`: number of cells
 * `Δx`: cell size
 * `inv_Δx`: inverse of cell size
 * `cells`: `Vector` of `Cell1D` elements

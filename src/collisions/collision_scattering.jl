@@ -63,9 +63,9 @@ Scatter electrons and ion after an ionization reaction using VHS (isotropic) sca
     center-of-mass velocity the magnitude of the pre-collisional relative velocity
     of the electron and the neutral, and the post-collisional magnitudes of the velocities
     of the electrons
-* `i1`: the first electron particle to scatter off of the neutral
-* `i2`: the second electron particle to scatter off of the neutral
-* `k1`: the ion produced in the ionization reaction
+* `p_e1`: the first electron particle to scatter off of the neutral
+* `p_e2`: the second electron particle to scatter off of the neutral
+* `p_ion`: the ion produced in the ionization reaction
 * `mass_ratio`: ratio of the electron mass to the ion mass
 
 # References

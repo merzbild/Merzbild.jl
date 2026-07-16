@@ -1146,11 +1146,11 @@ Write back merged particles to the particle array (0D case - position of particl
 It will only be used in the function compute_new_particles! without a grid argument, which means no boundary handling is needed.
 
 # Positional arguments:
+* `octree`: the `OctreeMerge` instance
 * `particles`: the `ParticleVector` instance containing the particles to be merged
 * `pia`: the `ParticleIndexerArray` instance
 * `cell`: the index of the grid cell in which particles are being merged
 * `species`: the index of the species being merged
-* `octree`: the `OctreeMerge` instance
 
 # Returns
 The current particle index after writing.
@@ -1182,18 +1182,18 @@ end
 
 
 """
-    write_back_to_particles!(octree::OctreeMerge{D,M}, particles::ParticleVector{D}, pia, cell, species, grid::Grid1DUniform) where N
+    write_back_to_particles!(octree::OctreeMerge{D,M}, particles::ParticleVector{D}, pia, cell, species, grid::Grid1DUniform) where {D,M}
 
 Write back merged particles to the particle array with boundary clamping (1D case).
 Particles positioned outside the grid boundaries (`grid.min_x`, `grid.max_x`) are clamped to the boundary.
 It will only be used in the function compute_new_particles! with grid::Grid1DUniform argument.
 
 # Positional arguments:
+* `octree`: the `OctreeMerge` instance
 * `particles`: the `ParticleVector` instance containing the particles to be merged
 * `pia`: the `ParticleIndexerArray` instance
 * `cell`: the index of the grid cell in which particles are being merged
 * `species`: the index of the species being merged
-* `octree`: the `OctreeMerge` instance
 * `grid`: the `Grid1DUniform` instance
 
 # Returns

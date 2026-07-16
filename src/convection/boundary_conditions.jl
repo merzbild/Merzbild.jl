@@ -127,7 +127,7 @@ function diffuse_reflection_x!(rng, particle, wall_reflection_v_sq, wall_normal_
 end
 
 """
-    apply_bc!(rng, particle::Particle{D}, wallbc::MaxwellWallBC1D, Δt)
+    apply_bc!(rng, particle::Particle{D}, wallbc::MaxwellWallBC1D, surface_normal::SVector{3,Float64}, Δt)
 
 Apply a Maxwell 1D boundary condition.
 

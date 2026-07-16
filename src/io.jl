@@ -795,9 +795,8 @@ If `D==0` (particle position is not tracked), neither the particle position nor 
 
 # Positional arguments
 * `nc_filename`: filename to write output to
-* `pv`: the `ParticleVector` instances of particles to be written
+* `particles`: the Vector of `ParticleVector` instances of particles to be written
 * `pia`: the `ParticleIndexerArray` instance
-* `species`: the index of the species being written
 * `species_data`: the vector of `Species` data for the species in the simulation
 * `species_ids`: list of species ids (in range 1:n_species) of species for which to write particle data
 

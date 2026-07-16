@@ -4,7 +4,7 @@
 Compute elastic VHS mean free path for single-species collisions.
 
 # Positional arguments
-* `interactions`: the 2-dimensional array of `Interaction` instances (of shape `(n_species, n_species)`) of all the pair-wise interactions
+* `interaction`: the 2-dimensional array of `Interaction` instances (of shape `(n_species, n_species)`) of all the pair-wise interactions
 * `species`: the species for which to compute the mean free path
 * `n`: the number density
 * `T`: the temperature

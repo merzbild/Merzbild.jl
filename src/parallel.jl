@@ -479,7 +479,7 @@ after particles have been swapped and pushed between chunks.
 # Positional arguments
 * `chunk_exchanger`: the `ChunkExchanger` instance used to track post-swap and post-push indices
 * `gridsort`: The `GridSortInPlace` associated with the chunk
-* `particles_chunks`: the `ParticleVector` for which to restore the indexing
+* `particles`: the `ParticleVector` for which to restore the indexing
 * `pia`: the `ParticleIndexerArray` instances associated with the chunk
 * `cell_chunk`: list or range of cells belonging to the chunk
 * `species`: the particle species being for which the indexing is being restored

@@ -6,7 +6,7 @@
 Structure to store computed surface properties.
 
 # Fields
-* `n_elements`: number of physical cells
+* `n_elements`: number of surface elements
 * `n_species`: number of species
 * `areas`: the vector of surface element areas
 * `inv_areas`: the vector of the inverse surface element areas
@@ -34,13 +34,17 @@ mutable struct SurfProps
     kinetic_energy_flux::Array{Float64,2}  # kinetic energy flux: elements x species
 
     @doc """
-        SurfProps(n_elements, n_species, area, normals)
+        SurfProps(n_elements, n_species, areas, normals)
+
+    Construct a struct for holding computed surface properties for `n_elements` surface elements,
+    `n_species` species. The surface elements' areas and normals are given by `areas` and `normals`,
+    respectively.
 
     # Positional arguments
-    * `n_elements`
-    * `n_species`
-    * `areas`
-    * `normals`
+    * `n_elements`: number of surface elements
+    * `n_species`: number of species
+    * `areas`: vector of areas of surface elements
+    * `normals`: vector of normals to surface elements
     """
     function SurfProps(n_elements, n_species, areas, normals)
         return new(n_elements, n_species, areas, [1.0/area for area in areas], normals,

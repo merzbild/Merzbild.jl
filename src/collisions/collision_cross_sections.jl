@@ -91,7 +91,7 @@ struct ElasticScattering
 end
 
 """
-    Ionization
+    ExcitationSink
 
 Structure to hold data on electron-impact electronic excitation cross-sections for a specific species.
 

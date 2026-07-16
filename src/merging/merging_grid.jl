@@ -15,7 +15,7 @@ Struct for keeping track of merging-related quantities in a velocity grid cell w
 * `x_std_sq`: variance of position of particles in cell
 * `particle_index1`: index of first particle in the cell (first as in the first particle that is found to
     belong to the cell)
-* `particle_index1`: index of second particle in the cell (second as in the second particle that is found to
+* `particle_index2`: index of second particle in the cell (second as in the second particle that is found to
     belong to the cell)
 * `w1`: the post-merge weight to assign to the first particle in the cell
 * `w2`: the post-merge weight to assign to the second particle in the cell
@@ -68,6 +68,7 @@ and `extent_multiplier` is a user-defined parameter (3.5 is a reasonable choice)
 * `Δv`: the grid cell size in each velocity direction
 * `Δv_inv`: the inverse grid cell size in each velocity direction
 * `direction_vec`: used to store randomly sampled direction signs
+* `direction_vecD`: used to store randomly sampled direction signs of length D
 * `cells`: vector of `GridCell` instances for each grid cell, as well as the external octants
 """
 mutable struct GridN2Merge{D}
