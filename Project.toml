@@ -1,6 +1,6 @@
 name = "Merzbild"
 uuid = "de01fcb4-c117-45a4-a951-7e39b0f12516"
-authors = ["Georgii Oblapenko <kunstmord@kunstmord.com>", "Leo Basov <basov.leo@gmail.com>"]
+authors = ["Georgii Oblapenko <georgii.oblapenko@fastmail.com>", "Leo Basov <basov.leo@gmail.com>", "Yanliang Zhu <yanliang.zhu@rwth-aachen.de>"]
 version = "0.8.0"
 
 [deps]

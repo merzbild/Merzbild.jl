@@ -4,10 +4,12 @@
 
 ### Breaking changes
 * Usage of `Vector{Particle}` completely deprecated; tests have been updated
-* `Particle` now has a `D` type parameter describing the dimension of the position vector. `D` defaults to 3 unless
+* `Particle` type now has a `D` type parameter describing the dimension of the position vector. `D` defaults to 3 unless
 specified. `ParticleVector` now also has a `D` type parameter.
 * Merging routines now also have a `D` type parameter describing the dimension of the position vector of the particles to merge.
 `D` defaults to 3 unless specified.
+* Octree merging struct renamed to `OctreeMerge` and also has a second type parameter `M`: the number of post-merge particles in a bin (refactoring
+by Yanliang Zhu)
 * Removed unused `update_particle_indexer_new_lower_count!` function
 * NNLS merging functions now do not take `v_multipliers`, `n_rand_pairs`, and `centered_at_mean` as arguments, and do not use any fictitious particles
 * The function `check_speed_bounds` has been removed
@@ -30,7 +32,7 @@ in particle arrays has been implemented. See documentaton on contiguous indexing
 * More specialized boundary conditions added for 1D simulations: `FullyDiffuseBC1D`, `MaxwellWallBC1D`, `SpecularWallBC1D`
 * The `ParticleIndexerArray` type now directly stores number of cells and species it is tracking (`.n_cells`, `.n_species`)
 * `MERZBILD_DATA_PATH` now exported for easier loading of particle and interaction data bundled with Merzbild.jl
-* Octree-based merging now supports N:M merging in each bin (currently, only conservative N:1 and N:2 merging implemented)
+* Octree-based merging now supports N:M merging in each bin (currently, only conservative N:1 and N:2 merging implemented; implementation by Yanliang Zhu)
 
 ### Misc
 * Added tests that check that for unexpected memory allocations
@@ -210,7 +212,7 @@ now uses the RNG. CI Github workflow added. Test values and tolerances updated. 
 * `MaxwellWalls` renamed to `MaxwellWalls1D`.
 
 ## v0.4.1
-* Implemented linear Fokker-Planck model for a single species gas without internal degrees of freedom.
+* Implemented linear Fokker-Planck model for a single species gas without internal degrees of freedom (implementation by Leo Basov).
 
 ## v0.4.0
 * Proper constructors added for a lot of the structs used in the code; old initialization functions removed.
