@@ -43,7 +43,7 @@ For the serial version, the call looks like this:
 ```julia
 exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, 1)
 ```
-The function [`exchange_particles!`](@ref) contains two loops over the chunks: one outer loop `for i in 1:n_chunks`
+The function [`exchange_particles!`](@ref) contains two loops over the chunks: one outer loop `for i in 1:n_chunks-1`
 and one inner loop `for j in i+1:n_chunks`.
 
 The equivalent threaded version looks like this:
@@ -79,7 +79,7 @@ particles in the per-chunk `ParticleVector` instances, since otherwise the trans
 calls to `resize!` at the start of the simulation as the solution approaches steady state and the average number of particles in a chunk
 changes significantly. A value of `1.0` means no additional particle storage is allocated.
 
-The surface properties are collected into `surf_props_reduced` via a call to `reduce_surf_props`.
+The surface properties are collected into `surf_props_reduced` via a call to [`reduce_surf_props!`](@ref).
 Before the start of the time loop, the sampling procedure is multithreaded via the `@threads` macro.
 The physical properties are also computed in multithreaded mode.
 

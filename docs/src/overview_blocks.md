@@ -37,7 +37,9 @@ correct.
 
 Since we are usually interested in multi-species and/or multi-dimensional simulations, an array of `ParticleIndexer`
 instances is needed to keep track of the particles of different species in different cells.
-For this purpose Merzbild.jl provides the `ParticleIndexerArray` struct. It has two fields:
+For this purpose Merzbild.jl provides the `ParticleIndexerArray` struct. It the following fields:
+- `ParticleIndexerArray.n_cells`: number of grid cells in the simulation
+- `ParticleIndexerArray.n_species`: number of species in the simulation
 - `ParticleIndexerArray.indexer`: a 2-dimensional array of `ParticleIndexer` instances with dimensions `n_cells*n_species`
 - `ParticleIndexerArray.n_total`: a 1-dimensional vector of length `n_species` with per-species total particle counts 
 - `ParticleIndexerArray.contiguous`: a 1-dimensional vector of length `n_species` describing whether indexing is contiguous for each species (see the section on [`Particle buffers and contiguous indexing`](@ref "Particle buffers and contiguous indexing"))
@@ -284,7 +286,7 @@ T = 500.0
 pia = ParticleIndexerArray(0)
 
 # for D=3 this would sample particles in a [0.0, 1.0]x[0.0, 1.0]x[0.0, 1.0] cell; for 0-D particles the position is not tracked
-sample_particles_equal_weight!(rng, particles[1], pia, 1, 1, n_particles, T, species_data[1].mass, Fnum,
+sample_particles_equal_weight!(rng, particles[1], pia, 1, 1, n_particles, species_data[1].mass, T, Fnum,
                                0.0, 1.0, 0.0, 1.0, 0.0, 1.0; distribution=:Maxwellian)
 
 # create struct for computation of physical properties

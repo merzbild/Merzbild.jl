@@ -4,8 +4,8 @@
 It provides all the necessary building blocks for building a DSMC simulation, i.e.
 particle indexing, collisions, file I/O. Combining these blocks together is left up
 to the user; examples can be found in the `simulations` directory.
-It supports variable-weight DSMC simulations and ionized flow simulations,
-PIC and Stochastic Fokker-Planck capabilities are in development.
+It supports variable-weight DSMC and stochastic linear Fokker-Planck simulations and ionized flow simulations;
+PIC capabilities are in development.
 
 The goals are to provide a modular, thoroughly tested, easy-to-read and easy-to-extend code
 for quick implementation and testing of new ideas.

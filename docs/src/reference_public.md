@@ -152,10 +152,8 @@ Merzbild.OctreeBinSplit
 Merzbild.OctreeInitBin
 Merzbild.OctreeBinBounds
 OctreeMerge
-OctreeMerge{D,M}(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit,
-            max_Nbins=4096, max_depth=10)
-OctreeMerge(split::OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit,
-            max_Nbins=4096, max_depth=10) 
+OctreeMerge{D,M}(split::Merzbild.OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit, max_Nbins=4096, max_depth=10) where {D,M}
+OctreeMerge(split::Merzbild.OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit, max_Nbins=4096, max_depth=10) 
 merge_octree!
 ```
 
