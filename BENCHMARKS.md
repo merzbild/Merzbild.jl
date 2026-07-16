@@ -17,16 +17,16 @@ Various benchmarks and comparisons to other open-source codes are provided here 
 |                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
 |:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
 | v0.7.0 (Julia 1.11)     |       1164s           |    795s                               |             1467s               |
-| v0.8.0 (Julia 1.12)     |       TODO            |    418s                               |             902s                |    
+| v0.8.0 (Julia 1.12)     |       550s            |    418s                               |             902s                |    
 
 ### Couette flow threading speed-up
 Note that this is 1) without any dynamical load-balancing (speed-up is less than expected due to density changes in the domain leading to different amount of work spent on collisions)
-2) using a serial particle exchange procedure.
+2) using a serial particle exchange procedure. Speed-up is compared to the "Couette flow, serial, large grid" case.
 
 |                     | **M1 Pro, 32 GB RAM, 2/4/8 threads** | **Intel Core i9-13900K, 128 GB RAM, 2/4/8 threads** | **AMD EPYC 9374F, 378 GB RAM 2/4/8/16/32 threads** |
 |:-------------------:|:------------------------------------:|:---------------------------------------------------:|:--------------------------------------------------:|
 | v0.7.0 (Julia 1.11) | 2.3 / 3.8 / 5.8                      |    1.9 / 3.2 / 5.1                                  | 1.9 / 3.9 / 5.2 / 5.7 / 6.5                        |
-| v0.8.0 (Julia 1.12) |       TODO                           |    1.6 / 2.7 / 3.7                                  | 1.7 / 3.3 / 3.6 / 4.1 / 3.6                        |    
+| v0.8.0 (Julia 1.12) |       2.0 / 3.3 / 4.5                |    1.6 / 2.7 / 3.7                                  | 1.7 / 3.3 / 3.6 / 4.1 / 3.6                        |    
 
 
 ### Couette flow, variable-weight particles, octree merging
@@ -200,7 +200,26 @@ MacOS 15.4.1, Julia version 1.12.5, SPARTA compiled with Apple clang version 17.
 
 #### Merzbild.jl
 ```
-TODO
+────────────────────────────────────────────────────────────────────────────────────────
+                                               Time                    Allocations      
+                                      ───────────────────────   ────────────────────────
+          Tot / % measured:                 550s /  99.9%            202MiB /  11.6%    
+
+Section                       ncalls     time    %tot     avg     alloc    %tot      avg
+────────────────────────────────────────────────────────────────────────────────────────
+main loop                          1     549s  100.0%    549s    636KiB    2.6%   636KiB
+  sort                         50.0k     164s   29.9%  3.28ms     0.00B    0.0%    0.00B
+  collide                       100M     115s   20.9%  1.15μs     0.00B    0.0%    0.00B
+  convect + surface compute    36.0k     113s   20.6%  3.14ms     0.00B    0.0%    0.00B
+  props compute                36.0k    89.9s   16.4%  2.50ms     0.00B    0.0%    0.00B
+  convect                      14.0k    37.8s    6.9%  2.70ms     0.00B    0.0%    0.00B
+  restore ordering             5.00k    26.9s    4.9%  5.39ms     0.00B    0.0%    0.00B
+  avg physprops                36.0k    180ms    0.0%  4.99μs     0.00B    0.0%    0.00B
+  I/O                             13   3.38ms    0.0%   260μs   3.05KiB    0.0%     240B
+  avg surfprops                36.0k   3.05ms    0.0%  84.8ns     0.00B    0.0%    0.00B
+sampling                           1   24.8ms    0.0%  24.8ms   22.9MiB   97.4%  22.9MiB
+I/O final                          2    272μs    0.0%   136μs      544B    0.0%     272B
+────────────────────────────────────────────────────────────────────────────────────────
 ```
 
 #### SPARTA
