@@ -33,21 +33,21 @@ Note that this is 1) without any dynamical load-balancing (speed-up is less than
 
 |                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
 |:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
-| v0.7.10 (Julia 1.12)    |       TODOs           |    27.3s                              |             38.6s               |
+| v0.7.10 (Julia 1.12)    |       35.2s           |    27.3s                              |             38.6s               |
 | v0.8.0 (Julia 1.12)     |       28.1s           |    23.7s                              |             31.8s               |    
 
 ### 0D ionization, variable-weight particles, octree merging
 
 |                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
 |:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
-| v0.7.10 (Julia 1.12)    |       TODOs           |    15.1s                              |             23.0s               |
+| v0.7.10 (Julia 1.12)    |       21.1s           |    15.1s                              |             23.0s               |
 | v0.8.0 (Julia 1.12)     |       6.62s           |    4.72s                              |             6.83s               |    
 
 ### 0D ionization, variable-weight particles, NNLS merging
 
 |                         | **M1 Pro, 32 GB RAM** |  **Intel Core i9-13900K, 128 GB RAM** |  **AMD EPYC 9374F, 378 GB RAM** |
 |:-----------------------:|:---------------------:|:-------------------------------------:|:-------------------------------:|
-| v0.7.10 (Julia 1.12)    |       TODOs           |    17.4s                              |             26.5s               |
+| v0.7.10 (Julia 1.12)    |       22.9s           |    17.4s                              |             26.5s               |
 | v0.8.0 (Julia 1.12)     |       4.95s           |    3.98s                              |             5.98s               |    
 
 ## Couette flow, serial, small grid
