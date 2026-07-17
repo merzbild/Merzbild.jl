@@ -167,4 +167,41 @@
             @test particles[i].x[3] == -5 * i
         end
     end
+
+    @testset "test that indexing and buffer are correctly re-ordered + pia index_last is set" begin
+        particles.index = [10, 5, 7, 6, 2, 1, 3, 5, 4, 6]
+
+        # 5 particles in use, 5 in buffer, 5 last elements of index are duplicate rubbish
+        for i in 1:5
+            particles[i] = Particle(i*1.0, [i, 2.0 * i, 3 * i], [-i, -4.0 * i, -5 * i])
+        end
+
+        # only index_last is updated in restore_particle_ordering
+        pia = ParticleIndexerArray(1,1)
+        # doesn't matter will be overwritten
+        pia.index_last[1] = 3
+
+        particles.buffer = [3, 7, 4, 1, 9, 10, 8, 2, 6, 5]  # doesn't matter
+        particles.nbuffer = 5
+
+        restore_particle_ordering!(particles, pia, 1, inv_map)
+        @test pia.index_last[1] == 5
+
+        # check that everything is correct
+        @test particles.index == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+        # test only relevant part of buffer
+        @test particles.nbuffer == 5
+        @test particles.buffer[1:5] == [10, 9, 8, 7, 6]
+
+        for i in 1:5
+            @test particles[i].w == i
+            @test particles[i].v[1] == i
+            @test particles[i].v[2] == 2 * i
+            @test particles[i].v[3] == 3 * i
+            @test particles[i].x[1] == -i
+            @test particles[i].x[2] == -4 * i
+            @test particles[i].x[3] == -5 * i
+        end
+    end
 end

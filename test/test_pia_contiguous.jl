@@ -634,4 +634,56 @@
     for i in 1:pia.n_total[1]
         @test (particles[1].index[i] in [3, 7, 6, 5]) == false
     end
+
+    # check that squashing does nothing if .contiguous is set to true
+    pia = ParticleIndexerArray(2, 1)  # 2 cells 1 species
+
+    particles = [ParticleVector(10)]
+
+    for i in 1:10
+        particles[1].particles[i] = Particle(Float64(i), [0.0, 0.0, 0.0], [10.0, 0.0, 1.0])
+    end
+    particles[1].nbuffer = 0  # set buffer to 0 manually
+
+    # fix particle indexer manually
+    pia.indexer[1,1].n_local = 6
+    pia.indexer[1,1].start1 = 1
+    pia.indexer[1,1].end1 = 4
+    pia.indexer[1,1].n_group1 = 4
+
+    pia.indexer[1,1].start2 = 9
+    pia.indexer[1,1].end2 = 10
+    pia.indexer[1,1].n_group2 = 2
+
+    pia.indexer[2,1].n_local = 2
+    pia.indexer[2,1].start1 = 5
+    pia.indexer[2,1].end1 = 6
+    pia.indexer[2,1].n_group1 = 2
+
+    pia.contiguous[1] = true
+    squash_pia!(particles, pia)
+    # test that nothing happened
+
+    @test pia.indexer[1,1].n_local == 6
+    @test pia.indexer[1,1].start1 == 1
+    @test pia.indexer[1,1].end1 == 4
+    @test pia.indexer[1,1].n_group1 == 4
+
+    @test pia.indexer[1,1].start2 == 9
+    @test pia.indexer[1,1].end2 == 10
+    @test pia.indexer[1,1].n_group2 == 2
+
+    @test pia.indexer[2,1].n_local == 2
+    @test pia.indexer[2,1].start1 == 5
+    @test pia.indexer[2,1].end1 == 6
+    @test pia.indexer[2,1].n_group1 == 2
+
+    @test pia.contiguous[1] == true
+
+    # check that realistically it should've been squashed
+    pia.contiguous[1] = false
+    squash_pia!(particles, pia)
+
+    @test pia.indexer[1,1].start2 != 9
+    @test pia.indexer[1,1].end2 != 10
 end

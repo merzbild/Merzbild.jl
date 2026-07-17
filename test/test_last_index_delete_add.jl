@@ -201,4 +201,20 @@
     @test check_unique_index(particles, pia, 1) == (true, 0)
     @test check_unique_buffer(particles) == (true, 0)
 
+    # check setting of index last once we have to iterate over preceding cells
+    pia, particles = generate_pia_and_particles(10, [7, 2, 1], [0, 0, 0])
+    @test pia.index_last[1] == 10
+    @test pia.n_total[1] == 10
+
+    Merzbild.delete_particle_end!(particles, pia, 2, 1)
+    @test pia.index_last[1] == 10
+    @test pia.n_total[1] == 9
+
+    Merzbild.delete_particle_end!(particles, pia, 2, 1)
+    @test pia.index_last[1] == 10
+    @test pia.n_total[1] == 8
+    @test pia.indexer[2,1].n_local == 0
+
+    Merzbild.delete_particle_end!(particles, pia, 3, 1)
+    @test pia.index_last[1] == 7
 end
