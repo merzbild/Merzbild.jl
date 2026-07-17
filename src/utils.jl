@@ -50,13 +50,93 @@ function weighted_median_with_interpolation(values, weights)
 end
 
 """
+    variance_scaling(var_before::SVector{N,Float64}, var_post::SVector{N,Float64}) where N
+
+Scale the the components of a variance vector `var_before` by the square root of the ratio of the components of it and
+a vector `var_post`, checking for zero/negative values in `var_post` and non-finite values in the scaling factor.
+
+A component of `var_post` is treated as zero if it is not larger than `variance_scaling_rel_tol` times the
+corresponding component of `var_before`, and a scaling factor of 1.0 is returned for it. A plain `var_post > 0.0`
+check is not enough: when all post-merge particles collapse onto the mean (e.g. an N:1 merge of a single octree bin),
+`var_post` is zero only in exact arithmetic, and is in practice a round-off residue of order `eps()^2 * var_before`.
+Scaling by `sqrt(var_before / var_post)` would then amplify that residue by ~`1/eps()` and destroy the conservation
+of the mean, instead of restoring a variance that cannot be restored by scaling in the first place.
+
+# Positional arguments
+* `var_before`: variance vector components of which to scale
+* `var_post`: variance vector components by which to scale
+"""
+@inline function variance_scaling(var_before::SVector{N,Float64}, var_post::SVector{N,Float64}) where N
+    map(var_before, var_post) do vb, vp
+        sf = vp > variance_scaling_rel_tol * vb ? sqrt(vb / vp) : 1.0
+        isfinite(sf) ? sf : 1.0
+    end
+end
+
+"""
+    vx_sign(octant)
+    
+Return sign of velocity vx of an octant in velocity space.
+
+# Positional arguments
+* `octant`: index of the octant in velocity space
+
+# Returns
+Sign of the x-velocity corresponding to the octant.
+"""
+function vx_sign(octant)
+    if octant % 2 == 1
+        return -1
+    else
+        return 1
+    end
+end
+
+"""
+    vy_sign(octant)
+    
+Return sign of velocity vy of an octant in velocity space.
+
+# Positional arguments
+* `octant`: index of the octant in velocity space
+
+# Returns
+Sign of the y-velocity corresponding to the octant.
+"""
+function vy_sign(octant)
+    if (octant == 3) || (octant == 4) || (octant == 7) || (octant == 8)
+        return 1
+    else
+        return -1
+    end
+end
+
+"""
+    vz_sign(octant)
+
+Return sign of velocity `vz` of an octant in velocity space.
+
+# Positional arguments
+* `octant`: index of the octant in velocity space
+
+# Returns
+Sign of the z-velocity corresponding to the octant
+"""
+function vz_sign(octant)
+    if octant >= 5
+        return 1
+    else
+        return -1
+    end
+end
+
+"""
     scale_columns!(matrix, column_norms)
 
 Scale the columns of the matrix to have unit L2 norm and store the inverse of the original norm in a vector.
 
 # Positional arguments
 * `matrix`: the matrix of the LHS
-* `ncols`: number of columns in the matrix
 * `column_norms`: the vector in which to store the computed inverses of the original column-wise norms
 """
 function scale_columns!(matrix, column_norms)

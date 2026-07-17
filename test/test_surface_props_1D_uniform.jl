@@ -37,7 +37,7 @@
         Merzbild.update_particle_buffer_new_particle!(particles[1], i)
 
         w = i + 0.5
-        particles[1][i] = Particle(w, [-i^2, i^2, 0], [0.25, 0.0, 0.0])
+        particles[1][i] = Particle(w, SVector{3,Float64}(-i^2, i^2, 0), SVector{3,Float64}(0.25, 0.0, 0.0))
     end
 
     # 4 particles in cell 8, with velocity 10.0
@@ -45,7 +45,7 @@
         Merzbild.update_particle_buffer_new_particle!(particles[1], i)
 
         w = i + 2.5
-        particles[1][i] = Particle(w, [10.0, 0, 3.0], [3.9, 0.0, 0.0])
+        particles[1][i] = Particle(w, SVector{3,Float64}(10.0, 0, 3.0), SVector{3,Float64}(3.9, 0.0, 0.0))
     end
 
     pia.n_total[1] = 8
@@ -154,7 +154,7 @@
     surf_props.areas = [2.0, 4.0]
     surf_props.inv_areas = [0.5, 0.25]
     Δt = 1e-20  # we make this super small so that any errors remain larger than machine precision
-    Merzbild.surface_props_scale!(1, surf_props, species_data, Δt)
+    Merzbild.surface_props_scale!(1, species_data, surf_props, Δt)
 
     f = species_data[1].mass * surf_props.inv_areas / Δt
 
@@ -295,7 +295,8 @@
 
     # test convection, contiguous
     # specular walls
-    boundaries = MaxwellWalls1D(species_data, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0)
+    bc_list = (MaxwellWallBC1D(1, species_data, 1.0, [0.0, 0.0, 0.0], 0.0),
+               MaxwellWallBC1D(1, species_data, 1.0, [0.0, 0.0, 0.0], 0.0))
 
     ppc = 4
     particles = [ParticleVector(ppc * grid.n_cells)]
@@ -305,7 +306,7 @@
         Merzbild.update_particle_buffer_new_particle!(particles[1], i)
 
         w = 1.0
-        particles[1][i] = Particle(w, [-1.0, 0, 0], [0.1, 0.0, 0.0])
+        particles[1][i] = Particle(w, SVector{3,Float64}(-1.0, 0, 0), SVector{3,Float64}(0.1, 0.0, 0.0))
     end
 
     # 4 particles in cell 8, only one of them reaches the wall
@@ -317,7 +318,7 @@
         if i == 5
             vx = 1.0
         end
-        particles[1][i] = Particle(w, [vx, 0, 3.0], [3.9, 0.0, 0.0])
+        particles[1][i] = Particle(w, SVector{3,Float64}(vx, 0, 3.0), SVector{3,Float64}(3.9, 0.0, 0.0))
     end
 
     pia.n_total[1] = 8
@@ -341,7 +342,7 @@
 
     clear_props!(surf_props)
 
-    convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, surf_props, 0.2)
+    convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, surf_props, 0.2)
 
     @test surf_props.np == [4.0;1.0;;]
 
@@ -364,7 +365,7 @@
         Merzbild.update_particle_buffer_new_particle!(particles[1], i)
 
         w = 1.0
-        particles[1][i] = Particle(w, [-1.0, 0, 0], [0.1, 0.0, 0.0])
+        particles[1][i] = Particle(w, SVector{3,Float64}(-1.0, 0, 0), SVector{3,Float64}(0.1, 0.0, 0.0))
     end
 
     # 4 particles in cell 8, only one of them reaches the wall
@@ -376,7 +377,7 @@
         if i == 5
             vx = 1.0
         end
-        particles[1][i] = Particle(w, [vx, 0, 3.0], [3.9, 0.0, 0.0])
+        particles[1][i] = Particle(w, SVector{3,Float64}(vx, 0, 3.0), SVector{3,Float64}(3.9, 0.0, 0.0))
     end
 
     pia.n_total[1] = 8
@@ -400,7 +401,7 @@
 
     clear_props!(surf_props)
 
-    convect_particles_and_compute_cell!(rng, grid, boundaries, particles[1], pia, 1, species_data, surf_props, 0.2)
+    convect_particles_and_compute_cell!(rng, grid, bc_list, particles[1], pia, 1, species_data, surf_props, 0.2)
 
     @test surf_props.np == [4.0;1.0;;]
 
@@ -422,7 +423,7 @@
         Merzbild.update_particle_buffer_new_particle!(particles[1], i)
 
         w = 1.0
-        particles[1][i] = Particle(w, [-1.0, 0, 0], [0.1, 0.0, 0.0])
+        particles[1][i] = Particle(w, SVector{3,Float64}(-1.0, 0, 0), SVector{3,Float64}(0.1, 0.0, 0.0))
     end
 
     # 4 particles in cell 8, only one of them reaches the wall
@@ -434,9 +435,8 @@
         if i == 5
             vx = 1.0
         end
-        particles[1][i] = Particle(w, [vx, 0, 3.0], [3.9, 0.0, 0.0])
+        particles[1][i] = Particle(w, SVector{3,Float64}(vx, 0, 3.0), SVector{3,Float64}(3.9, 0.0, 0.0))
     end
-    
     
     pia.n_total[1] = 8
     pia.indexer[1,1].n_local = 4
@@ -461,7 +461,7 @@
     Merzbild.delete_particle_end!(particles[1], pia, 1, 1)
     pia.contiguous[1] = false
 
-    convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, surf_props, 0.2)
+    convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, surf_props, 0.2)
 
     @test surf_props.np == [2.0;1.0;;]
 
@@ -481,7 +481,7 @@
         Merzbild.update_particle_buffer_new_particle!(particles[1], i)
 
         w = 1.0
-        particles[1][i] = Particle(w, [-1.0, 0, 0], [0.1, 0.0, 0.0])
+        particles[1][i] = Particle(w, SVector{3,Float64}(-1.0, 0, 0), SVector{3,Float64}(0.1, 0.0, 0.0))
     end
 
     # 4 particles in cell 8, only one of them reaches the wall
@@ -493,7 +493,7 @@
         if i == 5
             vx = 1.0
         end
-        particles[1][i] = Particle(w, [vx, 0, 3.0], [3.9, 0.0, 0.0])
+        particles[1][i] = Particle(w, SVector{3,Float64}(vx, 0, 3.0), SVector{3,Float64}(3.9, 0.0, 0.0))
     end
     
     
@@ -520,7 +520,7 @@
     Merzbild.delete_particle_end!(particles[1], pia, 1, 1)
     pia.contiguous[1] = false
 
-    convect_particles_and_compute_cell!(rng, grid, boundaries, particles[1], pia, 1, species_data, surf_props, 0.2)
+    convect_particles_and_compute_cell!(rng, grid, bc_list, particles[1], pia, 1, species_data, surf_props, 0.2)
 
     @test surf_props.np == [2.0;1.0;;]
 

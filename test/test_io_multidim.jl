@@ -9,7 +9,7 @@
     grid = Grid1DUniform(4, 8)
     ppc = 1000
     T = 400.0
-    phys_props::PhysProps = PhysProps(grid.n_cells, 1, [], Tref=1)
+    phys_props::PhysProps = PhysProps(grid.n_cells, 1)
 
     particles = [ParticleVector(ppc * grid.n_cells)]
     pia = ParticleIndexerArray(grid.n_cells, 1)

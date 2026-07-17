@@ -83,7 +83,7 @@ seed = 1
 Random.seed!(seed)
 rng = Xoshiro(seed)
 
-species_data = load_species_data("data/particles.toml", ["Ar", "He"])
+species_data = load_species_data(joinpath(MERZBILD_DATA_PATH, "particles.toml"), ["Ar", "He"])
 n_species = length(species_data)
 
 # number of timesteps to run simulation for
@@ -100,7 +100,7 @@ T0_He = 2000.0
 T0_list = [T0_Ar, T0_He]
 
 # create the 2-element Vector of ParticleVectors for the 2 species
-particles = [ParticleVector(n_particles_Ar), ParticleVector(n_particles_He)]
+particles = [ParticleVector{0}(n_particles_Ar), ParticleVector{0}(n_particles_He)]
 
 # create the 2-species 1-cell particle indexer array filled with zeros
 # as we haven't sampled any particles yet
@@ -116,7 +116,7 @@ sample_particles_equal_weight!(rng, particles[2], pia, 1, 2, n_particles_He,
 
 
 # create the PhysProps instance to store computed properties
-phys_props = PhysProps(1, 2, [], Tref=T0_Ar)
+phys_props = PhysProps(1, 2)
 
 # create struct for I/O
 ds = NCDataHolder("2species.nc", species_data, phys_props)
@@ -126,7 +126,7 @@ compute_props!(particles, pia, species_data, phys_props)
 write_netcdf(ds, phys_props, 0)
 
 # load interaction data
-interaction_data = load_interaction_data("data/vhs.toml", species_data)
+interaction_data = load_interaction_data(joinpath(MERZBILD_DATA_PATH, "vhs.toml"), species_data)
 
 # create the 3-D array of collision factors
 collision_factors::Array{CollisionFactors, 3} = create_collision_factors_array(n_species)

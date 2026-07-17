@@ -6,7 +6,7 @@
     interaction_data = load_interaction_data(interaction_data_path, species_data)
 
     mfp1 = mean_free_path(interaction_data, 1, 1e23, 300.0)
-    cf1 = mean_collision_frequency(interaction_data, species_data, 1, 1e23, 300.0)
+    cf1 = mean_collision_frequency(interaction_data, 1, species_data, 1e23, 300.0)
     @test abs(mfp1 - 1.371982759796177e-5) <= 2*eps()
     @test abs(cf1 - 2.907146431686186e7) <= 2*eps()
 
@@ -16,13 +16,13 @@
 
     # higher temperatures lead to larger mfp and high coll frequency
     mfp2T = mean_free_path(interaction_data, 1, 1e23, 500.0)
-    cf2T = mean_collision_frequency(interaction_data, species_data, 1, 1e23, 500.0)
+    cf2T = mean_collision_frequency(interaction_data, 1, species_data, 1e23, 500.0)
     @test mfp2T > mfp1
     @test cf2T > cf1
 
     # higher density leads to smaller mfp and higher coll frequency, and density scaling is linear
     mfp2n = mean_free_path(interaction_data, 1, 2e23, 300.0)
-    cf2n = mean_collision_frequency(interaction_data, species_data, 1, 2e23, 300.0)
+    cf2n = mean_collision_frequency(interaction_data, 1, species_data, 2e23, 300.0)
     @test mfp2n < mfp1
     @test cf2n > cf1
     @test abs(mfp2n/mfp1 - 0.5) <= 2*eps()

@@ -4,7 +4,7 @@
 Compute elastic VHS mean free path for single-species collisions.
 
 # Positional arguments
-* `interactions`: the 2-dimensional array of `Interaction` instances (of shape `(n_species, n_species)`) of all the pair-wise interactions
+* `interaction`: the 2-dimensional array of `Interaction` instances (of shape `(n_species, n_species)`) of all the pair-wise interactions
 * `species`: the species for which to compute the mean free path
 * `n`: the number density
 * `T`: the temperature
@@ -22,14 +22,14 @@ function mean_free_path(interaction, species, n, T)
 end
 
 """
-    mean_collision_frequency(interaction, species_data, species, n, T)
+    mean_collision_frequency(interaction, species, species_data, n, T)
 
 Compute elastic VHS mean collision frequency for single-species collisions.
 
 # Positional arguments
 * `interactions`: the 2-dimensional array of `Interaction` instances (of shape `(n_species, n_species)`) of all the pair-wise interactions
-* `species_data`: the vector of `Species` instances of the species in the flow 
 * `species`: the species for which to compute the mean free path
+* `species_data`: the vector of `Species` instances of the species in the flow 
 * `n`: the number density
 * `T`: the temperature
 
@@ -39,7 +39,7 @@ Mean collision frequency.
 # References
 * Eqn. (4.64) in "Molecular Gas Dynamics and the Direct Simulation of Gas Flows"
 """
-function mean_collision_frequency(interaction, species_data, species, n, T)
+function mean_collision_frequency(interaction, species, species_data, n, T)
     @inbounds nu = 4.0 * (interaction[species, species].vhs_d^2) * n
     @inbounds nu *= sqrt(π * k_B * interaction[species, species].vhs_Tref / species_data[species].mass)
     @inbounds nu *= (T / interaction[species, species].vhs_Tref)^(1.0 - interaction[species, species].vhs_o)

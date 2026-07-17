@@ -1,5 +1,6 @@
 using Random
 import Distributions
+using StaticArrays
 
 @muladd begin
 
@@ -42,7 +43,7 @@ velocity grid with extent ``[-v_{x,max},v_{x,max}]\\times[-v_{y,max},v_{y,max}]\
 * `vx_max`: extent of the grid in the x direction
 * `vy_max`: extent of the grid in the y direction
 * `vz_max`: extent of the grid in the z direction
-* `dy`: grid spacing in x direction
+* `dx`: grid spacing in x direction
 * `dy`: grid spacing in y direction
 * `dz`: grid spacing in z direction
 * `vx_grid`: `Vector` of grid nodes in x direction
@@ -177,7 +178,7 @@ function bkw(vx, vy, vz, m, T, scaled_time)
 end
 
 """
-    sample_bkw!(rng, particles, nparticles, offset, m, T, v0)
+    sample_bkw!(rng, particles::ParticleVector{D}, nparticles, offset, m, T, v0) where D
 
 Sample particle velocities from the BKW distribution with temperature `T` for a species with mass `m`
 at `t=0` and add a velocity offset.
@@ -192,7 +193,7 @@ Note: This does not update the particle weights, positions, or any indexing stru
 * `T`: temperature
 * `v0`: the 3-dimensional velocity to add to the sampled velocities
 """
-function sample_bkw!(rng, particles, nparticles, offset, m, T, v0)
+function sample_bkw!(rng, particles::ParticleVector{D}, nparticles, offset, m, T, v0) where D
     # BKW at t=0
     vscale = sqrt(2 * k_B * T / m) * sqrt(0.3)  # 0.3 comes from some scaling of the Chi distribution
 
@@ -213,7 +214,7 @@ function sample_bkw!(rng, particles, nparticles, offset, m, T, v0)
 end
 
 """
-    sample_bkw!(rng, particles, nparticles, m, T, v0)
+    sample_bkw!(rng, particles::ParticleVector{D}, nparticles, m, T, v0) where D
 
 Sample particles' velocities from the BKW distribution with temperature `T` for a species with mass `m`
     at `t=0` and add a velocity offset. This does not update the particle weights, positions, or any indexing structures.
@@ -227,7 +228,7 @@ Sample particles' velocities from the BKW distribution with temperature `T` for 
 * `T`: temperature
 * `v0`: the 3-dimensional velocity to add to the sampled velocities
 """
-function sample_bkw!(rng, particles, nparticles, m, T, v0)
+function sample_bkw!(rng, particles::ParticleVector{D}, nparticles, m, T, v0) where D
     sample_bkw!(rng, particles, nparticles, 0, m, T, v0)
 end
 
@@ -267,8 +268,40 @@ function evaluate_distribution_on_grid!(vdf, distribution_function, grid, w_tota
     end
 end
 
+
 """
-    sample_on_grid!(rng, vdf_func, particles, nv, m, T, n_total,
+    create_position_vector_D(rng, ::Val{D}, xlo, xhi, ylo, yhi, zlo, zhi) where D
+
+Helper function to create D-dimensional position vectors for particle sampling in a 0/1/2/3-dimensional box
+with extent xlo:xhi, ylo:yhi, zlo:zhi; positions are uniformly distributed.
+
+# Positional arguments
+* `rng`: the random number generator
+* `::Val{D}`: the dimension of the position vector
+* `xlo` - lower x-extent of the box
+* `xhi` - upper x-extent of the box
+* `ylo` - lower y-extent of the box
+* `yhi` - upper y-extent of the box
+* `zlo` - lower z-extent of the box
+* `zhi` - upper z-extent of the box
+"""
+@inline @generated function create_position_vector_D(rng, ::Val{D}, xlo, xhi, ylo, yhi, zlo, zhi) where D
+    if D == 0
+        return :(SVector{0,Float64}())
+    elseif D == 1
+        return :(SVector{1,Float64}(xlo + rand(rng, Float64) * (xhi - xlo)))
+    elseif D == 2
+        return :(SVector{2,Float64}(xlo + rand(rng, Float64) * (xhi - xlo),
+                                    ylo + rand(rng, Float64) * (yhi - ylo)))
+    elseif D == 3
+        return :(SVector{3,Float64}(xlo + rand(rng, Float64) * (xhi - xlo),
+                                    ylo + rand(rng, Float64) * (yhi - ylo),
+                                    zlo + rand(rng, Float64) * (zhi - zlo)))
+    end
+end
+
+"""
+    sample_on_grid!(rng, vdf_func, particles::ParticleVector{D}, nv, m, T, n_total,
                     xlo, xhi, ylo, yhi, zlo, zhi; v_mult=3.5, cutoff_mult=3.5, noise=0.0,
                     v_offset=[0.0, 0.0, 0.0])
 
@@ -309,9 +342,9 @@ user-defined parameter. The positions of the particles are assumed to be randoml
 # Returns
 * The number of particles created
 """
-function sample_on_grid!(rng, vdf_func, particles, nv, m, T, n_total,
+function sample_on_grid!(rng, vdf_func, particles::ParticleVector{D}, nv, m, T, n_total,
                          xlo, xhi, ylo, yhi, zlo, zhi; v_mult=3.5, cutoff_mult=3.5, noise=0.0,
-                         v_offset=[0.0, 0.0, 0.0])
+                         v_offset=[0.0, 0.0, 0.0]) where D
 
     vdf = VDF(nv, nv, nv)
     v_thermal = compute_thermal_velocity(m, T)
@@ -334,9 +367,7 @@ function sample_on_grid!(rng, vdf_func, particles, nv, m, T, n_total,
                                   SVector{3}(v_grid.vx_grid[i] + noise * v_grid.dx * (0.5 - rand(rng, Float64)) + v_offset[1],
                                              v_grid.vy_grid[j] + noise * v_grid.dy * (0.5 - rand(rng, Float64)) + v_offset[2],
                                              v_grid.vz_grid[k] + noise * v_grid.dz * (0.5 - rand(rng, Float64)) + v_offset[3]),
-                                  SVector{3}(xlo + rand(rng, Float64) * (xhi - xlo),
-                                             ylo + rand(rng, Float64) * (yhi - ylo),
-                                             zlo + rand(rng, Float64) * (zhi - zlo)))
+                                  create_position_vector_D(rng, Val(D), xlo, xhi, ylo, yhi, zlo, zhi))
                 end
             end
         end
@@ -347,7 +378,7 @@ end
 
 
 """
-    sample_maxwellian_on_grid!(rng, particles, nv, m, T, n_total,
+    sample_maxwellian_on_grid!(rng, particles::ParticleVector{D}, nv, m, T, n_total,
                                xlo, xhi, ylo, yhi, zlo, zhi; v_mult=3.5, cutoff_mult=3.5, noise=0.0,
                                v_offset=[0.0, 0.0, 0.0])
 
@@ -387,9 +418,9 @@ user-defined parameter. The positions of the particles are assumed to be randoml
 # Returns
 The function returns the number of particles created
 """
-function sample_maxwellian_on_grid!(rng, particles, nv, m, T, n_total,
+function sample_maxwellian_on_grid!(rng, particles::ParticleVector{D}, nv, m, T, n_total,
                                     xlo, xhi, ylo, yhi, zlo, zhi; v_mult=3.5, cutoff_mult=3.5, noise=0.0,
-                                    v_offset=[0.0, 0.0, 0.0])
+                                    v_offset=[0.0, 0.0, 0.0]) where D
 
     maxwell_df = (vx,vy,vz) -> maxwellian(vx, vy, vz, m, T)
     return sample_on_grid!(rng, maxwell_df, particles, nv, m, T, n_total,
@@ -414,7 +445,7 @@ function compute_thermal_velocity(m, T)
 end
 
 """
-    sample_maxwellian!(rng, particles, nparticles, offset, m, T, v0)
+    sample_maxwellian!(rng, particles::ParticleVector{D}, nparticles, offset, m, T, v0)
 
 Sample `nparticles` particles from a Maxwellian with temperature T for a species with mass m
 and add a velocity offset.
@@ -429,7 +460,7 @@ Note: This does not update the particle weights, positions, or any indexing stru
 * `T`: temperature
 * `v0`: the 3-dimensional velocity to add to the sampled velocities
 """
-function sample_maxwellian!(rng, particles, nparticles, offset, m, T, v0)
+function sample_maxwellian!(rng, particles::ParticleVector{D}, nparticles, offset, m, T, v0) where D
     vscale = compute_thermal_velocity(m, T)
 
     @inbounds for i in 1:nparticles
@@ -474,11 +505,11 @@ Note: this does not work if applied twice in a row to the same cell.
 * `vy0`: the y-velocity offset to add to the particle velocities
 * `vz0`: the z-velocity offset to add to the particle velocities
 """
-function sample_particles_equal_weight!(rng, particles, pia, cell, species,
+function sample_particles_equal_weight!(rng, particles::ParticleVector{D}, pia, cell, species,
                                         nparticles, m, T, Fnum, xlo, xhi, ylo, yhi, zlo, zhi;
-                                        distribution=:Maxwellian, vx0=0.0, vy0=0.0, vz0=0.0)
+                                        distribution=:Maxwellian, vx0=0.0, vy0=0.0, vz0=0.0) where D
 
-    @inbounds start = pia.n_total[species] + 1                                    
+    @inbounds start = max(pia.index_last[species], pia.n_total[species]) + 1                                    
     @inbounds pia.indexer[cell, species].n_local = nparticles
     @inbounds pia.n_total[species] += nparticles
 
@@ -490,28 +521,28 @@ function sample_particles_equal_weight!(rng, particles, pia, cell, species,
     @inbounds pia.indexer[cell, species].end2 = -1
     @inbounds pia.indexer[cell, species].n_group2 = 0
 
+    @inbounds pia.index_last[species] = start - 1 + nparticles
+
     offset = start - 1
 
     @inbounds for i in 1:nparticles
-        add_particle!(particles, i+offset, Fnum,  SVector{3}(0.0, 0.0, 0.0),
-                      SVector{3}(xlo + rand(rng, Float64) * (xhi - xlo),
-                                 ylo + rand(rng, Float64) * (yhi - ylo),
-                                 zlo + rand(rng, Float64) * (zhi - zlo)))
+        x_pos = create_position_vector_D(rng, Val(D), xlo, xhi, ylo, yhi, zlo, zhi)
+        add_particle!(particles, i+offset, Fnum,  SVector{3,Float64}(0.0, 0.0, 0.0), x_pos)
         particles.cell[i+offset] = cell
     end
 
-    v0 = SVector{3}(vx0, vy0, vz0)
+    v0 = SVector{3,Float64}(vx0, vy0, vz0)
     if distribution == :Maxwellian
         sample_maxwellian!(rng, particles, nparticles, offset, m, T, v0)
     elseif distribution == :BKW
-        sample_bkw!(rng, particles, nparticles, m, T, v0)
+        sample_bkw!(rng, particles, nparticles, offset, m, T, v0)
     end
 end
 
 """
-    sample_particles_phase_box_weighted(rng, particles, pia, cell, species,
-                                        nparticles, m, T, Fnum, xlo, xhi, ylo, yhi, zlo, zhi;
-                                        v_mult=3.5, vx0=0.0, vy0=0.0, vz0=0.0)
+    sample_particles_phase_box_weighted!(rng, particles::ParticleVector{D}, pia, cell, species,
+                                         nparticles, m, T, n_total, xlo, xhi, ylo, yhi, zlo, zhi;
+                                         v_mult=3.5, vx0=0.0, vy0=0.0, vz0=0.0)
 
 Sample variable-weight particles of a specific species in a specific cell from a Maxwellian.
 The velocities are sampled in a uniform box in phase space with extent ±`v_mult * v_thermal`
@@ -546,11 +577,11 @@ The positions of the particles are assumed to be randomly distributed in a cuboi
 * `vy0`: the y-velocity offset to add to the particle velocities
 * `vz0`: the z-velocity offset to add to the particle velocities
 """
-function sample_particles_phase_box_weighted!(rng, particles, pia, cell, species,
+function sample_particles_phase_box_weighted!(rng, particles::ParticleVector{D}, pia, cell, species,
                            nparticles, m, T, n_total, xlo, xhi, ylo, yhi, zlo, zhi;
-                           v_mult=3.5, vx0=0.0, vy0=0.0, vz0=0.0)
+                           v_mult=3.5, vx0=0.0, vy0=0.0, vz0=0.0) where D
 
-    @inbounds start = pia.n_total[species] + 1                                    
+    @inbounds start = max(pia.index_last[species], pia.n_total[species]) + 1                                    
     @inbounds pia.indexer[cell, species].n_local = nparticles
     @inbounds pia.n_total[species] += nparticles
 
@@ -561,6 +592,8 @@ function sample_particles_phase_box_weighted!(rng, particles, pia, cell, species
     @inbounds pia.indexer[cell, species].start2 = 0
     @inbounds pia.indexer[cell, species].end2 = -1
     @inbounds pia.indexer[cell, species].n_group2 = 0
+
+    @inbounds pia.index_last[species] = start - 1 + nparticles
 
     offset = start - 1
 
@@ -579,14 +612,14 @@ function sample_particles_phase_box_weighted!(rng, particles, pia, cell, species
         w = exp(-v_factor * (v_x^2 + v_y^2 + v_z^2))
         w_tot += w
 
-        add_particle!(particles, i+offset, w,  SVector{3}(v_x + vx0, v_y + vy0, v_z + vz0),
-                      SVector{3}(xlo + rand(rng, Float64) * (xhi - xlo),
-                                 ylo + rand(rng, Float64) * (yhi - ylo),
-                                 zlo + rand(rng, Float64) * (zhi - zlo)))
+        x_pos = create_position_vector_D(rng, Val(D), xlo, xhi, ylo, yhi, zlo, zhi)
+        add_particle!(particles, i+offset, w,  SVector{3,Float64}(v_x + vx0, v_y + vy0, v_z + vz0), x_pos)
         particles.cell[i+offset] = cell
     end
 
-    @inbounds for i in 1:nparticles
+    i_s = 1 + offset
+    i_e = nparticles + offset
+    @inbounds for i in i_s:i_e
         particles[i].w *= n_total / w_tot
     end
 end

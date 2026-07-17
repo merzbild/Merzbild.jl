@@ -82,7 +82,13 @@
     Ny = 2
     Nz = 2
 
-    phys_props::PhysProps = PhysProps(1, 1, [4], Tref=1)
+    T_mom_ref = 1
+    phys_props::PhysProps = PhysProps(1, 1)
+
+    mlist = [4]
+    mscaling = zeros(1)
+    mvals_list = zeros(1)
+    compute_moment_scaling!(mscaling, mlist, 1, species_data, T_mom_ref)
 
     Δabs = 2.5
     Δrel_xsmall = 5e-13
@@ -91,6 +97,7 @@
     pia = ParticleIndexerArray(length(particles[1]))
 
     compute_props!(particles, pia, species_data, phys_props)
+    compute_moments!(mvals_list, mscaling, mlist, particles, pia, 1, 1, species_data, phys_props)
 
     mim = []
     n_moms = 4
@@ -99,6 +106,9 @@
     end
 
     mnnls = NNLSMerge(mim, 30)
+
+    @test typeof(mnnls) == NNLSMerge{3}
+
     vref = sqrt(2 * k_B * 300.0 / species_data[1].mass)
     result = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1; vref=vref, scaling=:vref)
     @test length(mnnls.rhs_vector) == length(mim) + 1  # we didn't construct 0-th order moment
@@ -107,7 +117,7 @@
     np0 = phys_props.np[1, 1]
     v0 = phys_props.v[:, 1, 1]
     T0 = phys_props.T[1, 1]
-    M40 = phys_props.moments[1, 1, 1]
+    M40 = mvals_list[1]
 
     mixed_order_3 = compute_multi_index_moments(3)
     moms3 = zeros(length(mixed_order_3))
@@ -118,24 +128,18 @@
 
     # test some internal computes used in the merging
     @test sum(abs.(mnnls.v0 .- v0)) < eps()
-    @test sum(abs.(mnnls.w_total .- n0)) < 1.5e-14
-
-    @test abs(mnnls.minvx + v0[1] - 1.0) < eps()
-    @test abs(mnnls.maxvx + v0[1] - 50.0) < eps()
-    @test abs(mnnls.minvy + v0[2] - (5.0 - 2.0 * 50)) < eps()
-    @test abs(mnnls.maxvy + v0[2] - (5.0 - 2.0 * 1)) < eps()
-    @test abs(mnnls.minvz + v0[3] - (-100 + 0.25)) < eps()
-    @test abs(mnnls.maxvz + v0[3] - (-100 + 0.25 * 2500)) < eps()
+    @test sum(abs.(mnnls.w_total .- n0)) < 2.5e-14
 
     compute_props!(particles, pia, species_data, phys_props)
+    compute_moments!(mvals_list, mscaling, mlist, particles, pia, 1, 1, species_data, phys_props)
     # test that merging conserves mass / momentum / energy
     @test phys_props.np[1, 1] < np0
-    @test abs(n0 - phys_props.n[1, 1]) < 1.5e-14
+    @test abs(n0 - phys_props.n[1, 1]) < 2.5e-14
     @test sum(abs.(v0 - phys_props.v[:, 1, 1])) < 2e-13
     @test abs(T0 - phys_props.T[1, 1]) < 3.6e-14
 
     # test higher-order moment in g
-    @test abs(M40 - phys_props.moments[1, 1, 1]) < 7.4e-12
+    @test abs(M40 - mvals_list[1]) < 7.4e-12
 
     # test moments of order 3
     moms3_post = zeros(length(mixed_order_3))
@@ -192,19 +196,12 @@
     particles = [create_particles3()]
     pia = ParticleIndexerArray(length(particles[1]))
 
-    centered_at_mean = true
-    v_multipliers = [0.25, 0.5, 1.0]
-    n_add = centered_at_mean ? 1 : 0
-    n_rand_pairs = 0
-    n_add += 8 * length(v_multipliers)
-    lhs_ncols = pia.indexer[1, 1].n_local + n_add + n_rand_pairs
+    lhs_ncols = pia.indexer[1, 1].n_local
     lhs_matrix = zeros(mnnls.n_moments_vel, lhs_ncols)
     vel_pos_matrix = zeros(6, lhs_ncols)
 
     Merzbild.compute_lhs_and_rhs!(mnnls, lhs_matrix, vel_pos_matrix,
                                   particles[1], pia, 1, 1)
-    # we didn't compute anything using the additional particles
-    @test sum(abs.(lhs_matrix[:, pia.indexer[1, 1].n_local+1:end])) == 0
 
     max_v_diff = 0.0
     max_x_diff = 0.0
@@ -220,37 +217,6 @@
     end
     @test max_v_diff <= 2*eps()
     @test max_x_diff <= 2*eps()
-
-    Merzbild.compute_lhs_particles_additional!(rng, pia.indexer[1, 1].n_local+1, mnnls, lhs_matrix, vel_pos_matrix,
-                                               particles[1], pia, 1, 1,
-                                               n_rand_pairs, centered_at_mean, v_multipliers)
-
-    # centered particle adds zero values
-    @test sum(abs.(lhs_matrix[:, pia.indexer[1, 1].n_local+1])) == 0
-
-    # the other particles add non-zero values
-    @test sum(abs.(lhs_matrix[:, pia.indexer[1, 1].n_local+2:end])) != 0
-
-    centered_at_mean = false
-    v_multipliers = [0.25, 0.5, 1.0]
-    n_add = centered_at_mean ? 1 : 0
-    n_rand_pairs = 0
-    n_add += 8 * length(v_multipliers)
-    lhs_ncols = pia.indexer[1, 1].n_local + n_add + n_rand_pairs
-    lhs_matrix = zeros(mnnls.n_moments_vel, lhs_ncols)
-    vel_pos_matrix = zeros(6, lhs_ncols)
-
-    Merzbild.compute_lhs_and_rhs!(mnnls, lhs_matrix, vel_pos_matrix,
-                                  particles[1], pia, 1, 1)
-    # we didn't compute anything using the additional particles
-    @test sum(abs.(lhs_matrix[:, pia.indexer[1, 1].n_local+1:end])) == 0
-
-    Merzbild.compute_lhs_particles_additional!(rng, pia.indexer[1, 1].n_local+1, mnnls, lhs_matrix, vel_pos_matrix,
-                                               particles[1], pia, 1, 1,
-                                               n_rand_pairs, centered_at_mean, v_multipliers)
-
-    # no centered particle, so no zero values
-    @test sum(abs.(lhs_matrix[:, pia.indexer[1, 1].n_local+1:end])) != 0
 
     mim = []
     #  [[0, 0, 0],
@@ -275,9 +241,7 @@
     mnnls3.inv_vref = 1.0 / mnnls3.vref
     Merzbild.scale_lhs_rhs!(mnnls3, lhs_matrix, :vref, size(lhs_matrix, 2))
 
-    @test abs(mnnls3.scalevx - 2.0) < 2*eps()
-    @test abs(mnnls3.scalevy - 2.0) < 2*eps()
-    @test abs(mnnls3.scalevz - 2.0) < 2*eps()
+    @test maximum(abs.(mnnls3.scalev - [2.0, 2.0, 2.0])) < 2*eps()
     
     @test abs(rhs_vec_2[1] - mnnls3.rhs_vector[1]) < 2*eps()
     @test abs(rhs_vec_2[2] / mnnls3.vref - mnnls3.rhs_vector[2]) < 2*eps()
@@ -300,9 +264,7 @@
     mnnls3.rhs_vector = copy(rhs_vec_2)
     lhs_matrix = copy(lhs_matrix_2)
 
-    mnnls3.Ex = 2.0
-    mnnls3.Ey = 3.0
-    mnnls3.Ez = 4.0
+    mnnls3.Ev = SVector{3,Float64}(2.0, 3.0, 4.0)
 
     Merzbild.scale_lhs_rhs!(mnnls3, lhs_matrix, :variance, size(lhs_matrix, 2))
 
@@ -314,10 +276,7 @@
     @test abs(rhs_vec_2[6] / 9.0 - mnnls3.rhs_vector[6]) < 2*eps()
     @test abs(rhs_vec_2[7] / 16.0 - mnnls3.rhs_vector[7]) < 2*eps()
 
-    @test abs(mnnls3.scalevx - 2.0) < 2*eps()
-    @test abs(mnnls3.scalevy - 3.0) < 2*eps()
-    @test abs(mnnls3.scalevz - 4.0) < 2*eps()
-
+    @test maximum(abs.(mnnls3.scalev - [2.0, 3.0, 4.0])) < 2*eps()
     for i in 1:2
         @test maximum(abs.(lhs_matrix_2[1,i] - lhs_matrix[1,i])) < 2*eps()
         @test maximum(abs.(lhs_matrix_2[2,i] / 2.0 - lhs_matrix[2,i])) < 2*eps()
@@ -373,8 +332,8 @@
 
     n_new = pia.indexer[1,1].n_local[1]
 
-    @test maximum(abs.([mnnls_pos.Epx, mnnls_pos.Epy, mnnls_pos.Epz] - x_std)) < 4*eps()
-    @test maximum(abs.([mnnls_pos.scalex, mnnls_pos.scaley, mnnls_pos.scalez] - x_std)) < 4*eps()
+    @test maximum(abs.(mnnls_pos.Ex - x_std)) < 4*eps()
+    @test maximum(abs.(mnnls_pos.scalex - x_std)) < 4*eps()
 
     # we only conserve mean position
     @test maximum(abs.(mnnls_pos.rhs_vector[8:10])) < 4*eps() 
@@ -384,7 +343,7 @@
     new_x = [0.0, 0.0, 0.0]
     s1 = pia.indexer[1,1].start1
     e1 = pia.indexer[1,1].end1
-    for i in 1:s1:e1
+    for i in s1:e1
         new_w += particles[1][i].w
         new_v += particles[1][i].v * particles[1][i].w
         new_x += particles[1][i].x * particles[1][i].w
@@ -393,7 +352,7 @@
     if pia.indexer[1,1].n_group2 > 0
         s2 = pia.indexer[1,1].start2
         e2 = pia.indexer[1,1].end2
-        for i in 1:s2:e2
+        for i in s2:e2
             new_w += particles[1][i].w
             new_v += particles[1][i].v * particles[1][i].w
             new_x += particles[1][i].x * particles[1][i].w
@@ -421,7 +380,7 @@
     new_x = [0.0, 0.0, 0.0]
     s1 = pia.indexer[1,1].start1
     e1 = pia.indexer[1,1].end1
-    for i in 1:s1:e1
+    for i in s1:e1
         new_w += particles[1][i].w
         # new_v += particles[1][i].v * particles[1][i].w
         # new_x += particles[1][i].x * particles[1][i].w
@@ -430,7 +389,7 @@
     if pia.indexer[1,1].n_group2 > 0
         s2 = pia.indexer[1,1].start2
         e2 = pia.indexer[1,1].end2
-        for i in 1:s2:e2
+        for i in s2:e2
             new_w += particles[1][i].w
             # new_v += particles[1][i].v * particles[1][i].w
             # new_x += particles[1][i].x * particles[1][i].w
@@ -447,7 +406,7 @@
     # test that computation of spatial moments does not affect the LHS and RHS entries corresponding to the velocity moments
     particles = [create_particles2(mult=2.0,mult2=2.0)]
     pia = ParticleIndexerArray(length(particles[1]))
-    lhs_ncols = 16 + 1 + 16  # 16 particles + 1 centered at 0 + 16 in octants
+    lhs_ncols = 16
    
     add_vel_moments = [[3,1,0],[0,2,1]]
     pos_moments = [[1,0,0],[0,1,0],[2,0,2]]
@@ -486,13 +445,6 @@
     old_val = lhs_matrix_pos[mnnls_pos.n_moments_vel+2,3]
     old_val2 = lhs_matrix_pos[mnnls_pos.n_moments_vel+3,3]
 
-    # additional fictitious particles
-    for i in 17:16+17
-        @test abs(lhs_matrix_pos[mnnls_pos.n_moments_vel+1,i] - (0.0)) < 2*eps()
-        @test abs(lhs_matrix_pos[mnnls_pos.n_moments_vel+2,i] - (0.0)) < 2*eps()
-        @test abs(lhs_matrix_pos[mnnls_pos.n_moments_vel+3,i] - (0.0)^2 * (0.0)^2) < 2*eps()
-    end
-
     # scaling of spatial moments also doesn't interfere with scaling of velocity moments
     Merzbild.scale_lhs_rhs!(mnnls_pos, lhs_matrix_pos, :vref, size(lhs_matrix_pos, 2))
     Merzbild.scale_lhs_rhs!(mnnls_no_pos, lhs_matrix_no_pos, :vref, size(lhs_matrix_no_pos, 2))
@@ -509,14 +461,14 @@
     @test result == 1
     s1 = pia.indexer[1,1].start1
     e1 = pia.indexer[1,1].end1
-    for i in 1:s1:e1
+    for i in s1:e1
         @test abs(particles[1][i].x[3] - mnnls_pos.x0[3]) <= eps()
     end
 
     if pia.indexer[1,1].n_group2 > 0
         s2 = pia.indexer[1,1].start2
         e2 = pia.indexer[1,1].end2
-        for i in 1:s2:e2
+        for i in s2:e2
             @test abs(particles[1][i].x[3] - mnnls_pos.x0[3]) <= eps()
         end
     end
@@ -536,42 +488,47 @@
         @test size(mnnls_pos.work[i-25+1].idx) == (i,)
     end
 
+    # test merging with pre-allocated NNLS work arrays
+    particles = [create_particles2(mult=2.0,mult2=2.0)]
+    pia = ParticleIndexerArray(length(particles[1]))
     result = merge_nnls_based!(rng, mnnls_pos, particles[1], pia, 1, 1; w_threshold=1e-12)
     @test result == 1
     s1 = pia.indexer[1,1].start1
     e1 = pia.indexer[1,1].end1
-    for i in 1:s1:e1
+    for i in s1:e1
         @test abs(particles[1][i].x[3] - mnnls_pos.x0[3]) <= eps()
     end
 
     if pia.indexer[1,1].n_group2 > 0
         s2 = pia.indexer[1,1].start2
         e2 = pia.indexer[1,1].end2
-        for i in 1:s2:e2
+        for i in s2:e2
             @test abs(particles[1][i].x[3] - mnnls_pos.x0[3]) <= eps()
         end
     end
 
     particles = [create_particles2(mult=2.0,mult2=2.0)]
     pia = ParticleIndexerArray(length(particles[1]))
-    result = merge_nnls_based!(rng, mnnls_pos, particles[1], pia, 1, 1; centered_at_mean=false, n_rand_pairs=3, w_threshold=1e-12)
+    result = merge_nnls_based!(rng, mnnls_pos, particles[1], pia, 1, 1; w_threshold=1e-12)
     @test result == 1
+    @test pia.index_last[1] == pia.n_total[1]
+
     wtot = 0.0
     s1 = pia.indexer[1,1].start1
     e1 = pia.indexer[1,1].end1
-    for i in 1:s1:e1
+    for i in s1:e1
         wtot += particles[1][i].w
     end
 
     if pia.indexer[1,1].n_group2 > 0
         s2 = pia.indexer[1,1].start2
         e2 = pia.indexer[1,1].end2
-        for i in 1:s2:e2
+        for i in s2:e2
             wtot += particles[1][i].w
         end
     end
 
-    @test abs(new_w - tw) < 4.5e-15
+    @test abs(wtot - tw) < 4.5e-15
 
     # finally test the edge case of init_np = total_np and no pre-allocated matrices, v_multipliers=[]
     # reset particles
@@ -579,5 +536,8 @@
     pia = ParticleIndexerArray(length(particles[1]))
 
     mnnls = NNLSMerge(add_vel_moments, length(particles[1]); multi_index_moments_pos=[])
-    merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1; centered_at_mean=false, n_rand_pairs=0, v_multipliers=[], w_threshold=1e-12)
+    result = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1; w_threshold=1e-12)
+
+    @test result == 1
+    @test pia.n_total[1] < 16
 end

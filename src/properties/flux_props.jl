@@ -54,10 +54,10 @@ Construct a `FluxProps` instance given a `ParticleIndexerArray` instance.
 # Positional arguments
 * `pia`: the `ParticleIndexerArray` instance
 """
-FluxProps(pia) = FluxProps(size(pia.indexer)[1], size(pia.indexer)[2])
+FluxProps(pia) = FluxProps(pia.n_cells, pia.n_species)
 
 """
-    compute_flux_props!(particles, pia, species_data, phys_props::PhysProps, flux_props::FluxProps, grid::G) where {G<:AbstractGrid}
+    compute_flux_props!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props::PhysProps, flux_props::FluxProps, grid::G) where {G<:AbstractGrid,D}
 
 Compute the fluxes of all species in all cells and store the result in a `FluxProps` instance.
 This uses the pre-computed species-wise mean velocities from a `PhysProps` instance, which needs to be computed
@@ -74,7 +74,7 @@ In case particles are sorted, `compute_flux_props_sorted!` will be more efficien
 * `flux_props`: the `FluxProps` instance in which the computed fluxes are stored
 * `grid`: the physical grid
 """
-function compute_flux_props!(particles, pia, species_data, phys_props::PhysProps, flux_props::FluxProps, grid::G) where {G<:AbstractGrid}
+function compute_flux_props!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props::PhysProps, flux_props::FluxProps, grid::G) where {G<:AbstractGrid,D}
     c = SVector{3,Float64}(0.0, 0.0, 0.0)
 
     for species in 1:flux_props.n_species
@@ -83,11 +83,13 @@ function compute_flux_props!(particles, pia, species_data, phys_props::PhysProps
             kefd = SVector{3,Float64}(0.0, 0.0, 0.0)  # kinetic_energy_flux
             dmfd = SVector{3,Float64}(0.0, 0.0, 0.0)  # diagonal_momentum_flux
             odmfd = SVector{3,Float64}(0.0, 0.0, 0.0)  # off_diagonal_momentum_flux
+
+            cell_vel = SVector{3,Float64}(phys_props.v[1, cell, species],
+                                          phys_props.v[2, cell, species],
+                                          phys_props.v[3, cell, species])
             
             for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
-                c = particles[species][i].v - SVector{3,Float64}(phys_props.v[1, cell, species],
-                                                                 phys_props.v[2, cell, species],
-                                                                 phys_props.v[3, cell, species])
+                c = particles[species][i].v - cell_vel
                 cxsq = c[1]^2
                 cysq = c[2]^2
                 czsq = c[3]^2
@@ -100,9 +102,7 @@ function compute_flux_props!(particles, pia, species_data, phys_props::PhysProps
         
             if pia.indexer[cell,species].n_group2 > 0
                 for i in pia.indexer[cell,species].start2:pia.indexer[cell,species].end2
-                    c = particles[species][i].v - SVector{3,Float64}(phys_props.v[1, cell, species],
-                                                                    phys_props.v[2, cell, species],
-                                                                    phys_props.v[3, cell, species])
+                    c = particles[species][i].v - cell_vel
                     cxsq = c[1]^2
                     cysq = c[2]^2
                     czsq = c[3]^2
@@ -179,7 +179,7 @@ function avg_props!(flux_props_avg::FluxProps, flux_props::FluxProps, n_avg_time
 end
 
 """
-    compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props, grid::G, cell_chunk) where {G<:AbstractGrid}
+    compute_flux_props_sorted!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props, flux_props, grid::G, cell_chunk) where {G<:AbstractGrid, D}
 
 Compute the flux densities of all species in a
 subset of cells and store the result in a `FluxProps` instance,
@@ -196,7 +196,7 @@ at the same timestep before calling this function for the same subset of cells.
 * `grid`: the physical grid
 * `cell_chunk`: the list of cell indices or range of cell indices in which to compute the properties
 """
-function compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props, grid::G, cell_chunk) where {G<:AbstractGrid}
+function compute_flux_props_sorted!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props, flux_props, grid::G, cell_chunk) where {G<:AbstractGrid,D}
     for species in 1:phys_props.n_species
         for cell in cell_chunk
 
@@ -227,7 +227,7 @@ function compute_flux_props_sorted!(particles, pia, species_data, phys_props, fl
 end
 
 """
-    compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props, grid::G) where {G<:AbstractGrid}
+    compute_flux_props_sorted!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props, flux_props, grid::G) where {G<:AbstractGrid,D}
 
 Compute the flux densities of all species in all
 cells and store the result in a `FluxProps` instance,
@@ -243,7 +243,7 @@ at the same timestep before calling this function.
 * `flux_props`: the `FluxProps` instance in which the computed fluxes are stored
 * `grid`: the physical grid
 """
-@inline function compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props, grid::G) where {G<:AbstractGrid}
+@inline function compute_flux_props_sorted!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props, flux_props, grid::G) where {G<:AbstractGrid,D}
     compute_flux_props_sorted!(particles, pia, species_data, phys_props, flux_props, grid, 1:phys_props.n_cells)
 end
 

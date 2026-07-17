@@ -8,7 +8,7 @@
     interaction_data = load_interaction_data(interaction_data_path, species_data, 1e-10, 1.0, 273.0)
 
     e_n_data_path = joinpath(@__DIR__, "..", "data", "test_neutral_electron_data.xml")
-    n_e_interactions = load_electron_neutral_interactions(species_data, e_n_data_path,
+    n_e_interactions = ElectronNeutralInteractions(species_data, e_n_data_path,
                                                           Dict("He" => "LinearDB"),
                                                           Dict("He" => ScatteringIsotropic),
                                                           Dict("He" => ElectronEnergySplitEqual))
@@ -111,7 +111,7 @@
     @test dme.msg == "Data not found"
 
     species_data_Ar = load_species_data(particles_data_path, ["Ar", "e-"])
-    @test_throws DataMissingException e_int_data = load_electron_neutral_interactions(species_data_Ar, e_n_data_path,
+    @test_throws DataMissingException e_int_data = ElectronNeutralInteractions(species_data_Ar, e_n_data_path,
                                                                                       Dict("Ar" => "LinearDB"),
                                                                                       Dict("Ar" => ScatteringIsotropic),
                                                                                       Dict("Ar" => ElectronEnergySplitEqual))

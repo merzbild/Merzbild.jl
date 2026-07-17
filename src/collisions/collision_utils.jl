@@ -504,7 +504,7 @@ function estimate_sigma_g_w_max!(collision_factors::Array{CollisionFactors}, int
 end
 
 """
-    estimate_sigma_g_max!(collision_factors::Array{CollisionFactorsSWPM}, interactions, species_data, T_list, Fnum; mult_factor=1.0)
+    estimate_sigma_g_max!(collision_factors::Array{CollisionFactorsSWPM}, interactions, species_data, T_list; mult_factor=1.0)
 
 Estimate ``(\\sigma g)_{max}`` for all species in all cells, assuming
 a constant particle computational weight `Fnum`, a VHS cross-section, and that each species' temperature is constant across all cells.
@@ -515,7 +515,6 @@ Uses the same methodology as the estimate for a two-species interaction.
 * `interactions`: the 2-dimensional array of `Interaction` instances (of shape `(n_species, n_species)`) of all the pair-wise interactions
 * `species_data`: the vector of `Species` instances of the species in the flow 
 * `T_list`: the list of temperatures of the species
-* `Fnum`: the constant computational weight of the particles
 
 # Keyword arguments
 * `mult_factor`: a factor by which to multiply the result (default value is 1.0)

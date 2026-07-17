@@ -87,11 +87,11 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons,
 
     reset_timer!()
 
-    species_data::Vector{Species} = load_species_data("data/particles.toml", ["Ar", "Ar+", "e-"])
-    interaction_data::Array{Interaction, 2} = load_interaction_data_with_dummy("data/vhs.toml", species_data)
+    species_data::Vector{Species} = load_species_data(joinpath(MERZBILD_DATA_PATH, "particles.toml"), ["Ar", "Ar+", "e-"])
+    interaction_data::Array{Interaction, 2} = load_interaction_data_with_dummy(joinpath(MERZBILD_DATA_PATH, "vhs.toml"), species_data)
 
 
-    n_e_interactions = load_electron_neutral_interactions(species_data, cross_section_filepath,
+    n_e_interactions = ElectronNeutralInteractions(species_data, cross_section_filepath,
                                                           Dict("Ar" => "IST-Lisbon"),
                                                           Dict("Ar" => ScatteringIsotropic),
                                                           Dict("Ar" => ElectronEnergySplitEqual))
@@ -107,8 +107,8 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons,
     np_base_heavy = nv_heavy^3  # some initial guess on # of particles in simulation
     np_base_electrons = nv_electrons^3  # some initial guess on # of particles in simulation
 
-    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=8000)
-    oc_electrons = OctreeN2Merge(merging_bin_split; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=8000)
+    oc = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=8000)
+    oc_electrons = OctreeMerge(merging_bin_split; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=8000)
     mg_ions = GridN2Merge(Nmerging_ions, Nmerging_ions, Nmerging_ions, 3.5)
 
     particles = [ParticleVector(np_base_heavy),
@@ -126,19 +126,19 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons,
 
     pia = ParticleIndexerArray(n_sampled)
 
-    phys_props::PhysProps = PhysProps(1, 3, [], Tref=T0)
+    phys_props::PhysProps = PhysProps(1, 3)
     compute_props!(particles, pia, species_data, phys_props)
 
     if pia.n_total[1] > threshold_neutrals
-        @timeit "merge n" merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
+        @timeit "merge n (t=0)" merge_octree!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
     end
 
     if pia.n_total[2] > threshold_ion
-        @timeit "merge i" merge_grid_based!(rng, mg_ions, particles[2], pia, 1, 2, species_data, phys_props)
+        @timeit "merge i (t=0)" merge_grid_based!(rng, mg_ions, particles[2], pia, 1, 2, species_data, phys_props)
     end
 
     if pia.n_total[3] > threshold_electrons
-        @timeit "merge e" merge_octree_N2_based!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
+        @timeit "merge e (t=0)" merge_octree!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
     end
 
     squash_pia!(particles, pia)
@@ -182,7 +182,7 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons,
 
 
         if pia.n_total[1] > threshold_neutrals
-            @timeit "merge n" merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
+            @timeit "merge n" merge_octree!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
         end
 
         if pia.n_total[2] > threshold_ion
@@ -190,7 +190,7 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons,
         end
 
         if pia.n_total[3] > threshold_electrons
-            @timeit "merge e" merge_octree_N2_based!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
+            @timeit "merge e" merge_octree!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
         end
 
         @timeit "acc e" accelerate_constant_field_x!(particles[index_electron],
@@ -217,7 +217,6 @@ cs_n_e_filepath = "../../Data/cross_sections/Ar_IST_Lisbon.xml"
 for do_event_splitting in [false, true]  # try out different collision schemes
     run(1234, external_E_field_Tn, n_t, paramset[1], paramset[2], cs_n_e_filepath; merging_bin_split=OctreeBinMidSplit, adds=0, do_es=do_event_splitting)
 end
-
 
 #  # Uncomment set-up below to run over the parameter sets used for "Moment-preserving particle merging via non-negative least squares"
 #  # the 3rd value in each parameter list is the number of ensembles that are run with different random seeds 
@@ -249,3 +248,7 @@ end
 #         end
 #     end
 # end
+
+
+#### Benchmarking run
+# run(1234, 400.0, 500000, 2000, 1500, cs_n_e_filepath; merging_bin_split=OctreeBinMidSplit, adds=0, do_es=true)

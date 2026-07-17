@@ -37,9 +37,9 @@ function ChunkExchanger(chunks, n_cells)
     n_chunks = length(chunks)
     indexer = Array{ParticleIndexer, 2}(undef, (n_chunks, n_cells))
 
-    for j in 1:n_cells
+    @inbounds for j in 1:n_cells
         for i in 1:n_chunks
-            @inbounds indexer[i, j] = ParticleIndexer()
+            indexer[i, j] = ParticleIndexer()
         end
     end
     return ChunkExchanger(n_chunks, n_cells, indexer)
@@ -55,19 +55,19 @@ Reset all indexing of `chunk_exchanger.indexer[chunk_id,:]`.
 * `chunk_id`: the chunk for which to reset indexing
 """
 function reset!(chunk_exchanger, chunk_id)
-    for i in 1:chunk_exchanger.n_cells
+    @inbounds for i in 1:chunk_exchanger.n_cells
         # reset only the things we actually need
-        @inbounds chunk_exchanger.indexer[chunk_id, i].n_group1 = 0
-        @inbounds chunk_exchanger.indexer[chunk_id, i].start1 = 0
-        @inbounds chunk_exchanger.indexer[chunk_id, i].end1 = -1
-        @inbounds chunk_exchanger.indexer[chunk_id, i].n_group2 = 0
-        @inbounds chunk_exchanger.indexer[chunk_id, i].start2 = 0
-        @inbounds chunk_exchanger.indexer[chunk_id, i].end2 = -1
+        chunk_exchanger.indexer[chunk_id, i].n_group1 = 0
+        chunk_exchanger.indexer[chunk_id, i].start1 = 0
+        chunk_exchanger.indexer[chunk_id, i].end1 = -1
+        chunk_exchanger.indexer[chunk_id, i].n_group2 = 0
+        chunk_exchanger.indexer[chunk_id, i].start2 = 0
+        chunk_exchanger.indexer[chunk_id, i].end2 = -1
     end
 end
 
 """
-    push_particles!(chunk_exchanger, particles_chunks, pia_chunks, species, i, j, offset_ij, s_ci_ij2, e_ci_ij)
+    push_particles!(chunk_exchanger, particles_chunks::Vector{Vector{ParticleVector{D}}}, pia_chunks, species, i, j, offset_ij, s_ci_ij2, e_ci_ij) where D
 
 Pushes particles of the specified `species` from chunk `i` to the end of chunk `j`,
 handling partial (unfinished) swaps.
@@ -92,32 +92,36 @@ This also updates the `buffer` of the source `ParticleVector` as particles are r
     should start in case no swapping was performed
 * `e_ci_ij`: final cell index to transfer from chunk `i` to chunk `j`
 """
-function push_particles!(chunk_exchanger, particles_chunks, pia_chunks, species, i, j, offset_ij, s_ci_ij2, e_ci_ij)
+function push_particles!(chunk_exchanger, particles_chunks::Vector{Vector{ParticleVector{D}}}, pia_chunks, species, i, j, offset_ij, s_ci_ij2, e_ci_ij) where D
     # push remaining particles from chunk i to end of chunk j
     # we take care of s_ci_ij2 separately
     # because we might have stopped the swapping process in the middle of the cell
     # this is the cell of particles in chunk i where we stopped swapping
     cell = s_ci_ij2
 
+    @inbounds chunk_exchanger_i = chunk_exchanger.indexer[i,cell]
+    @inbounds pia_chunk_j = pia_chunks[j]
+    @inbounds indexer = pia_chunks[i].indexer[cell,species]
+
     # println("Push from $i to $j")
     # println("Starting from cell $s_ci_ij2, already pushed $offset_ij from there")
     # println("In total it has $(pia_chunks[i].indexer[cell,species].n_group1) particles that need to be pushed")
     # we couldn't swap all particles and stopped the swapping process in the middle of the cell
-    @inbounds if (pia_chunks[i].indexer[cell,species].n_group1) > 0 && (offset_ij < pia_chunks[i].indexer[cell,species].n_group1)
-        n_leftover = pia_chunks[i].indexer[cell,species].n_group1 - offset_ij
+    if (indexer.n_group1) > 0 && (offset_ij < indexer.n_group1)
+        n_leftover = indexer.n_group1 - offset_ij
 
         # println("Pushing from cell where swap was broken off, $n_leftover left")
         # we write to [i,cell], not [j,cell]
         # because otherwise we might overwrite this when we transfer from another chunk to j
         # so the exchanger tracks from which chunk the particles came
-        @inbounds chunk_exchanger.indexer[i,cell].start2 = pia_chunks[j].n_total[species] + 1
-        @inbounds pia_chunks[j].n_total[species] += n_leftover
-        @inbounds chunk_exchanger.indexer[i,cell].end2 = pia_chunks[j].n_total[species]
-        @inbounds chunk_exchanger.indexer[i,cell].n_group2 = n_leftover
+        @inbounds chunk_exchanger_i.start2 = pia_chunk_j.n_total[species] + 1
+        @inbounds pia_chunk_j.n_total[species] += n_leftover
+        @inbounds chunk_exchanger_i.end2 = pia_chunk_j.n_total[species]
+        chunk_exchanger_i.n_group2 = n_leftover
 
-        @inbounds s2 = chunk_exchanger.indexer[i,cell].start2
-        @inbounds e2 = chunk_exchanger.indexer[i,cell].end2
-        @inbounds  offset = -s2 + pia_chunks[i].indexer[cell,species].start1 + offset_ij
+        s2 = chunk_exchanger_i.start2
+        e2 = chunk_exchanger_i.end2
+        offset = -s2 + indexer.start1 + offset_ij
 
         # println("will write to $s2:$e2 in chunk $j")
 
@@ -125,48 +129,59 @@ function push_particles!(chunk_exchanger, particles_chunks, pia_chunks, species,
             # println("Writing to $pid in $j using particle $(pid + offset) from $i")
             # move particle to chunk j
             update_particle_buffer_new_particle!(particles_chunks[j][species], pid)
-            particles_chunks[j][species][pid].w = particles_chunks[i][species][pid + offset].w
-            particles_chunks[j][species][pid].v = particles_chunks[i][species][pid + offset].v
-            particles_chunks[j][species][pid].x = particles_chunks[i][species][pid + offset].x
 
+            p_j = particles_chunks[j][species][pid]
+            p_i = particles_chunks[i][species][pid + offset]
+
+            p_j.w = p_i.w
+            p_j.v = p_i.v
+            p_j.x = p_i.x
+            
+            # update buffer in chunk i
             particles_chunks[i][species].nbuffer += 1
             particles_chunks[i][species].buffer[particles_chunks[i][species].nbuffer] =
                 particles_chunks[i][species].index[pid + offset]
         end
 
-        @inbounds pia_chunks[i].indexer[cell,species].n_local = 0
-        @inbounds pia_chunks[i].indexer[cell,species].n_group1 = 0
-        @inbounds pia_chunks[i].indexer[cell,species].start1 = 0
-        @inbounds pia_chunks[i].indexer[cell,species].end1 = -1
+        indexer.n_local = 0
+        indexer.n_group1 = 0
+        indexer.start1 = 0
+        indexer.end1 = -1
     end
     @inbounds for cell in s_ci_ij2+1:e_ci_ij
-        if pia_chunks[i].indexer[cell,species].n_group1 > 0
-            chunk_exchanger.indexer[i,cell].start2 = pia_chunks[j].n_total[species] + 1
-            pia_chunks[j].n_total[species] += pia_chunks[i].indexer[cell,species].n_group1
-            chunk_exchanger.indexer[i,cell].end2 = pia_chunks[j].n_total[species]
-            chunk_exchanger.indexer[i,cell].n_group2 = pia_chunks[i].indexer[cell,species].n_group1
+        indexer = pia_chunks[i].indexer[cell,species]
+        chunk_exchanger_i = chunk_exchanger.indexer[i,cell]
+        if indexer.n_group1 > 0
+            chunk_exchanger_i.start2 = pia_chunk_j.n_total[species] + 1
+            pia_chunk_j.n_total[species] += indexer.n_group1
+            chunk_exchanger_i.end2 = pia_chunk_j.n_total[species]
+            chunk_exchanger_i.n_group2 = indexer.n_group1
 
-            s2 = chunk_exchanger.indexer[i,cell].start2
-            e2 = chunk_exchanger.indexer[i,cell].end2
-            offset = -s2 + pia_chunks[i].indexer[cell,species].start1
+            s2 = chunk_exchanger_i.start2
+            e2 = chunk_exchanger_i.end2
+            offset = -s2 + indexer.start1
 
             # write particles to chunk j
             for pid in s2:e2
                 # move particle to chunk j
                 update_particle_buffer_new_particle!(particles_chunks[j][species], pid)
-                particles_chunks[j][species][pid].w = particles_chunks[i][species][pid + offset].w
-                particles_chunks[j][species][pid].v = particles_chunks[i][species][pid + offset].v
-                particles_chunks[j][species][pid].x = particles_chunks[i][species][pid + offset].x
+
+                p_j = particles_chunks[j][species][pid]
+                p_i = particles_chunks[i][species][pid + offset]
+
+                p_j.w = p_i.w
+                p_j.v = p_i.v
+                p_j.x = p_i.x
                 
                 # update buffer in chunk i
                 particles_chunks[i][species].nbuffer += 1
                 particles_chunks[i][species].buffer[particles_chunks[i][species].nbuffer] =
                     particles_chunks[i][species].index[pid + offset]
             end
-            pia_chunks[i].indexer[cell,species].n_local = 0
-            pia_chunks[i].indexer[cell,species].n_group1 = 0
-            pia_chunks[i].indexer[cell,species].start1 = 0
-            pia_chunks[i].indexer[cell,species].end1 = -1
+            indexer.n_local = 0
+            indexer.n_group1 = 0
+            indexer.start1 = 0
+            indexer.end1 = -1
         end
     end
 end
@@ -205,28 +220,30 @@ function update_swap_indexing!(chunk_exchanger, pia_chunks, species, i, j, s_ci_
     # iterate over cells that belong to chunk j but where particles are present in chunk i
     @inbounds for cell in s_ci_ij:e_ci_ij
         # check out how many particles we actually can use (if there are any)
-        offset = min(pia_chunks[i].indexer[cell,species].n_group1, n_swap)
+        indexer = pia_chunks[i].indexer[cell,species]
+        offset = min(indexer.n_group1, n_swap)
 
         # we will swap all particles, so we can safely set this to 0/-1
         # if not, we use this data in the subsequent push of remaining particles
         # and reset indexing there 
-        if offset == pia_chunks[i].indexer[cell,species].n_group1
-            pia_chunks[i].indexer[cell,species].n_local = 0
-            pia_chunks[i].indexer[cell,species].n_group1 = 0
-            pia_chunks[i].indexer[cell,species].start1 = 0
-            pia_chunks[i].indexer[cell,species].end1 = -1
+        if offset == indexer.n_group1
+            indexer.n_local = 0
+            indexer.n_group1 = 0
+            indexer.start1 = 0
+            indexer.end1 = -1
         end
 
         if offset > 0
+            chunk_exchanger_i = chunk_exchanger.indexer[i,cell]
             # println("$i -> $j update in $cell from $s_ci_ij:$e_ci_ij: $s_ji / $offset")
             # we stored the starting index of where we started swapping particles
             # so the particles written to chunk j during the swap
             # will start at s_ji and continue
             # particles come from chunk i into cell that belongs to chunk j
-            chunk_exchanger.indexer[i,cell].start1 = s_ji
+            chunk_exchanger_i.start1 = s_ji
             s_ji += offset - 1
-            chunk_exchanger.indexer[i,cell].end1 = s_ji
-            chunk_exchanger.indexer[i,cell].n_group1 = offset
+            chunk_exchanger_i.end1 = s_ji
+            chunk_exchanger_i.n_group1 = offset
             n_swap -= offset
 
             # store the cell where we currently are
@@ -250,7 +267,7 @@ end
 
 
 """
-    exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, species, i, j)
+    exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{ParticleVector{D}}}, pia_chunks, cell_chunks, species, i, j) where D
 
 Redistribute particles between chunks `i` and `j` based on their spatial cell ownership.
 
@@ -278,7 +295,7 @@ indexing should not be relied on until particles are re-sorted, see (`sort_parti
 * `i`: index of first chunk
 * `j`: index of second chunk
 """
-function exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, species, i, j)
+function exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{ParticleVector{D}}}, pia_chunks, cell_chunks, species, i, j) where D
     n_chunks = length(cell_chunks)
 
     # find how many particles need to be transferred from i to j
@@ -287,8 +304,9 @@ function exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell
     s_ij = 0
     s_ci_ij = 0 # index of the cell
     @inbounds for cj in cell_chunks[j]
-        if pia_chunks[i].indexer[cj, species].start1 > 0
-            s_ij = pia_chunks[i].indexer[cj, species].start1
+        st = pia_chunks[i].indexer[cj, species].start1
+        if st > 0
+            s_ij = st
             s_ci_ij = cj
             break
         end
@@ -301,8 +319,9 @@ function exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell
     e_ci_ij = 0 # index of the cell
     @inbounds for cji in l_cj:-1:1
         cj = cell_chunks[j][cji]
-        if pia_chunks[i].indexer[cj, species].end1 > 0
-            e_ij = pia_chunks[i].indexer[cj, species].end1
+        et = pia_chunks[i].indexer[cj, species].end1
+        if et > 0
+            e_ij = et
             e_ci_ij = cj
             break
         end
@@ -315,8 +334,9 @@ function exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell
     s_ji = 0
     s_ci_ji = 0 # index of the cell
     @inbounds for ci in cell_chunks[i]
-        if pia_chunks[j].indexer[ci, species].start1 > 0
-            s_ji = pia_chunks[j].indexer[ci, species].start1
+        st = pia_chunks[j].indexer[ci, species].start1
+        if st > 0
+            s_ji = st
             s_ci_ji = ci
             break
         end
@@ -327,8 +347,9 @@ function exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell
     e_ci_ji = 0 # index of the cell
     @inbounds for cij in l_ci:-1:1
         ci = cell_chunks[i][cij]
-        if pia_chunks[j].indexer[ci, species].end1 > 0
-            e_ji = pia_chunks[j].indexer[ci, species].end1
+        et = pia_chunks[j].indexer[ci, species].end1
+        if et > 0
+            e_ji = et
             e_ci_ji = ci
             break
         end
@@ -414,7 +435,7 @@ function exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell
 end
 
 """
-    exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, species)
+    exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{ParticleVector{D}}}, pia_chunks, cell_chunks, species) where D
 
 Redistribute particles between chunks based on their spatial cell ownership.
 
@@ -440,7 +461,7 @@ indexing should not be relied on until particles are re-sorted, see (`sort_parti
     i.e. `cell_chunks[chunk_id][i] == cell_chunks[chunk_id][i-1] + 1`
 * `species`: the particle species being redistributed
 """
-function exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, species)
+function exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{ParticleVector{D}}}, pia_chunks, cell_chunks, species) where D
     n_chunks = length(cell_chunks)
     @inbounds for i in 1:n_chunks-1
         for j in i+1:n_chunks
@@ -449,9 +470,8 @@ function exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell
     end
 end
 
-
 """
-    sort_particles_after_exchange!(chunk_exchanger, gridsort, particles, pia, cell_chunk, species)
+    sort_particles_after_exchange!(chunk_exchanger, gridsort, particles::ParticleVector{D}, pia, cell_chunk, species) where D
 
 Restore indexing of a `ParticleVector` and the associated `ParticleIndexerArray`
 after particles have been swapped and pushed between chunks.
@@ -459,12 +479,12 @@ after particles have been swapped and pushed between chunks.
 # Positional arguments
 * `chunk_exchanger`: the `ChunkExchanger` instance used to track post-swap and post-push indices
 * `gridsort`: The `GridSortInPlace` associated with the chunk
-* `particles_chunks`: the `ParticleVector` for which to restore the indexing
+* `particles`: the `ParticleVector` for which to restore the indexing
 * `pia`: the `ParticleIndexerArray` instances associated with the chunk
 * `cell_chunk`: list or range of cells belonging to the chunk
 * `species`: the particle species being for which the indexing is being restored
 """
-function sort_particles_after_exchange!(chunk_exchanger, gridsort, particles, pia, cell_chunk, species)
+function sort_particles_after_exchange!(chunk_exchanger, gridsort, particles::ParticleVector{D}, pia, cell_chunk, species) where D
     @inbounds n_tot = pia.n_total[species] 
     @inbounds if n_tot > length(gridsort.sorted_indices)
         resize!(gridsort.sorted_indices, n_tot + DELTA_PARTICLES)
@@ -473,62 +493,68 @@ function sort_particles_after_exchange!(chunk_exchanger, gridsort, particles, pi
     ci = 0
     n_tot = 0
     offset = 0
+
+    cell_counts = gridsort.cell_counts
+    sorted_indices = gridsort.sorted_indices
+    p_index = particles.index
+
     @inbounds for cell in cell_chunk
-        gridsort.cell_counts[cell] = pia.indexer[cell, species].n_group1
+        indexer = pia.indexer[cell, species]
+        cc = indexer.n_group1
 
-        s1 = pia.indexer[cell, species].start1
-        e1 = pia.indexer[cell, species].end1
-
-        for i in s1:e1
-            ci += 1
-            gridsort.sorted_indices[ci] = particles.index[i]
+        if cc > 0
+            unsafe_copyto!(sorted_indices, ci+1, p_index, indexer.start1, cc)
+            ci += cc
         end
+
+        # for i in s1:e1
+        #     ci += 1
+        #     sorted_indices[ci] = p_index[i]
+        # end
 
         for chunk_id in 1:chunk_exchanger.n_chunks
-            gridsort.cell_counts[cell] += chunk_exchanger.indexer[chunk_id,cell].n_group1
-            gridsort.cell_counts[cell] += chunk_exchanger.indexer[chunk_id,cell].n_group2
+            chunk_exchanger_i = chunk_exchanger.indexer[chunk_id,cell]
 
-            s1 = chunk_exchanger.indexer[chunk_id,cell].start1
-            e1 = chunk_exchanger.indexer[chunk_id,cell].end1
+            ng1 = chunk_exchanger_i.n_group1
+            ng2 = chunk_exchanger_i.n_group2
+            cc += ng1 + ng2
 
-            for i in s1:e1
-                ci += 1
-                gridsort.sorted_indices[ci] = particles.index[i]
+            if ng1 > 0
+                unsafe_copyto!(sorted_indices, ci+1, p_index, chunk_exchanger_i.start1, ng1)
+                ci += ng1
             end
 
-            s2 = chunk_exchanger.indexer[chunk_id,cell].start2
-            e2 = chunk_exchanger.indexer[chunk_id,cell].end2
-
-            for i in s2:e2
-                ci += 1
-                gridsort.sorted_indices[ci] = particles.index[i]
+            if ng2 > 0
+                unsafe_copyto!(sorted_indices, ci+1, p_index, chunk_exchanger_i.start2, ng2)
+                ci += ng2
             end
         end
-        n_tot += gridsort.cell_counts[cell]
+        n_tot += cc
 
-        pia.indexer[cell,species].n_group1 = gridsort.cell_counts[cell]
-        pia.indexer[cell,species].n_local = gridsort.cell_counts[cell]
+        indexer.n_group1 = cc
+        indexer.n_local = cc
 
-        if pia.indexer[cell,species].n_group1 > 0
-            pia.indexer[cell,species].start1 = offset + 1
-            pia.indexer[cell,species].end1 = offset + gridsort.cell_counts[cell]
+        if indexer.n_group1 > 0
+            indexer.start1 = offset + 1
+            indexer.end1 = offset + cc
         else
-            pia.indexer[cell,species].start1 = 0
-            pia.indexer[cell,species].end1 = -1
+            indexer.start1 = 0
+            indexer.end1 = -1
         end
 
-        offset += gridsort.cell_counts[cell]
+        offset += cc
 
-        pia.indexer[cell,species].n_group2 = 0
-        pia.indexer[cell,species].start2 = 0
-        pia.indexer[cell,species].end2 = -1
+        cell_counts[cell] = cc
+
+        indexer.n_group2 = 0
+        indexer.start2 = 0
+        indexer.end2 = -1
     end
 
     @inbounds pia.n_total[species] = n_tot
+    @inbounds pia.index_last[species] = n_tot
 
-    @inbounds for i in 1:n_tot
-        particles.index[i] = gridsort.sorted_indices[i]
-    end
+    unsafe_copyto!(p_index, 1, sorted_indices, 1, n_tot)
 end
 
 """

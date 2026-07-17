@@ -1,0 +1,1 @@
+include("test_collision_utils_swpm.jl")  # SWPM collision factors estimation

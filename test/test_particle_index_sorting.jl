@@ -13,7 +13,7 @@
 
     @testset "test that used_indices are resized, in case of ordered input nothing changes" begin
         for i in 1:10
-            particles[i] = Particle(i, [i, 2 * i, 3 * i], [-i, -4 * i, -5 * i])
+            particles[i] = Particle(i*1.0, [i, 2.0 * i, 3 * i], [-i, -4.0 * i, -5 * i])
         end
 
         restore_particle_ordering!(particles, inv_map)
@@ -40,12 +40,12 @@
 
         # 2 particles in use, 8 in buffer
         for i in 1:2
-            particles[i] = Particle(i, [i, 2 * i, 3 * i], [-i, -4 * i, -5 * i])
+            particles[i] = Particle(i*1.0, [i, 2.0 * i, 3 * i], [-i, -4.0 * i, -5 * i])
         end
 
         # these particles are not in use
         for i in 3:10
-            particles[i] = Particle(0, [0, 0, 0], [0, 0, 0])
+            particles[i] = Particle(0.0, [0, 0.0, 0], [0, 0.0, 0])
         end
 
         particles.buffer = [7, 3, 2, 4, 10, 8, 6, 9, 5, 1]  # only first 8 elements matter
@@ -76,12 +76,12 @@
 
         # 7 particles in use, 3 in buffer
         for i in 1:7
-            particles[i] = Particle(i, [i, 2 * i, 3 * i], [-i, -4 * i, -5 * i])
+            particles[i] = Particle(i*1.0, [i, 2.0 * i, 3 * i], [-i, -4.0 * i, -5 * i])
         end
 
         # these particles are not in use
         for i in 8:10
-            particles[i] = Particle(0, [0, 0, 0], [0, 0, 0])
+            particles[i] = Particle(0.0, [0, 0.0, 0], [0, 0.0, 0])
         end
 
         particles.buffer = [4, 7, 2, 10, 9, 5, 6, 1, 8, 3]  # only first 3 elements matter
@@ -112,7 +112,7 @@
 
         # all 10 particles in use, 0 in buffer
         for i in 1:10
-            particles[i] = Particle(i, [i, 2 * i, 3 * i], [-i, -4 * i, -5 * i])
+            particles[i] = Particle(i*1.0, [i, 2.0 * i, 3 * i], [-i, -4.0 * i, -5 * i])
         end
 
         particles.buffer = [4, 7, 2, 10, 9, 5, 6, 1, 8, 3]  # doesn't matter
@@ -142,13 +142,50 @@
 
         # 5 particles in use, 5 in buffer, 5 last elements of index are duplicate rubbish
         for i in 1:5
-            particles[i] = Particle(i, [i, 2 * i, 3 * i], [-i, -4 * i, -5 * i])
+            particles[i] = Particle(i*1.0, [i, 2.0 * i, 3 * i], [-i, -4.0 * i, -5 * i])
         end
 
         particles.buffer = [3, 7, 4, 1, 9, 10, 8, 2, 6, 5]  # doesn't matter
         particles.nbuffer = 5
 
         restore_particle_ordering!(particles, inv_map)
+
+        # check that everything is correct
+        @test particles.index == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+        # test only relevant part of buffer
+        @test particles.nbuffer == 5
+        @test particles.buffer[1:5] == [10, 9, 8, 7, 6]
+
+        for i in 1:5
+            @test particles[i].w == i
+            @test particles[i].v[1] == i
+            @test particles[i].v[2] == 2 * i
+            @test particles[i].v[3] == 3 * i
+            @test particles[i].x[1] == -i
+            @test particles[i].x[2] == -4 * i
+            @test particles[i].x[3] == -5 * i
+        end
+    end
+
+    @testset "test that indexing and buffer are correctly re-ordered + pia index_last is set" begin
+        particles.index = [10, 5, 7, 6, 2, 1, 3, 5, 4, 6]
+
+        # 5 particles in use, 5 in buffer, 5 last elements of index are duplicate rubbish
+        for i in 1:5
+            particles[i] = Particle(i*1.0, [i, 2.0 * i, 3 * i], [-i, -4.0 * i, -5 * i])
+        end
+
+        # only index_last is updated in restore_particle_ordering
+        pia = ParticleIndexerArray(1,1)
+        # doesn't matter will be overwritten
+        pia.index_last[1] = 3
+
+        particles.buffer = [3, 7, 4, 1, 9, 10, 8, 2, 6, 5]  # doesn't matter
+        particles.nbuffer = 5
+
+        restore_particle_ordering!(particles, pia, 1, inv_map)
+        @test pia.index_last[1] == 5
 
         # check that everything is correct
         @test particles.index == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]

@@ -89,7 +89,7 @@ in the simulation, with shape `(n_species,n_species,n_cells)`.
 3-dimensional array of `CollisionFactorsSWPM` instances with shape `(n_species,n_species,n_cells)`.
 """
 function create_collision_factors_swpm_array(pia::ParticleIndexerArray)
-    return create_collision_factors_swpm_array(size(pia.indexer)[2], size(pia.indexer)[1])
+    return create_collision_factors_swpm_array(pia.n_species, pia.n_cells)
 end
 
 """
@@ -173,7 +173,7 @@ function compute_n_coll_single_species(rng, collision_factors_swpm::CollisionFac
 end
 
 """
-    swpm!(rng, collision_factors_swpm, collision_data, interaction, particles, pia,
+    swpm!(rng, collision_factors_swpm, collision_data, interaction, particles::ParticleVector{D}, pia,
           cell, species, G, Δt, V)
 
 Perform elastic collisions between variable-weight particles of same species using the SWPM algorithm
@@ -198,8 +198,8 @@ During a collision of particles with weights ``w_i``, ``w_j``, the weights are d
 * S. Rjasanow, W.Wagner, Stochastic numerics for the Boltzmann equation.
     [Springer Berlin, Heidelberg, 2005](https://doi.org/10.1007/3-540-27689-0).
 """
-function swpm!(rng, collision_factors_swpm, collision_data, interaction, particles, pia,
-               cell, species, G, Δt, V)
+function swpm!(rng, collision_factors_swpm, collision_data, interaction, particles::ParticleVector{D}, pia,
+               cell, species, G, Δt, V) where D
     # single-species swpm
     # find w_max
     w_max = 0.0
@@ -262,7 +262,7 @@ function swpm!(rng, collision_factors_swpm, collision_data, interaction, particl
                 collision_factors_swpm.n_coll_performed += 1
                 compute_com!(collision_data, interaction[species, species], particles[i], particles[k])
                 # do collision
-                if (length(particles) <= pia.n_total[species])
+                if (length(particles) <= max(pia.n_total[species], pia.index_last[species]))
                     resize!(particles, length(particles)+DELTA_PARTICLES)
                 end
 

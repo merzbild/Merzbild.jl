@@ -4,6 +4,7 @@
         pia_ = ParticleIndexerArray(4, 1)
 
         pia_.n_total[1] = 9
+        pia_.index_last[1] = 9
 
         pia_.indexer[1,1].n_local = 5
         pia_.indexer[1,1].n_group1 = 3
@@ -27,7 +28,7 @@
 
     particles = [ParticleVector(10)]
     for i in 1:8
-        Merzbild.add_particle!(particles[1], i, i*1.0, [2.0, 2.0, 3.0], [11.0, 12.0, 14.0])
+        Merzbild.add_particle!(particles[1], i, i*1.0, SVector{3, Float64}(2.0, 2.0, 3.0), SVector{3, Float64}(11.0, 12.0, 14.0))
     end
 
     pia = ParticleIndexerArray(1, 1)
@@ -63,7 +64,7 @@
     
     particles = [ParticleVector(10)]
     for i in 1:8
-        Merzbild.add_particle!(particles[1], i, i*1.0, [2.0, 2.0, 3.0], [11.0, 12.0, 14.0])
+        Merzbild.add_particle!(particles[1], i, i*1.0, SVector{3, Float64}(2.0, 2.0, 3.0), SVector{3, Float64}(11.0, 12.0, 14.0))
     end
     pia = ParticleIndexerArray(1, 1)
 
@@ -124,6 +125,16 @@
     pia.indexer[3,1].n_group2 = 2
     @test check_pia_is_correct(pia, 1) == (false, 3)
 
+    # test index_last - smaller than n_total
+    pia = create_pia()
+    pia.index_last[1] = 8
+    @test check_pia_is_correct(pia, 1) == (false, -1)
+
+    # test index_last - inconsistent
+    pia = create_pia()
+    pia.index_last[1] = 10
+    @test check_pia_is_correct(pia, 1) == (false, -2)
+
     # test pretty_print_pia
     pia = create_pia()
 
@@ -134,7 +145,7 @@
 
     redirect_stdout(out)
     @test String(readavailable(stream)) == """
-    Total: 9
+    Total: 9, index_last: 9
     Cell 1: group1: [1, 3] group2: [4, 5]
     Cell 3: group2: [6, 8]
     Cell 4: group1: [9, 9]

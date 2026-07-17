@@ -1,5 +1,48 @@
 # Changelog
 
+## v0.8.0
+
+### Breaking changes
+* Usage of `Vector{Particle}` completely deprecated; tests have been updated
+* `Particle` type now has a `D` type parameter describing the dimension of the position vector. `D` defaults to 3 unless
+specified. `ParticleVector` now also has a `D` type parameter.
+* Merging routines now also have a `D` type parameter describing the dimension of the position vector of the particles to merge.
+`D` defaults to 3 unless specified.
+* Octree merging struct renamed to `OctreeMerge` and also has a second type parameter `M`: the number of post-merge particles in a bin (refactoring
+by Yanliang Zhu)
+* Removed unused `update_particle_indexer_new_lower_count!` function
+* NNLS merging functions now do not take `v_multipliers`, `n_rand_pairs`, and `centered_at_mean` as arguments, and do not use any fictitious particles
+* The function `check_speed_bounds` has been removed
+* NetCDF output now does not write species' names to a variable, but rather to a global attribute as a single comma-separated string (implementation by Yanliang Zhu)
+* NetCDF PhysProps output now does not write total moments; an `NCDataHolderMoments` has been added for that purpose (implementation by Yanliang Zhu)
+* PhysProps no longer stores any moment data and `compute_props_with_total_moments!` has been removed (implementation by Yanliang Zhu)
+* Particle netCDF I/O simplified, skips output of position and cell data for 0-D particles
+* `load_electron_neutral_interactions` replaced by an `ElectronNeutralInteractions` constructor
+* `MaxwellWalls1D` removed
+* Boundary conditions now need to be passed to `convect_particles!` or `convect_particles_and_compute_cell!` as a `Tuple` of boundary conditions, one for each surface.
+* Order of parameters passed to `fp_linear!` and `mean_collision_frequency` changed to be consistent with guidelines in `CONTRIBUTING.md`.
+* `merge_octree_N2_based!` renamed to `merge_octree!`
+
+### New functionality
+* `squash_pia!` can be called less frequently, i.e. only before particle convection, as better tracking of last index
+in particle arrays has been implemented. See documentaton on contiguous indexing.
+* NetCDF output now allows to choose exact format and defalts to `NC_64BIT_OFFSET`, significantly speeding-up I/O (implementation by Yanliang Zhu)
+* `compute_moment_scaling!`, `compute_moments!` functions to compute scaled total velocity moments (implementation by Yanliang Zhu)
+* `NCDataHolderMoments` struct type added for I/O of computed moment data (implementation by Yanliang Zhu)
+* More specialized boundary conditions added for 1D simulations: `FullyDiffuseBC1D`, `MaxwellWallBC1D`, `SpecularWallBC1D`
+* The `ParticleIndexerArray` type now directly stores number of cells and species it is tracking (`.n_cells`, `.n_species`)
+* `MERZBILD_DATA_PATH` now exported for easier loading of particle and interaction data bundled with Merzbild.jl
+* `MERZBILD_SIMULATIONS_PATH` now exported to expose path to example simulations bundled with Merzbild.jl
+* `MERZBILD_SCRIPTS_PATH` now exported to expose path to Python scripts bundled with Merzbild.jl
+* Octree-based merging now supports N:M merging in each bin (currently, only conservative N:1 and N:2 merging implemented; implementation by Yanliang Zhu)
+
+### Misc
+* Added tests that check that for unexpected memory allocations
+* Various performance optimizations
+* Minor bug fixes
+* Fixed linear Fokker-Planck for variable-weight particles
+* Documentation improvements
+
 ## v0.7.10
 * Documentation improvements
 * Improved test coverage
@@ -171,7 +214,7 @@ now uses the RNG. CI Github workflow added. Test values and tolerances updated. 
 * `MaxwellWalls` renamed to `MaxwellWalls1D`.
 
 ## v0.4.1
-* Implemented linear Fokker-Planck model for a single species gas without internal degrees of freedom.
+* Implemented linear Fokker-Planck model for a single species gas without internal degrees of freedom (implementation by Leo Basov).
 
 ## v0.4.0
 * Proper constructors added for a lot of the structs used in the code; old initialization functions removed.

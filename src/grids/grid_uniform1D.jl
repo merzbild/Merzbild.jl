@@ -39,12 +39,13 @@ end
 
 # Fields
 * `L`: length of the domain
-* `nx`: number of cells
+* `n_cells`: number of cells
 * `Δx`: cell size
 * `inv_Δx`: inverse of cell size
 * `cells`: `Vector` of `Cell1D` elements
 * `min_x`: minimum allowed `x` coordinate for particles (slightly larger than ``0``)
 * `max_x`: maximum allowed `x` coordinate for particles (slightly smaller than ``L``)
+* `surface_normals`: vector of surface normals (1st element corresponds to the left wall, 2nd to the right wall)
 """
 struct Grid1DUniform <: AbstractGrid
     L::Float64
@@ -54,6 +55,7 @@ struct Grid1DUniform <: AbstractGrid
     cells::Vector{Cell1D}
     min_x::Float64  # so that we don't get particles stuck exactly at the wall
     max_x::Float64  # so that we don't get particles stuck exactly at the wall
+    surface_normals::Vector{SVector{3,Float64}}
 
     @doc """
         Grid1DUniform(L, nx; wall_offset=1e-12)
@@ -81,20 +83,24 @@ struct Grid1DUniform <: AbstractGrid
             cells[i] = Cell1D(xlo, xhi, V)
         end
 
-        return new(L, nx, dx, 1.0 / dx, cells, dx * wall_offset, L - dx * wall_offset)
+        return new(L, nx, dx, 1.0 / dx, cells, dx * wall_offset, L - dx * wall_offset,
+                   [SVector{3,Float64}(1.0, 0.0, 0.0), SVector{3,Float64}(-1.0, 0.0, 0.0)])
     end
 end
 
 """
-    get_cell(grid1duniform::Grid1DUniform, x_pos)
+    get_cell(grid1duniform::Grid1DUniform, x_pos::SVector{D,Float64}) where D
 
 Find in which cell of a 1-D uniform grid the coordinate is located
 
 # Positional arguments
 * `grid1duniform`: the 1-D uniform grid
-* `x_pos`: the 3-D coordinate vector for the which the cell index is to be determined (only the first component is used)
+* `x_pos`: the D-dimensional coordinate vector for which the cell index is to be determined (only the first component is used)
+
+# Returns
+Index of cell the particle is located in
 """
-@inline function get_cell(grid1duniform::Grid1DUniform, x_pos)
+@inline function get_cell(grid1duniform::Grid1DUniform, x_pos::SVector{D,Float64}) where D
     @inbounds return floor(Int64, x_pos[1] * grid1duniform.inv_Δx) + 1
 end
 
@@ -177,7 +183,7 @@ probabilistically sample an extra particle, so that on average, the expected num
 end
 
 """
-    sample_particles_equal_weight!(rng, grid1duniform, particles, pia, species, species_data, ndens::Float64, T, Fnum)
+    sample_particles_equal_weight!(rng, grid1duniform, particles, pia, species, species_data, ndens::Float64, T, Fnum, cell_chunk)
 
 Sample particles from a Maxwellian distribution in each cell of 1-D uniform grid given the target number density.
 If the computed number of particles is not an integer value, the fractional remainder is used to

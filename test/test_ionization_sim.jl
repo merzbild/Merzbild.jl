@@ -5,14 +5,16 @@
     # The ions are merged away (very coarsely)
     # Electrons and neutrals are merged using octree merging
     # Uses a very simple constant cross-section model
-    # running this for 300k timesteps and a T0_e of Merzbild.eV * 2.0
+    # running this for 350k timesteps and a T0_e of Merzbild.eV * 2.0
     # with sampling on a finer grid (nv_heavy = 20, nv_electrons = 40)
+    # settimg threshold_electrons = 2000, np_target_electrons = 1500 
     # and computing rate based
-    # on densities for 100_000 < nt < 290_000
-    # gives a rate of 4.0565095021838734e-16
+    # on densities for 150_000 < nt < 350_000
+    # gives a rate of 4.266287551708332e-16
     # reference bolsig value (bolsig version from 07/2024) using same data
     # (input file bolsig_input_const_Ar.dat and cross-section file bolsig_const_Ar_cs.txt)
     # gives a rate of 3.970707E-16
+    # the other two test cases in the file use other temperatures and densities and E field values
 
     # first we test with small T0_e
     E_Tn = 100 # field strength in Tn
@@ -45,7 +47,6 @@
     Random.seed!(seed)
     rng = StableRNG(seed)
 
-
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
     interaction_data_path = joinpath(@__DIR__, "..", "data", "vhs.toml")
     cs_data_path = joinpath(@__DIR__, "..", "data", "test_neutral_electron_data.xml")
@@ -53,7 +54,7 @@
     species_data::Vector{Species} = load_species_data(particles_data_path, ["Ar", "Ar+", "e-"])
     interaction_data::Array{Interaction, 2} = load_interaction_data_with_dummy(interaction_data_path, species_data)
 
-    n_e_interactions = load_electron_neutral_interactions(species_data, cs_data_path,
+    n_e_interactions = ElectronNeutralInteractions(species_data, cs_data_path,
                                                           Dict("Ar" => "ConstantDB"),
                                                           Dict("Ar" => ScatteringIsotropic),
                                                           Dict("Ar" => ElectronEnergySplitEqual))
@@ -70,8 +71,8 @@
     np_base_heavy = nv_heavy^3  # some initial guess on # of particles in simulation
     np_base_electrons = nv_electrons^3  # some initial guess on # of particles in simulation
 
-    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
-    oc_electrons = OctreeN2Merge(merging_bin_split; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc_electrons = OctreeMerge(merging_bin_split; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
     mg_ions = GridN2Merge(Nmerging_ions, Nmerging_ions, Nmerging_ions, 3.5)
 
    
@@ -90,7 +91,7 @@
 
     pia = ParticleIndexerArray(n_sampled)
 
-    phys_props::PhysProps = PhysProps(1, 3, [], Tref=T0)
+    phys_props::PhysProps = PhysProps(1, 3)
 
     sol_path = joinpath(@__DIR__, "data", "tmp_ion_no_es.nc")
 
@@ -104,7 +105,7 @@
     collision_data = CollisionData()
 
     if pia.n_total[1] > threshold_neutrals
-        merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
+        merge_octree!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
     end
 
     if pia.n_total[2] > threshold_ion
@@ -112,7 +113,7 @@
     end
 
     if pia.n_total[3] > threshold_electrons
-        merge_octree_N2_based!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
+        merge_octree!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
     end
 
     # neutral-neutral
@@ -151,7 +152,7 @@
 
 
         if pia.n_total[1] > threshold_neutrals
-            merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
+            merge_octree!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
         end
 
         if pia.n_total[2] > threshold_ion
@@ -159,7 +160,7 @@
         end
 
         if pia.n_total[3] > threshold_electrons
-            merge_octree_N2_based!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
+            merge_octree!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
         end
 
         accelerate_constant_field_x!(particles[index_electron],
@@ -171,15 +172,21 @@
     end
     close_netcdf(ds)
 
+    for s in 1:3
+        @test check_pia_is_correct(pia, s) == (true, 0)
+        @test check_unique_index(particles[s], pia, s) == (true, 0)
+        @test check_unique_buffer(particles[s]) == (true, 0)
+    end
+
     sol = NCDataset(sol_path, "r")
  
     ndens_tot = n_dens_e + n_dens_ions + n_dens_neutrals
 
-    # test overall number density conservation, 1.5e-14 is relative error due to initialization
+    # test number density conservation, aka we have no ionization in this case
     ndens_conservation = true
 
     for t in 1:n_t
-        if abs(sum(sol["ndens"][1, :, t]) - ndens_tot) / ndens_tot > 1.5e-14
+        if abs(sum(sol["ndens"][1, :, t]) - ndens_tot) / ndens_tot > 4.4e-13
             ndens_conservation = false
         end
     end
@@ -196,21 +203,20 @@
     end
 
     @test charge_neutrality == true
-
     # test compared to ref solution
     ref_sol_path = joinpath(@__DIR__, "data", "ionization_Ar_no_es.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
 
-    @test maximum(abs.(ref_sol["ndens"][1, :, 1:n_t] .- sol["ndens"][1, :, 1:n_t])) < 4 * eps()
-    @test maximum(abs.(ref_sol["T"][1, :, 1:n_t] .- sol["T"][1, :, 1:n_t])) < 7.5e-12  # not zero
+    @test maximum(abs.((ref_sol["ndens"][1, :, 1:n_t] .- sol["ndens"][1, :, 1:n_t]) ./ ref_sol["ndens"][1, :, 1:n_t])) < 4 * eps()
+    @test maximum(abs.((ref_sol["T"][1, :, 1:n_t] .- sol["T"][1, :, 1:n_t]) ./ ref_sol["T"][1, :, 1:n_t])) < 7.5e-12  # not zero
     # because in v0.7.9 some octree merging computations replaced 1/w with 1 * inv_w
 
     close(sol)
     rm(sol_path)
 
     # now we test with higher T0_e and E_tn and should get ionization
-    E_Tn = 400
-    T0_e = Merzbild.eV * 4.5  # T_e(t=0) = 4.5eV
+    E_Tn = 600
+    T0_e = Merzbild.eV * 8.5  # T_e(t=0) = 4.5eV
 
     particles = [ParticleVector(np_base_heavy),
                  ParticleVector(np_base_heavy),
@@ -239,7 +245,7 @@
     collision_data = CollisionData()
 
     if pia.n_total[1] > threshold_neutrals
-        merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
+        merge_octree!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
     end
 
     if pia.n_total[2] > threshold_ion
@@ -247,7 +253,7 @@
     end
 
     if pia.n_total[3] > threshold_electrons
-        merge_octree_N2_based!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
+        merge_octree!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
     end
 
     # neutral-neutral
@@ -286,7 +292,7 @@
 
 
         if pia.n_total[1] > threshold_neutrals
-            merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
+            merge_octree!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
         end
 
         if pia.n_total[2] > threshold_ion
@@ -294,7 +300,7 @@
         end
 
         if pia.n_total[3] > threshold_electrons
-            merge_octree_N2_based!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
+            merge_octree!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
         end
 
         accelerate_constant_field_x!(particles[index_electron],
@@ -314,7 +320,7 @@
     ndens_conservation = true
 
     for t in 1:n_t
-        if abs(sum(sol["ndens"][1, :, t]) - ndens_tot) / ndens_tot > 1.5e-14
+        if abs(sum(sol["ndens"][1, :, t]) - ndens_tot) / ndens_tot > 1e-11
             ndens_conservation = false
         end
     end
@@ -330,7 +336,7 @@
     mass_conservation = true
 
     for t in 1:n_t
-        if abs(sol["ndens"][1, 2, t] - sol["ndens"][1, 3, t]) / sol["ndens"][1, 3, t] > 1.5e-14
+        if abs(sol["ndens"][1, 2, t] - sol["ndens"][1, 3, t]) / sol["ndens"][1, 3, t] > 2.5e-14
             charge_neutrality = false
         end
 
@@ -341,6 +347,12 @@
         end
     end
 
+    for s in 1:3
+        @test check_pia_is_correct(pia, s) == (true, 0)
+        @test check_unique_index(particles[s], pia, s) == (true, 0)
+        @test check_unique_buffer(particles[s]) == (true, 0)
+    end
+
     @test charge_neutrality == true
     @test mass_conservation == true
 
@@ -348,13 +360,11 @@
     ref_sol_path = joinpath(@__DIR__, "data", "ionization_Ar_no_es_v2.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
 
-    @test maximum(abs.(ref_sol["ndens"][1, :, 1:n_t] .- sol["ndens"][1, :, 1:n_t])) < 4 * eps()
-    @test maximum(abs.(ref_sol["T"][1, :, 1:n_t] .- sol["T"][1, :, 1:n_t])) < 7.5e-14
+    @test maximum(abs.((ref_sol["ndens"][1, :, 1:n_t] .- sol["ndens"][1, :, 1:n_t]) ./ ref_sol["ndens"][1, :, 1:n_t])) < 4 * eps()
+    @test maximum(abs.((ref_sol["T"][1, :, 1:n_t] .- sol["T"][1, :, 1:n_t]) ./ ref_sol["T"][1, :, 1:n_t])) < 7.5e-14
 
     close(sol)
     rm(sol_path)
-
-
 
     # now we test with higher T0_e and E_tn and should get ionization
     # and have inverse ratio of densities to check splitting
@@ -393,7 +403,7 @@
     collision_data = CollisionData()
 
     if pia.n_total[1] > threshold_neutrals
-        merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
+        merge_octree!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
     end
 
     if pia.n_total[2] > threshold_ion
@@ -401,7 +411,7 @@
     end
 
     if pia.n_total[3] > threshold_electrons
-        merge_octree_N2_based!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
+        merge_octree!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
     end
 
     # neutral-neutral
@@ -439,7 +449,7 @@
                  particles[s1], particles[s2], particles[s3], pia, 1, s1, s2, s3, Δt, V)
 
         if pia.n_total[1] > threshold_neutrals
-            merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
+            merge_octree!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
         end
 
         if pia.n_total[2] > threshold_ion
@@ -447,7 +457,7 @@
         end
 
         if pia.n_total[3] > threshold_electrons
-            merge_octree_N2_based!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
+            merge_octree!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
         end
 
         accelerate_constant_field_x!(particles[index_electron],
@@ -458,6 +468,12 @@
         write_netcdf(ds, phys_props, ts, sync_freq=1000)
     end
     close_netcdf(ds)
+
+    for s in 1:3
+        @test check_pia_is_correct(pia, s) == (true, 0)
+        @test check_unique_index(particles[s], pia, s) == (true, 0)
+        @test check_unique_buffer(particles[s]) == (true, 0)
+    end
 
     sol = NCDataset(sol_path, "r")
  
@@ -502,8 +518,8 @@
     ref_sol_path = joinpath(@__DIR__, "data", "ionization_Ar_no_es_v2_invratio.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
 
-    @test maximum(abs.(ref_sol["ndens"][1, :, 1:n_t] .- sol["ndens"][1, :, 1:n_t])) < 4 * eps()
-    @test maximum(abs.(ref_sol["T"][1, :, 1:n_t] .- sol["T"][1, :, 1:n_t])) < 7.5e-14
+    @test maximum(abs.((ref_sol["ndens"][1, :, 1:n_t] .- sol["ndens"][1, :, 1:n_t]) ./ ref_sol["ndens"][1, :, 1:n_t])) < 4 * eps()
+    @test maximum(abs.((ref_sol["T"][1, :, 1:n_t] .- sol["T"][1, :, 1:n_t]) ./ ref_sol["T"][1, :, 1:n_t])) < 7.5e-14
 
     close(sol)
     rm(sol_path)

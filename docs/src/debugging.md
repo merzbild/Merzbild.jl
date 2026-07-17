@@ -9,7 +9,7 @@ Therefore, several utility functions have been developed to help track down inde
 
 [`pretty_print_pia`](@ref) prints out the particle indexing for a given species over all cells, producing output like
 ```
-Total: 9
+Total: 9, index_last: 9
 Cell 1: group1: [1, 3] group2: [4, 5]
 Cell 3: group2: [6, 8]
 Cell 4: group1: [9, 9]
@@ -17,8 +17,8 @@ Cell 4: group1: [9, 9]
 This can be helpful in checking that indexing doesn't overlap or in general looking at what happens to specific groups of particles in
 certain cells.
 
-One can also use [`check_pia_is_correct`](@ref) to verify that the start of the indexing in a cell follows the end of indexing in the
-previous cell, without gaps. It also checks that local cell particle counts sum up to the total cell count.
+One can also use [`check_pia_is_correct`](@ref) to verify that the constituent parts of indexing in a cell are consistent (across
+all cells), i.e. `n_local == n_group1 + n_group2`, if `n_group1 > 0`, then `n_group1 == end1 - start1 + 1`, etc.
 
 [`check_unique_index`](@ref) verifies that the underlying indexing of a `ParticleVector` instance doesn't contain duplicates,
 i.e. that `pv[i]` points to a different particle than `pv[j]` if `i!=j`.

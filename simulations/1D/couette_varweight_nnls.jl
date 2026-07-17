@@ -12,14 +12,15 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     rng::Xoshiro = Xoshiro(seed)
 
     # load particle and interaction data
-    particles_data_path = joinpath("data", "particles.toml")
+    particles_data_path = joinpath(MERZBILD_DATA_PATH, "particles.toml")
     species_data = load_species_data(particles_data_path, "Ar")
-    interaction_data_path = joinpath("data", "vhs.toml")
+    interaction_data_path = joinpath(MERZBILD_DATA_PATH, "vhs.toml")
     interaction_data::Array{Interaction, 2} = load_interaction_data(interaction_data_path, species_data)
 
     # create our grid and BCs
     grid = Grid1DUniform(L, nx)
-    boundaries = MaxwellWalls1D(species_data, T_wall, T_wall, -v_wall, v_wall, 1.0, 1.0)
+    bc_list = (FullyDiffuseBC1D(1, species_data, T_wall, [0.0, -v_wall, 0.0]),
+               FullyDiffuseBC1D(1, species_data, T_wall, [0.0, v_wall, 0.0]))
 
     # init particle vector, particle indexer, grid particle sorter
     n_particles = ppc_sampled * nx
@@ -83,25 +84,24 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
         append!(mim_backup, compute_multi_index_moments(i))
     end
     # this in case the main NNLS fails - we try with fewer moments
-    # and we also add fictitious particles, so the matrices to be pre-allocated have more columns
     @timeit "NNLSinit backup" mnnls_backup = NNLSMerge(mim_backup, init_np+17; multi_index_moments_pos=pos_moments, matrix_ncol_nprealloc=matrix_ncol_nprealloc)
 
     # this is the fallback merge in case NNLS fails
-    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
     println("# of preserved moments in main merge: ", length(mnnls.rhs_vector), ", in backup merge: ", length(mnnls_backup.rhs_vector))
 
     for cell in 1:grid.n_cells
         if pia.indexer[cell,1].n_local > merge_threshold
 
-            @timeit "merge NNLS (t=0)" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1; centered_at_mean=false, v_multipliers=[], w_threshold=1e-12)
+            @timeit "merge NNLS (t=0)" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1; w_threshold=1e-12)
 
             if nnls_success_flag == -1
-                @timeit "merge NNLS backup (t=0)" merge_nnls_based!(rng, mnnls_backup, particles[1], pia, cell, 1; v_multipliers=[0.25, 0.5, 1.0], w_threshold=1e-12)
+                @timeit "merge NNLS backup (t=0)" merge_nnls_based!(rng, mnnls_backup, particles[1], pia, cell, 1; w_threshold=1e-12)
             end
 
             if nnls_success_flag == -1
-                @timeit "merge octree (t=0)" merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+                @timeit "merge octree (t=0)" merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
             end
         end
     end
@@ -130,14 +130,14 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
                                    collision_data, interaction_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
 
             if pia.indexer[cell,1].n_local > merge_threshold
-                @timeit "merge NNLS" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1; centered_at_mean=false, v_multipliers=[], w_threshold=1e-12)
+                @timeit "merge NNLS" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1; w_threshold=1e-12)
     
                 if nnls_success_flag == -1
-                    @timeit "merge NNLS backup" nnls_success_flag = merge_nnls_based!(rng, mnnls_backup, particles[1], pia, cell, 1; v_multipliers=[0.25, 0.5, 1.0], w_threshold=1e-12)
+                    @timeit "merge NNLS backup" nnls_success_flag = merge_nnls_based!(rng, mnnls_backup, particles[1], pia, cell, 1; w_threshold=1e-12)
                 end
     
                 if nnls_success_flag == -1
-                    @timeit "merge octree" merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+                    @timeit "merge octree" merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
                 end
                 @timeit "squash" squash_pia!(particles, pia)
             end
@@ -145,9 +145,9 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
 
         # convect particles
         if (t < avg_start)
-            @timeit "convect" convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, Δt)
+            @timeit "convect" convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, Δt)
         else
-            @timeit "convect + surface compute" convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, surf_props, Δt)
+            @timeit "convect + surface compute" convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, surf_props, Δt)
             avg_props!(surf_props_avg, surf_props, n_avg)
         end
 

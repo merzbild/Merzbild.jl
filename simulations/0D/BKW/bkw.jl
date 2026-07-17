@@ -11,8 +11,8 @@ function run(seed)
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)
 
-    species_data::Vector{Species} = load_species_data("data/particles.toml", "Ar")
-    interaction_data::Array{Interaction, 2} = load_interaction_data("data/pseudo_maxwell.toml", species_data)
+    species_data::Vector{Species} = load_species_data(joinpath(MERZBILD_DATA_PATH, "particles.toml"), "Ar")
+    interaction_data::Array{Interaction, 2} = load_interaction_data(joinpath(MERZBILD_DATA_PATH, "pseudo_maxwell.toml"), species_data)
 
     println([species.name for species in species_data])
     println(interaction_data)
@@ -58,14 +58,24 @@ function run(seed)
     sample_particles_equal_weight!(rng, particles[1], pia, 1, 1, n_particles, species_data[1].mass, T0, Fnum,
                                    0.0, 1.0, 0.0, 1.0, 0.0, 1.0; distribution=:BKW)
 
-    phys_props = PhysProps(1, 1, [4, 6, 8, 10], Tref=T0)
+    moments_list = [4,6,8,10]
+    mscaling = zeros(length(moments_list))
+    mvals_list = zeros(length(moments_list))
+    compute_moment_scaling!(mscaling, moments_list, 1, species_data, T0)
+
+    phys_props = PhysProps(1, 1)
     compute_props!(particles, pia, species_data, phys_props)
+    compute_moments!(mvals_list, mscaling, moments_list, particles, pia, 1, 1, species_data, phys_props)
+
     println(phys_props.n)
     println(phys_props.v)
     println(phys_props.T)
 
     ds = NCDataHolder("scratch/data/bkw.nc", species_data, phys_props)
     write_netcdf(ds, phys_props, 0)
+
+    ds_moments = NCDataHolderMoments("scratch/data/bkw_moments.nc", species_data, 1, 1, moments_list)
+    write_netcdf(ds_moments, mvals_list, 0)
 
     collision_factors::CollisionFactors = CollisionFactors()
     collision_data::CollisionData = CollisionData()
@@ -80,9 +90,12 @@ function run(seed)
              pia, 1, 1, Δt, V)
         
         compute_props!(particles, pia, species_data, phys_props)
+        compute_moments!(mvals_list, mscaling, moments_list, particles, pia, 1, 1, species_data, phys_props)
         write_netcdf(ds, phys_props, ts)
+        write_netcdf(ds_moments, mvals_list, ts)
     end
     close_netcdf(ds)
+    close_netcdf(ds_moments)
 end
 
 run(1234)

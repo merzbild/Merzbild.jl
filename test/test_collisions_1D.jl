@@ -31,7 +31,7 @@
     @test pia.indexer[cell, 1].start1 == 1
     @test pia.indexer[cell, 1].end1 == np
 
-    phys_props = PhysProps(grid.n_cells, 1, [], Tref=1)
+    phys_props = PhysProps(grid.n_cells, 1)
     compute_props!(particles, pia, species_data, phys_props)
 
     @test phys_props.n[1, 1] == 0.0

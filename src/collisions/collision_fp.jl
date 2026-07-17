@@ -1,7 +1,7 @@
 @muladd begin
 
 """
-    fp_linear!(rng, collision_data_fp, interaction, species_data, particles, pia, cell, species, Δt, V)
+    fp_linear!(rng, collision_data_fp, interaction, particles::ParticleVector{D}, pia, cell, species, species_data, Δt, V) where D
 
 Model single-species elastic collisions using a linear Fokker-Planck approximation.
 
@@ -9,11 +9,11 @@ Model single-species elastic collisions using a linear Fokker-Planck approximati
 * `rng`: the random number generator
 * `collision_data_fp`: `CollisionDataFP` instance used for storing collisional quantities
 * `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
-* `species_data`: the vector of `SpeciesData`
 * `particles`: `ParticleVector` of the particles being collided
 * `pia`: the `ParticleIndexerArray`
 * `cell`: the index of the cell in which collisions are performed
 * `species`: the index of the species for which collisions are performed
+* `species_data`: the vector of `SpeciesData`
 * `Δt`: timestep
 * `V`: cell volume
 
@@ -21,11 +21,14 @@ Model single-species elastic collisions using a linear Fokker-Planck approximati
 * M.H. Gorji, M. Torrilhon, P. Jenny, Fokker-Planck model for computational studies of monatomic rarefied gas flows.
     [J. Fluid Mech., 2011](https://doi.org/10.1017/jfm.2011.188).
 """
-function fp_linear!(rng, collision_data_fp, interaction, species_data, particles, pia, cell, species, Δt, V)
+function fp_linear!(rng, collision_data_fp, interaction, particles::ParticleVector{D}, pia, cell, species, species_data, Δt, V) where D
     @inbounds indexer = pia.indexer[cell, species]
     n_local = indexer.n_local
     n_begin = indexer.start1
     n_end = indexer.end1
+
+    s2 = indexer.start2
+    e2 = indexer.end2
 
     if n_local < 7
         return nothing
@@ -45,7 +48,6 @@ function fp_linear!(rng, collision_data_fp, interaction, species_data, particles
     end
 
     sample_normal_rands!(rng, collision_data_fp, n_local)
-    scale_norm_rands!(collision_data_fp, n_local)
 
     @inbounds for part_id in n_begin:n_end
         collision_data_fp.vel_ave = collision_data_fp.vel_ave + particles[part_id].v * particles[part_id].w
@@ -53,13 +55,15 @@ function fp_linear!(rng, collision_data_fp, interaction, species_data, particles
     end
 
     if indexer.n_group2 > 0
-        @inbounds for part_id in indexer.start2:indexer.end2
-            collision_data_fp.vel_ave = vel_ave + particles[part_id].v * particles[part_id].w
+        @inbounds for part_id in s2:e2
+            collision_data_fp.vel_ave = collision_data_fp.vel_ave + particles[part_id].v * particles[part_id].w
             local_w += particles[part_id].w
         end
     end
 
     collision_data_fp.vel_ave = collision_data_fp.vel_ave / local_w
+
+    scale_norm_rands!(collision_data_fp, particles, indexer, local_w)
 
     @inbounds for part_id in n_begin:n_end
         particles[part_id].v = particles[part_id].v - collision_data_fp.vel_ave
@@ -69,7 +73,7 @@ function fp_linear!(rng, collision_data_fp, interaction, species_data, particles
     end
 
     if indexer.n_group2 > 0
-        @inbounds for part_id in indexer.start2:indexer.end2
+        @inbounds for part_id in s2:e2
             particles[part_id].v = particles[part_id].v - collision_data_fp.vel_ave
             es_old = es_old + (particles[part_id].v[1]^2
                                + particles[part_id].v[2]^2
@@ -170,43 +174,93 @@ and write them to a `CollisionDataFP` instance.
 end
 
 """
-    scale_norm_rands!(collision_data_fp, n_local)
+    scale_norm_rands!(collision_data_fp, particles, indexer, local_w)
 
 Scale sampled normally distributed random numbers velocity component-wise, so that their
-means for each component are exactly 0, and their variances are exactly 1.
+weight-averaged means for each component are exactly 0, and their weight-averaged variances
+are exactly 1. Weighting by the particles' computational weights is required so that the
+Langevin step conserves momentum (and hence energy) exactly for variable-weight particles;
+for equal-weight particles this reduces to the plain (unweighted) normalization.
 
 # Positional arguments
 * `collision_data_fp`: `CollisionDataFP` instance used for storing collisional quantities
-* `n_local`: the number of particles for which the numbers were sampled for
+* `particles`: `ParticleVector` of the particles being collided
+* `indexer`: the `ParticleIndexer` for the cell/species being collided (`pia.indexer[cell, species]`)
+* `local_w`: the total computational weight of the particles in the cell
 """
-@inline function scale_norm_rands!(collision_data_fp, n_local)
+@inline function scale_norm_rands!(collision_data_fp, particles, indexer, local_w)
+    n_begin = indexer.start1
+    n_end = indexer.end1
+    s2 = indexer.start2
+    e2 = indexer.end2
+
     collision_data_fp.mean = SVector{3,Float64}(0.0, 0.0, 0.0)
     collision_data_fp.stddev = SVector{3,Float64}(0.0, 0.0, 0.0)
 
-    @inbounds for i in 1:n_local
-        collision_data_fp.mean = collision_data_fp.mean + SVector{3,Float64}(collision_data_fp.xvel_rand[i],
-                                                                             collision_data_fp.yvel_rand[i],
-                                                                             collision_data_fp.zvel_rand[i])
+    @inbounds for part_id in n_begin:n_end
+        i = part_id - n_begin + 1
+        w = particles[part_id].w
+        collision_data_fp.mean = collision_data_fp.mean + w * SVector{3,Float64}(collision_data_fp.xvel_rand[i],
+                                                                                 collision_data_fp.yvel_rand[i],
+                                                                                 collision_data_fp.zvel_rand[i])
     end
 
-    collision_data_fp.mean = collision_data_fp.mean / n_local
+    if indexer.n_group2 > 0
+        @inbounds for part_id in s2:e2
+            i = part_id - n_begin + 1
+            w = particles[part_id].w
+            collision_data_fp.mean = collision_data_fp.mean + w * SVector{3,Float64}(collision_data_fp.xvel_rand[i],
+                                                                                     collision_data_fp.yvel_rand[i],
+                                                                                     collision_data_fp.zvel_rand[i])
+        end
+    end
 
-    @inbounds for i in 1:n_local
+    collision_data_fp.mean = collision_data_fp.mean / local_w
+
+    @inbounds for part_id in n_begin:n_end
+        i = part_id - n_begin + 1
+        w = particles[part_id].w
+
         collision_data_fp.xvel_rand[i] -= collision_data_fp.mean[1]
         collision_data_fp.yvel_rand[i] -= collision_data_fp.mean[2]
         collision_data_fp.zvel_rand[i] -= collision_data_fp.mean[3]
 
-        collision_data_fp.stddev = collision_data_fp.stddev + SVector{3,Float64}(collision_data_fp.xvel_rand[i]^2,
-                                                                                 collision_data_fp.yvel_rand[i]^2,
-                                                                                 collision_data_fp.zvel_rand[i]^2)
+        collision_data_fp.stddev = collision_data_fp.stddev + w * SVector{3,Float64}(collision_data_fp.xvel_rand[i]^2,
+                                                                                     collision_data_fp.yvel_rand[i]^2,
+                                                                                     collision_data_fp.zvel_rand[i]^2)
     end
 
-    collision_data_fp.stddev = SVector{3,Float64}(sqrt.(n_local ./ collision_data_fp.stddev))
+    if indexer.n_group2 > 0
+        @inbounds for part_id in s2:e2
+            i = part_id - n_begin + 1
+            w = particles[part_id].w
 
-    @inbounds for i in 1:n_local
+            collision_data_fp.xvel_rand[i] -= collision_data_fp.mean[1]
+            collision_data_fp.yvel_rand[i] -= collision_data_fp.mean[2]
+            collision_data_fp.zvel_rand[i] -= collision_data_fp.mean[3]
+
+            collision_data_fp.stddev = collision_data_fp.stddev + w * SVector{3,Float64}(collision_data_fp.xvel_rand[i]^2,
+                                                                                         collision_data_fp.yvel_rand[i]^2,
+                                                                                         collision_data_fp.zvel_rand[i]^2)
+        end
+    end
+
+    collision_data_fp.stddev = SVector{3,Float64}(sqrt.(local_w ./ collision_data_fp.stddev))
+
+    @inbounds for part_id in n_begin:n_end
+        i = part_id - n_begin + 1
         collision_data_fp.xvel_rand[i] *= collision_data_fp.stddev[1]
         collision_data_fp.yvel_rand[i] *= collision_data_fp.stddev[2]
         collision_data_fp.zvel_rand[i] *= collision_data_fp.stddev[3]
+    end
+
+    if indexer.n_group2 > 0
+        @inbounds for part_id in s2:e2
+            i = part_id - n_begin + 1
+            collision_data_fp.xvel_rand[i] *= collision_data_fp.stddev[1]
+            collision_data_fp.yvel_rand[i] *= collision_data_fp.stddev[2]
+            collision_data_fp.zvel_rand[i] *= collision_data_fp.stddev[3]
+        end
     end
 end
 

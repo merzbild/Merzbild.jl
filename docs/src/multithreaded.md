@@ -43,7 +43,7 @@ For the serial version, the call looks like this:
 ```julia
 exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, 1)
 ```
-The function [`exchange_particles!`](@ref) contains two loops over the chunks: one outer loop `for i in 1:n_chunks`
+The function [`exchange_particles!`](@ref) contains two loops over the chunks: one outer loop `for i in 1:n_chunks-1`
 and one inner loop `for j in i+1:n_chunks`.
 
 The equivalent threaded version looks like this:
@@ -79,7 +79,7 @@ particles in the per-chunk `ParticleVector` instances, since otherwise the trans
 calls to `resize!` at the start of the simulation as the solution approaches steady state and the average number of particles in a chunk
 changes significantly. A value of `1.0` means no additional particle storage is allocated.
 
-The surface properties are collected into `surf_props_reduced` via a call to `reduce_surf_props`.
+The surface properties are collected into `surf_props_reduced` via a call to [`reduce_surf_props!`](@ref).
 Before the start of the time loop, the sampling procedure is multithreaded via the `@threads` macro.
 The physical properties are also computed in multithreaded mode.
 
@@ -111,14 +111,15 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
     rng_chunks = [Xoshiro(seed + i) for i in 0:n_chunks-1]
 
     # load particle and interaction data
-    particles_data_path = joinpath("data", "particles.toml")
+    particles_data_path = joinpath(MERZBILD_DATA_PATH, "particles.toml")
     species_data = load_species_data(particles_data_path, "Ar")
-    interaction_data_path = joinpath("data", "vhs.toml")
+    interaction_data_path = joinpath(MERZBILD_DATA_PATH, "vhs.toml")
     interaction_data::Array{Interaction, 2} = load_interaction_data(interaction_data_path, species_data)
 
     # create our grid and BCs
     grid = Grid1DUniform(L, nx)
-    boundaries = MaxwellWalls1D(species_data, T_wall, T_wall, -v_wall, v_wall, 1.0, 1.0)
+    bc_list = (FullyDiffuseBC1D(1, species_data, T_wall, [0.0, -v_wall, 0.0]),
+               FullyDiffuseBC1D(1, species_data, T_wall, [0.0, v_wall, 0.0]))
 
     # split cell indices into chunks
     cell_indices = Vector(1:nx)
@@ -196,12 +197,12 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
             end
 
             if (t >= avg_start)
-                @inbounds convect_particles!(rng_chunks[chunk_id], grid, boundaries,
+                @inbounds convect_particles!(rng_chunks[chunk_id], grid, bc_list,
                                     particles_chunks[chunk_id][1], pia_chunks[chunk_id],
                                     1, species_data, surf_props_chunks[chunk_id], Δt)
             else
                 # we don't need to compute surface properties before we start averaging
-                @inbounds convect_particles!(rng_chunks[chunk_id], grid, boundaries,
+                @inbounds convect_particles!(rng_chunks[chunk_id], grid, bc_list,
                                     particles_chunks[chunk_id][1], pia_chunks[chunk_id],
                                     1, species_data, Δt)
             end
@@ -244,5 +245,5 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
     print_timer()
 end
 
-run(1234, 300.0, 500.0, 5e-4, 5e22, 500, 500, 2.59e-9, 50000, 14000; chunk_count_multiplier=1, preallocation_margin_multiplier=1.5)
+run(1234, 300.0, 500.0, 5e-4, 5e22, 100, 100, 2.59e-9, 50000, 14000; chunk_count_multiplier=1, preallocation_margin_multiplier=1.5)
 ```

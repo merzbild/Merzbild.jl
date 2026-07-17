@@ -11,18 +11,19 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
     rng::Xoshiro = Xoshiro(seed)
 
     # load particle and interaction data
-    particles_data_path = joinpath("data", "particles.toml")
+    particles_data_path = joinpath(MERZBILD_DATA_PATH, "particles.toml")
     species_data = load_species_data(particles_data_path, "Ar")
-    interaction_data_path = joinpath("data", "vhs.toml")
+    interaction_data_path = joinpath(MERZBILD_DATA_PATH, "vhs.toml")
     interaction_data::Array{Interaction, 2} = load_interaction_data(interaction_data_path, species_data)
 
     # create our grid and BCs
     grid = Grid1DUniform(L, nx)
-    boundaries = MaxwellWalls1D(species_data, T_wall, T_wall, -v_wall, v_wall, 1.0, 1.0)
+    bc_list = (FullyDiffuseBC1D(1, species_data, T_wall, [0.0, -v_wall, 0.0]),
+               FullyDiffuseBC1D(1, species_data, T_wall, [0.0, v_wall, 0.0]))
 
     # init particle vector, particle indexer, grid particle sorter
     n_particles = ppc * nx
-    particles = [ParticleVector(n_particles)]
+    particles = [ParticleVector{1}(n_particles)]
     pia = ParticleIndexerArray(grid.n_cells, 1)
     gridsorter = GridSortInPlace(grid, n_particles)
 
@@ -70,22 +71,23 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
 
     n_avg = n_timesteps - avg_start + 1
 
-    for t in 1:n_timesteps
+    @timeit "main loop" @inbounds for t in 1:n_timesteps
         if t % 1000 == 0
             println(t)
         end
 
         # collide particles
-        for cell in 1:grid.n_cells
-            @timeit "collide" ntc!(rng, collision_factors[1, 1, cell],
-                                   collision_data, interaction_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
+         @inbounds for cell in 1:grid.n_cells
+            @timeit "collide" ntc_equal_weight!(rng, collision_factors[1, 1, cell],
+                                                collision_data, interaction_data, particles[1],
+                                                pia, cell, 1, Δt, grid.cells[cell].V)
         end
 
         # convect particles
         if (t < avg_start)
-            @timeit "convect" convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, Δt)
+            @timeit "convect" convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, Δt)
         else
-            @timeit "convect + surface compute" convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, surf_props, Δt)
+            @timeit "convect + surface compute" convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, surf_props, Δt)
             @timeit "avg surfprops" avg_props!(surf_props_avg, surf_props, n_avg)
         end
 
@@ -117,8 +119,8 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
         end
     end
 
-    @timeit "I/O" write_netcdf(ds_avg, phys_props_avg, n_timesteps)
-    @timeit "I/O" write_netcdf(ds_surf_avg, surf_props_avg, n_timesteps)
+    @timeit "I/O final" write_netcdf(ds_avg, phys_props_avg, n_timesteps)
+    @timeit "I/O final" write_netcdf(ds_surf_avg, surf_props_avg, n_timesteps)
 
     close_netcdf(ds)
     close_netcdf(ds_avg)
@@ -128,4 +130,6 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
 end
 
 const n_t = 50000
+# run(1234, 300.0, 500.0, 5e-4, 5e22, 500, 250, 2.59e-9, 1000, n_t, 14000; do_benchmark=true)
+# run version below to produce results shown in BENCHMARKS.md
 run(1234, 300.0, 500.0, 5e-4, 5e22, 2000, 250, 2.59e-9, 1000, n_t, 14000; do_benchmark=true)
