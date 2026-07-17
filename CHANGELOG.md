@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.8
+## v0.8.0
 
 ### Breaking changes
 * Usage of `Vector{Particle}` completely deprecated; tests have been updated
