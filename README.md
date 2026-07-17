@@ -157,3 +157,5 @@ Please see [`CONTRIBUTING.MD`](CONTRIBUTING.MD) about some general guidelines on
 ## Acknowledgments
 Dr. Georgii Oblapenko acknowledges the support of the German Research Foundation (DFG) via
 the [SFB1481 research group](https://sfb1481.rwth-aachen.de).
+Several benchmarks were run on the `momentum` [HPC node](https://www.snubic.io/news/new-high-performance-compute-node-in-aachen), acquired with the support
+of German Research Foundation (DFG) via the [SNuBIC research unit](https://www.snubic.io/).
