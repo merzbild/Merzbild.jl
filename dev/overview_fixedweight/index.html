@@ -9,7 +9,7 @@ seed = 1
 Random.seed!(seed)
 rng = Xoshiro(seed)
 
-species_data = load_species_data(&quot;data/particles.toml&quot;, [&quot;Ar&quot;, &quot;He&quot;])
+species_data = load_species_data(joinpath(MERZBILD_DATA_PATH, &quot;particles.toml&quot;), [&quot;Ar&quot;, &quot;He&quot;])
 n_species = length(species_data)
 
 # number of timesteps to run simulation for
@@ -26,7 +26,7 @@ T0_He = 2000.0
 T0_list = [T0_Ar, T0_He]
 
 # create the 2-element Vector of ParticleVectors for the 2 species
-particles = [ParticleVector(n_particles_Ar), ParticleVector(n_particles_He)]
+particles = [ParticleVector{0}(n_particles_Ar), ParticleVector{0}(n_particles_He)]
 
 # create the 2-species 1-cell particle indexer array filled with zeros
 # as we haven&#39;t sampled any particles yet
@@ -42,7 +42,7 @@ sample_particles_equal_weight!(rng, particles[2], pia, 1, 2, n_particles_He,
 
 
 # create the PhysProps instance to store computed properties
-phys_props = PhysProps(1, 2, [], Tref=T0_Ar)
+phys_props = PhysProps(1, 2)
 
 # create struct for I/O
 ds = NCDataHolder(&quot;2species.nc&quot;, species_data, phys_props)
@@ -52,7 +52,7 @@ compute_props!(particles, pia, species_data, phys_props)
 write_netcdf(ds, phys_props, 0)
 
 # load interaction data
-interaction_data = load_interaction_data(&quot;data/vhs.toml&quot;, species_data)
+interaction_data = load_interaction_data(joinpath(MERZBILD_DATA_PATH, &quot;vhs.toml&quot;), species_data)
 
 # create the 3-D array of collision factors
 collision_factors::Array{CollisionFactors, 3} = create_collision_factors_array(n_species)
@@ -94,4 +94,4 @@ for ts in 1:n_t  # loop over time
 end
 
 # close output file
-close_netcdf(ds)</code></pre><h2 id="Summary"><a class="docs-heading-anchor" href="#Summary">Summary</a><a id="Summary-1"></a><a class="docs-heading-anchor-permalink" href="#Summary" title="Permalink"></a></h2><p>Now we have an overview of how to</p><ol><li>Load interaction-related data</li><li>Estimate the factor required for the NTC collision algorithm</li><li>Perform elastic collisions between particles of alike and unalike species</li></ol><p>In the next section, an overview of simulating collisions with variable-weight particles will be given.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../overview_blocks/">« Overview of basic building blocks</a><a class="docs-footer-nextpage" href="../overview_varweight/">Variable-weight DSMC simulations »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 19 May 2026 14:54">Tuesday 19 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+close_netcdf(ds)</code></pre><h2 id="Summary"><a class="docs-heading-anchor" href="#Summary">Summary</a><a id="Summary-1"></a><a class="docs-heading-anchor-permalink" href="#Summary" title="Permalink"></a></h2><p>Now we have an overview of how to</p><ol><li>Load interaction-related data</li><li>Estimate the factor required for the NTC collision algorithm</li><li>Perform elastic collisions between particles of alike and unalike species</li></ol><p>In the next section, an overview of simulating collisions with variable-weight particles will be given.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../overview_blocks/">« Overview of basic building blocks</a><a class="docs-footer-nextpage" href="../overview_varweight/">Variable-weight DSMC simulations »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Friday 17 July 2026 13:08">Friday 17 July 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

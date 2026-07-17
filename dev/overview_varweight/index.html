@@ -13,8 +13,8 @@ ndens = 1e23
 T0 = 300.0  
 
 # load species and interaction data
-species_data = load_species_data(&quot;data/particles.toml&quot;, &quot;Ar&quot;)
-interaction_data = load_interaction_data(&quot;data/pseudo_maxwell.toml&quot;, species_data)
+species_data = load_species_data(joinpath(MERZBILD_DATA_PATH, &quot;particles.toml&quot;), &quot;Ar&quot;)
+interaction_data = load_interaction_data(joinpath(MERZBILD_DATA_PATH, &quot;pseudo_maxwell.toml&quot;), species_data)
 
 # number of velocity grid points in each velocity direction
 nv = 20  
@@ -22,7 +22,7 @@ nv = 20
 # some initial guess on # of particles in simulation
 np_base = 40^3  
 
-particles = [ParticleVector(np_base)]
+particles = [ParticleVector{0}(np_base)]
 
 # sample from a BKW distribution at t=0
 vdf0 = (vx, vy, vz) -&gt; bkw(vx, vy, vz, species_data[1].mass, T0, 0.0)
@@ -33,15 +33,15 @@ n_sampled = sample_on_grid!(rng, vdf0, particles[1], nv, species_data[1].mass, T
                             v_mult=3.5, cutoff_mult=3.5, noise=0.0, v_offset=[0.0, 0.0, 0.0])
 
 # create the ParticleIndexerArray
-pia = ParticleIndexerArray(n_sampled)</code></pre><h2 id="Colliding-variable-weight-particles"><a class="docs-heading-anchor" href="#Colliding-variable-weight-particles">Colliding variable-weight particles</a><a id="Colliding-variable-weight-particles-1"></a><a class="docs-heading-anchor-permalink" href="#Colliding-variable-weight-particles" title="Permalink"></a></h2><p>As mentioned above, the existing DSMC routines, unless they have <code>equal_weight</code> explicitly in their name, take care of the required particle splitting. For variable-weight NTC simulations, one needs to estimate <span>$(\sigma g w)_{max}$</span>. The simplest approach is to use <code>estimate_sigma_g_w_max</code> function, but it requires a (fixed) value of <code>Fnum</code> - so one can simply compute it as <code>ndens/n_sampled</code> (i.e. the number density divided by the total number of sampled particles). If we merge after sampling, an effective <code>Fnum</code> is then computed as <code>ndens/n_post_merge</code> (i.e. number density divided by the total number of post-merge particles). The <a href="../reference_public/#Merzbild.ntc!"><code>ntc!</code></a> function has a keyword parameter <code>dw_tol</code> that governs when particle collisions are treated as equal-weight so that small discrepancies in particle weights do not cause unnecessary splitting.</p><h2 id="Merging-variable-weight-particles"><a class="docs-heading-anchor" href="#Merging-variable-weight-particles">Merging variable-weight particles</a><a id="Merging-variable-weight-particles-1"></a><a class="docs-heading-anchor-permalink" href="#Merging-variable-weight-particles" title="Permalink"></a></h2><p>In order to merge variable-weight particles, one needs to set up a merging algorithm and the associated data structures and parameters. A more detailed overview of merging algorithms will appear later in a Tutorials section; here, the Octree merging approach of <a href="https://doi.org/10.1016/j.jcp.2016.01.020">Martin and Cambier (2016)</a> is used. The algorithm groups particles into bins in velocity space, recursively refining the bins until the number of post-merge particles reaches the prescribed value. It then performs an <span>$N:2$</span> merge in each bin, replacing all particles in a bin with 2 particles.</p><p>To set up this merging algorithm, one needs to create a <code>OctreeN2Merge</code> instance, specifying</p><ul><li>The extent of the first (root) bin - whether it accounts for the extent of the particles or whether it is just taken to be very large</li><li>How bins are split (along the middle velocity, the mean velocity, or the median velocity)</li><li>Whether the velocity bounds of each sub-bin are recomputed based on the particles in the bin or are based purely on the bounds of the parent bin and the splitting velocity</li><li>Maximum number of bins</li><li>Maximum refinement depth</li></ul><p>For example, we can create an octree merging instance that splits velocity bins across the middle, sets the root bin bounds to the bounding box of the particle velocities, and inherits the bin bounds of the parent bin when splitting a bin. We also immediately merge our particles, setting a target particle number of 100.</p><pre><code class="language-julia hljs"># set up the merging algorithm
-oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel,
+pia = ParticleIndexerArray(n_sampled)</code></pre><h2 id="Colliding-variable-weight-particles"><a class="docs-heading-anchor" href="#Colliding-variable-weight-particles">Colliding variable-weight particles</a><a id="Colliding-variable-weight-particles-1"></a><a class="docs-heading-anchor-permalink" href="#Colliding-variable-weight-particles" title="Permalink"></a></h2><p>As mentioned above, the existing DSMC routines, unless they have <code>equal_weight</code> explicitly in their name, take care of the required particle splitting. For variable-weight NTC simulations, one needs to estimate <span>$(\sigma g w)_{max}$</span>. The simplest approach is to use <code>estimate_sigma_g_w_max</code> function, but it requires a (fixed) value of <code>Fnum</code> - so one can simply compute it as <code>ndens/n_sampled</code> (i.e. the number density divided by the total number of sampled particles). If we merge after sampling, an effective <code>Fnum</code> is then computed as <code>ndens/n_post_merge</code> (i.e. number density divided by the total number of post-merge particles). The <a href="../reference_public/#Merzbild.ntc!"><code>ntc!</code></a> function has a keyword parameter <code>dw_tol</code> that governs when particle collisions are treated as equal-weight so that small discrepancies in particle weights do not cause unnecessary splitting.</p><h2 id="Merging-variable-weight-particles"><a class="docs-heading-anchor" href="#Merging-variable-weight-particles">Merging variable-weight particles</a><a id="Merging-variable-weight-particles-1"></a><a class="docs-heading-anchor-permalink" href="#Merging-variable-weight-particles" title="Permalink"></a></h2><p>In order to merge variable-weight particles, one needs to set up a merging algorithm and the associated data structures and parameters. A more detailed overview of merging algorithms will appear later in a Tutorials section; here, the Octree merging approach of <a href="https://doi.org/10.1016/j.jcp.2016.01.020">Martin and Cambier (2016)</a> is used. The algorithm groups particles into bins in velocity space, recursively refining the bins until the number of post-merge particles reaches the prescribed value. It then performs an <span>$N:M$</span> merge in each bin, replacing all particles in a bin with M particles (currently, <code>M=1</code> and <code>M=2</code> are supported, <code>N:1</code> merging is made conservative via re-scaling of post-merge particles&#39; properties).</p><p>To set up this merging algorithm, one needs to create a <code>OctreeMerge{D,M}</code> instance, specifying</p><ul><li>The extent of the first (root) bin - whether it accounts for the extent of the particles or whether it is just taken to be very large</li><li>How bins are split (along the middle velocity, the mean velocity, or the median velocity)</li><li>Whether the velocity bounds of each sub-bin are recomputed based on the particles in the bin or are based purely on the bounds of the parent bin and the splitting velocity</li><li>Maximum number of bins</li><li>Maximum refinement depth</li><li><code>M</code>: the number of post-merge particles in a bin (defaults to 2)</li></ul><p>It is important that the dimension <code>D</code> of the merging instance coincides with that used for the particle positions. For example, we can create an octree merging instance that splits velocity bins across the middle, sets the root bin bounds to the bounding box of the particle velocities, and inherits the bin bounds of the parent bin when splitting a bin. We also immediately merge our particles, setting a target particle number of 100.</p><pre><code class="language-julia hljs"># set up the merging algorithm: 0-D particles, 2 post-merge particles in a bin
+oc = OctreeMerge{0,2}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel,
                    bin_bounds_compute=OctreeBinBoundsInherit, max_Nbins=6000)
 
 # set Ntarget
 Ntarget = 100
 
 # perform merging
-merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)</code></pre><p>We can check the number of particles after the merging procedure by looking at <code>pia.indexer[1,1].n_local</code> (the number of particles of species 1 in cell 1), which should be equal to 100. <strong>Important</strong>: when estimating collision factors, one might need an estimate for the average weight of a particle; this needs to be computed after the merging is performed on the initial simulation, otherwise the estimates might be significantly off if merging reduces the number of particles by a large amount.</p><h2 id="Example:-bringing-it-all-together"><a class="docs-heading-anchor" href="#Example:-bringing-it-all-together">Example: bringing it all together</a><a id="Example:-bringing-it-all-together-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-bringing-it-all-together" title="Permalink"></a></h2><p>Now we can put the variable-weight collisions and merging into a timestep loop, performing merging by when <code>pia.indexer[1,1].n_local &gt; Nthreshold</code>, where <code>Nthreshold</code> is the threshold number of particles. Alternatively, one can check <code>phys_props.np[1,1] &gt; Nthreshold</code>, in case the physical properties are computed frequently enough. The following simulation computes the BKW relaxation problem.</p><pre><code class="language-julia hljs">using Merzbild
+merge_octree!(rng, oc, particles[1], pia, 1, 1, Ntarget)</code></pre><p>We can check the number of particles after the merging procedure by looking at <code>pia.indexer[1,1].n_local</code> (the number of particles of species 1 in cell 1), which should be equal to 100. <strong>Important</strong>: when estimating collision factors, one might need an estimate for the average weight of a particle; this needs to be computed after the merging is performed on the initial simulation, otherwise the estimates might be significantly off if merging reduces the number of particles by a large amount.</p><h2 id="Example:-bringing-it-all-together"><a class="docs-heading-anchor" href="#Example:-bringing-it-all-together">Example: bringing it all together</a><a id="Example:-bringing-it-all-together-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-bringing-it-all-together" title="Permalink"></a></h2><p>Now we can put the variable-weight collisions and merging into a timestep loop, performing merging by when <code>pia.indexer[1,1].n_local &gt; Nthreshold</code>, where <code>Nthreshold</code> is the threshold number of particles. Alternatively, one can check <code>phys_props.np[1,1] &gt; Nthreshold</code>, in case the physical properties are computed frequently enough. The following simulation computes the BKW relaxation problem.</p><pre><code class="language-julia hljs">using Merzbild
 using Random
 
 seed = 1
@@ -55,8 +55,8 @@ ndens = 1e23
 T0 = 300.0  
 
 # load species and interaction data
-species_data = load_species_data(&quot;data/particles.toml&quot;, &quot;Ar&quot;)
-interaction_data = load_interaction_data(&quot;data/pseudo_maxwell.toml&quot;, species_data)
+species_data = load_species_data(joinpath(MERZBILD_DATA_PATH, &quot;particles.toml&quot;), &quot;Ar&quot;)
+interaction_data = load_interaction_data(joinpath(MERZBILD_DATA_PATH, &quot;pseudo_maxwell.toml&quot;), species_data)
 
 # number of velocity grid points in each velocity direction
 nv = 20  
@@ -64,7 +64,7 @@ nv = 20
 # some initial guess on # of particles in simulation
 np_base = 40^3  
 
-particles = [ParticleVector(np_base)]
+particles = [ParticleVector{0}(np_base)]
 
 # sample from a BKW distribution at t=0
 vdf0 = (vx, vy, vz) -&gt; bkw(vx, vy, vz, species_data[1].mass, T0, 0.0)
@@ -77,8 +77,8 @@ n_sampled = sample_on_grid!(rng, vdf0, particles[1], nv, species_data[1].mass, T
 # create the ParticleIndexerArray
 pia = ParticleIndexerArray(n_sampled)
 
-# set up the merging algorithm
-oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel,
+# set up the merging algorithm: 0-D particles, 2 post-merge particles in a bin
+oc = OctreeMerge{0,2}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel,
                    bin_bounds_compute=OctreeBinBoundsInherit, max_Nbins=6000)
 
 # set Ntarget for merging
@@ -88,7 +88,7 @@ Ntarget = 100
 Nthreshold = 120
 
 # perform initial merge
-merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
+merge_octree!(rng, oc, particles[1], pia, 1, 1, Ntarget)
 
 # set some reference values
 sigma_ref = π * (interaction_data[1,1].vhs_d^2)
@@ -97,7 +97,7 @@ Lref = 1.0 / (ndens * sigma_ref)
 tref = Lref / vref
 
 # set up computation of physical properties
-phys_props = PhysProps(1, 1, [], Tref=T0)
+phys_props = PhysProps(1, 1)
 compute_props!(particles, pia, species_data, phys_props)
 
 ds = NCDataHolder(&quot;output_bkw_octree.nc&quot;, species_data, phys_props)
@@ -128,7 +128,7 @@ for ts in 1:n_t
 
     # check if we need to merge
     if pia.indexer[1,1].n_local &gt; Nthreshold
-        merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, Ntarget)
+        merge_octree!(rng, oc, particles[1], pia, 1, 1, Ntarget)
     end
 
     # print number of particles every 10 timesteps
@@ -139,4 +139,4 @@ for ts in 1:n_t
     compute_props!(particles, pia, species_data, phys_props)
     write_netcdf(ds, phys_props, ts)
 end
-close_netcdf(ds)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../overview_fixedweight/">« Fixed-weight DSMC simulations</a><a class="docs-footer-nextpage" href="../overview_1d/">1D DSMC simulations »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 19 May 2026 14:54">Tuesday 19 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+close_netcdf(ds)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../overview_fixedweight/">« Fixed-weight DSMC simulations</a><a class="docs-footer-nextpage" href="../overview_1d/">1D DSMC simulations »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Friday 17 July 2026 13:08">Friday 17 July 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
