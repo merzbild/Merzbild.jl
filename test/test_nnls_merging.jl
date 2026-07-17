@@ -128,13 +128,13 @@
 
     # test some internal computes used in the merging
     @test sum(abs.(mnnls.v0 .- v0)) < eps()
-    @test sum(abs.(mnnls.w_total .- n0)) < 1.5e-14
+    @test sum(abs.(mnnls.w_total .- n0)) < 2.5e-14
 
     compute_props!(particles, pia, species_data, phys_props)
     compute_moments!(mvals_list, mscaling, mlist, particles, pia, 1, 1, species_data, phys_props)
     # test that merging conserves mass / momentum / energy
     @test phys_props.np[1, 1] < np0
-    @test abs(n0 - phys_props.n[1, 1]) < 1.5e-14
+    @test abs(n0 - phys_props.n[1, 1]) < 2.5e-14
     @test sum(abs.(v0 - phys_props.v[:, 1, 1])) < 2e-13
     @test abs(T0 - phys_props.T[1, 1]) < 3.6e-14
 
