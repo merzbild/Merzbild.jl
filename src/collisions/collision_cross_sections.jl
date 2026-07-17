@@ -91,7 +91,7 @@ struct ElasticScattering
 end
 
 """
-    Ionization
+    ExcitationSink
 
 Structure to hold data on electron-impact electronic excitation cross-sections for a specific species.
 
@@ -417,11 +417,11 @@ function load_elastic_data(xml_data)
 end
 
 
-"""
-    load_electron_neutral_interactions(species_data, filename, databases, scattering_laws, energy_splits)
+@doc """
+    ElectronNeutralInteractions(species_data, filename, databases, scattering_laws, energy_splits)
 
 Load electron-neutral interaction data from an LXCAT format XML file for
-a set of given neutral species.
+a set of given neutral species and instantiate a `ElectronNeutralInteractions` instance.
 
 # Positional arguments
 * `species_data`: vector of `Species` data for the neutral species
@@ -437,7 +437,7 @@ of the cross-section database in the XML file to use for the species
 # Throws
 `DataMissingException` if data not found or not all required data present.
 """
-function load_electron_neutral_interactions(species_data, filename, databases, scattering_laws, energy_splits)
+function ElectronNeutralInteractions(species_data, filename, databases, scattering_laws, energy_splits)
     neutral_indexer::Vector{Int64} = []
     mass_ratios::Vector{Float64} = []
     elastic_cs_vector::Vector{ElasticScattering} = []

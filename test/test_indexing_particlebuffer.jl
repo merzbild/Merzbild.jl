@@ -77,7 +77,7 @@
 
     n_dens = 6e10 + 3e6
 
-    phys_props = PhysProps(1, 1, [], Tref=1)
+    phys_props = PhysProps(1, 1)
     compute_props!(particles, pia, species_data, phys_props)
     @test phys_props.np[1,1] == 9.0
     @test abs((phys_props.n[1,1] - n_dens) / n_dens) < 1e-15

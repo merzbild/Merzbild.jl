@@ -26,7 +26,8 @@
 
     # create our grid and BCs
     grid = Grid1DUniform(L, nx)
-    boundaries = MaxwellWalls1D(species_data, T_wall, T_wall, -v_wall, v_wall, 1.0, 1.0)
+    bc_list = (MaxwellWallBC1D(1, species_data, T_wall, [0.0, -v_wall, 0.0], 1.0),
+               MaxwellWallBC1D(1, species_data, T_wall, [0.0, v_wall, 0.0], 1.0))
 
     # init particle vector, particle indexer, grid particle sorter
     n_particles = ppc * nx
@@ -62,11 +63,11 @@
     collision_factors = create_collision_factors_swpm_array(pia, interaction_data, species_data, T_wall)
 
 
-    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
     for cell in 1:grid.n_cells
         if pia.indexer[cell,1].n_local > merge_threshold
-            merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+            merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
         end
     end
     squash_pia!(particles, pia)
@@ -84,13 +85,13 @@
                   collision_data, interaction_data, particles[1], pia, cell, 1, G, Δt, grid.cells[cell].V)
         
             if pia.indexer[cell,1].n_local > merge_threshold
-                merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+                merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
                 squash_pia!(particles, pia)
             end
         end
 
         # convect particles
-        convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, surf_props, Δt)
+        convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, surf_props, Δt)
 
         # sort particles
         sort_particles!(gridsorter, grid, particles[1], pia, 1)

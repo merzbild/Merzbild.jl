@@ -95,7 +95,8 @@
     for chunk_id in 1:2
         for np in 1:4
             Merzbild.add_particle!(particles_chunks[chunk_id][1], np,
-                                   chunk_id * 1.0, [chunk_id^3 * np, -np + 1.0, np], [chunk_id * 3.0, 0.5, 1.0+chunk_id])
+                                   chunk_id * 1.0, SVector{3, Float64}(chunk_id^3 * np, -np + 1.0, np),
+                                   SVector{3, Float64}(chunk_id * 3.0, 0.5, 1.0+chunk_id))
         end
         pia_chunks[chunk_id].n_total[1] = 4
         pia_chunks[chunk_id].indexer[chunk_id,1].n_local = 4  # here cell is same as chunk_id
@@ -128,8 +129,8 @@
     for chunk_id in 1:2
         for np in 1:4
             Merzbild.add_particle!(particles_chunks[chunk_id][1], np,
-                                   chunk_id * 1.0, [chunk_id^3 * np, -np + 1.0, np],
-                                   [positions[chunk_id][np], 0.5, 1.0+chunk_id])
+                                   chunk_id * 1.0, SVector{3, Float64}(chunk_id^3 * np, -np + 1.0, np),
+                                   SVector{3, Float64}(positions[chunk_id][np], 0.5, 1.0+chunk_id))
         end
         pia_chunks[chunk_id].n_total[1] = 4
     end
@@ -213,8 +214,8 @@
     for chunk_id in 1:2
         for np in 1:np_actual[chunk_id]
             Merzbild.add_particle!(particles_chunks[chunk_id][1], np,
-                                   chunk_id * 1.0, [chunk_id^3 * np, -np + 1.0, np],
-                                   [positions[chunk_id][np], 0.5, 1.0+chunk_id])
+                                   chunk_id * 1.0, SVector{3, Float64}(chunk_id^3 * np, -np + 1.0, np),
+                                   SVector{3, Float64}(positions[chunk_id][np], 0.5, 1.0+chunk_id))
         end
         pia_chunks[chunk_id].n_total[1] = np_actual[chunk_id]
     end
@@ -339,8 +340,8 @@
     for chunk_id in 1:2
         for np in 1:np_actual[chunk_id]
             Merzbild.add_particle!(particles_chunks[chunk_id][1], np,
-                                   chunk_id * 1.0, [chunk_id^3 * np, -np + 1.0, np],
-                                   [positions[chunk_id][np], 0.5, 1.0+chunk_id])
+                                   chunk_id * 1.0, SVector{3, Float64}(chunk_id^3 * np, -np + 1.0, np),
+                                   SVector{3, Float64}(positions[chunk_id][np], 0.5, 1.0+chunk_id))
         end
         pia_chunks[chunk_id].n_total[1] = np_actual[chunk_id]
         pia_chunks[chunk_id].indexer[1,1].n_local = np_actual[chunk_id]
@@ -447,8 +448,8 @@
     for chunk_id in 1:2
         for np in 1:np_actual[chunk_id]
             Merzbild.add_particle!(particles_chunks[chunk_id][1], np,
-                                   cells[chunk_id][np] * 1.0, [chunk_id, -chunk_id, chunk_id],
-                                   [positions[chunk_id][np], 0.5, 0.0])
+                                   cells[chunk_id][np] * 1.0, SVector{3, Float64}(chunk_id, -chunk_id, chunk_id),
+                                   SVector{3, Float64}(positions[chunk_id][np], 0.5, 0.0))
         end
         pia_chunks[chunk_id].n_total[1] = np_actual[chunk_id]
 
@@ -555,8 +556,8 @@
     for chunk_id in 1:3
         for np in 1:np_actual[chunk_id]
             Merzbild.add_particle!(particles_chunks[chunk_id][1], np,
-                                   cells[chunk_id][np] * 1.0, [chunk_id, -chunk_id, chunk_id],
-                                   [positions[chunk_id][np], 0.5, 0.0])
+                                   cells[chunk_id][np] * 1.0, SVector{3, Float64}(chunk_id, -chunk_id, chunk_id),
+                                   SVector{3, Float64}(positions[chunk_id][np], 0.5, 0.0))
         end
         pia_chunks[chunk_id].n_total[1] = np_actual[chunk_id]
 
@@ -790,8 +791,8 @@
     for chunk_id in 1:2
         for np in 1:np_actual[chunk_id]
             Merzbild.add_particle!(particles_chunks[chunk_id][1], np,
-                                   cells[chunk_id][np] * 1.0, [chunk_id, -chunk_id, chunk_id],
-                                   [positions[chunk_id][np], 0.5, 0.0])
+                                   cells[chunk_id][np] * 1.0, SVector{3, Float64}(chunk_id, -chunk_id, chunk_id),
+                                   SVector{3, Float64}(positions[chunk_id][np], 0.5, 0.0))
         end
         pia_chunks[chunk_id].n_total[1] = np_actual[chunk_id]
 

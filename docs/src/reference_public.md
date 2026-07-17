@@ -5,10 +5,10 @@
 Particle
 ParticleVector
 ParticleVector(np)
-Base.getindex(pv::ParticleVector, i)
-Base.setindex!(pv::ParticleVector, p::Particle, i::Integer)
-Base.length(pv::ParticleVector)
-Base.resize!(pv::ParticleVector, n::Integer)
+Base.getindex(pv::ParticleVector{D}, i) where D
+Base.setindex!(pv::ParticleVector{D}, p::Particle{D}, i::Integer) where D
+Base.length(pv::ParticleVector{D}) where D
+Base.resize!(pv::ParticleVector{D}, n::Integer) where D
 ```
 
 ## Particle indexing
@@ -33,13 +33,13 @@ check_unique_buffer
 
 ## Loading species and interaction data
 ```@docs
+MERZBILD_DATA_PATH
 Species
 Interaction
 load_species_data
 load_interaction_data
 load_interaction_data_with_dummy
 load_species_and_interaction_data
-load_electron_neutral_interactions
 ```
 
 ## Sampling
@@ -55,9 +55,8 @@ sample_particles_phase_box_weighted!
 ## Computing grid and surface macroscopic properties
 ```@docs
 PhysProps
-PhysProps(n_cells, n_species, moments_list; Tref=300.0)
-PhysProps(pia, moments_list; Tref=300.0)
-PhysProps(pia)
+PhysProps(n_cells, n_species; ndens_not_Np=false)
+PhysProps(pia::ParticleIndexerArray; ndens_not_Np=false)
 SurfProps
 SurfProps(n_elements, n_species, areas, normals)
 SurfProps(pia, grid::Grid1DUniform)
@@ -65,12 +64,13 @@ FluxProps
 FluxProps(n_cells, n_species)
 FluxProps(pia)
 compute_props!
-compute_props_with_total_moments!
 compute_props_sorted!
 compute_flux_props!
 compute_flux_props_sorted!
 avg_props!
 clear_props!
+compute_moment_scaling!
+compute_moments!
 ```
 
 ## Collisional properties
@@ -112,6 +112,7 @@ fp_linear!
 ## Electron-neutral interactions
 ```@docs
 ElectronNeutralInteractions
+ElectronNeutralInteractions(species_data, filename, databases, scattering_laws, energy_splits)
 ComputedCrossSections
 Merzbild.ElectronEnergySplit
 Merzbild.ScatteringLaw
@@ -122,19 +123,24 @@ Merzbild.CSExtend
 
 ### Grid merging
 ```@docs
-GridN2Merge
-GridN2Merge(Nx::Int, Ny::Int, Nz::Int, extent_multiplier::T) where T <: AbstractArray
-GridN2Merge(N::Int, extent_multiplier::T) where T <: AbstractArray
+GridN2Merge{D}
+GridN2Merge{D}(Nx::Int, Ny::Int, Nz::Int, extent_multiplier::T) where {D, T <: AbstractArray}
+GridN2Merge{D}(N::Int, extent_multiplier::T) where {D, T <: AbstractArray}
+GridN2Merge{D}(Nx::Int, Ny::Int, Nz::Int, extent_multiplier::Float64) where D
+GridN2Merge{D}(Nx::Int, Ny::Int, Nz::Int, extent_multiplier_x::Float64, extent_multiplier_y::Float64, extent_multiplier_z::Float64) where D
+GridN2Merge{D}(N::Int, extent_multiplier::Float64) where D
+GridN2Merge(N::Int, extent_multiplier::T) where T <: AbstractArray 
 GridN2Merge(Nx::Int, Ny::Int, Nz::Int, extent_multiplier::Float64)
 GridN2Merge(Nx::Int, Ny::Int, Nz::Int, extent_multiplier_x::Float64, extent_multiplier_y::Float64, extent_multiplier_z::Float64)
-GridN2Merge(N::Int, extent_multiplier::Float64)
 merge_grid_based!
+GridN2Merge(N::Int, extent_multiplier::Float64)
 ```
 
 ### NNLS merging
 ```@docs
-NNLSMerge
-NNLSMerge(multi_index_moments, init_np; rate_preserving=false)
+NNLSMerge{D}
+NNLSMerge{D}(multi_index_moments, init_np; rate_preserving=false, multi_index_moments_pos=[], matrix_ncol_nprealloc=0) where D
+NNLSMerge(multi_index_moments, init_np; rate_preserving=false, multi_index_moments_pos=[], matrix_ncol_nprealloc=0)
 compute_multi_index_moments
 merge_nnls_based!
 merge_nnls_based_rate_preserving!
@@ -145,12 +151,10 @@ merge_nnls_based_rate_preserving!
 Merzbild.OctreeBinSplit
 Merzbild.OctreeInitBin
 Merzbild.OctreeBinBounds
-OctreeN2Merge
-OctreeN2Merge(split::Merzbild.OctreeBinSplit;
-              init_bin_bounds=OctreeInitBinMinMaxVel,
-              bin_bounds_compute=OctreeBinBoundsInherit,
-              max_Nbins=4096, max_depth=10)
-merge_octree_N2_based!
+OctreeMerge
+OctreeMerge{D,M}(split::Merzbild.OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit, max_Nbins=4096, max_depth=10) where {D,M}
+OctreeMerge(split::Merzbild.OctreeBinSplit; init_bin_bounds=OctreeInitBinMinMaxVel, bin_bounds_compute=OctreeBinBoundsInherit, max_Nbins=4096, max_depth=10) 
+merge_octree!
 ```
 
 ### Roulette merging
@@ -177,10 +181,11 @@ convect_particles_and_compute_cell!
 
 ## Particle-surface interactions
 ```@docs
-MaxwellWallBC
-MaxwellWalls1D
-MaxwellWalls1D(species_data, T_l::Float64, T_r::Float64, vy_l::Float64, vy_r::Float64, accomodation_l::Float64,          
-    accomodation_r::Float64)
+MaxwellWallBC1D
+MaxwellWallBC1D(species, species_data,T::Float64, v, accommodation::Float64)
+FullyDiffuseBC1D
+FullyDiffuseBC1D(species, species_data, T::Float64, v)
+FullySpecularBC1D
 ```
 
 ## I/O
@@ -196,14 +201,16 @@ IOSkipListFlux
 IOSkipListFlux(list_of_variables_to_skip)
 IOSkipListFlux()
 NCDataHolder
-NCDataHolder(nc_filename, names_skip_list, species_data, phys_props; global_attributes=Dict{Any,Any}())
-NCDataHolder(nc_filename, species_data, phys_props; global_attributes=Dict{Any,Any}())
+NCDataHolder(nc_filename, names_skip_list, species_data, phys_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
+NCDataHolder(nc_filename, species_data, phys_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
 NCDataHolderSurf
-NCDataHolderSurf(nc_filename, names_skip_list, species_data, surf_props; global_attributes=Dict{Any,Any}())
-NCDataHolderSurf(nc_filename, species_data, surf_props; global_attributes=Dict{Any,Any}())
+NCDataHolderSurf(nc_filename, names_skip_list, species_data, surf_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
+NCDataHolderSurf(nc_filename, species_data, surf_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
 NCDataHolderFlux
-NCDataHolderFlux(nc_filename, names_skip_list, species_data, flux_props; global_attributes=Dict{Any,Any}())
-NCDataHolderFlux(nc_filename, species_data, flux_props; global_attributes=Dict{Any,Any}())
+NCDataHolderFlux(nc_filename, names_skip_list, species_data, flux_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
+NCDataHolderFlux(nc_filename, species_data, flux_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
+NCDataHolderMoments
+NCDataHolderMoments(nc_filename, species_data, n_cells, n_species, moment_powers; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
 write_netcdf
 close_netcdf
 ```
@@ -232,4 +239,6 @@ k_B
 ## Misc
 ```@docs
 DataMissingException
+MERZBILD_SIMULATIONS_PATH
+MERZBILD_SCRIPTS_PATH
 ```

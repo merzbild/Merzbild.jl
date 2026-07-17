@@ -48,7 +48,7 @@
     seed = 1234
     rng = StableRNG(seed)
 
-    phys_props = PhysProps(2, 1, [], Tref=1)
+    phys_props = PhysProps(2, 1)
 
     particles, pia = create_particles_and_pia(50)
     
@@ -64,8 +64,8 @@
 
     @test pia.contiguous[1] == true
 
-    octree = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel)
-    merge_octree_N2_based!(rng, octree, particles[1], pia, 1, 1, 6)
+    octree = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel)
+    merge_octree!(rng, octree, particles[1], pia, 1, 1, 6)
 
     compute_props!(particles, pia, species_data, phys_props)
 
@@ -159,10 +159,10 @@
 
     @test pia.contiguous[1] == true
 
-    octree = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel)
+    octree = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel)
 
     # 16 is the target particle number but we will get 12 post-merge particles
-    merge_octree_N2_based!(rng, octree, particles[1], pia, 1, 1, 16)
+    merge_octree!(rng, octree, particles[1], pia, 1, 1, 16)
 
     compute_props!(particles, pia, species_data, phys_props)
 

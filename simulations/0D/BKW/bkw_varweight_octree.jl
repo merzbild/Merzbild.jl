@@ -39,8 +39,8 @@ function run(seed::Int64, threshold::Int64, ntarget::Int64)
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)
 
-    species_data::Vector{Species} = load_species_data("data/particles.toml", "Ar")
-    interaction_data::Array{Interaction, 2} = load_interaction_data("data/pseudo_maxwell.toml", species_data)
+    species_data::Vector{Species} = load_species_data(joinpath(MERZBILD_DATA_PATH, "particles.toml"), "Ar")
+    interaction_data::Array{Interaction, 2} = load_interaction_data(joinpath(MERZBILD_DATA_PATH, "pseudo_maxwell.toml"), species_data)
 
     dt_scaled = 0.025
     n_t = 600
@@ -48,7 +48,7 @@ function run(seed::Int64, threshold::Int64, ntarget::Int64)
     nv = 32
     np_base = 40^3  # some initial guess on # of particle in simulation
 
-    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
     T0::Float64 = 273.0
     sigma_ref = π * (interaction_data[1,1].vhs_d^2)
@@ -69,14 +69,22 @@ function run(seed::Int64, threshold::Int64, ntarget::Int64)
 
     pia = ParticleIndexerArray(n_sampled)
 
-    phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
-    compute_props_with_total_moments!(particles, pia, species_data, phys_props)
+    mscaling = zeros(length(moments_list))
+    mvals_list = zeros(length(moments_list))
+    compute_moment_scaling!(mscaling, moments_list, 1, species_data, T0)
+
+    phys_props = PhysProps(1, 1)
+    compute_props!(particles, pia, species_data, phys_props)
+    compute_moments!(mvals_list, mscaling, moments_list, particles, pia, 1, 1, species_data, phys_props)
 
     ds = NCDataHolder("scratch/data/bkw_octree_mid_$(threshold)_$(ntarget)_$(seed).nc", species_data, phys_props)
     write_netcdf(ds, phys_props, 0)
 
+    ds_moments = NCDataHolderMoments("scratch/data/bkw_octree_mid_$(threshold)_$(ntarget)_$(seed)_moments.nc", species_data, 1, 1, moments_list)
+    write_netcdf(ds_moments, mvals_list, 0)
+
     if phys_props.np[1,1] > threshold
-        merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, ntarget)
+        merge_octree!(rng, oc, particles[1], pia, 1, 1, ntarget)
     end
 
     collision_factors::CollisionFactors = CollisionFactors()
@@ -91,13 +99,17 @@ function run(seed::Int64, threshold::Int64, ntarget::Int64)
         ntc!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
 
         if pia.indexer[1,1].n_local > threshold
-            merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, ntarget)
+            merge_octree!(rng, oc, particles[1], pia, 1, 1, ntarget)
         end
-        squash_pia!(particles, pia, 1)
-        compute_props_with_total_moments!(particles, pia, species_data, phys_props)
+        squash_pia!(particles, pia)
+        
+        compute_props!(particles, pia, species_data, phys_props)
+        compute_moments!(mvals_list, mscaling, moments_list, particles, pia, 1, 1, species_data, phys_props)
         write_netcdf(ds, phys_props, ts)
+        write_netcdf(ds_moments, mvals_list, ts)
     end
     close_netcdf(ds)
+    close_netcdf(ds_moments)
 end
 
 # run BKW test case with merging called if particle count exceeds 150 and merged down to 100 particles

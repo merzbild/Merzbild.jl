@@ -10,7 +10,7 @@
     interaction_data::Array{Interaction, 2} = load_interaction_data(interaction_data_path, species_data)
     n_species = length(species_data)
 
-    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
     n_t = 800
 
@@ -41,7 +41,7 @@
     sample_particles_equal_weight!(rng, particles[2], pia, 1, 2, 
                                    n_particles_He, species_data[2].mass, T0_He, Fnum_He, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
 
-    phys_props::PhysProps = PhysProps(1, 2, [], Tref=T0_Ar)
+    phys_props::PhysProps = PhysProps(1, 2)
     compute_props!(particles, pia, species_data, phys_props)
     
     sol_path = joinpath(@__DIR__, "data", "tmp_2species_varweight_elastic.nc")
@@ -69,11 +69,21 @@
         end
 
         if pia.indexer[1,1].n_local > threshold_Ar
-            merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, n_particles_Ar)
+            merge_octree!(rng, oc, particles[1], pia, 1, 1, n_particles_Ar)
         end
 
         if pia.indexer[1,2].n_local > threshold_He
-            merge_octree_N2_based!(rng, oc, particles[2], pia, 1, 2, n_particles_He)
+            merge_octree!(rng, oc, particles[2], pia, 1, 2, n_particles_He)
+        end
+
+        for s1 in [1,2]
+            @test pia.index_last[s1] == pia.n_total[s1]
+
+            if pia.indexer[1,s1].n_group2 > 0
+                @test pia.index_last[s1] == pia.indexer[1,s1].end2
+            else
+                @test pia.index_last[s1] == pia.indexer[1,s1].end1
+            end
         end
 
         compute_props!(particles, pia, species_data, phys_props)
@@ -93,16 +103,15 @@
     @test maximum(abs.(sol["ndens"][1, 2, :] .- n_He)) / n_He < 6e-15
 
     for species in 1:2
-        diff = abs.(ref_T[1, species, :] - sol_T[1, species, :])
-        @test maximum(diff) < 9.3e-13
+        diff = abs.(ref_T[1, species, :] - sol_T[1, species, :]) / ref_T[1, species, :]
+        @test maximum(diff) < 1e-13
     end
 
     for species in 1:2
-        @test abs(sol_T[1, species, end] - T_eq) / T_eq < 0.055
+        @test abs(sol_T[1, species, end] - T_eq) / T_eq < 0.075
     end
 
     close(sol)
     close(ref_sol)
-
     rm(sol_path)
 end

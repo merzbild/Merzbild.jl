@@ -11,7 +11,7 @@
     particles = [ParticleVector(10)]
 
     for i in 1:10
-        particles[1].particles[i] = Particle(i, [0.0, 0.0, 0.0], [10.0, 0.0, 1.0])
+        particles[1].particles[i] = Particle(Float64(i), [0.0, 0.0, 0.0], [10.0, 0.0, 1.0])
     end
     particles[1].nbuffer = 0  # set buffer to 0 manually
 
@@ -61,10 +61,13 @@
     # our free particle is not pointed to by any indices in use
     @test (bufferindex in particles[1].index[1:9]) == false
 
+    @test pia.n_total[1] == 9
+    @test pia.index_last[1] == pia.n_total[1]
+
 
     # 1-cell 2-group case
     for i in 1:10
-        particles[1].particles[i] = Particle(i, [0.0, 0.0, 0.0], [10.0, 0.0, 1.0])
+        particles[1].particles[i] = Particle(Float64(i), [0.0, 0.0, 0.0], [10.0, 0.0, 1.0])
     end
     particles[1].nbuffer = 0  # set buffer to 0 manually
 
@@ -118,13 +121,16 @@
     @test (bufferindex1 in particles[1].index[1:8]) == false
     @test (bufferindex2 in particles[1].index[1:8]) == false
 
+    @test pia.n_total[1] == 8
+    @test pia.index_last[1] == pia.n_total[1]
+
     # 3-cell case that looks like this
 
     particles = [ParticleVector(10)]
     # 111 22 33 1 33
     cell_positions = [1.0, 1.0, 1.0, 2.0, 2.0, 3.0, 3.0, 1.0, 3.0, 3.0]
     for i in 1:10
-        particles[1].particles[i] = Particle(i, [0.0, 0.0, 0.0], [cell_positions[i], 0.0, 1.0])
+        particles[1].particles[i] = Particle(Float64(i), [0.0, 0.0, 0.0], [cell_positions[i], 0.0, 1.0])
     end
 
     particles[1].nbuffer = 0  # set buffer to 0 manually
@@ -218,12 +224,15 @@
     @test phys_props.n[2,1] == 9.0
     @test phys_props.n[3,1] == 25.0
 
+    @test pia.n_total[1] == 6
+    @test pia.index_last[1] == pia.n_total[1]
+
     # 3-cell case that looks like this
     # 111 2 333 222
     particles = [ParticleVector(10)]
     cell_positions = [1.0, 1.0, 1.0, 2.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0]
     for i in 1:10
-        particles[1].particles[i] = Particle(i, [0.0, 0.0, 0.0], [cell_positions[i], 0.0, 1.0])
+        particles[1].particles[i] = Particle(Float64(i), [0.0, 0.0, 0.0], [cell_positions[i], 0.0, 1.0])
     end
 
     particles[1].nbuffer = 0  # set buffer to 0 manually
@@ -302,6 +311,9 @@
     @test pia.indexer[3,1].n_group1 == 1
     @test pia.indexer[3,1].n_group2 == 0
 
+    @test pia.n_total[1] == 6
+    @test pia.index_last[1] == pia.n_total[1]
+
     # check that there are no conflicts between particles in the buffer and particles
     # actually being used
     flag = false
@@ -352,12 +364,12 @@
 
     T_computed = copy(phys_props.T[:,1])
 
-    octree = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
-    merge_octree_N2_based!(rng, octree, particles[1], pia, 1, 1, 16)
+    octree = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
+    merge_octree!(rng, octree, particles[1], pia, 1, 1, 16)
     @test pia.contiguous[1] == false
-    merge_octree_N2_based!(rng, octree, particles[1], pia, 2, 1, 16)
+    merge_octree!(rng, octree, particles[1], pia, 2, 1, 16)
     @test pia.contiguous[1] == false
-    merge_octree_N2_based!(rng, octree, particles[1], pia, 3, 1, 16)
+    merge_octree!(rng, octree, particles[1], pia, 3, 1, 16)
     @test pia.contiguous[1] == false
 
     squash_pia!(particles, pia)
@@ -374,6 +386,8 @@
     @test abs(phys_props.T[1,1] - T_computed[1])/T_computed[1] < 1e-14
     @test abs(phys_props.T[2,1] - T_computed[2])/T_computed[2] < 1e-14
     @test abs(phys_props.T[3,1] - T_computed[3])/T_computed[3] < 1e-14
+
+    @test pia.index_last[1] == pia.n_total[1]
 
     # check that buffer length is equal to the number of unused particles
     # plus whatever buffer we had at the start
@@ -416,11 +430,11 @@
     @test abs(phys_props.T[2,1] - Ts[2])/Ts[2] < 1.5e-2
     @test abs(phys_props.T[3,1] - Ts[3])/Ts[3] < 6.5e-2
 
-    merge_octree_N2_based!(rng, octree, particles[1], pia, 3, 1, 16)
+    merge_octree!(rng, octree, particles[1], pia, 3, 1, 16)
     @test pia.contiguous[1] == true
-    merge_octree_N2_based!(rng, octree, particles[1], pia, 2, 1, 16)
+    merge_octree!(rng, octree, particles[1], pia, 2, 1, 16)
     @test pia.contiguous[1] == false
-    merge_octree_N2_based!(rng, octree, particles[1], pia, 1, 1, 16)
+    merge_octree!(rng, octree, particles[1], pia, 1, 1, 16)
     @test pia.contiguous[1] == false
 
     squash_pia!(particles, pia)
@@ -438,13 +452,14 @@
     @test abs(phys_props.T[2,1] - T_computed[2])/T_computed[2] < 1e-14
     @test abs(phys_props.T[3,1] - T_computed[3])/T_computed[3] < 1e-14
 
+    @test pia.index_last[1] == pia.n_total[1]
 
     # 3-cell case that looks like this
     # 111 2 333 222
     particles = [ParticleVector(10)]
     cell_positions = [1.0, 1.0, 1.0, 2.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0]
     for i in 1:10
-        particles[1].particles[i] = Particle(i, [0.0, 0.0, 0.0], [cell_positions[i], 0.0, 1.0])
+        particles[1].particles[i] = Particle(Float64(i), [0.0, 0.0, 0.0], [cell_positions[i], 0.0, 1.0])
     end
 
     particles[1].nbuffer = 0  # set buffer to 0 manually
@@ -521,13 +536,16 @@
     @test pia.indexer[3,1].n_group1 == 3
     @test pia.indexer[3,1].n_group2 == 0
 
+    @test pia.n_total[1] == 7
+    @test pia.index_last[1] == pia.n_total[1]
+
     # more tests
     # 3-cell case that looks like this
     # 111 2 333 222
     particles = [ParticleVector(10)]
     cell_positions = [1.0, 1.0, 1.0, 2.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0]
     for i in 1:10
-        particles[1].particles[i] = Particle(i, [0.0, 0.0, 0.0], [cell_positions[i], 0.0, 1.0])
+        particles[1].particles[i] = Particle(Float64(i), [0.0, 0.0, 0.0], [cell_positions[i], 0.0, 1.0])
     end
 
     particles[1].nbuffer = 0  # set buffer to 0 manually
@@ -608,9 +626,64 @@
     @test pia.indexer[3,1].n_group1 == 0
     @test pia.indexer[3,1].n_group2 == 0
 
+    @test pia.n_total[1] == 6
+    @test pia.index_last[1] == pia.n_total[1]
+
     # when we iterate over particles we don't
     # accidentally access particles in buffer
     for i in 1:pia.n_total[1]
         @test (particles[1].index[i] in [3, 7, 6, 5]) == false
     end
+
+    # check that squashing does nothing if .contiguous is set to true
+    pia = ParticleIndexerArray(2, 1)  # 2 cells 1 species
+
+    particles = [ParticleVector(10)]
+
+    for i in 1:10
+        particles[1].particles[i] = Particle(Float64(i), [0.0, 0.0, 0.0], [10.0, 0.0, 1.0])
+    end
+    particles[1].nbuffer = 0  # set buffer to 0 manually
+
+    # fix particle indexer manually
+    pia.indexer[1,1].n_local = 6
+    pia.indexer[1,1].start1 = 1
+    pia.indexer[1,1].end1 = 4
+    pia.indexer[1,1].n_group1 = 4
+
+    pia.indexer[1,1].start2 = 9
+    pia.indexer[1,1].end2 = 10
+    pia.indexer[1,1].n_group2 = 2
+
+    pia.indexer[2,1].n_local = 2
+    pia.indexer[2,1].start1 = 5
+    pia.indexer[2,1].end1 = 6
+    pia.indexer[2,1].n_group1 = 2
+
+    pia.contiguous[1] = true
+    squash_pia!(particles, pia)
+    # test that nothing happened
+
+    @test pia.indexer[1,1].n_local == 6
+    @test pia.indexer[1,1].start1 == 1
+    @test pia.indexer[1,1].end1 == 4
+    @test pia.indexer[1,1].n_group1 == 4
+
+    @test pia.indexer[1,1].start2 == 9
+    @test pia.indexer[1,1].end2 == 10
+    @test pia.indexer[1,1].n_group2 == 2
+
+    @test pia.indexer[2,1].n_local == 2
+    @test pia.indexer[2,1].start1 == 5
+    @test pia.indexer[2,1].end1 == 6
+    @test pia.indexer[2,1].n_group1 == 2
+
+    @test pia.contiguous[1] == true
+
+    # check that realistically it should've been squashed
+    pia.contiguous[1] = false
+    squash_pia!(particles, pia)
+
+    @test pia.indexer[1,1].start2 != 9
+    @test pia.indexer[1,1].end2 != 10
 end

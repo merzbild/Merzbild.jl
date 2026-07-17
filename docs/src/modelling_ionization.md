@@ -92,7 +92,8 @@ a `DataX` field, whereas the cross-section values are in a `DataY` field.
 
 The tabulated values for the different processes, along with the threshold energy values are stored in
 a [`ElectronNeutralInteractions`](@ref) structure, which holds all the electron-neutral interactions for a system.
-To instantiate such an instance, the [`load_electron_neutral_interactions`](@ref) is called. The type of scattering
+To instantiate such an instance, we call [`ElectronNeutralInteractions`](@ref) and pass in a filename of the database file,
+as well as other relevant parameters. The type of scattering
 used for each species is set by the `scattering_laws` parameter, and how the energy split across primary and secondary electrons
 in ionization reactions is governed by the `energy_splits` parameter.
 
@@ -119,9 +120,9 @@ To avoid this, it is suggested to use [`estimate_sigma_g_w_max_ntc_n_e!`](@ref),
 samples multiple collision pairs (without performing the collisions)
 and updates the collision factors based on the actual computed cross-section values.
 It samples ``N_{coll} + min_{coll}`` pairs, where ``N_{coll}`` is the number of pairs computed using the standard
-formulas for the NTC routine, and ``min_{coll}`` is the minimum number of pairs to sample (default values of 15).
+formulas for the NTC routine, and ``min_{coll}`` is the minimum number of pairs to sample (default value of 5).
 The whole process (compute ``N_{coll}`` and sample, updating collision factors) is repeated `n_loops` times
-(default value of 6).
+(default value of 3).
 
 An example 0-D simulation with a constant applied electric field can be found under
 `simulations/0D/ionization/0D_ionization_1neutralspecies_es.jl`. By default it uses IST Lisbon data from LXCat which should

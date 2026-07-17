@@ -14,7 +14,7 @@
     v0 = [-1.0, 2.0, -4.0]
     x0 = [10.0, 20.0, 30.0]
 
-    particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, n_particles)]
+    particles::Vector{ParticleVector} = [ParticleVector(n_particles)]
 
     for i in 1:n_particles
         particles[1][i] = Particle(Fnum, v0, x0)
@@ -22,8 +22,8 @@
 
     pia = ParticleIndexerArray(n_particles)
 
-    phys_props::PhysProps = PhysProps(1, 1, [], Tref=1)
-    phys_props_no_moments::PhysProps = PhysProps(1, 1, [], Tref=1)
+    phys_props::PhysProps = PhysProps(1, 1)
+    phys_props_no_moments::PhysProps = PhysProps(1, 1)
     compute_props!(particles, pia, species_data, phys_props)
     @test abs((phys_props.np[1,1] - n_particles) / n_particles) <= eps()
     @test abs((phys_props.n[1,1] - n_dens) / n_dens) < Δsmall
@@ -67,18 +67,14 @@
     @test abs(mom132 - (-128)) < Δverysmall
 
     # test different constructors of PhysProps
-    phys_props2 = PhysProps(pia, [2, 3, 4], Tref=600.0)
+    phys_props2 = PhysProps(pia)
     @test phys_props2.n_cells == 1
     @test phys_props2.n_species == 1
-    @test phys_props2.Tref == 600.0
-    @test phys_props2.moment_powers == [2,3,4]
 
     pia2 = ParticleIndexerArray(40, 3)
     phys_props3 = PhysProps(pia2)
     @test phys_props3.n_cells == 40
     @test phys_props3.n_species == 3
-    @test phys_props3.Tref == 300.0
-    @test phys_props3.moment_powers == []
 
     # test averaging of PhysProps
     phys_props4 = PhysProps(pia2)
@@ -112,6 +108,6 @@
     @test maximum(abs.(phys_props_avg.lpa)) == 0.0
     @test maximum(abs.(phys_props_avg.v)) == 0.0
 
-    phys_props_ndens = PhysProps(pia, [2, 3, 4], Tref=600.0; ndens_not_Np=true)
+    phys_props_ndens = PhysProps(pia; ndens_not_Np=true)
     @test_throws ErrorException avg_props!(phys_props_avg, phys_props_ndens, 2)
 end

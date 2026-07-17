@@ -15,8 +15,8 @@
     # cx^2 = 38.0 
     for i in 1:4
         Merzbild.add_particle!(particles[1], i,
-                               1.0, [velocities_x[i], velocities_y[i], velocities_z[i]],
-                               [0.3, 0.0, 0.0])
+                               1.0, SVector{3,Float64}(velocities_x[i], velocities_y[i], velocities_z[i]),
+                               SVector{3,Float64}(0.3, 0.0, 0.0))
     end
 
     # create 2 particles in cell 6
@@ -26,8 +26,8 @@
     weights = [2.0, 8.0]
     for i in 5:6
         Merzbild.add_particle!(particles[1], i,
-                               weights[i-4], [velocities_x[i-4], velocities_y[i-4], velocities_z[i-4]],
-                               [2.8, 0.0, 0.0])
+                               weights[i-4], SVector{3,Float64}(velocities_x[i-4], velocities_y[i-4], velocities_z[i-4]),
+                               SVector{3,Float64}(2.8, 0.0, 0.0))
     end
 
     pia = ParticleIndexerArray(8,1)

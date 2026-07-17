@@ -39,10 +39,9 @@ function run(seed)
     Random.seed!(seed)
     rng = Xoshiro(seed)
 
-    # load species and interaction data
-    # path is correct if run from root directory of the Merzbild repo
-    species_data = load_species_data("data/particles.toml", ["Ar", "He"])
-    interaction_data = load_interaction_data("data/vhs.toml", species_data)
+    # load species and interaction data provided with Merzbild.jl
+    species_data = load_species_data(joinpath(MERZBILD_DATA_PATH, "particles.toml"), ["Ar", "He"])
+    interaction_data = load_interaction_data(joinpath(MERZBILD_DATA_PATH, "vhs.toml"), species_data)
     n_species = length(species_data)
 
     n_t = 800 # set number of timesteps
@@ -65,7 +64,7 @@ function run(seed)
     pia = ParticleIndexerArray([0, 0])
 
     # sample particles
-    particles::Vector{ParticleVector} = [ParticleVector(n_particles_Ar), ParticleVector(n_particles_He)]
+    particles = [ParticleVector(n_particles_Ar), ParticleVector(n_particles_He)]
     sample_particles_equal_weight!(rng, particles[1], pia, 1, 1, n_particles_Ar, species_data[1].mass, T0_Ar, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
     sample_particles_equal_weight!(rng, particles[2], pia, 1, 2, n_particles_He, species_data[2].mass, T0_He, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
 
@@ -152,6 +151,11 @@ at the ["Overview of capabilities"](https://merzbild.github.io/Merzbild.jl/dev/o
 ## Contributing
 Please see [`CONTRIBUTING.MD`](CONTRIBUTING.MD) about some general guidelines on contributing to the development of Merzbild.jl.
 
+## Participating research groups
+[Applied and Computational Mathematics, RWTH Aachen](https://www.acom.rwth-aachen.de)
+
 ## Acknowledgments
 Dr. Georgii Oblapenko acknowledges the support of the German Research Foundation (DFG) via
 the [SFB1481 research group](https://sfb1481.rwth-aachen.de).
+Several benchmarks were run on the `momentum` [HPC node](https://www.snubic.io/news/new-high-performance-compute-node-in-aachen), acquired with the support
+of German Research Foundation (DFG) via the [SNuBIC research unit](https://www.snubic.io/).

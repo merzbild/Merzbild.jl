@@ -31,7 +31,8 @@
 
     # create our grid and BCs
     grid = Grid1DUniform(L, nx)
-    boundaries = MaxwellWalls1D(species_data, T_wall, T_wall, -v_wall, v_wall, 1.0, 1.0)
+    bc_list = (MaxwellWallBC1D(1, species_data, T_wall, [0.0, -v_wall, 0.0], 1.0),
+               MaxwellWallBC1D(1, species_data, T_wall, [0.0, v_wall, 0.0], 1.0))
 
     # split cell indices into chunks
     cell_indices = Vector(1:nx)
@@ -68,12 +69,12 @@
                          for pia in pia_chunks]
 
     # create merging structs
-    oc_chunks = [OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000) for cell_chunks in cell_chunks]
+    oc_chunks = [OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000) for cell_chunks in cell_chunks]
 
     # merge and compute data at t=0
     for chunk_id in 1:n_chunks
         for cell in cell_chunks[chunk_id]
-            merge_octree_N2_based!(rng_chunks[chunk_id], oc_chunks[chunk_id], particles_chunks[chunk_id][1], pia_chunks[chunk_id], cell, 1, merge_target, grid)
+            merge_octree!(rng_chunks[chunk_id], oc_chunks[chunk_id], particles_chunks[chunk_id][1], pia_chunks[chunk_id], cell, 1, merge_target, grid)
         end
         squash_pia!(particles_chunks[chunk_id], pia_chunks[chunk_id])
         compute_props_sorted!(particles_chunks[chunk_id], pia_chunks[chunk_id], species_data, phys_props, cell_chunks[chunk_id])
@@ -104,12 +105,12 @@
                                pia_chunks[chunk_id], cell, 1, Δt, grid.cells[cell].V)
 
                 if pia_chunks[chunk_id].indexer[cell,1].n_local > merge_threshold
-                    merge_octree_N2_based!(rng_chunks[chunk_id], oc_chunks[chunk_id], particles_chunks[chunk_id][1], pia_chunks[chunk_id], cell, 1, merge_target, grid)
+                    merge_octree!(rng_chunks[chunk_id], oc_chunks[chunk_id], particles_chunks[chunk_id][1], pia_chunks[chunk_id], cell, 1, merge_target, grid)
                     squash_pia!(particles_chunks[chunk_id], pia_chunks[chunk_id])
                 end
             end
 
-            convect_particles!(rng_chunks[chunk_id], grid, boundaries,
+            convect_particles!(rng_chunks[chunk_id], grid, bc_list,
                                 particles_chunks[chunk_id][1], pia_chunks[chunk_id],
                                 1, species_data, Δt)
         

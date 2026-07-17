@@ -26,9 +26,23 @@ def get_release_changelog():
 def get_release_gittag():
     output = subprocess.run(["git", "tag"], stdout=subprocess.PIPE)
     decoded = output.stdout.decode("utf-8")
-    lsp = decoded.strip().split('\n')
-    v = lsp[-1].replace('v', '')
-    return [int(x) for x in v.split('.')]
+    tags = [t.strip().lstrip('v') for t in decoded.strip().split('\n') if t.strip()]
+    
+    # Filter out tags that can't be split into version numbers
+    valid_tags = []
+    for t in tags:
+        try:
+            parts = [int(x) for x in t.split('.')]
+            valid_tags.append((t, parts))
+        except ValueError:
+            continue  # Skip malformed tags
+
+    if not valid_tags:
+        raise ValueError("No valid version tags found")
+
+    # Sort by version number
+    valid_tags.sort(key=lambda x: x[1])
+    return [int(x) for x in valid_tags[-1][0].split('.')]
 
 v_projecttoml = get_release_projecttoml()
 v_changelog = get_release_changelog()

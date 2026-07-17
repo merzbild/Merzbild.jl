@@ -64,13 +64,21 @@
                                    species_data[1].mass, T0, Fnum, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0;
                                    distribution=:BKW)
 
+    mscaling = zeros(length(moments_list))
+    mvals_list = zeros(length(moments_list))
+    compute_moment_scaling!(mscaling, moments_list, 1, species_data, T0)
 
-    phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
-    compute_props_with_total_moments!(particles, pia, species_data, phys_props)
+    phys_props::PhysProps = PhysProps(1, 1)
+    compute_props!(particles, pia, species_data, phys_props)
+    compute_moments!(mvals_list, mscaling, moments_list, particles, pia, 1, 1, species_data, phys_props)
 
     sol_path = joinpath(@__DIR__, "data", "tmp_bkw.nc")
     ds = NCDataHolder(sol_path, species_data, phys_props)
     write_netcdf(ds, phys_props, 0)
+
+    sol_path_moments = joinpath(@__DIR__, "data", "tmp_bkw_moments.nc")
+    ds_moments = NCDataHolderMoments(sol_path_moments, species_data, 1, 1, moments_list)
+    write_netcdf(ds_moments, mvals_list, 0)
 
     collision_factors::CollisionFactors = CollisionFactors()
     collision_data::CollisionData = CollisionData()
@@ -83,14 +91,18 @@
     for ts in 1:n_t
         ntc_equal_weight!(rng, collision_factors, collision_data, interaction_data, particles[1], pia, 1, 1, Δt, V)
         
-        compute_props_with_total_moments!(particles, pia, species_data, phys_props)
+        compute_props!(particles, pia, species_data, phys_props)
+        compute_moments!(mvals_list, mscaling, moments_list, particles, pia, 1, 1, species_data, phys_props)
         write_netcdf(ds, phys_props, ts)
+        write_netcdf(ds_moments, mvals_list, ts)
     end
     close_netcdf(ds)
+    close_netcdf(ds_moments)
 
     ref_sol_path = joinpath(@__DIR__, "data", "bkw_20k_seed1234.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
     sol = NCDataset(sol_path, "r")
+    sol_moments = NCDataset(sol_path_moments, "r")
 
     @test length(sol["timestep"]) == n_t + 1
 
@@ -98,7 +110,7 @@
     @test minimum(sol["np"]) == n_particles
 
     ref_mom = ref_sol["moments"]
-    sol_mom = sol["moments"]
+    sol_mom = sol_moments["moments"]
 
     for mom_no in 1:length(moments_list)
         diff = abs.(ref_mom[mom_no, 1, 1, :] - sol_mom[mom_no, 1, 1, :])
@@ -120,5 +132,7 @@
     @test maximum(diff) < 0.15
 
     close(sol)
+    close(sol_moments)
     rm(sol_path)
+    rm(sol_path_moments)
 end

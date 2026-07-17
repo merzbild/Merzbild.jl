@@ -16,20 +16,22 @@ Scatter two particles using VHS (isotropic) scattering.
 """
 @inline function scatter_vhs!(rng, collision_data, interaction, p1, p2)
     ϕ = twopi * rand(rng, Float64)
-    cphi = cos(ϕ)
-    sphi = sin(ϕ)
+    sphi, cphi = sincos(ϕ)
 
     ctheta = 2.0 * rand(rng, Float64) - 1.0
     stheta = sqrt(1.0 - ctheta^2)
 
-    collision_data.g_vec_new = collision_data.g * SVector{3,Float64}(stheta * cphi, stheta * sphi, ctheta)
+    g_vec_new = collision_data.g * SVector{3,Float64}(stheta * cphi, stheta * sphi, ctheta)
 
-    p1.v = collision_data.v_com + interaction.μ2 * collision_data.g_vec_new
-    p2.v = collision_data.v_com - interaction.μ1 * collision_data.g_vec_new
+    v_com = collision_data.v_com
+
+    p1.v = v_com + interaction.μ2 * g_vec_new
+    p2.v = v_com - interaction.μ1 * g_vec_new
+    collision_data.g_vec_new = g_vec_new
 end
 
 """
-    scatter_electron_vhs!(rng, collision_data, particles_electron, g_new)
+    scatter_electron_vhs!(rng, particle_electron, g_new)
 
 Scatter an electron using VHS (isotropic) scattering and
 re-scale its relative velocity to `g_new`. This **DOES NOT** add
@@ -37,22 +39,21 @@ the velocity of the center of mass to the electron.
 
 # Positional arguments
 * `rng`: the random number generator
-* `particles_electron`: the electron particle to scatter off of the neutral particle
+* `particle_electron`: the electron particle to scatter off of the neutral particle
 * `g_new`: the magnitude of the post-collisional relative velocity
 """
-@inline function scatter_electron_vhs!(rng, particles_electron, g_new)
+@inline function scatter_electron_vhs!(rng, particle_electron, g_new)
     ϕ = twopi * rand(rng, Float64)
-    cphi = cos(ϕ)
-    sphi = sin(ϕ)
+    sphi, cphi = sincos(ϕ)
 
     ctheta = 2.0 * rand(rng, Float64) - 1.0
     stheta = sqrt(1.0 - ctheta^2)
 
-    particles_electron.v = SVector{3, Float64}(ctheta * g_new, stheta * cphi * g_new, stheta * sphi * g_new)
+    particle_electron.v = g_new * SVector{3, Float64}(ctheta, stheta * cphi, stheta * sphi)
 end
 
 """
-    scatter_ionization_electrons_and_ion!(rng, collision_data, particles_electron, particles_ion, i1, i2, k1, mass_ratio)
+    scatter_ionization_electrons_and_ion!(rng, collision_data, p_e1, p_e2, p_ion, mass_ratio)
 
 Scatter electrons and ion after an ionization reaction using VHS (isotropic) scattering.
 
@@ -62,23 +63,21 @@ Scatter electrons and ion after an ionization reaction using VHS (isotropic) sca
     center-of-mass velocity the magnitude of the pre-collisional relative velocity
     of the electron and the neutral, and the post-collisional magnitudes of the velocities
     of the electrons
-* `particles_electron`: the vector of electron particles
-* `particles_electron`: the vector of ion particles
-* `i1`: the index of the first electron particle to scatter off of the neutral
-* `i2`: the index of the second electron particle to scatter off of the neutral
-* `k1`: the index of the ion produced in the ionization reaction
+* `p_e1`: the first electron particle to scatter off of the neutral
+* `p_e2`: the second electron particle to scatter off of the neutral
+* `p_ion`: the ion produced in the ionization reaction
 * `mass_ratio`: ratio of the electron mass to the ion mass
 
 # References
 * K. Nanbu, Eqns. (47)-(53b), [IEEE Trans. Plasma. Sci., 2000](https://doi.org/10.1109/27.887765)
 """
-function scatter_ionization_electrons_and_ion!(rng, collision_data, particles_electron, particles_ion, i1, i2, k1, mass_ratio)
-    scatter_electron_vhs!(rng, particles_electron[i1], collision_data.g_new_1)
-    scatter_electron_vhs!(rng, particles_electron[i2], collision_data.g_new_2)
-    particles_ion[k1].v = -mass_ratio * (particles_electron[i1].v + particles_electron[i2].v) + collision_data.v_com
+function scatter_ionization_electrons_and_ion!(rng, collision_data, p_e1, p_e2, p_ion, mass_ratio)
+    scatter_electron_vhs!(rng, p_e1, collision_data.g_new_1)
+    scatter_electron_vhs!(rng, p_e2, collision_data.g_new_2)
+    p_ion.v = -mass_ratio * (p_e1.v + p_e2.v) + collision_data.v_com
     
-    particles_electron[i1].v = particles_electron[i1].v + collision_data.v_com
-    particles_electron[i2].v = particles_electron[i2].v + collision_data.v_com
+    p_e1.v = p_e1.v + collision_data.v_com
+    p_e2.v = p_e2.v + collision_data.v_com
 end
 
 end

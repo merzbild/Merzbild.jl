@@ -5,8 +5,8 @@ One of the main parts of the code is the `ParticleIndexer` struct.
 It contains the starting and ending indices of the particles of a single species in a single cell.
 During collisions, the number of the particles of a certain species in a cell may increase,
 either due to inelastic processes, or due to particle splitting in variable-weight collisions.
-These new particles are "tacked onto" the end of the whole array of particles of the species.
-Thus, each  `ParticleIndexer` instance potentially tracks two blocks of particles that are all in a single cell:
+These new particles are "tacked onto" the end of the whole array of particles of the species. This two-group design allows efficient handling of newly created particles during collisions without disturbing the ordered indices of existing particles
+Thus, each `ParticleIndexer` instance potentially tracks two blocks of particles that are all in a single cell:
 the ones that were there before collisions were performed, and the new ones that got created during collisions
 and are at the end of the array.
 
@@ -37,11 +37,18 @@ correct.
 
 Since we are usually interested in multi-species and/or multi-dimensional simulations, an array of `ParticleIndexer`
 instances is needed to keep track of the particles of different species in different cells.
-For this purpose Merzbild.jl provides the `ParticleIndexerArray` struct. It has two fields:
+For this purpose Merzbild.jl provides the `ParticleIndexerArray` struct. It the following fields:
+- `ParticleIndexerArray.n_cells`: number of grid cells in the simulation
+- `ParticleIndexerArray.n_species`: number of species in the simulation
 - `ParticleIndexerArray.indexer`: a 2-dimensional array of `ParticleIndexer` instances with dimensions `n_cells*n_species`
 - `ParticleIndexerArray.n_total`: a 1-dimensional vector of length `n_species` with per-species total particle counts 
+- `ParticleIndexerArray.contiguous`: a 1-dimensional vector of length `n_species` describing whether indexing is contiguous for each species (see the section on [`Particle buffers and contiguous indexing`](@ref "Particle buffers and contiguous indexing"))
+- `ParticleIndexerArray.index_last`: a 1-dimensional vector of length `n_species` holding the index of the last particle of each species.
 
-Thus, to iterate over the particles of a specific species in a specific cell, one uses an instance of the
+**IMPORTANT**: the indexing layout **always assumes** that any particles in any of the index ranges pointed to by a group2 come after all the particles in any of the index ranges pointed to by a group2.
+So the first index of a particle in any of the group2 ranges is always larger than the last index of any of the particles in any of the group1 ranges.
+
+To iterate over the particles of a specific species in a specific cell, one uses an instance of the
 `ParticleIndexerArray` (called `pia` in the code by convention):
 ```julia
 for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
@@ -56,42 +63,45 @@ end
 ```
 
 Some utility functions are available for updating particle indexer arrays for developing new functionality:
-[`Merzbild.update_particle_indexer_new_lower_count!`](@ref) and [`Merzbild.update_particle_indexer_new_particle!`](@ref).
+[`Merzbild.update_particle_indexer_new_particle!`](@ref).
 It is assumed that if the number of particles in the second block pointed to by a `ParticleIndexer` instance is 0,
 then the value of `start2` is set to a value smaller than 0, so to iterate over the particles in the second block one can either
 do a check similar to the `pia.indexer[cell,species].start2 > 0` check seen above, or check
 if `pia.indexer[cell,species].n_group2 <= 0`.
 See also the section on [Particle buffers and contiguous indexing](@ref).
+The function [`pretty_print_pia`](@ref) can be used to print the particle indexer array in a human-readable format.
 
 ## Particles: Particle and ParticleVector
 Now that we can index particles, we need to create some lists of particles to index. For that, we need
 to define what a particle is.
-For this purpose, a `Particle` struct is available in the code. It has the following fields:
+For this purpose, a `Particle{D}` struct is available in the code. It has the following fields:
 - `w`: the computational weight of the particle (in a fixed-weight DSMC simulation, this is the ``F_{num}`` parameter)
 - `v`: the 3-dimensional velocity vector of the particle
-- `x`: the 3-dimensional position vector of the particle
+- `x`: the D-dimensional position vector of the particle
 
+For spatially homogeneous simulations, `D` can be set to 0, so that the location of the particles is not tracked at all.
 Each species has its own list of particles associated with it, so a `particles` variable in the simulation could have the
-following the type `Vector{Vector{Particle}}`. Then `particles[species_1]` would correspond to the list of all particles
+following the type `Vector{Vector{Particle{D}}}`. Then `particles[species_1]` would correspond to the list of all particles
 of chemical species `species_1`. `pia.indexer[cell,species_1]` would then be used to index the particles of `species_1`
-in a specific cell `cell`.
+in a specific cell `cell`. If no `D` is specified explicitly, the dimension of the position vector defaults to 3.
 
-The drawback of using `Vector{Vector{Particle}}` is that for non-spatially homogeneous simulations, the particles need to be
+The drawback of using `Vector{Vector{Particle{D}}}` is that for non-spatially homogeneous simulations, the particles need to be
 sorted after each convection step, and this would involving constantly re-writing the position and velocity vectors.
 To reduce the computational cost
-of sorting, an additional abstraction layer is added via the struct `ParticleVector` that is intended to be used instead of 
-a simple `Vector{Particle}` instance.
-An instance of `ParticleVector` has the following fields:
-- `particles`: the underlying vector of particles
+of sorting, an additional abstraction layer is added via the struct `ParticleVector{D}` that is intended to be used instead of 
+a simple `Vector{Particle{D}}` instance.
+An instance of `ParticleVector{D}` has the following fields:
+- `particles`: the underlying vector of particles with a D-dimensional position.
 - `index`: the sorted indices of the particles
 - `cell`: used in particle sorting to keep track of new assigned cells
 - `buffer`: a LIFO queue used to track which particles from `particles` are not being used (i.e. allocated in memory but not present in the simulation)
 - `nbuffer`: the number of elements in `buffer`
 
-Given a `ParticleVector` instance `pv`, one can still transparently access a particle at index `i` as `pv[i]`.
+Given a `ParticleVector{D}` instance `pv`, one can still transparently access a particle at index `i` as `pv[i]`.
 This access operation however uses the sorted `index` list to get the actual index of the particle,
 so `pv[i]` is equivalent to `pv.particles[pv.index[i]]`. During particle sorting, only the indices in `index`
 are shuffled around, which is computationally cheaper than sorting the particles directly.
+If no `D` is specified explicitly, the dimension of the position vector of the particles defaults to 3.
 
 ![particle_vector_trim](assets/particlevector.png)
 
@@ -140,6 +150,16 @@ This is done via instances of the `Species` struct, which have the following fie
 Data about chemical species can be loaded by using the [`load_species_data`](@ref) function, which
 reads a TOML file with the relevant species information.
 
+Merzbild.jl exports a [`MERZBILD_DATA_PATH`](@ref) variable that points to the `data` directory containing
+data bundled with the package. For example, one can write
+
+```julia
+particles_data_path = joinpath(MERZBILD_DATA_PATH, "particles.toml")
+species_data = load_species_data(particles_data_path, "Ar")
+```
+
+to construct the path to the `particles.toml` file provided with Merzbild.jl and load data for Argon from the file.
+
 ## Sampling particles
 In order to sample particles of a certain species from a specific distribution, Merzbild.jl provides
 several functions. For fixed-weight DSMC simulations, one can use the [`sample_particles_equal_weight!`](@ref)
@@ -156,36 +176,27 @@ so care must be taken, and particles might need to be merged immediately after h
 
 ## Computing macroscopic physical properties: PhysProps
 Now that we have a vector of particles, we can compute some macroscopic properties (density, velocity, etc.).
-To store and use these properties where they might be needed, the `PhysProps` struct is provided.
+To store and use these properties where they might be needed, the [`PhysProps`](@ref) struct is provided.
 An instance of `PhysProps` has the following fields:
 - `ndens_not_Np`: a boolean value used to distinguish between the meanings of the `n` field (see below) and ensure consistency
 - `n_cells`: number of grid cells
 - `n_species`: number of species in the simulation
-- `n_moments`: number of total moments computed (see below how moments are defined)
 - `lpa`: vector of length `n_species` storing the lengths of the particle arrays (i.e. how many elements have been allocated, actual particle counts may be less)
 - `np`: array with dimensions `n_cells*n_species`, stores the number of particles of each species in each grid cell
 - `n`: array with dimensions `n_cells*n_species`, stores either the number of physical particles of each species in each grid cell or the number density of each species in each grid cell, see below for explanation
 - `v`: array with dimensions `3*n_cells*n_species`, stores the x, y, and z components of the macroscopic velocity of each species in each grid cell 
 - `T`: array with dimensions `n_cells*n_species`, stores the temperature of each species in each grid cell
-- `moment_powers`: vector of length `n_moments`, stores which total moments are being computed
-- `moments`: array with dimensions `n_moments*n_cells*n_species`, stores the total moments of each species in each grid cell
-- `Tref`: a reference temperature set during initialization of a `PhysProps` instance used to scale the moments so that for an equilibrium distribution at a temperature of ``T_{ref}`` all moments are equal to 1.
 
-One can see that the definition of the `n` field is somewhat ambiguous - it
-can either mean the total number of particles in a cell, or the number density in a cell (equal to the number
-of particles in the cell divided by the cell volume). To distinguish between these two cases, the following convention
+One can see that the definition of the `n` field is somewhat ambiguous. It can store either: (a) the count of physical particles, or (b) the number density (particles/volume). The `ndens_not_Np` flag is `true` when storing number density, `false` when storing particle counts. To distinguish between these two cases, the following convention
 is assumed, one can provide a value of `ndens_not_NP` during instantiation (by default it is `false`, i.e. the number of physical particles
-is computed and not the number density).
-
-If we don't need to compute the total moments, then we can create a `PhysProps` instance by simply
-passing a `ParticleIndexerArray` instance to the constructor, as it already has the required information
-on the number of grid cells and species. So we can simply do this: `props = PhysProps(pia)`.
+is computed and not the number density).  
+We can simply instantiate a `PhysProps` instance like this: `props = PhysProps(pia)`.
 
 The [`compute_props!`](@ref) function computes the macroscopical physical properties
-of all species in all cells in the simulation. **Currently this computes only the number of particles in a cell, regardless of the value of the `ndens_not_Np` field.**
+of all species in all cells in the simulation. **This computes only the number of particles in a cell, regardless of the value of the `ndens_not_Np` field.**
 
 There is an optimized version of this function, which assumes the particles are only indexed by
-the first group of a `ParticleIndexer` instance: [`compute_props_sorted!`](@ref); it also does not computed any moments. This is the case immediately after sorting the particles on a grid.
+the first group of a `ParticleIndexer` instance: [`compute_props_sorted!`](@ref). This is the case immediately after sorting the particles on a grid.
 If a grid is passed as a parameter, it will compute either the number of particles in a cell
 or the number density in a cell depending on the value of `ndens_not_NP` field of the `PhysProps` instance passed to the function.
 
@@ -194,24 +205,6 @@ The [`avg_props!`](@ref) function can also be used to time-average physical prop
 and the other one holds the values of the averaged physical properties. Similarly to the previous case,
 trying to average one `PhysProps` instance "into" another `PhysProps` instance with a different value
 of the `ndens_not_NP` field will raise an error.
-
-The total moment of order ``N`` is defined as
-```math
-M_{N} = \frac{1}{\sum_i w_i}\sum_i w_i \left(v_{x,i}^2+v_{y,i}^2+v_{z,i}^2\right)^{\frac{N}{2}}.
-```
-Here the summation is over all particles of a specific species in a particular grid cell.
-Since computing the moments is expensive, a different function needs to be called to compute
-all the physical properties **and** the moments: [`compute_props_with_total_moments!`](@ref).
-If it is called and a `PhysProps` instance with `n_moments = 0` is passed to it, it will fall back
-to the standard [`compute_props!`](@ref) to avoid unnecessary computations.
-
-Support for computing mixed moments of the form 
-```math
-M_{abc} = \frac{1}{\sum_i w_i}\sum_i w_i v_{x,i}^a v_{y,i}^b v_{z,i}^c
-```
-is planned in future versions of Merzbild.jl.
-
-**NOTE**: the computation of total moments is planned to be decoupled from `PhysProps` and moved into a separate structure.
 
 ## Writing output: NCDataHolder
 Finally, once the properties have been computed, we need to output them.
@@ -257,8 +250,8 @@ close_netcdf(ds)
 
 ## Computing surface properties due to particle-surface interactions: SurfProps
 Details on calculation of surface properties due to particle-surface interactions can be found in the section on [1D DSMC simulations](@ref "1D DSMC simulations").
-Time-averaging works exactly the same as for `PhysProps`, via use of the `avg_props` function. Output is performed similarly,
-via an `NCDataHolderSurf` struct and calls to `write_netcdf_surf_props`.
+Time-averaging works exactly the same as for `PhysProps`, via use of the [`avg_props!`](@ref) function. Output is performed similarly,
+via an `NCDataHolderSurf` struct and calls to [`write_netcdf`](@ref).
 
 ## Example: bringing it all together
 An example of particle sampling, property computation, and output for a 0-D single-species gas is presented here.
@@ -272,12 +265,12 @@ Random.seed!(seed)
 rng = Xoshiro(seed)
 
 # load particle data
-particles_data_path = joinpath("data", "particles.toml")
+particles_data_path = joinpath(MERZBILD_DATA_PATH, "particles.toml")
 species_data = load_species_data(particles_data_path, "Ar")
 
 # init particle vector for a 1000 particles
 n_particles = 1000
-particles = [ParticleVector(n_particles)]
+particles = [ParticleVector{0}(n_particles)]
 
 # set number density to 1e23
 ndens = 1e23
@@ -292,8 +285,8 @@ T = 500.0
 # sampled any particles yet
 pia = ParticleIndexerArray(0)
 
-# sample particles in a [0.0, 1.0]x[0.0, 1.0]x[0.0, 1.0] cell
-sample_particles_equal_weight!(rng, particles[1], pia, 1, 1, n_particles, T, species_data[1].mass, Fnum,
+# for D=3 this would sample particles in a [0.0, 1.0]x[0.0, 1.0]x[0.0, 1.0] cell; for 0-D particles the position is not tracked
+sample_particles_equal_weight!(rng, particles[1], pia, 1, 1, n_particles, species_data[1].mass, T, Fnum,
                                0.0, 1.0, 0.0, 1.0, 0.0, 1.0; distribution=:Maxwellian)
 
 # create struct for computation of physical properties
@@ -306,7 +299,7 @@ ds = NCDataHolder("output.nc", species_data, phys_props)
 compute_props!(particles, pia, species_data, phys_props)
 
 # and output them (t=0)
-write_netcdf_phys_props(ds, phys_props, 0)
+write_netcdf(ds, phys_props, 0)
 close_netcdf(ds)
 ```
 
@@ -315,8 +308,8 @@ close_netcdf(ds)
 Now we have an overview of how to
 1. Create a structure to hold particles
 2. Index the vector of particles
-4. Load species' data
-3. Sample particles from a distribution
+3. Load species' data
+4. Sample particles from a distribution
 5. Compute macroscopic physical properties
 6. Output these properties to disk
 

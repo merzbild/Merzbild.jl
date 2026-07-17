@@ -12,7 +12,7 @@
     Nz = 2
     mg = GridN2Merge(Nx, Ny, Nz, 1.0)
 
-    phys_props::PhysProps = PhysProps(1, 1, [], Tref=1)
+    phys_props::PhysProps = PhysProps(1, 1)
 
     phys_props.T[1,1] = species_data[1].mass / (2 * k_B)
 

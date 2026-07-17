@@ -107,10 +107,10 @@ function run(seed, E_Tn, n_t,
 
     reset_timer!()
 
-    species_data::Vector{Species} = load_species_data("data/particles.toml", ["Ar", "Ar+", "e-"])
-    interaction_data::Array{Interaction, 2} = load_interaction_data_with_dummy("data/vhs.toml", species_data)
+    species_data::Vector{Species} = load_species_data(joinpath(MERZBILD_DATA_PATH, "particles.toml"), ["Ar", "Ar+", "e-"])
+    interaction_data::Array{Interaction, 2} = load_interaction_data_with_dummy(joinpath(MERZBILD_DATA_PATH, "vhs.toml"), species_data)
 
-    n_e_interactions = load_electron_neutral_interactions(species_data, cross_section_filepath,
+    n_e_interactions = ElectronNeutralInteractions(species_data, cross_section_filepath,
                                                           Dict("Ar" => "IST-Lisbon"),
                                                           Dict("Ar" => ScatteringIsotropic),
                                                           Dict("Ar" => ElectronEnergySplitEqual))
@@ -137,8 +137,8 @@ function run(seed, E_Tn, n_t,
     np_base_heavy = nv_heavy^3  # some initial guess on # of particles in simulation
     np_base_electrons = nv_electrons^3  # some initial guess on # of particles in simulation
 
-    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
-    oc_electrons = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc_electrons = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
     mg_ions = GridN2Merge(Nmerging_ions, Nmerging_ions, Nmerging_ions, 3.5)
 
     particles = [ParticleVector(np_base_heavy),
@@ -156,7 +156,7 @@ function run(seed, E_Tn, n_t,
 
     pia = ParticleIndexerArray(n_sampled)
 
-    phys_props::PhysProps = PhysProps(1, 3, [], Tref=T0)
+    phys_props::PhysProps = PhysProps(1, 3)
     compute_props!(particles, pia, species_data, phys_props)
 
     ds = NCDataHolder(fname, species_data, phys_props)
@@ -168,7 +168,7 @@ function run(seed, E_Tn, n_t,
     vref = sqrt(2 * k_B * 3 * 11605.0 / species_data[1].mass)
 
     if pia.n_total[1] > threshold_neutrals
-        @timeit "merge n t=0" merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
+        @timeit "merge n t=0" merge_octree!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
     end
 
     if pia.n_total[2] > threshold_ion
@@ -177,11 +177,11 @@ function run(seed, E_Tn, n_t,
 
     if pia.n_total[3] > threshold_electrons
         @timeit "merge e t=0" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[3], pia, 1, 3;
-                                                                    vref=vref, scaling=:variance, centered_at_mean=false, v_multipliers=[], iteration_mult=5)
+                                                                    vref=vref, scaling=:variance, iteration_mult=5)
         
         if nnls_success_flag == -1
             println("resorting to octree for electrons at t=0")
-            merge_octree_N2_based!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons_octree)
+            merge_octree!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons_octree)
         end
     end
 
@@ -223,7 +223,7 @@ function run(seed, E_Tn, n_t,
         end
 
         if pia.n_total[1] > threshold_neutrals
-            @timeit "merge n" merge_octree_N2_based!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
+            @timeit "merge n" merge_octree!(rng, oc, particles[1], pia, 1, 1, np_target_neutrals)
         end
 
         if pia.n_total[2] > threshold_ion
@@ -238,7 +238,7 @@ function run(seed, E_Tn, n_t,
                 @timeit "NNLSmergeARP e" nnls_success_flag = merge_nnls_based_rate_preserving!(rng, mnnls_rp, 
                 interaction_data, n_e_interactions, n_e_cs,
                 particles[3], pia, 1, 3, index_neutral,
-                ref_cs_elastic, ref_cs_ionization; centered_at_mean=false, v_multipliers=[], vref=vref, scaling=:variance, iteration_mult=5)
+                ref_cs_elastic, ref_cs_ionization; vref=vref, scaling=:variance, iteration_mult=5)
             elseif rate_preserving == :exact
                 @timeit "NNLSmergeERP e" nnls_success_flag = merge_nnls_based_rate_preserving!(rng, mnnls_rp, 
                 interaction_data, n_e_interactions, n_e_cs,
@@ -246,18 +246,18 @@ function run(seed, E_Tn, n_t,
                 ref_cs_elastic, ref_cs_ionization; vref=vref, scaling=:variance, iteration_mult=5)
             else
                 @timeit "NNLSmerge e" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[3], pia, 1, 3;
-                                                                          centered_at_mean=false, v_multipliers=[], vref=vref, scaling=:variance, iteration_mult=5)
+                                                                            vref=vref, scaling=:variance, iteration_mult=5)
             end
             
             if nnls_success_flag == -1
 
                 
                 @timeit "NNLSmerge bup e" nnls_success_flag = merge_nnls_based!(rng, mnnls_backup, particles[3], pia, 1, 3;
-                                                      centered_at_mean=false, v_multipliers=[], vref=vref, scaling=:variance, iteration_mult=5) 
+                                                                                vref=vref, scaling=:variance, iteration_mult=5) 
 
                 if nnls_success_flag == -1
                     println("Resorting to octree merging")
-                    @timeit "Octreemerge e" merge_octree_N2_based!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons_octree)
+                    @timeit "Octreemerge e" merge_octree!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons_octree)
                 end
             end
         end
@@ -326,3 +326,7 @@ end
 #         end
 #     end
 # end
+
+#### Benchmarking run
+# run(1234, 400.0, 500000, 6, 95, 88,
+#     cs_n_e_filepath; adds=0, rate_preserving=:off, do_es=true)

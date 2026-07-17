@@ -59,7 +59,7 @@ This however requires the indexing to be **contiguous**, which means the followi
 So this basically correspond to the indexing as defined by the indexer having no "holes". For this purposes, `pia` has
 the boolean `contiguous` property, which can be checked to decided how to iterate over particles.
 
-It is expected that a particle sorting routine restores continuity of indices. There is also a utility function [`squash_pia!`](@ref squash_pia!)
+It is expected that a particle sorting routine restores continuity of indices. There is also a utility function [`squash_pia!`](@ref)
 which restores continuity of indices by moving around the indices in a `ParticleVector` instance, as well as the starts and ends of groups
 in the `pia` particle indexing structure.
 
@@ -79,12 +79,15 @@ in the group.
 So a hole might appear in the indexing if one is doing particle merging. For example, let's say we have 20 particles in two cells with 10 particles per cell, and the indexing looks like this: `pia.indexer[1,1].start1 = 1`, `pia.indexer[1,1].end1 = 10`,
 `pia.indexer[2,1].start1 = 11`,  `pia.indexer[2,1].end1 = 20`. If we merge particles in cell 1 down to 2 particles,
 the `buffer` in the `ParticleVector` instance `pv` will be updated, and `pia.indexer[1,1].end1` will be set to 2, but the particles
-`pv[3:10]` can't be really accessed or used, unless we either 1) sort the particles 2) call [`squash_pia!`](@ref squash_pia!).
-Some computations currently used the number of particles of a certain species to find where to place a newly created particle (for example,
-in the variable-weight NTC collision functions); without restoring continuity of the indexing, this will lead to erroneous results,
-as now the index of the last particle in the simulation `pv[20]` is no longer the same as the total number of particles in the simulation (which is 12 after the merge).
+`pv[3:10]` can't be really accessed or used, unless we either 1) sort the particles 2) call [`squash_pia!`](@ref).
+This is the reason why a [`ParticleIndexerArray`](@ref) also tracks the last index of a particle, since this might not necessarily
+coincide with the number of total particles in a simulation.
+So one can either call [`squash_pia!`](@ref) after each merge, leading to higher computational costs, but making use of any deleted
+particles immediately, or call [`squash_pia!`](@ref) after the full collision-merge loop, reducing the cost of re-indexing at the cost
+of potentially having a large number of "ghost" particles in the `buffer` that cannot be used unless the indexing is squashed.
 
-So, for a multi-dimensional simulation with variable-weight DSMC, the correct collide-merge procedure might take on the following form:
+So, for a multi-dimensional simulation with variable-weight DSMC, the correct collide-merge procedure might take on the following form
+(squash after all collisions and merges):
 ```julia
 
 for cell in 1:grid.n_cells
@@ -93,14 +96,30 @@ for cell in 1:grid.n_cells
 
     if pia.indexer[cell,1].n_local > merge_threshold
         # we need to merge
-        merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+        merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+    end
+end
+# restore continuity of pia
+squash_pia!(particles, pia)
+```
+
+or (squash after each merge call)
+```julia
+
+for cell in 1:grid.n_cells
+    ntc!(rng, collision_factors[1, 1, cell],
+         collision_data, interaction_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
+
+    if pia.indexer[cell,1].n_local > merge_threshold
+        # we need to merge
+        merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
         # restore continuity of pia
         squash_pia!(particles, pia)
     end
 end
 ```
 
-So if no merging took place, then no particle deletion happened, and one doesn't need to call `squash_pia!`. Of course, `squash_pia!` checks
+Of course, `squash_pia!` checks
 the value of `pia.contiguous` and does nothing if that value is set to `true`.
 
 **Summary**: one needs to restore continuity of particle indexing if particles are deleted and created in a simulation, otherwise this

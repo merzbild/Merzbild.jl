@@ -11,18 +11,19 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
     rng::Xoshiro = Xoshiro(seed)
 
     # load particle and interaction data
-    particles_data_path = joinpath("data", "particles.toml")
+    particles_data_path = joinpath(MERZBILD_DATA_PATH, "particles.toml")
     species_data = load_species_data(particles_data_path, "Ar")
-    interaction_data_path = joinpath("data", "vhs.toml")
+    interaction_data_path = joinpath(MERZBILD_DATA_PATH, "vhs.toml")
     interaction_data::Array{Interaction, 2} = load_interaction_data(interaction_data_path, species_data)
 
     # create our grid and BCs
     grid = Grid1DUniform(L, nx)
-    boundaries = MaxwellWalls1D(species_data, T_wall, T_wall, -v_wall, v_wall, 1.0, 1.0)
+    bc_list = (FullyDiffuseBC1D(1, species_data, T_wall, [0.0, -v_wall, 0.0]),
+               FullyDiffuseBC1D(1, species_data, T_wall, [0.0, v_wall, 0.0]))
 
     # init particle vector, particle indexer, grid particle sorter
     n_particles = ppc * nx
-    particles = particles = [ParticleVector(n_particles)]
+    particles = particles = [ParticleVector{1}(n_particles)]
     pia = ParticleIndexerArray(grid.n_cells, 1)
     gridsorter = GridSortInPlace(grid, n_particles)
 
@@ -64,11 +65,11 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
 
         # collide particles
         for cell in 1:grid.n_cells
-            @timeit "collide" fp_linear!(rng, collision_data_fp, interaction_data[1, 1], species_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
+            @timeit "collide" fp_linear!(rng, collision_data_fp, interaction_data[1, 1], particles[1], pia, cell, 1, species_data, Δt, grid.cells[cell].V)
         end
 
         # convect particles
-        @timeit "convect" convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, Δt)
+        @timeit "convect" convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, Δt)
 
         # sort particles
         @timeit "sort" sort_particles!(gridsorter, grid, particles[1], pia, 1)

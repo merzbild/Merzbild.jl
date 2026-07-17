@@ -11,14 +11,15 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, merge_threshold, merge_tar
     rng::Xoshiro = Xoshiro(seed)
 
     # load particle and interaction data
-    particles_data_path = joinpath("data", "particles.toml")
+    particles_data_path = joinpath(MERZBILD_DATA_PATH, "particles.toml")
     species_data = load_species_data(particles_data_path, "Ar")
-    interaction_data_path = joinpath("data", "vhs.toml")
+    interaction_data_path = joinpath(MERZBILD_DATA_PATH, "vhs.toml")
     interaction_data::Array{Interaction, 2} = load_interaction_data(interaction_data_path, species_data)
 
     # create our grid and BCs
     grid = Grid1DUniform(L, nx)
-    boundaries = MaxwellWalls1D(species_data, T_wall, T_wall, -v_wall, v_wall, 1.0, 1.0)
+    bc_list = (FullyDiffuseBC1D(1, species_data, T_wall, [0.0, -v_wall, 0.0]),
+               FullyDiffuseBC1D(1, species_data, T_wall, [0.0, v_wall, 0.0]))
 
     # init particle vector, particle indexer, grid particle sorter
     n_particles = ppc * nx
@@ -36,7 +37,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, merge_threshold, merge_tar
     collision_data_fp = CollisionDataFP(ppc * 2)
 
     # merging
-    oc = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    oc = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
     
     # create struct for computation of physical properties
     phys_props = PhysProps(pia)
@@ -54,7 +55,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, merge_threshold, merge_tar
     
     for cell in 1:grid.n_cells
         if pia.indexer[cell,1].n_local > merge_threshold
-            @timeit "merge (t=0)" merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+            @timeit "merge (t=0)" merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
             println("Post (t=0): $(cell) $(pia.indexer[cell,1].n_local) $merge_threshold $merge_target")
             println("t=0: $(pia.n_total[1]/nx) avg")
             @timeit "squash (t=0)" squash_pia!(particles, pia)
@@ -77,11 +78,11 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, merge_threshold, merge_tar
 
         # collide particles
         for cell in 1:grid.n_cells
-            @timeit "collide" fp_linear!(rng, collision_data_fp, interaction_data[1, 1], species_data, particles[1], pia, cell, 1, Δt, grid.cells[cell].V)
+            @timeit "collide" fp_linear!(rng, collision_data_fp, interaction_data[1, 1], particles[1], pia, cell, 1, species_data, Δt, grid.cells[cell].V)
 
             if pia.indexer[cell,1].n_local > merge_threshold
                 println("$(cell) $(pia.indexer[cell,1].n_local) $merge_threshold $merge_target")
-                @timeit "merge" merge_octree_N2_based!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+                @timeit "merge" merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
                 @timeit "squash" squash_pia!(particles, pia)
                 println("Post: $(cell) $(pia.indexer[cell,1].n_local) $merge_threshold $merge_target")
                 println("$(pia.n_total[1]/nx) avg")
@@ -89,7 +90,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, merge_threshold, merge_tar
         end
 
         # convect particles
-        @timeit "convect" convect_particles!(rng, grid, boundaries, particles[1], pia, 1, species_data, Δt)
+        @timeit "convect" convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, Δt)
 
         # sort particles
         @timeit "sort" sort_particles!(gridsorter, grid, particles[1], pia, 1)

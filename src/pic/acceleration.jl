@@ -18,17 +18,24 @@ function accelerate_constant_field_x!(particles, pia, cell, species, species_dat
     # for 1-D problems, assume E-field is in the X direction
     dv = species_data[species].charge_div_mass * E * Δt
 
-    @inbounds for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
-        particles[i].v = SVector{3, Float64}(particles[i].v[1] + dv,
-                                             particles[i].v[2],
-                                             particles[i].v[3])
+    @inbounds s1 = pia.indexer[cell,species].start1
+    @inbounds e1 = pia.indexer[cell,species].end1
+
+    @inbounds for i in s1:e1
+        p = particles[i]
+        p.v = SVector{3, Float64}(p.v[1] + dv,
+                                  p.v[2],
+                                  p.v[3])
     end
 
-    if pia.indexer[cell,species].start2 > 0
-        @inbounds for i in pia.indexer[cell,species].start2:pia.indexer[cell,species].end2
-            particles[i].v = SVector{3, Float64}(particles[i].v[1] + dv,
-                                                 particles[i].v[2],
-                                                 particles[i].v[3])
+    @inbounds s2 = pia.indexer[cell,species].start2
+    if s2 > 0
+        @inbounds e2 = pia.indexer[cell,species].end2
+        @inbounds for i in s2:e2
+            p = particles[i]
+            p.v = SVector{3, Float64}(p.v[1] + dv,
+                                    p.v[2],
+                                    p.v[3])
         end
     end
 end

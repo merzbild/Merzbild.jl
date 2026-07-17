@@ -6,7 +6,7 @@ using Merzbild
 using Random
 
 function run(seed)
-    species_data = load_species_data("data/particles.toml", "Ar")
+    species_data = load_species_data(joinpath(MERZBILD_DATA_PATH, "particles.toml"), "Ar")
     println([species.name for species in species_data])
     rng = Xoshiro(seed)
 
@@ -18,7 +18,7 @@ function run(seed)
     sample_particles_equal_weight!(rng, particles[1], pia, 1, 1,
                                    n_particles, species_data[1].mass, 500.0, 1e10, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
     
-    phys_props = PhysProps(1, 1, [])
+    phys_props = PhysProps(1, 1)
     compute_props!(particles, pia, species_data, phys_props)
     println(phys_props.n)
     println(phys_props.v)

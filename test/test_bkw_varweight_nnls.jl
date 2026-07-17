@@ -61,7 +61,7 @@
     end
 
     mnnls = NNLSMerge(mim, threshold)
-    ocm = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    ocm = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
     T0::Float64 = 273.0
     sigma_ref = π * (interaction_data[1,1].vhs_d^2)
@@ -76,7 +76,6 @@
     ttt_bkw = 1 / (4 * π * n_dens * kappa_mult)
     magic_factor = tref / ttt_bkw / (4 * π)
 
-    # particles::Vector{Vector{Particle}} = [Vector{Particle}(undef, np_base)]
     particles = [ParticleVector(np_base)]
 
     vdf0 = (vx, vy, vz) -> bkw(vx, vy, vz, species_data[1].mass, T0, 0.0)
@@ -85,14 +84,23 @@
                                 0.0, 1.0, 0.0, 1.0, 0.0, 1.0;
                                 v_mult=3.5, cutoff_mult=3.5, noise=0.0, v_offset=[0.0, 0.0, 0.0])
 
+    mscaling = zeros(length(moments_list))
+    mvals_list = zeros(length(moments_list))
+    compute_moment_scaling!(mscaling, moments_list, 1, species_data, T0)
+
     pia = ParticleIndexerArray(n_sampled)
 
-    phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
-    compute_props_with_total_moments!(particles, pia, species_data, phys_props)
+    phys_props::PhysProps = PhysProps(1, 1)
+    compute_props!(particles, pia, species_data, phys_props)
+    compute_moments!(mvals_list, mscaling, moments_list, particles, pia, 1, 1, species_data, phys_props)
 
     sol_path = joinpath(@__DIR__, "data", "tmp_bkw_nnls.nc")
     ds = NCDataHolder(sol_path, species_data, phys_props)
     write_netcdf(ds, phys_props, 0)
+
+    sol_path_moments = joinpath(@__DIR__, "data", "tmp_bkw_nnls_moments.nc")
+    ds_moments = NCDataHolderMoments(sol_path_moments, species_data, 1, 1, moments_list)
+    write_netcdf(ds_moments, mvals_list, 0)
 
     collision_factors::CollisionFactors = CollisionFactors()
     collision_data::CollisionData = CollisionData()
@@ -117,14 +125,17 @@
             total_merges += 1
             if nnls_success_flag == -1
                 failed_merges += 1
-                merge_octree_N2_based!(rng, ocm, particles[1], pia, 1, 1, ntarget_octree)
+                merge_octree!(rng, ocm, particles[1], pia, 1, 1, ntarget_octree)
             end
         end
         
-        compute_props_with_total_moments!(particles, pia, species_data, phys_props)
+        compute_props!(particles, pia, species_data, phys_props)
+        compute_moments!(mvals_list, mscaling, moments_list, particles, pia, 1, 1, species_data, phys_props)
         write_netcdf(ds, phys_props, ts)
+        write_netcdf(ds_moments, mvals_list, ts)
     end
     close_netcdf(ds)
+    close_netcdf(ds_moments)
 
     @test abs(phys_props.T[1,1] - T0) < 5e-4
     @test abs(phys_props.n[1,1] / n_dens - 1.0) < 1e-11
@@ -136,11 +147,12 @@
     ref_sol_path = joinpath(@__DIR__, "data", "bkw_vw_nnls_6full_upto8_150_seed0.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
     sol = NCDataset(sol_path, "r")
+    sol_moments = NCDataset(sol_path_moments, "r")
 
     @test length(sol["timestep"]) == n_t + 1
 
     ref_mom = ref_sol["moments"]
-    sol_mom = sol["moments"]
+    sol_mom = sol_moments["moments"]
 
     for mom_no in 1:length(moments_list)
         diff = abs.(ref_mom[mom_no, 1, 1, :50] - sol_mom[mom_no, 1, 1, :50])
@@ -154,5 +166,7 @@
     @test maximum(diff) < 0.285
 
     close(sol)
+    close(sol_moments)
     rm(sol_path)
+    rm(sol_path_moments)
 end

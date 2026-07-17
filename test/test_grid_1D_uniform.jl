@@ -35,6 +35,9 @@
 
     pia = ParticleIndexerArray(grid.n_cells, 1)
 
+    @test pia.n_cells == grid.n_cells
+    @test pia.n_species == 1
+
     sample_particles_equal_weight!(rng, grid, particles[1], pia, 1,
                                    species_data, ppc, T, Fnum)
 
@@ -53,7 +56,7 @@
         @test particles[1].cell[(i-1)*ppc + 1] == i
     end
 
-    phys_props::PhysProps = PhysProps(grid.n_cells, 1, [], Tref=1)
+    phys_props::PhysProps = PhysProps(grid.n_cells, 1)
     compute_props!(particles, pia, species_data, phys_props)
 
     @test phys_props.n_species == 1
@@ -71,7 +74,7 @@
 
     @test sum(phys_props.np) == ppc * grid.n_cells
 
-    phys_props_ndens::PhysProps = PhysProps(grid.n_cells, 1, [], Tref=1, ndens_not_Np=true)
+    phys_props_ndens::PhysProps = PhysProps(grid.n_cells, 1, ndens_not_Np=true)
     compute_props_sorted!(particles, pia, species_data, phys_props_ndens, grid)
 
     @test phys_props_ndens.n_species == 1
@@ -91,10 +94,10 @@
 
     @test sum(phys_props_ndens.np) == ppc * grid.n_cells
 
-    @test Merzbild.get_cell(grid, [0.001, 0.0, 0.0]) == 1
-    @test Merzbild.get_cell(grid, [0.4, 0.0, 0.0]) == 1
-    @test Merzbild.get_cell(grid, [0.501, 0.0, 0.0]) == 2
-    @test Merzbild.get_cell(grid, [3.999, 0.0, 0.0]) == 8
+    @test Merzbild.get_cell(grid, SVector{3,Float64}(0.001, 0.0, 0.0)) == 1
+    @test Merzbild.get_cell(grid, SVector{3,Float64}(0.4, 0.0, 0.0)) == 1
+    @test Merzbild.get_cell(grid, SVector{3,Float64}(0.501, 0.0, 0.0)) == 2
+    @test Merzbild.get_cell(grid, SVector{3,Float64}(3.999, 0.0, 0.0)) == 8
 
     # test filling domain with particles
     # based on given ndens
@@ -102,6 +105,7 @@
     particles2 = [ParticleVector(ppc * grid.n_cells)]
 
     pia.n_total[1] = 0
+    pia.index_last[1] = 0
 
     ndens = 1e23
     Fnum = 1e20
@@ -129,4 +133,6 @@
     pia = ParticleIndexerArray(grid, species_data)
     @test length(pia.n_total) == 2
     @test size(pia.indexer) == (8, 2)
+    @test pia.n_cells == 8
+    @test pia.n_species == 2
 end 

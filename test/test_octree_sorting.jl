@@ -19,7 +19,7 @@
             v_y = -v_val
         end
 
-        return Particle(w, [v_x, v_y, v_z], [0.0, 0.0, 0.0])
+        return Particle(Float64(w), [v_x, v_y, v_z], [0.0, 0.0, 0.0])
     end
 
     function create_15particles_nested()
@@ -33,7 +33,7 @@
         #      11, 3, 12, 15, 2, 14, 13, 7, 8, 10, 4, 9, 1, 6, 5
         mia = [12, 15, 2, 14, 13, 7, 8, 10, 5, 6, 1, 9, 4, 3, 11]
 
-        vp = Vector{Particle}(undef, 15)
+        vp = ParticleVector{3}(15)
         i = 1
         for v_x in [-1.0, -3.0]
             for v_y in [1.0, 3.0]
@@ -59,7 +59,7 @@
     function create_9particles(extra_octant, reverse)
         # create 1 particle per octant, plus one extra particle in specified octant
 
-        vp = Vector{Particle}(undef, 9)
+        vp = ParticleVector{3}(9)
 
         i = 1
 
@@ -84,7 +84,7 @@
     function create_7particles(missing_octant, reverse)
         # create 1 particle per octant, except one empty octant
         
-        vp = Vector{Particle}(undef, 7)
+        vp = ParticleVector{3}(7)
 
         i = 1
 
@@ -140,9 +140,9 @@
 
     # then we test particle sorting with 2 particles in a specific octant
     # octants are 8, 7, 6, 5, 4, 3, 3, 2, 1
-    particles9::Vector{Vector{Particle}} = [create_9particles(3, true)]
+    particles9 = [create_9particles(3, true)]
     pia = ParticleIndexerArray(9)
-    octree = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
+    octree = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC)
 
     Merzbild.init_octree!(octree, particles9[1], pia, 1, 1)
     for i in 1:9
@@ -163,8 +163,14 @@
     # particles:  1, 2, 3, 4, 5, 6, 7, 8, 9
     # octants are 4, 5, 6, 7, 8, 3, 3, 2, 1
     # end results should be 9, 8, 7, 6, 1, 2, 3, 4, 5
-    particles9[1][1:5] = create_9particles(3, false)[5:9]
-    particles9[1][6:9] = create_9particles(3, true)[6:9]
+    temp_particles = create_9particles(3, false)
+    for i in 1:5
+        particles9[1][i] = temp_particles[i+4]
+    end
+    temp_particles = create_9particles(3, true)
+    for i in 1:4
+        particles9[1][i+5] = temp_particles[i+5]
+    end
     Merzbild.init_octree!(octree, particles9[1], pia, 1, 1)
     Merzbild.split_bin!(octree, 1, particles9[1])
     @test octree.Nbins == 8
@@ -206,7 +212,7 @@
     # now we test for 7 particles, i.e. with one empty octree bin
     # particles:  1, 2, 3, 4, 5, 6, 7
     # octants are 8, 7, 6, 4, 3, 2, 1
-    particles7::Vector{Vector{Particle}} = [create_7particles(5, true)]
+    particles7 = [create_7particles(5, true)]
     pia3 = ParticleIndexerArray(7)
 
     Merzbild.init_octree!(octree, particles7[1], pia3, 1, 1)
@@ -228,10 +234,10 @@
     # test double-splitting, i.e. we have 1 p/bin in 7 bins, the 8th bin has 4 particles
     # we do splitting of the main 0 bin, and then do a second split
     
-    particles15::Vector{Vector{Particle}} = [create_15particles_nested()]
+    particles15 = [create_15particles_nested()]
     pia4 = ParticleIndexerArray(15)
 
-    octree2 = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVelSym)
+    octree2 = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVelSym)
 
     # the initial bin will have bounds [-3.0, -3.0, -3.0], [3.0, 3.0, 3.0] 
     Merzbild.init_octree!(octree2, particles15[1], pia4, 1, 1)

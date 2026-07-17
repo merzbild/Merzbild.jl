@@ -42,8 +42,8 @@ function run(seed, n_full_up_to_total, threshold, ntarget_octree)
     rng::Xoshiro = Xoshiro(seed)
 
     # reset_timer!()
-    species_data::Vector{Species} = load_species_data("data/particles.toml", "Ar")
-    interaction_data::Array{Interaction, 2} = load_interaction_data("data/pseudo_maxwell.toml", species_data)
+    species_data::Vector{Species} = load_species_data(joinpath(MERZBILD_DATA_PATH, "particles.toml"), "Ar")
+    interaction_data::Array{Interaction, 2} = load_interaction_data(joinpath(MERZBILD_DATA_PATH, "pseudo_maxwell.toml"), species_data)
 
     dt_scaled = 0.025
     n_t = 600
@@ -65,7 +65,7 @@ function run(seed, n_full_up_to_total, threshold, ntarget_octree)
 
     mnnls = NNLSMerge(mim, threshold)
     mnnls_backup = NNLSMerge(mim_backup, threshold)
-    ocm = OctreeN2Merge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
+    ocm = OctreeMerge(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinMinMaxVel, max_Nbins=6000)
 
     T0::Float64 = 273.0
     sigma_ref = π * (interaction_data[1,1].vhs_d^2)
@@ -86,23 +86,30 @@ function run(seed, n_full_up_to_total, threshold, ntarget_octree)
 
     pia = ParticleIndexerArray(n_sampled)
 
-    phys_props::PhysProps = PhysProps(1, 1, moments_list, Tref=T0)
-    compute_props_with_total_moments!(particles, pia, species_data, phys_props)
+    mscaling = zeros(length(moments_list))
+    mvals_list = zeros(length(moments_list))
+    compute_moment_scaling!(mscaling, moments_list, 1, species_data, T0)
+
+    phys_props = PhysProps(1, 1)
+    compute_props!(particles, pia, species_data, phys_props)
+    compute_moments!(mvals_list, mscaling, moments_list, particles, pia, 1, 1, species_data, phys_props)
 
     ds = NCDataHolder("scratch/data/bkw_nnls_$(n_full_up_to_total)full_$(threshold)_$(seed).nc", species_data, phys_props)
-
     write_netcdf(ds, phys_props, 0)
+
+    ds_moments = NCDataHolderMoments("scratch/data/bkw_nnls_$(n_full_up_to_total)full_$(threshold)_$(seed)_moments.nc", species_data, 1, 1, moments_list)
+    write_netcdf(ds_moments, mvals_list, 0)
 
     if phys_props.np[1,1] > threshold
         nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1;
-                                                                            vref=vref, scaling=:variance, centered_at_mean=false, v_multipliers=[], iteration_mult=4)
+                                                                            vref=vref, scaling=:variance, iteration_mult=4)
 
         if nnls_success_flag == -1
             nnls_success_flag = merge_nnls_based!(rng, mnnls_backup, particles[1], pia, 1, 1;
-                                                                    vref=vref, scaling=:variance, centered_at_mean=false, v_multipliers=[], iteration_mult=4)
+                                                                    vref=vref, scaling=:variance, iteration_mult=4)
             
             if nnls_success_flag == -1
-                merge_octree_N2_based!(rng, ocm, particles[1], pia, 1, 1, ntarget_octree)
+                merge_octree!(rng, ocm, particles[1], pia, 1, 1, ntarget_octree)
             end
         end
     end
@@ -132,23 +139,26 @@ function run(seed, n_full_up_to_total, threshold, ntarget_octree)
         # npp += pia.indexer[1,1].n_local
         if pia.indexer[1,1].n_local > threshold
             nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1;
-                                                                      vref=vref, scaling=:variance, centered_at_mean=false, v_multipliers=[], iteration_mult=4)
+                                                                      vref=vref, scaling=:variance, iteration_mult=4)
             if nnls_success_flag == -1
                 nnls_success_flag = merge_nnls_based!(rng, mnnls_backup, particles[1], pia, 1, 1;
-                                                                      vref=vref, scaling=:variance, centered_at_mean=false, v_multipliers=[], iteration_mult=4)
+                                                                      vref=vref, scaling=:variance, iteration_mult=4)
                 
                 if nnls_success_flag == -1
-                    merge_octree_N2_based!(rng, ocm, particles[1], pia, 1, 1, ntarget_octree)
+                    merge_octree!(rng, ocm, particles[1], pia, 1, 1, ntarget_octree)
                 end
             end
         end
 
-        squash_pia!(particles, pia, 1)
+        squash_pia!(particles, pia)
         
-        compute_props_with_total_moments!(particles, pia, species_data, phys_props)
+        compute_props!(particles, pia, species_data, phys_props)
+        compute_moments!(mvals_list, mscaling, moments_list, particles, pia, 1, 1, species_data, phys_props)
         write_netcdf(ds, phys_props, ts)
+        write_netcdf(ds_moments, mvals_list, ts)
     end
     close_netcdf(ds)
+    close_netcdf(ds_moments)
 end
 
 # run with merging conserving all mixed moments up to order 6; merging is called when particle count exceeds 100

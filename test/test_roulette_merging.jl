@@ -7,7 +7,7 @@
     x_cell1 = [0.05, 0.05, 0.05, 0.45]
     for i in 1:4
         Merzbild.update_particle_buffer_new_particle!(vp, i)
-        vp[i] = Particle(i, [0.5, 3.0, 4.0], [x_cell1[i], 0.0, 1.0])
+        vp[i] = Particle(i*1.0, [0.5, 3.0, 4.0], [x_cell1[i], 0.0, 1.0])
     end
 
     x_cell2 = [0.55, 0.95, 0.8, 0.85, 0.99]
@@ -95,7 +95,7 @@
     x_cell1 = [0.05, 0.05, 0.05, 0.45]
     for i in 1:4
         Merzbild.update_particle_buffer_new_particle!(vp, i)
-        vp[i] = Particle(i, [0.5, 3.0, 4.0], [x_cell1[i], 0.0, 1.0])
+        vp[i] = Particle(i*1.0, [0.5, 3.0, 4.0], [x_cell1[i], 0.0, 1.0])
     end
 
     x_cell2 = [0.55, 0.95, 0.8, 0.85, 0.99]
@@ -189,7 +189,7 @@
     x_cell1 = [0.05, 0.05, 0.05, 0.45]
     for i in 1:4
         Merzbild.update_particle_buffer_new_particle!(vp, i)
-        vp[i] = Particle(i, [0.5 - 0.1*i, 3.0 + 2.0*i^2, 4.0-0.3*i], [x_cell1[i], 0.0, 1.0])
+        vp[i] = Particle(i*1.0, [0.5 - 0.1*i, 3.0 + 2.0*i^2, 4.0-0.3*i], [x_cell1[i], 0.0, 1.0])
     end
 
     x_cell2 = [0.55, 0.95, 0.8, 0.85, 0.99]
@@ -311,7 +311,7 @@
     x_cell1 = [0.05, 0.05, 0.05, 0.45]
     for i in 1:4
         Merzbild.update_particle_buffer_new_particle!(vp, i)
-        vp[i] = Particle(i, [0.5 - 0.1*i, 3.0 + 2.0*i^2, 4.0-0.3*i], [x_cell1[i], 0.0, 1.0])
+        vp[i] = Particle(i*1.0, [0.5 - 0.1*i, 3.0 + 2.0*i^2, 4.0-0.3*i], [x_cell1[i], 0.0, 1.0])
     end
 
     x_cell2 = [0.55, 0.95, 0.8, 0.85, 0.99]
@@ -432,7 +432,7 @@
         x_cell1 = [0.05, 0.05, 0.05, 0.45]
         for i in 1:4
             Merzbild.update_particle_buffer_new_particle!(vp, i)
-            vp[i] = Particle(i, [1.0*i, 3.0 + 2.0*i^2, 4.0-0.3*i], [x_cell1[i], 0.0, 1.0])
+            vp[i] = Particle(i*1.0, [1.0*i, 3.0 + 2.0*i^2, 4.0-0.3*i], [x_cell1[i], 0.0, 1.0])
         end
 
         x_cell2 = [0.55, 0.95, 0.8, 0.85, 0.99]

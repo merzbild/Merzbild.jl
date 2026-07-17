@@ -1,5 +1,5 @@
 include("merging_grid.jl")
-include("merging_octree_N2.jl")
+include("merging_octree.jl")
 include("merging_roulette.jl")
 include("nnls.jl")
 include("merging_nnls.jl")
