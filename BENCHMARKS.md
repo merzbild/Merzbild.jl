@@ -137,6 +137,45 @@ Output  | 0.0019748  | 0.0019748  | 0.0019748  |   0.0 |  0.00
 Other   |            | 0.0009062  |            |       |  0.00
 ```
 
+### AMD EPYC 9374F, 378 GB RAM
+Ubuntu 24.04.3, Julia version 1.12.5.
+
+#### Merzbild.jl
+```
+─────────────────────────────────────────────────────────────────────────────
+                                    Time                    Allocations      
+                           ───────────────────────   ────────────────────────
+     Tot / % measured:          31.1s /  94.4%            188MiB /   6.8%    
+
+Section            ncalls     time    %tot     avg     alloc    %tot      avg
+─────────────────────────────────────────────────────────────────────────────
+sort                50.0k    9.16s   31.1%   183μs     0.00B    0.0%    0.00B
+collide             2.50M    7.78s   26.5%  3.11μs     0.00B    0.0%    0.00B
+convect             50.0k    6.75s   23.0%   135μs     0.00B    0.0%    0.00B
+props compute       36.0k    4.17s   14.2%   116μs     0.00B    0.0%    0.00B
+restore ordering    5.00k    1.41s    4.8%   282μs     0.00B    0.0%    0.00B
+I/O                     1    125ms    0.4%   125ms   10.5MiB   82.1%  10.5MiB
+avg physprops       36.0k   9.08ms    0.0%   252ns     0.00B    0.0%    0.00B
+sampling                1   2.32ms    0.0%  2.32ms   2.29MiB   17.9%  2.29MiB
+─────────────────────────────────────────────────────────────────────────────
+```
+
+#### SPARTA
+```
+Loop time of 47.8094 on 1 procs for 50000 steps with 50000 particles
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Move    | 12.635     | 12.635     | 12.635     |   0.0 | 26.43
+Coll    | 16.142     | 16.142     | 16.142     |   0.0 | 33.76
+Sort    | 2.4732     | 2.4732     | 2.4732     |   0.0 |  5.17
+Comm    | 0.0065105  | 0.0065105  | 0.0065105  |   0.0 |  0.01
+Modify  | 16.548     | 16.548     | 16.548     |   0.0 | 34.61
+Output  | 0.0015361  | 0.0015361  | 0.0015361  |   0.0 |  0.00
+Other   |            | 0.003732   |            |       |  0.01
+```
+
 ## Couette flow, serial, large grid
 The physical parameters for this test case are the same as for the previous one, but a larger (2000 cells) grid is used, with 250 particles per cell at `t=0`.
 So the number of grid cells is 40x higher than for the small grid test case, and the number of particles is 10x higher.
@@ -237,7 +276,6 @@ Other   |            | 0.006827   |            |       |  0.00
 ```
 
 ### AMD EPYC 9374F, 378 GB RAM
-Ubuntu 24.04.3, Julia version 1.12.5.
 
 #### Merzbild.jl
 ```
@@ -261,6 +299,22 @@ main loop                          1     901s  100.0%    901s    631KiB    2.6% 
 sampling                           1   23.8ms    0.0%  23.8ms   22.9MiB   97.4%  22.9MiB
 I/O final                          2    397μs    0.0%   199μs      544B    0.0%     272B
 ────────────────────────────────────────────────────────────────────────────────────────
+```
+
+#### SPARTA
+```
+Loop time of 1728.54 on 1 procs for 50000 steps with 500000 particles
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Move    | 876.94     | 876.94     | 876.94     |   0.0 | 50.73
+Coll    | 481.02     | 481.02     | 481.02     |   0.0 | 27.83
+Sort    | 60.717     | 60.717     | 60.717     |   0.0 |  3.51
+Comm    | 0.070553   | 0.070553   | 0.070553   |   0.0 |  0.00
+Modify  | 309.76     | 309.76     | 309.76     |   0.0 | 17.92
+Output  | 0.0039017  | 0.0039017  | 0.0039017  |   0.0 |  0.00
+Other   |            | 0.02432    |            |       |  0.00
 ```
 
 ## Couette flow, variable-weight particles, octree merging
