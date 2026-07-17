@@ -70,7 +70,7 @@ mutable struct NCDataHolderMoments <: AbstractNCDataHolder
         v_mompows = NcVar("moment_powers", [moments_dim], t=Int32)
         v_moments = NcVar("moments", [moments_dim, cells_dim, species_dim, timestep_dim], t=Float64)
 
-        varlist::Vector{NetCDF.NcVar} = [v_timestep, v_mompows, v_moments]
+        varlist = NetCDF.NcVar[v_timestep, v_mompows, v_moments]
 
         filehandle = NetCDF.create(nc_filename, varlist, gatts=gatts, mode=mode)
 

@@ -165,7 +165,7 @@ mutable struct NCDataHolder <: AbstractNCDataHolder
         v_v = NcVar("v", [v_dim, cells_dim, species_dim, timestep_dim], t=Float64, compress=-1)
         v_T = NcVar("T", [cells_dim, species_dim, timestep_dim], t=Float64, compress=-1)
 
-        varlist::Vector{NetCDF.NcVar} = [v_timestep]
+        varlist = NetCDF.NcVar[v_timestep]
 
         if !skip_list.skip_length_particle_array
             push!(varlist, v_lpa)
@@ -456,7 +456,7 @@ mutable struct NCDataHolderSurf <: AbstractNCDataHolder
         v_shear_pressure = NcVar("shear_pressure", [v_dim, elements_dim, species_dim, timestep_dim], t=Float64, compress=-1)
         v_kinetic_energy_flux = NcVar("kinetic_energy_flux", [elements_dim, species_dim, timestep_dim], t=Float64, compress=-1)
 
-        varlist::Vector{NetCDF.NcVar} = [v_timestep]
+        varlist = NetCDF.NcVar[v_timestep]
 
         if !skip_list.skip_number_of_particles
             push!(varlist, v_np)
@@ -697,7 +697,7 @@ mutable struct NCDataHolderFlux <: AbstractNCDataHolder
         v_kinetic_energy_flux = NcVar("kinetic_energy_flux", [v_dim, cells_dim, species_dim, timestep_dim], t=Float64, compress=-1)
         v_diagonal_momentum_flux = NcVar("diagonal_momentum_flux", [v_dim, cells_dim, species_dim, timestep_dim], t=Float64, compress=-1)
         v_off_diagonal_momentum_flux = NcVar("off_diagonal_momentum_flux", [v_dim, cells_dim, species_dim, timestep_dim], t=Float64, compress=-1)
-        varlist::Vector{NetCDF.NcVar} = [v_timestep]
+        varlist = NetCDF.NcVar[v_timestep]
 
         if !skip_list.skip_kinetic_energy_flux
             push!(varlist, v_kinetic_energy_flux)
@@ -816,7 +816,7 @@ function write_netcdf(nc_filename, particles::Vector{ParticleVector{D}}, pia, sp
         spatial_dim = NcDim("spatial_dim", D, unlimited=false)
     end
 
-    varlist::Vector{NetCDF.NcVar} = []
+    varlist = NetCDF.NcVar[]
     dimlist::Vector{NetCDF.NcDim} = [NcDim("nparticles_$(species_data[species].name)", pia.n_total[species], unlimited=false)
                                      for species in species_ids]
     gatts["Particle x-position dimension"] = "$D"
