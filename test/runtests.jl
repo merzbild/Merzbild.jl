@@ -8,6 +8,7 @@ using StaticArrays
 using StableRNGs
 using LinearAlgebra
 using ChunkSplitters
+using NetCDF
 
 include("runtests_basics.jl")  # fundamental blocks - indexing, sorting
 include("runtests_computes.jl")  # various computes
