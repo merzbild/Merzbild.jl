@@ -241,7 +241,26 @@ Ubuntu 24.04.3, Julia version 1.12.5.
 
 #### Merzbild.jl
 ```
-TODO
+────────────────────────────────────────────────────────────────────────────────────────
+                                               Time                    Allocations      
+                                      ───────────────────────   ────────────────────────
+          Tot / % measured:                 902s /  99.9%            202MiB /  11.7%    
+
+Section                       ncalls     time    %tot     avg     alloc    %tot      avg
+────────────────────────────────────────────────────────────────────────────────────────
+main loop                          1     901s  100.0%    901s    631KiB    2.6%   631KiB
+  sort                         50.0k     256s   28.4%  5.11ms     0.00B    0.0%    0.00B
+  convect + surface compute    36.0k     219s   24.3%  6.08ms     0.00B    0.0%    0.00B
+  collide                       100M     146s   16.2%  1.46μs     0.00B    0.0%    0.00B
+  props compute                36.0k     140s   15.5%  3.88ms     0.00B    0.0%    0.00B
+  convect                      14.0k    93.2s   10.3%  6.66ms     0.00B    0.0%    0.00B
+  restore ordering             5.00k    42.9s    4.8%  8.58ms     0.00B    0.0%    0.00B
+  avg physprops                36.0k    354ms    0.0%  9.83μs     0.00B    0.0%    0.00B
+  avg surfprops                36.0k   18.1ms    0.0%   502ns     0.00B    0.0%    0.00B
+  I/O                             13   3.75ms    0.0%   288μs   3.05KiB    0.0%     240B
+sampling                           1   23.8ms    0.0%  23.8ms   22.9MiB   97.4%  22.9MiB
+I/O final                          2    397μs    0.0%   199μs      544B    0.0%     272B
+────────────────────────────────────────────────────────────────────────────────────────
 ```
 
 ## Couette flow, variable-weight particles, octree merging
@@ -298,8 +317,28 @@ squash (t=0)                     1   26.4μs    0.0%  26.4μs     0.00B    0.0% 
 ```
 
 ### AMD EPYC 9374F, 378 GB RAM
+```
+──────────────────────────────────────────────────────────────────────────────────────
+                                             Time                    Allocations      
+                                    ───────────────────────   ────────────────────────
+         Tot / % measured:               31.8s /  98.3%           12.1MiB /  25.4%    
 
-TODO
+Section                     ncalls     time    %tot     avg     alloc    %tot      avg
+──────────────────────────────────────────────────────────────────────────────────────
+collide                      10.0M    13.9s   44.6%  1.39μs     0.00B    0.0%    0.00B
+sort                         50.0k    5.31s   17.0%   106μs     0.00B    0.0%    0.00B
+merge                         569k    3.76s   12.0%  6.61μs     0.00B    0.0%    0.00B
+convect + surface compute    36.0k    3.14s   10.1%  87.3μs     0.00B    0.0%    0.00B
+props compute                36.0k    2.41s    7.7%  66.8μs     0.00B    0.0%    0.00B
+convect                      14.0k    1.24s    4.0%  88.2μs     0.00B    0.0%    0.00B
+restore ordering             5.00k    937ms    3.0%   187μs     0.00B    0.0%    0.00B
+squash                       50.0k    517ms    1.7%  10.3μs     0.00B    0.0%    0.00B
+I/O                             52   3.74ms    0.0%  72.0μs   12.2KiB    0.4%     241B
+sampling                         1   3.17ms    0.0%  3.17ms   3.05MiB   99.6%  3.05MiB
+merge (t=0)                    200   1.66ms    0.0%  8.29μs     0.00B    0.0%    0.00B
+squash (t=0)                     1   12.4μs    0.0%  12.4μs     0.00B    0.0%    0.00B
+──────────────────────────────────────────────────────────────────────────────────────
+```
 
 ## 0D ionization, variable-weight particles, octree merging
 This simulation can be found under `simulations/0D/0D_ionization_1neutralspecies_es.jl`. Lisbon IST data was used for the cross-sections,
@@ -354,8 +393,27 @@ merge n (t=0)        1    203μs    0.0%   203μs     0.00B    0.0%    0.00B
 ```
 
 ### AMD EPYC 9374F, 378 GB RAM
+```
+──────────────────────────────────────────────────────────────────────────
+                                 Time                    Allocations      
+                        ───────────────────────   ────────────────────────
+   Tot / % measured:         6.83s /  78.6%            244MiB /  41.2%    
 
-TODO
+Section         ncalls     time    %tot     avg     alloc    %tot      avg
+──────────────────────────────────────────────────────────────────────────
+props             500k    1.94s   36.2%  3.89μs     0.00B    0.0%    0.00B
+acc e             500k    1.18s   22.1%  2.37μs     0.00B    0.0%    0.00B
+coll n-e ES       500k    1.02s   19.1%  2.05μs     0.00B    0.0%    0.00B
+I/O               500k    988ms   18.4%  1.98μs   99.2MiB   98.5%     208B
+merge e            697    153ms    2.9%   220μs     0.00B    0.0%    0.00B
+merge n          6.10k   42.4ms    0.8%  6.94μs     0.00B    0.0%    0.00B
+coll n-n          500k   23.4ms    0.4%  46.8ns     0.00B    0.0%    0.00B
+merge i          1.80k   6.21ms    0.1%  3.44μs     0.00B    0.0%    0.00B
+merge e (t=0)        1   2.30ms    0.0%  2.30ms   1.47MiB    1.5%  1.47MiB
+merge i (t=0)        1    259μs    0.0%   259μs     0.00B    0.0%    0.00B
+merge n (t=0)        1    187μs    0.0%   187μs     0.00B    0.0%    0.00B
+──────────────────────────────────────────────────────────────────────────
+```
 
 ## 0D ionization, variable-weight particles, NNLS merging
 This simulation can be found under `simulations/0D/0D_ionization_1neutralspecies_nnls_es.jl`. Lisbon IST data was used for the cross-sections
@@ -415,5 +473,26 @@ NNLSinit RP        1   12.8μs    0.0%  12.8μs    142KiB    0.0%   142KiB
 ```
 
 ### AMD EPYC 9374F, 378 GB RAM
+```
+────────────────────────────────────────────────────────────────────────
+                               Time                    Allocations      
+                      ───────────────────────   ────────────────────────
+  Tot / % measured:        5.98s /  74.4%            805MiB /  80.5%    
 
-TODO
+Section       ncalls     time    %tot     avg     alloc    %tot      avg
+────────────────────────────────────────────────────────────────────────
+NNLSmerge e    3.07k    1.78s   39.9%   579μs    394MiB   60.8%   132KiB
+merge e t=0        1    1.05s   23.5%   1.05s    126MiB   19.5%   126MiB
+I/O             500k    1.03s   23.2%  2.06μs    114MiB   17.7%     240B
+props           500k    327ms    7.3%   654ns     0.00B    0.0%    0.00B
+coll n-e ES     500k   89.7ms    2.0%   179ns     0.00B    0.0%    0.00B
+NNLSinit           2   78.1ms    1.8%  39.0ms   13.2MiB    2.0%  6.59MiB
+acc e           500k   64.7ms    1.5%   129ns     0.00B    0.0%    0.00B
+coll n-n        500k   30.0ms    0.7%  60.1ns     0.00B    0.0%    0.00B
+merge n          393   3.23ms    0.1%  8.21μs     0.00B    0.0%    0.00B
+merge i          186    745μs    0.0%  4.00μs     0.00B    0.0%    0.00B
+merge i t=0        1    395μs    0.0%   395μs     0.00B    0.0%    0.00B
+merge n t=0        1    280μs    0.0%   280μs     0.00B    0.0%    0.00B
+NNLSinit RP        1   16.9μs    0.0%  16.9μs    142KiB    0.0%   142KiB
+────────────────────────────────────────────────────────────────────────
+```
