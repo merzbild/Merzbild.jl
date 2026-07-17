@@ -54,6 +54,10 @@ More specific examples (ionizing collisions, specific merging algorithms) will b
 Finally, a full API reference is present, split into the [Merzbild.jl public API reference](@ref)
 and [Merzbild.jl internal API reference](@ref).
 
+## Example simulations
+Various example simulations are available in the `simulations/` directory; the path to the directory as bundled with the code is
+exported as `MERZBILD_SIMULATIONS_PATH`.
+
 ## Citing
 You can for now cite the repository as
 ```bibtex

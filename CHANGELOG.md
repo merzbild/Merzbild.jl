@@ -32,6 +32,8 @@ in particle arrays has been implemented. See documentaton on contiguous indexing
 * More specialized boundary conditions added for 1D simulations: `FullyDiffuseBC1D`, `MaxwellWallBC1D`, `SpecularWallBC1D`
 * The `ParticleIndexerArray` type now directly stores number of cells and species it is tracking (`.n_cells`, `.n_species`)
 * `MERZBILD_DATA_PATH` now exported for easier loading of particle and interaction data bundled with Merzbild.jl
+* `MERZBILD_SIMULATIONS_PATH` now exported to expose path to example simulations bundled with Merzbild.jl
+* `MERZBILD_SCRIPTS_PATH` now exported to expose path to Python scripts bundled with Merzbild.jl
 * Octree-based merging now supports N:M merging in each bin (currently, only conservative N:1 and N:2 merging implemented; implementation by Yanliang Zhu)
 
 ### Misc

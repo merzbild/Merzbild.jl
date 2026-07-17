@@ -36,6 +36,24 @@ bundled data independently of the current working directory, e.g.
 const MERZBILD_DATA_PATH = joinpath(pkgdir(Merzbild), "data")
 export MERZBILD_DATA_PATH
 
+"""
+    MERZBILD_SIMULATIONS_PATH
+
+Absolute path to the `simulations` directory bundled with Merzbild.jl, holding various simulation examples.
+Use it to run bundled simulations independently of the current working directory, e.g.
+`include(joinpath(MERZBILD_SIMULATIONS_PATH, "0D/BKW/bkw.jl"))`.
+"""
+const MERZBILD_SIMULATIONS_PATH = joinpath(pkgdir(Merzbild), "simulations")
+export MERZBILD_SIMULATIONS_PATH
+
+"""
+    MERZBILD_SCRIPTS_PATH
+
+Absolute path to the `scripts` directory bundled with Merzbild.jl, holding various Python scripts for
+data post-processing and plotting.
+"""
+const MERZBILD_SCRIPTS_PATH = joinpath(pkgdir(Merzbild), "scripts")
+export MERZBILD_SCRIPTS_PATH
 
 """
 Relative tolerance below which a post-merge variance is treated as having collapsed to zero,

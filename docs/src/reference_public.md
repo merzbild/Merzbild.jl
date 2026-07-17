@@ -239,4 +239,6 @@ k_B
 ## Misc
 ```@docs
 DataMissingException
+MERZBILD_SIMULATIONS_PATH
+MERZBILD_SCRIPTS_PATH
 ```
