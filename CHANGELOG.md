@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.8.1
+* Clean-up of roulette merging code and minor optimizations
+
 ## v0.8.0
 
 ### Breaking changes
