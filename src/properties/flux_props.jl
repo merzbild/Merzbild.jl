@@ -197,15 +197,19 @@ at the same timestep before calling this function for the same subset of cells.
 * `cell_chunk`: the list of cell indices or range of cell indices in which to compute the properties
 """
 function compute_flux_props_sorted!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props, flux_props, grid::G, cell_chunk) where {G<:AbstractGrid,D}
-    for species in 1:phys_props.n_species
+    @inbounds for species in 1:phys_props.n_species
         for cell in cell_chunk
+
+            indexer = pia.indexer[cell,species]
 
             kefd = SVector{3,Float64}(0.0, 0.0, 0.0)  # kinetic_energy_flux
             dmfd = SVector{3,Float64}(0.0, 0.0, 0.0)  # diagonal_momentum_flux
             odmfd = SVector{3,Float64}(0.0, 0.0, 0.0)  # off_diagonal_momentum_flux
             c = SVector{3,Float64}(0.0, 0.0, 0.0)
 
-            for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
+            s1 = indexer.start1
+            e1 = indexer.end1
+            for i in s1:e1
                 c = particles[species][i].v - SVector{3,Float64}(phys_props.v[1, cell, species],
                                                                  phys_props.v[2, cell, species],
                                                                  phys_props.v[3, cell, species])
@@ -214,9 +218,11 @@ function compute_flux_props_sorted!(particles::Vector{ParticleVector{D}}, pia, s
                 czsq = c[3]^2
                 
                 csq = cxsq + cysq + czsq
-                kefd = kefd + particles[species][i].w * c * csq
-                dmfd = dmfd + particles[species][i].w * SVector{3,Float64}(cxsq, cysq, czsq)
-                odmfd = odmfd + particles[species][i].w * SVector{3,Float64}(c[1]*c[2], c[1]*c[3], c[2]*c[3])
+
+                w = particles[species][i].w
+                kefd = kefd + w * c * csq
+                dmfd = dmfd + w * SVector{3,Float64}(cxsq, cysq, czsq)
+                odmfd = odmfd + w * SVector{3,Float64}(c[1]*c[2], c[1]*c[3], c[2]*c[3])
             end
 
             flux_props.kinetic_energy_flux[:,cell,species] = 0.5 * kefd * species_data[species].mass * grid.cells[cell].inv_V
