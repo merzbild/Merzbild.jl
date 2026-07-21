@@ -2,6 +2,7 @@
 
 ## v0.8.1
 * Clean-up of roulette merging code and minor optimizations
+* Documentation improvements
 
 ## v0.8.0
 
