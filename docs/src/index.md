@@ -27,7 +27,19 @@ A more detailed overview of the capabilities is given on the [Overview of capabi
 The output format is NetCDF4.
 
 ## Installation
-For now, **Merzbild.jl** needs to be cloned to be run. Once cloned, navigate to the directory, run
+
+### Package installation
+You can either install **Merzbild.jl** as a package via the Julia package manager (`using Pkg; Pkg.add("Merzbild")`).
+You can run tests by entering the package manager (`]`) and running `test Merzbild`.
+An example simulation from the `simulations` folder can be run by typing
+`include(joinpath(MERZBILD_SIMULATIONS_PATH, "relative/path/to_simulation.jl"))`.
+Simulations bundled with Merzbild output data to `scratch/data` and will crash if the directory is not present.
+
+The constant `MERZBILD_DATA_PATH` is exported and points to the `data` directory of the package which stores
+species and interaction data.
+
+### Development installation
+To develop functionality within the package, clone the package. Once cloned, navigate to the directory, run
 ```
 julia --project=.
 ```
@@ -49,7 +61,8 @@ The documentation assumes a certain level of pre-existing knowledge of the DSMC 
 Basic building blocks and operations (particle indexing, sampling, collisions, I/O) are covered in the
 Getting Started section.
 
-More specific examples (ionizing collisions, specific merging algorithms) will be published later in a Tutorials section.
+More specific examples and some advanced code aspects are found in the Tutorials section.
+A list of various algorithms implemented in the code is given in the Implemented algorithms section.
 
 Finally, a full API reference is present, split into the [Merzbild.jl public API reference](@ref)
 and [Merzbild.jl internal API reference](@ref).

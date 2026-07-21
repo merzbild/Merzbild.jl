@@ -22,6 +22,11 @@ makedocs(
             "Multithreaded simulations" => "multithreaded.md",
             "Debugging Merzbild" => "debugging.md",
         ],
+        "Implemented algorithms" => [
+            "Collisions" => "collisions.md",
+            "Merging" => "merging.md",
+            "Grids and particle-surface interaction models" => "grids_and_bcs.md",
+        ],
         "API reference" => [
             "Public API reference" => "reference_public.md",
             "Internal API reference" => "reference_internal.md",
