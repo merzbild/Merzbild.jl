@@ -79,18 +79,6 @@ struct FullySpecularBC1D <: AbstractBC
 end
 
 """
-    PeriodicBC1D <: AbstractBC
-
-A struct to hold information about a periodic boundary condition orthogonal to the x-axis.
-This sets the particle's x-coordinate to `x` when it crosses the boundary.
-**Note**: no checks are performed to ensure that `x` is within the simulation domain or that
-both boundaries are periodic.
-"""
-struct PeriodicBC1D <: AbstractBC
-    x::Float64
-end
-
-"""
     specular_reflection_x!(particle, Δt)
 
 Perform specular reflection of a particle in the x direction.
@@ -205,28 +193,6 @@ Unchanged value of `Δt`.
 """
 @inline function apply_bc!(rng, particle::Particle{D}, wallbc::FullySpecularBC1D, surface_normal::SVector{3,Float64}, Δt) where D
     return specular_reflection_x!(particle, Δt)
-end
-
-
-
-"""
-    apply_bc!(rng, particle::Particle{D}, wallbc::PeriodicBC1D, surface_normal::SVector{3,Float64}, Δt) where D
-
-Apply a periodic 1D boundary condition.
-
-# Positional arguments
-* `rng`: the random number generator
-* `particle`: the `Particle` instance to which the boundary condition is applied
-* `wallbc`: the `PeriodicBC1D` instance
-* `surface_normal`: the vector of the surface normal
-* `Δt`: the time left for the particle to move
-
-# Returns
-Unchanged value of `Δt`.
-"""
-@inline function apply_bc!(rng, particle::Particle{D}, wallbc::PeriodicBC1D, surface_normal::SVector{3,Float64}, Δt) where D
-    particle.x = set_x(particle.x, wallbc.x)
-    return Δt
 end
 
 """
