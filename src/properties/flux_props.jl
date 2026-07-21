@@ -88,35 +88,46 @@ function compute_flux_props!(particles::Vector{ParticleVector{D}}, pia, species_
                                           phys_props.v[2, cell, species],
                                           phys_props.v[3, cell, species])
             
-            for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
+            s1 = pia.indexer[cell,species].start1
+            e1 = pia.indexer[cell,species].end1
+            for i in s1:e1
                 c = particles[species][i].v - cell_vel
                 cxsq = c[1]^2
                 cysq = c[2]^2
                 czsq = c[3]^2
                 
                 csq = cxsq + cysq + czsq
-                kefd = kefd + particles[species][i].w * c * csq
-                dmfd = dmfd + particles[species][i].w * SVector{3,Float64}(cxsq, cysq, czsq)
-                odmfd = odmfd + particles[species][i].w * SVector{3,Float64}(c[1]*c[2], c[1]*c[3], c[2]*c[3])
+
+                w = particles[species][i].w
+
+                kefd = kefd + w * c * csq
+                dmfd = dmfd + w * SVector{3,Float64}(cxsq, cysq, czsq)
+                odmfd = odmfd + w * SVector{3,Float64}(c[1]*c[2], c[1]*c[3], c[2]*c[3])
             end
         
             if pia.indexer[cell,species].n_group2 > 0
-                for i in pia.indexer[cell,species].start2:pia.indexer[cell,species].end2
+                s2 = pia.indexer[cell,species].start2
+                e2 = pia.indexer[cell,species].end2
+                for i in s2:e2
                     c = particles[species][i].v - cell_vel
                     cxsq = c[1]^2
                     cysq = c[2]^2
                     czsq = c[3]^2
                     csq = cxsq + cysq + czsq
 
-                    kefd = kefd + particles[species][i].w * c * csq
-                    dmfd = dmfd + particles[species][i].w * SVector{3,Float64}(cxsq, cysq, czsq)
-                    odmfd = odmfd + particles[species][i].w * SVector{3,Float64}(c[1]*c[2], c[1]*c[3], c[2]*c[3])
+                    w = particles[species][i].w
+
+                    kefd = kefd + w * c * csq
+                    dmfd = dmfd + w * SVector{3,Float64}(cxsq, cysq, czsq)
+                    odmfd = odmfd + w * SVector{3,Float64}(c[1]*c[2], c[1]*c[3], c[2]*c[3])
                 end
             end
 
-            flux_props.kinetic_energy_flux[:,cell,species] = 0.5 * kefd * species_data[species].mass * grid.cells[cell].inv_V
-            flux_props.diagonal_momentum_flux[:,cell,species] = dmfd * species_data[species].mass * grid.cells[cell].inv_V
-            flux_props.off_diagonal_momentum_flux[:,cell,species] = odmfd * species_data[species].mass * grid.cells[cell].inv_V
+            minvV = species_data[species].mass * grid.cells[cell].inv_V
+
+            flux_props.kinetic_energy_flux[:,cell,species] = 0.5 * kefd * minvV
+            flux_props.diagonal_momentum_flux[:,cell,species] = dmfd * minvV
+            flux_props.off_diagonal_momentum_flux[:,cell,species] = odmfd * minvV
         end
     end
 end
@@ -225,9 +236,11 @@ function compute_flux_props_sorted!(particles::Vector{ParticleVector{D}}, pia, s
                 odmfd = odmfd + w * SVector{3,Float64}(c[1]*c[2], c[1]*c[3], c[2]*c[3])
             end
 
-            flux_props.kinetic_energy_flux[:,cell,species] = 0.5 * kefd * species_data[species].mass * grid.cells[cell].inv_V
-            flux_props.diagonal_momentum_flux[:,cell,species] = dmfd * species_data[species].mass * grid.cells[cell].inv_V
-            flux_props.off_diagonal_momentum_flux[:,cell,species] = odmfd * species_data[species].mass * grid.cells[cell].inv_V
+            minvV = species_data[species].mass * grid.cells[cell].inv_V
+
+            flux_props.kinetic_energy_flux[:,cell,species] = 0.5 * kefd * minvV
+            flux_props.diagonal_momentum_flux[:,cell,species] = dmfd * minvV
+            flux_props.off_diagonal_momentum_flux[:,cell,species] = odmfd * minvV
         end
     end
 end

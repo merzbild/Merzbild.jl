@@ -3,6 +3,7 @@
 ## v0.8.1
 * Clean-up of roulette merging code and minor optimizations
 * Documentation improvements
+* Minor optimizations in computation of fluxes on grid
 
 ## v0.8.0
 
