@@ -27,7 +27,7 @@ Particles are sorted into their cells with [`sort_particles!`](@ref) using a
 [`GridSortInPlace`](@ref) instance, which also restores contiguity of the particle indexing (see
 [Particle buffers and contiguous indexing](@ref "Particle buffers and contiguous indexing")). 
 
-## Boundary conditions
+## Boundary conditions: 1D
 
 Boundary conditions describe how particles interact with the walls at the ends of the 1-D domain.
 They are collected into a tuple (left wall, right wall) that is passed to the convection routines.
@@ -45,19 +45,26 @@ specular reflection at an accommodation coefficient of 0 and to fully diffuse re
 of 1. These specular/diffuse gas–surface interaction models are the standard DSMC wall models found in
 [Bird (1994)](https://doi.org/10.1093/oso/9780198561958.001.0001).
 
+Periodic BCs for 1D grids are implemented via convection functions that wrap the particle positions,
+see below.
+
 ## Convection
 
 Convection moves particles according to their velocities and applies the boundary conditions when
-particles reach a wall. Four routines are available, distinguished by whether they accumulate
+particles reach a wall (periodic versions do not take any
+lists of boundary conditions as input parameters and simply wrap
+particle coordinates on 1D uniform grids). Six routines are available, distinguished by whether they accumulate
 surface properties into a [`SurfProps`](@ref) instance, and by whether they also compute and store
 each particle's post-convection cell index (into `particles.cell`, which avoids required an additional
-pass over all particles during sorting):
+pass over all particles during sorting), plus periodic convection versions:
 
 | Function | Computes surface properties | Computes post-convection cell index |
 | --- | --- | --- |
 | [`convect_particles!`](@ref) | no | no |
+| [`convect_particles_periodic!`](@ref) (1D uniform grid only) | no | no |
 | [`convect_particles!`](@ref) (with `SurfProps`) | yes | no |
 | [`convect_particles_and_compute_cell!`](@ref) | no | yes |
+| [`convect_particles_and_compute_cell_periodic!`](@ref) (1D uniform grid only) | no | yes |
 | [`convect_particles_and_compute_cell!`](@ref) (with `SurfProps`) | yes | yes |
 
 The surface-property-computing variants take an additional [`SurfProps`](@ref) argument, into which
