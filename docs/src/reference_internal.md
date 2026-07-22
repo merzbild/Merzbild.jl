@@ -131,6 +131,7 @@ Merzbild.get_cell
 ## Particle movement
 ```@docs
 Merzbild.convect_single_particle!
+Merzbild.convect_single_particle_periodic!
 Merzbild.set_x
 ```
 

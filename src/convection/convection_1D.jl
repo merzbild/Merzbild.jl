@@ -43,16 +43,16 @@ Convect a singe particle on a 1-D uniform grid.
 end
 
 """
-    convect_single_particle!(grid::Grid1DUniform, particle::Particle{D}, Δt) where D
+    convect_single_particle_periodic!(grid::Grid1DUniform, particle::Particle{D}, Δt) where D
 
-Convect a singe particle on a 1-D uniform grid assuming periodic grid.
+Convect a singe particle on a 1-D uniform grid assuming a periodic grid.
 
 # Positional arguments
 * `grid`: the grid on which the convection is performed
 * `particle`: the particle to be convected
 * `Δt`: the convection timestep
 """
-@inline function convect_single_particle!(grid::Grid1DUniform, particle::Particle{D}, Δt) where D
+@inline function convect_single_particle_periodic!(grid::Grid1DUniform, particle::Particle{D}, Δt) where D
     @inbounds x_old = particle.x[1]
     @inbounds x_new = mod(x_old + particle.v[1] * Δt, grid.L)
 
@@ -149,7 +149,7 @@ function convect_particles!(rng, grid::Grid1DUniform, bc_list, particles::Partic
 end
 
 """
-    convect_particles!(grid::Grid1DUniform, particles::ParticleVector{D}, pia, species, Δt) where D
+    convect_particles_periodic!(grid::Grid1DUniform, particles::ParticleVector{D}, pia, species, Δt) where D
 
 Convect particles on a 1-D uniform grid assuming a periodic grid.
 
@@ -160,11 +160,11 @@ Convect particles on a 1-D uniform grid assuming a periodic grid.
 * `species`: the index of the species being convected
 * `Δt`: the convection timestep
 """
-function convect_particles!(grid::Grid1DUniform, particles::ParticleVector{D}, pia, species, Δt) where D
+function convect_particles_periodic!(grid::Grid1DUniform, particles::ParticleVector{D}, pia, species, Δt) where D
     @inbounds if pia.contiguous[species]
         @inbounds n_tot = pia.n_total[species]
         @inbounds for i in 1:n_tot
-            convect_single_particle!(grid, particles[i], Δt) 
+            convect_single_particle_periodic!(grid, particles[i], Δt) 
         end
     else
         @inbounds for cell in 1:grid.n_cells
@@ -172,7 +172,7 @@ function convect_particles!(grid::Grid1DUniform, particles::ParticleVector{D}, p
             e = pia.indexer[cell, species].end1
             
             for i in s:e
-                convect_single_particle!(grid, particles[i], Δt) 
+                convect_single_particle_periodic!(grid, particles[i], Δt) 
             end
 
             if pia.indexer[cell, species].n_group2 > 0
@@ -180,7 +180,7 @@ function convect_particles!(grid::Grid1DUniform, particles::ParticleVector{D}, p
                 e = pia.indexer[cell, species].end2
             
                 for i in s:e
-                    convect_single_particle!(grid, particles[i], Δt) 
+                    convect_single_particle_periodic!(grid, particles[i], Δt) 
                 end
             end
         end
@@ -281,7 +281,7 @@ function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, bc_list, 
 end
 
 """
-    convect_particles_and_compute_cell!(grid::Grid1DUniform, particles::ParticleVector{D}, pia, species, Δt) where D
+    convect_particles_and_compute_cell_periodic!(grid::Grid1DUniform, particles::ParticleVector{D}, pia, species, Δt) where D
 
 Convect particles on a 1-D uniform grid and write post-convection cell index to `particles.cell`
 assuming a periodic grid.
@@ -297,7 +297,7 @@ function convect_particles_and_compute_cell!(grid::Grid1DUniform, particles::Par
     @inbounds if pia.contiguous[species]
         @inbounds n_tot = pia.n_total[species]
         @inbounds for i in 1:n_tot
-            convect_single_particle!(grid, particles[i], Δt)
+            convect_single_particle_periodic!(grid, particles[i], Δt)
             particles.cell[i] = get_cell(grid, particles[i].x)
         end
     else
@@ -307,7 +307,7 @@ function convect_particles_and_compute_cell!(grid::Grid1DUniform, particles::Par
             e = pia.indexer[cell, species].end1
             
             for i in s:e
-                convect_single_particle!(grid, particles[i], Δt)
+                convect_single_particle_periodic!(grid, particles[i], Δt)
                 particles.cell[i] = get_cell(grid, particles[i].x)
             end
 
@@ -316,7 +316,7 @@ function convect_particles_and_compute_cell!(grid::Grid1DUniform, particles::Par
                 e = pia.indexer[cell, species].end2
             
                 for i in s:e
-                    convect_single_particle!(grid, particles[i], Δt)
+                    convect_single_particle_periodic!(grid, particles[i], Δt)
                     particles.cell[i] = get_cell(grid, particles[i].x)
                 end
             end
