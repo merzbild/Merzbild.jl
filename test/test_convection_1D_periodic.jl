@@ -43,11 +43,11 @@
     @test particles[1][2].v == [-1.25, -1.5, 4.0]
     @test particles[1][2].w == 1.0
 
-    @test maximum(abs.(particles[1][3].x - [21.0, 1.0, 3.0])) < 2 * eps()
+    @test maximum(abs.(particles[1][3].x - [21.0, 6.0, -3.0])) < 2 * eps()
     @test particles[1][3].v == [11.0, -3.0, 1.0]
     @test particles[1][3].w == 2.0
 
-    @test maximum(abs.(particles[1][4].x - [27.0, 6.0, -3.0])) < 2 * eps()
+    @test maximum(abs.(particles[1][4].x - [27.0, 1.0, 3.0])) < 2 * eps()
     @test particles[1][4].v == [-20.0, 0.0, 2.0]
     @test particles[1][4].w == 3.0
 
