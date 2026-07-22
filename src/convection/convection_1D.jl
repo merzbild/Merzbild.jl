@@ -293,7 +293,7 @@ assuming a periodic grid.
 * `species`: the index of the species being convected
 * `Δt`: the convection timestep
 """
-function convect_particles_and_compute_cell!(grid::Grid1DUniform, particles::ParticleVector{D}, pia, species, Δt) where D
+function convect_particles_and_compute_cell_periodic!(grid::Grid1DUniform, particles::ParticleVector{D}, pia, species, Δt) where D
     @inbounds if pia.contiguous[species]
         @inbounds n_tot = pia.n_total[species]
         @inbounds for i in 1:n_tot
