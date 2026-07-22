@@ -60,9 +60,9 @@
         elseif i == 42
             w = 1.0
         elseif i == 43
-            w = 3.0
-        elseif i == 55
             w = 2.0
+        elseif i == 55
+            w = 3.0
         else
             w = 0.0
         end
