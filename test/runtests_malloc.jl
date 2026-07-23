@@ -9,6 +9,7 @@ include("test_malloc_gridmerge_1Dgrid.jl")  # malloc with grid merging on 1D gri
 include("test_malloc_convection_1D.jl")  # malloc with convection on 1D grid
 include("test_malloc_accelerate_ionize.jl")  # malloc with ionization reactions and acceleration
 include("test_malloc_nnls.jl")  # malloc for NNLS merging internal computes
+include("test_malloc_particle_exchange.jl")  # malloc for inter-chunk particle exchange + re-sort
 
 
 # tests assume that VHS data for Ar, He is
