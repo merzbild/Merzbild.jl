@@ -65,7 +65,8 @@ The VHS model uses the following power law: ``\\sigma_{VHS} = C g^(1 - 2 \\omega
 * `μ1`: relative mass of the first species
 * `μ2`: relative mass of the second species
 * `vhs_d`: diameter for the VHS potential
-* `vhs_o`: exponent for the VHS potential
+* `vhs_o`: exponent for the VHS potential (omega)
+* `vhs_exp`: pre-computed `1 - 2 vhs_o`
 * `vhs_Tref`: reference temperature for the VHS potential
 * `vhs_muref`: reference viscosity for the VHS potential
 * `vhs_factor`: pre-computed factor for calculation of the VHS cross-section
@@ -76,9 +77,34 @@ struct Interaction
     μ2::Float64  # m2 / (m1 + m2)
     vhs_d::Float64
     vhs_o::Float64
+    vhs_exp::Float64
     vhs_Tref::Float64
     vhs_muref::Float64
     vhs_factor::Float64 # = π * vhs_d^2 * (2 * vhs_Tref/m_r)^(vhs_o - 0.5) / gamma(2.5 - vhs_o)
+end
+
+"""
+    Interaction(m1::Float64, m2::Float64, vhs_d::Float64, vhs_o::Float64, vhs_Tref::Float64)
+
+Construct an Interaction instance from the masses of the two species and the VHS parameters.
+
+# Positional arguments
+* `m1`: molecular mass of the first species
+* `m2`: molecular mass of the second species
+* `vhs_d`: VHS diameter
+* `vhs_o`: VHS exponent (omega)
+* `vhs_Tref`: reference VHS temperature
+"""
+function Interaction(m1::Float64, m2::Float64, vhs_d::Float64, vhs_o::Float64, vhs_Tref::Float64)
+    m_r = m1 * m2 / (m1 + m2)
+
+    μ1 = m1 / (m1 + m2) 
+    μ2 = m2 / (m1 + m2) 
+    vhs_exp = 1.0 - 2 * vhs_o
+
+    return Interaction(m_r, μ1, μ2, vhs_d, vhs_o, vhs_exp, vhs_Tref,
+                       compute_mu_ref(0.5 * (m1 + m2), vhs_o, vhs_Tref, vhs_d),
+                       compute_vhs_factor(vhs_Tref, vhs_d, vhs_o, m_r))
 end
 
 """
@@ -169,11 +195,6 @@ function load_interaction_data(interactions_filename, species_data)
 
                 s1s2 = species_name1 * "," * species_name2
 
-                m_r = species_data[i].mass * species_data[k].mass / (species_data[i].mass + species_data[k].mass)
-
-                μ1 = species_data[i].mass / (species_data[i].mass + species_data[k].mass) 
-                μ2 = species_data[k].mass / (species_data[i].mass + species_data[k].mass) 
-
                 interaction_s1s2 = nothing
                 try
                     interaction_s1s2 = interactions_data[s1s2]
@@ -182,18 +203,10 @@ function load_interaction_data(interactions_filename, species_data)
                     interaction_s1s2 = interactions_data[s2s1]
                 end
 
-                interactions_list[i,k] = Interaction(m_r, μ1, μ2,
-                interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"],
-                interaction_s1s2["vhs_Tref"],
-                compute_mu_ref(0.5*(species_data[i].mass + species_data[k].mass), interaction_s1s2["vhs_o"], interaction_s1s2["vhs_Tref"], interaction_s1s2["vhs_d"]),
-                compute_vhs_factor(interaction_s1s2["vhs_Tref"], interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"],
-                m_r))
-                interactions_list[k,i] = Interaction(m_r, μ2, μ1,
-                interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"],
-                interaction_s1s2["vhs_Tref"],
-                compute_mu_ref(0.5*(species_data[i].mass + species_data[k].mass), interaction_s1s2["vhs_o"], interaction_s1s2["vhs_Tref"], interaction_s1s2["vhs_d"]),
-                compute_vhs_factor(interaction_s1s2["vhs_Tref"], interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"],
-                m_r))
+                interactions_list[i,k] = Interaction(species_data[i].mass, species_data[k].mass,
+                                                     interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"], interaction_s1s2["vhs_Tref"])
+                interactions_list[k,i] = Interaction(species_data[k].mass, species_data[i].mass,
+                                                     interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"], interaction_s1s2["vhs_Tref"])
             end
         end
     end
@@ -202,21 +215,21 @@ function load_interaction_data(interactions_filename, species_data)
 end
 
 """
-    compute_mu_ref(m_r, vhs_o, vhs_Tref, vhs_d)
+    compute_mu_ref(m_AB, vhs_o, vhs_Tref, vhs_d)
     
 Compute reference viscosity for the VHS model.
 
 # Positional arguments
-* `m_r`: collision-reduced mass
+* `m_AB`: average mass of colliding particles
 * `vhs_o`: exponent for the VHS potential
 * `vhs_Tref`: reference temperature for the VHS potential
 * `vhs_d`: diameter for the VHS potential
 
 # Returns
-* reference viscosity
+* Reference viscosity
 """
-function compute_mu_ref(m_r, vhs_o, vhs_Tref, vhs_d)
-    numerator = 30.0 * sqrt(m_r * k_B * vhs_Tref)
+function compute_mu_ref(m_AB, vhs_o, vhs_Tref, vhs_d)
+    numerator = 30.0 * sqrt(m_AB * k_B * vhs_Tref)
     denumerator = 4.0 * sqrt(π) * (5.0 - 2.0 * vhs_o) * (7.0 - 2.0 * vhs_o) * vhs_d * vhs_d
 
     return numerator / denumerator;
@@ -275,31 +288,16 @@ function load_interaction_data(interactions_filename, species_data, dummy_vhs_d,
                 end
                 
                 if interaction_s1s2 !== nothing
-                    interactions_list[i,k] = Interaction(m_r, μ1, μ2,
-                    interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"],
-                    interaction_s1s2["vhs_Tref"],
-                    compute_mu_ref(0.5*(species_data[i].mass + species_data[k].mass), interaction_s1s2["vhs_o"], interaction_s1s2["vhs_Tref"], interaction_s1s2["vhs_d"]),
-                    compute_vhs_factor(interaction_s1s2["vhs_Tref"], interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"],
-                    m_r))
-                    
-                    interactions_list[k,i] = Interaction(m_r, μ2, μ1,
-                    interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"],
-                    interaction_s1s2["vhs_Tref"],
-                    compute_mu_ref(0.5*(species_data[i].mass + species_data[k].mass), interaction_s1s2["vhs_o"], interaction_s1s2["vhs_Tref"], interaction_s1s2["vhs_d"]),
-                    compute_vhs_factor(interaction_s1s2["vhs_Tref"], interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"],
-                    m_r))
+                    interactions_list[i,k] = Interaction(species_data[i].mass, species_data[k].mass,
+                                                         interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"], interaction_s1s2["vhs_Tref"])
+                    interactions_list[k,i] = Interaction(species_data[k].mass, species_data[i].mass,
+                                                         interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"], interaction_s1s2["vhs_Tref"])
                 else
-                    interactions_list[i,k] = Interaction(m_r, μ1, μ2,
-                    dummy_vhs_d, dummy_vhs_o,
-                    dummy_vhs_Tref,
-                    compute_mu_ref(0.5*(species_data[i].mass + species_data[k].mass), dummy_vhs_o, dummy_vhs_Tref, dummy_vhs_d),
-                    compute_vhs_factor(dummy_vhs_Tref, dummy_vhs_d, dummy_vhs_o, m_r))
-                    
-                    interactions_list[k,i] = Interaction(m_r, μ2, μ1,
-                    dummy_vhs_d, dummy_vhs_o,
-                    dummy_vhs_Tref,
-                    compute_mu_ref(0.5*(species_data[i].mass + species_data[k].mass), dummy_vhs_o, dummy_vhs_Tref, dummy_vhs_d),
-                    compute_vhs_factor(dummy_vhs_Tref, dummy_vhs_d, dummy_vhs_o, m_r))
+
+                    interactions_list[i,k] = Interaction(species_data[i].mass, species_data[k].mass,
+                                                         dummy_vhs_d, dummy_vhs_o, dummy_vhs_Tref)
+                    interactions_list[k,i] = Interaction(species_data[k].mass, species_data[i].mass,
+                                                         dummy_vhs_d, dummy_vhs_o, dummy_vhs_Tref)
                 end
             end
         end

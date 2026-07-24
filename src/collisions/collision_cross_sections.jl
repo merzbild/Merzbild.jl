@@ -177,7 +177,7 @@ Computes the VHS cross-section.
 The value of the computed cross-section.
 """
 @inline function sigma_vhs(interaction, g)
-    return interaction.vhs_factor * g^(1.0 - 2 * interaction.vhs_o)
+    return interaction.vhs_factor * g^(interaction.vhs_exp)
 end
 
 """
