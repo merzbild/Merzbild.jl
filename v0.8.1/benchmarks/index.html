@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Benchmarks · Merzbild</title><meta name="title" content="Benchmarks · Merzbild"/><meta property="og:title" content="Benchmarks · Merzbild"/><meta property="twitter:title" content="Benchmarks · Merzbild"/><meta name="description" content="Documentation for Merzbild."/><meta property="og:description" content="Documentation for Merzbild."/><meta property="twitter:description" content="Documentation for Merzbild."/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">Merzbild</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../overview_capabilities/">Overview of capabilities</a></li><li><span class="tocitem">Getting started</span><ul><li><a class="tocitem" href="../overview_blocks/">Overview of basic building blocks</a></li><li><a class="tocitem" href="../overview_fixedweight/">Fixed-weight DSMC simulations</a></li><li><a class="tocitem" href="../overview_varweight/">Variable-weight DSMC simulations</a></li><li><a class="tocitem" href="../overview_1d/">1D DSMC simulations</a></li><li><a class="tocitem" href="../overview_fp/">Fokker-Planck simulations</a></li></ul></li><li><span class="tocitem">Tutorials</span><ul><li><a class="tocitem" href="../contiguous_indexing/">Contiguous indexing</a></li><li><a class="tocitem" href="../modelling_ionization/">Modelling ionization reactions</a></li><li><a class="tocitem" href="../multithreaded/">Multithreaded simulations</a></li><li><a class="tocitem" href="../debugging/">Debugging Merzbild</a></li></ul></li><li><span class="tocitem">Implemented algorithms</span><ul><li><a class="tocitem" href="../collisions/">Collisions</a></li><li><a class="tocitem" href="../merging/">Merging</a></li><li><a class="tocitem" href="../grids_and_bcs/">Grids and particle-surface interaction models</a></li></ul></li><li><span class="tocitem">API reference</span><ul><li><a class="tocitem" href="../reference_public/">Public API reference</a></li><li><a class="tocitem" href="../reference_internal/">Internal API reference</a></li></ul></li><li class="is-active"><a class="tocitem" href>Benchmarks</a><ul class="internal"><li><a class="tocitem" href="#Summary"><span>Summary</span></a></li><li><a class="tocitem" href="#Couette-flow,-serial,-small-grid-2"><span>Couette flow, serial, small grid</span></a></li><li><a class="tocitem" href="#Couette-flow,-serial,-large-grid-2"><span>Couette flow, serial, large grid</span></a></li><li><a class="tocitem" href="#Couette-flow,-variable-weight-particles,-octree-merging-2"><span>Couette flow, variable-weight particles, octree merging</span></a></li><li><a class="tocitem" href="#0D-ionization,-variable-weight-particles,-octree-merging-2"><span>0D ionization, variable-weight particles, octree merging</span></a></li><li><a class="tocitem" href="#0D-ionization,-variable-weight-particles,-NNLS-merging-2"><span>0D ionization, variable-weight particles, NNLS merging</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Benchmarks</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Benchmarks</a></li></ul></nav><div class="docs-right"><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Merzbild.jl-benchmarks"><a class="docs-heading-anchor" href="#Merzbild.jl-benchmarks">Merzbild.jl benchmarks</a><a id="Merzbild.jl-benchmarks-1"></a><a class="docs-heading-anchor-permalink" href="#Merzbild.jl-benchmarks" title="Permalink"></a></h1><p>Various benchmarks and comparisons to other open-source codes are provided here for reference test cases. An overview of benchmarks between different versions of Merzbild is provided in the Summary section.</p><h2 id="Summary"><a class="docs-heading-anchor" href="#Summary">Summary</a><a id="Summary-1"></a><a class="docs-heading-anchor-permalink" href="#Summary" title="Permalink"></a></h2><h3 id="Couette-flow,-serial,-small-grid"><a class="docs-heading-anchor" href="#Couette-flow,-serial,-small-grid">Couette flow, serial, small grid</a><a id="Couette-flow,-serial,-small-grid-1"></a><a class="docs-heading-anchor-permalink" href="#Couette-flow,-serial,-small-grid" title="Permalink"></a></h3><table><tr><th style="text-align: center"></th><th style="text-align: center"><strong>M1 Pro, 32 GB RAM</strong></th><th style="text-align: center"><strong>Intel Core i9-13900K, 128 GB RAM</strong></th><th style="text-align: center"><strong>AMD EPYC 9374F, 378 GB RAM</strong></th></tr><tr><td style="text-align: center">v0.7.0 (Julia 1.11)</td><td style="text-align: center">33.5s</td><td style="text-align: center">28.4s</td><td style="text-align: center">33.0s</td></tr><tr><td style="text-align: center">v0.8.0 (Julia 1.12)</td><td style="text-align: center">30.0s</td><td style="text-align: center">23.4s</td><td style="text-align: center">31.1s</td></tr></table><h3 id="Couette-flow,-serial,-large-grid"><a class="docs-heading-anchor" href="#Couette-flow,-serial,-large-grid">Couette flow, serial, large grid</a><a id="Couette-flow,-serial,-large-grid-1"></a><a class="docs-heading-anchor-permalink" href="#Couette-flow,-serial,-large-grid" title="Permalink"></a></h3><table><tr><th style="text-align: center"></th><th style="text-align: center"><strong>M1 Pro, 32 GB RAM</strong></th><th style="text-align: center"><strong>Intel Core i9-13900K, 128 GB RAM</strong></th><th style="text-align: center"><strong>AMD EPYC 9374F, 378 GB RAM</strong></th></tr><tr><td style="text-align: center">v0.7.0 (Julia 1.11)</td><td style="text-align: center">1164s</td><td style="text-align: center">795s</td><td style="text-align: center">1467s</td></tr><tr><td style="text-align: center">v0.8.0 (Julia 1.12)</td><td style="text-align: center">550s</td><td style="text-align: center">418s</td><td style="text-align: center">902s</td></tr></table><h3 id="Couette-flow-threading-speed-up"><a class="docs-heading-anchor" href="#Couette-flow-threading-speed-up">Couette flow threading speed-up</a><a id="Couette-flow-threading-speed-up-1"></a><a class="docs-heading-anchor-permalink" href="#Couette-flow-threading-speed-up" title="Permalink"></a></h3><p>Note that this is 1) without any dynamical load-balancing (speed-up is less than expected due to density changes in the domain leading to different amount of work spent on collisions)</p><ol><li>using a serial particle exchange procedure. Speed-up is compared to the &quot;Couette flow, serial, large grid&quot; case.</li></ol><table><tr><th style="text-align: center"></th><th style="text-align: center"><strong>M1 Pro, 32 GB RAM, 2/4/8 threads</strong></th><th style="text-align: center"><strong>Intel Core i9-13900K, 128 GB RAM, 2/4/8 threads</strong></th><th style="text-align: center"><strong>AMD EPYC 9374F, 378 GB RAM 2/4/8/16/32 threads</strong></th></tr><tr><td style="text-align: center">v0.7.0 (Julia 1.11)</td><td style="text-align: center">2.3 / 3.8 / 5.8</td><td style="text-align: center">1.9 / 3.2 / 5.1</td><td style="text-align: center">1.9 / 3.9 / 5.2 / 5.7 / 6.5</td></tr><tr><td style="text-align: center">v0.8.0 (Julia 1.12)</td><td style="text-align: center">2.0 / 3.3 / 4.5</td><td style="text-align: center">1.6 / 2.7 / 3.7</td><td style="text-align: center">1.7 / 3.3 / 3.6 / 4.1 / 3.6</td></tr></table><h3 id="Couette-flow,-variable-weight-particles,-octree-merging"><a class="docs-heading-anchor" href="#Couette-flow,-variable-weight-particles,-octree-merging">Couette flow, variable-weight particles, octree merging</a><a id="Couette-flow,-variable-weight-particles,-octree-merging-1"></a><a class="docs-heading-anchor-permalink" href="#Couette-flow,-variable-weight-particles,-octree-merging" title="Permalink"></a></h3><table><tr><th style="text-align: center"></th><th style="text-align: center"><strong>M1 Pro, 32 GB RAM</strong></th><th style="text-align: center"><strong>Intel Core i9-13900K, 128 GB RAM</strong></th><th style="text-align: center"><strong>AMD EPYC 9374F, 378 GB RAM</strong></th></tr><tr><td style="text-align: center">v0.7.10 (Julia 1.12)</td><td style="text-align: center">35.2s</td><td style="text-align: center">27.3s</td><td style="text-align: center">38.6s</td></tr><tr><td style="text-align: center">v0.8.0 (Julia 1.12)</td><td style="text-align: center">28.1s</td><td style="text-align: center">23.7s</td><td style="text-align: center">31.8s</td></tr></table><h3 id="0D-ionization,-variable-weight-particles,-octree-merging"><a class="docs-heading-anchor" href="#0D-ionization,-variable-weight-particles,-octree-merging">0D ionization, variable-weight particles, octree merging</a><a id="0D-ionization,-variable-weight-particles,-octree-merging-1"></a><a class="docs-heading-anchor-permalink" href="#0D-ionization,-variable-weight-particles,-octree-merging" title="Permalink"></a></h3><table><tr><th style="text-align: center"></th><th style="text-align: center"><strong>M1 Pro, 32 GB RAM</strong></th><th style="text-align: center"><strong>Intel Core i9-13900K, 128 GB RAM</strong></th><th style="text-align: center"><strong>AMD EPYC 9374F, 378 GB RAM</strong></th></tr><tr><td style="text-align: center">v0.7.10 (Julia 1.12)</td><td style="text-align: center">21.1s</td><td style="text-align: center">15.1s</td><td style="text-align: center">23.0s</td></tr><tr><td style="text-align: center">v0.8.0 (Julia 1.12)</td><td style="text-align: center">6.62s</td><td style="text-align: center">4.72s</td><td style="text-align: center">6.83s</td></tr></table><h3 id="0D-ionization,-variable-weight-particles,-NNLS-merging"><a class="docs-heading-anchor" href="#0D-ionization,-variable-weight-particles,-NNLS-merging">0D ionization, variable-weight particles, NNLS merging</a><a id="0D-ionization,-variable-weight-particles,-NNLS-merging-1"></a><a class="docs-heading-anchor-permalink" href="#0D-ionization,-variable-weight-particles,-NNLS-merging" title="Permalink"></a></h3><table><tr><th style="text-align: center"></th><th style="text-align: center"><strong>M1 Pro, 32 GB RAM</strong></th><th style="text-align: center"><strong>Intel Core i9-13900K, 128 GB RAM</strong></th><th style="text-align: center"><strong>AMD EPYC 9374F, 378 GB RAM</strong></th></tr><tr><td style="text-align: center">v0.7.10 (Julia 1.12)</td><td style="text-align: center">22.9s</td><td style="text-align: center">17.4s</td><td style="text-align: center">26.5s</td></tr><tr><td style="text-align: center">v0.8.0 (Julia 1.12)</td><td style="text-align: center">4.95s</td><td style="text-align: center">3.98s</td><td style="text-align: center">5.98s</td></tr></table><h2 id="Couette-flow,-serial,-small-grid-2"><a class="docs-heading-anchor" href="#Couette-flow,-serial,-small-grid-2">Couette flow, serial, small grid</a><a class="docs-heading-anchor-permalink" href="#Couette-flow,-serial,-small-grid-2" title="Permalink"></a></h2><p>Comparison with SPARTA are provided for a single-species (argon) Couette flow test case with 50000 particles and 50 cells (averaging over 36k timesteps after t&gt;14000). The computation is serial. Timing in Merzbild.jl providedd by <a href="https://github.com/KristofferC/TimerOutputs.jl">TimerOutputs.jl</a>, timing in SPARTA provided by the inbuilt timers. No surface quantities are being computed. The input can be found in <code>simulations/1D/couette_benchmarking.jl</code>.</p><p>Merzbild.jl version 0.8.0, run with  <code>--check-bounds=no -O3</code>.</p><p>SPARTA version 20Jan2025, compiled with <code>-O3</code>.</p><h3 id="Intel-Core-i9-13900K,-128-GB-RAM"><a class="docs-heading-anchor" href="#Intel-Core-i9-13900K,-128-GB-RAM">Intel Core i9-13900K, 128 GB RAM</a><a id="Intel-Core-i9-13900K,-128-GB-RAM-1"></a><a class="docs-heading-anchor-permalink" href="#Intel-Core-i9-13900K,-128-GB-RAM" title="Permalink"></a></h3><p>Ubuntu 22.04.5, Julia version 1.12.5, SPARTA compiled with gcc version 11.4.0.</p><h4 id="Merzbild.jl"><a class="docs-heading-anchor" href="#Merzbild.jl">Merzbild.jl</a><a id="Merzbild.jl-1"></a><a class="docs-heading-anchor-permalink" href="#Merzbild.jl" title="Permalink"></a></h4><pre><code class="nohighlight hljs">─────────────────────────────────────────────────────────────────────────────
+                                    Time                    Allocations      
+                           ───────────────────────   ────────────────────────
+     Tot / % measured:          23.4s /  94.9%            188MiB /   6.8%    
+
+Section            ncalls     time    %tot     avg     alloc    %tot      avg
+─────────────────────────────────────────────────────────────────────────────
+sort                50.0k    7.18s   32.4%   144μs     0.00B    0.0%    0.00B
+collide             2.50M    5.96s   26.9%  2.38μs     0.00B    0.0%    0.00B
+convect             50.0k    4.28s   19.3%  85.6μs     0.00B    0.0%    0.00B
+props compute       36.0k    3.72s   16.8%   103μs     0.00B    0.0%    0.00B
+restore ordering    5.00k    949ms    4.3%   190μs     0.00B    0.0%    0.00B
+I/O                     1   90.0ms    0.4%  90.0ms   10.5MiB   82.1%  10.5MiB
+avg physprops       36.0k   5.96ms    0.0%   166ns     0.00B    0.0%    0.00B
+sampling                1   2.44ms    0.0%  2.44ms   2.29MiB   17.9%  2.29MiB
+─────────────────────────────────────────────────────────────────────────────</code></pre><h4 id="SPARTA"><a class="docs-heading-anchor" href="#SPARTA">SPARTA</a><a id="SPARTA-1"></a><a class="docs-heading-anchor-permalink" href="#SPARTA" title="Permalink"></a></h4><pre><code class="nohighlight hljs">Loop time of 30.4417 on 1 procs for 50000 steps with 50000 particles
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Move    | 8.0618     | 8.0618     | 8.0618     |   0.0 | 26.48
+Coll    | 10.862     | 10.862     | 10.862     |   0.0 | 35.68
+Sort    | 2.793      | 2.793      | 2.793      |   0.0 |  9.18
+Comm    | 0.0034328  | 0.0034328  | 0.0034328  |   0.0 |  0.01
+Modify  | 8.719      | 8.719      | 8.719      |   0.0 | 28.64
+Output  | 0.00057459 | 0.00057459 | 0.00057459 |   0.0 |  0.00
+Other   |            | 0.002392   |            |       |  0.01</code></pre><h3 id="M1-Pro-(Macbook-Pro),-32-GB-RAM"><a class="docs-heading-anchor" href="#M1-Pro-(Macbook-Pro),-32-GB-RAM">M1 Pro (Macbook Pro), 32 GB RAM</a><a id="M1-Pro-(Macbook-Pro),-32-GB-RAM-1"></a><a class="docs-heading-anchor-permalink" href="#M1-Pro-(Macbook-Pro),-32-GB-RAM" title="Permalink"></a></h3><p>MacOS 15.4.1, Julia version 1.12.5, SPARTA compiled with Apple clang version 17.0.0.</p><h4 id="Merzbild.jl-2"><a class="docs-heading-anchor" href="#Merzbild.jl-2">Merzbild.jl</a><a class="docs-heading-anchor-permalink" href="#Merzbild.jl-2" title="Permalink"></a></h4><pre><code class="nohighlight hljs">─────────────────────────────────────────────────────────────────────────────
+                                    Time                    Allocations      
+                           ───────────────────────   ────────────────────────
+     Tot / % measured:          30.0s /  95.9%            177MiB /   7.3%    
+
+Section            ncalls     time    %tot     avg     alloc    %tot      avg
+─────────────────────────────────────────────────────────────────────────────
+sort                50.0k    11.1s   38.6%   222μs     0.00B    0.0%    0.00B
+collide             2.50M    6.93s   24.1%  2.77μs     0.00B    0.0%    0.00B
+convect             50.0k    4.85s   16.9%  96.9μs     0.00B    0.0%    0.00B
+props compute       36.0k    4.52s   15.7%   125μs     0.00B    0.0%    0.00B
+restore ordering    5.00k    1.25s    4.3%   250μs     0.00B    0.0%    0.00B
+I/O                     1    109ms    0.4%   109ms   10.6MiB   82.2%  10.6MiB
+avg physprops       36.0k   4.58ms    0.0%   127ns     0.00B    0.0%    0.00B
+sampling                1   3.65ms    0.0%  3.65ms   2.29MiB   17.8%  2.29MiB
+─────────────────────────────────────────────────────────────────────────────</code></pre><h4 id="SPARTA-2"><a class="docs-heading-anchor" href="#SPARTA-2">SPARTA</a><a class="docs-heading-anchor-permalink" href="#SPARTA-2" title="Permalink"></a></h4><pre><code class="nohighlight hljs">Loop time of 47.4825 on 1 procs for 50000 steps with 50000 particles
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Move    | 12.001     | 12.001     | 12.001     |   0.0 | 25.28
+Coll    | 13.299     | 13.299     | 13.299     |   0.0 | 28.01
+Sort    | 2.8246     | 2.8246     | 2.8246     |   0.0 |  5.95
+Comm    | 0.0020463  | 0.0020463  | 0.0020463  |   0.0 |  0.00
+Modify  | 19.352     | 19.352     | 19.352     |   0.0 | 40.76
+Output  | 0.0019748  | 0.0019748  | 0.0019748  |   0.0 |  0.00
+Other   |            | 0.0009062  |            |       |  0.00</code></pre><h3 id="AMD-EPYC-9374F,-378-GB-RAM"><a class="docs-heading-anchor" href="#AMD-EPYC-9374F,-378-GB-RAM">AMD EPYC 9374F, 378 GB RAM</a><a id="AMD-EPYC-9374F,-378-GB-RAM-1"></a><a class="docs-heading-anchor-permalink" href="#AMD-EPYC-9374F,-378-GB-RAM" title="Permalink"></a></h3><p>Ubuntu 24.04.3, Julia version 1.12.5.</p><h4 id="Merzbild.jl-3"><a class="docs-heading-anchor" href="#Merzbild.jl-3">Merzbild.jl</a><a class="docs-heading-anchor-permalink" href="#Merzbild.jl-3" title="Permalink"></a></h4><pre><code class="nohighlight hljs">─────────────────────────────────────────────────────────────────────────────
+                                    Time                    Allocations      
+                           ───────────────────────   ────────────────────────
+     Tot / % measured:          31.1s /  94.4%            188MiB /   6.8%    
+
+Section            ncalls     time    %tot     avg     alloc    %tot      avg
+─────────────────────────────────────────────────────────────────────────────
+sort                50.0k    9.16s   31.1%   183μs     0.00B    0.0%    0.00B
+collide             2.50M    7.78s   26.5%  3.11μs     0.00B    0.0%    0.00B
+convect             50.0k    6.75s   23.0%   135μs     0.00B    0.0%    0.00B
+props compute       36.0k    4.17s   14.2%   116μs     0.00B    0.0%    0.00B
+restore ordering    5.00k    1.41s    4.8%   282μs     0.00B    0.0%    0.00B
+I/O                     1    125ms    0.4%   125ms   10.5MiB   82.1%  10.5MiB
+avg physprops       36.0k   9.08ms    0.0%   252ns     0.00B    0.0%    0.00B
+sampling                1   2.32ms    0.0%  2.32ms   2.29MiB   17.9%  2.29MiB
+─────────────────────────────────────────────────────────────────────────────</code></pre><h4 id="SPARTA-3"><a class="docs-heading-anchor" href="#SPARTA-3">SPARTA</a><a class="docs-heading-anchor-permalink" href="#SPARTA-3" title="Permalink"></a></h4><pre><code class="nohighlight hljs">Loop time of 47.8094 on 1 procs for 50000 steps with 50000 particles
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Move    | 12.635     | 12.635     | 12.635     |   0.0 | 26.43
+Coll    | 16.142     | 16.142     | 16.142     |   0.0 | 33.76
+Sort    | 2.4732     | 2.4732     | 2.4732     |   0.0 |  5.17
+Comm    | 0.0065105  | 0.0065105  | 0.0065105  |   0.0 |  0.01
+Modify  | 16.548     | 16.548     | 16.548     |   0.0 | 34.61
+Output  | 0.0015361  | 0.0015361  | 0.0015361  |   0.0 |  0.00
+Other   |            | 0.003732   |            |       |  0.01</code></pre><h2 id="Couette-flow,-serial,-large-grid-2"><a class="docs-heading-anchor" href="#Couette-flow,-serial,-large-grid-2">Couette flow, serial, large grid</a><a class="docs-heading-anchor-permalink" href="#Couette-flow,-serial,-large-grid-2" title="Permalink"></a></h2><p>The physical parameters for this test case are the same as for the previous one, but a larger (2000 cells) grid is used, with 250 particles per cell at <code>t=0</code>. So the number of grid cells is 40x higher than for the small grid test case, and the number of particles is 10x higher.</p><p>In addition, surface properties are also computed and averaged. The numerical setup corresponds to the <code>simulations/1D/couette_with_surface_quantities.jl</code> file with the following parameters parameters for the <code>run</code> command:</p><p><code>run(1234, 300.0, 500.0, 5e-4, 5e22, 2000, 250, 2.59e-9, 1000, 50000, 14000; do_benchmark=true)</code></p><p>Setting <code>do_benchmark</code> to <code>true</code> turns off computation of the degree of particle index fragmentation.</p><h3 id="Intel-Core-i9-13900K,-128-GB-RAM-2"><a class="docs-heading-anchor" href="#Intel-Core-i9-13900K,-128-GB-RAM-2">Intel Core i9-13900K, 128 GB RAM</a><a class="docs-heading-anchor-permalink" href="#Intel-Core-i9-13900K,-128-GB-RAM-2" title="Permalink"></a></h3><p>Ubuntu 22.04.5, Julia version 1.12.5, SPARTA compiled with gcc version 11.4.0.</p><h4 id="Merzbild.jl-4"><a class="docs-heading-anchor" href="#Merzbild.jl-4">Merzbild.jl</a><a class="docs-heading-anchor-permalink" href="#Merzbild.jl-4" title="Permalink"></a></h4><pre><code class="nohighlight hljs">────────────────────────────────────────────────────────────────────────────────────────
+                                               Time                    Allocations      
+                                      ───────────────────────   ────────────────────────
+          Tot / % measured:                 418s /  99.8%            202MiB /  11.7%    
+
+Section                       ncalls     time    %tot     avg     alloc    %tot      avg
+────────────────────────────────────────────────────────────────────────────────────────
+main loop                          1     418s  100.0%    418s    631KiB    2.6%   631KiB
+  sort                         50.0k     122s   29.3%  2.44ms     0.00B    0.0%    0.00B
+  collide                       100M     106s   25.5%  1.06μs     0.00B    0.0%    0.00B
+  convect + surface compute    36.0k    69.8s   16.7%  1.94ms     0.00B    0.0%    0.00B
+  props compute                36.0k    64.8s   15.5%  1.80ms     0.00B    0.0%    0.00B
+  convect                      14.0k    28.5s    6.8%  2.04ms     0.00B    0.0%    0.00B
+  restore ordering             5.00k    22.8s    5.5%  4.57ms     0.00B    0.0%    0.00B
+  avg physprops                36.0k    220ms    0.1%  6.12μs     0.00B    0.0%    0.00B
+  avg surfprops                36.0k   6.39ms    0.0%   177ns     0.00B    0.0%    0.00B
+  I/O                             13   1.73ms    0.0%   133μs   3.05KiB    0.0%     240B
+sampling                           1   54.4ms    0.0%  54.4ms   22.9MiB   97.4%  22.9MiB
+I/O final                          2    147μs    0.0%  73.6μs      544B    0.0%     272B
+────────────────────────────────────────────────────────────────────────────────────────</code></pre><h4 id="SPARTA-4"><a class="docs-heading-anchor" href="#SPARTA-4">SPARTA</a><a class="docs-heading-anchor-permalink" href="#SPARTA-4" title="Permalink"></a></h4><pre><code class="nohighlight hljs">Loop time of 1155.34 on 1 procs for 50000 steps with 500000 particles
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Move    | 598.55     | 598.55     | 598.55     |   0.0 | 51.81
+Coll    | 262.52     | 262.52     | 262.52     |   0.0 | 22.72
+Sort    | 87.103     | 87.103     | 87.103     |   0.0 |  7.54
+Comm    | 0.018935   | 0.018935   | 0.018935   |   0.0 |  0.00
+Modify  | 207.14     | 207.14     | 207.14     |   0.0 | 17.93
+Output  | 0.002845   | 0.002845   | 0.002845   |   0.0 |  0.00
+Other   |            | 0.01218    |            |       |  0.00</code></pre><h3 id="M1-Pro-(Macbook-Pro),-32-GB-RAM-2"><a class="docs-heading-anchor" href="#M1-Pro-(Macbook-Pro),-32-GB-RAM-2">M1 Pro (Macbook Pro), 32 GB RAM</a><a class="docs-heading-anchor-permalink" href="#M1-Pro-(Macbook-Pro),-32-GB-RAM-2" title="Permalink"></a></h3><p>MacOS 15.4.1, Julia version 1.12.5, SPARTA compiled with Apple clang version 17.0.0.</p><h4 id="Merzbild.jl-5"><a class="docs-heading-anchor" href="#Merzbild.jl-5">Merzbild.jl</a><a class="docs-heading-anchor-permalink" href="#Merzbild.jl-5" title="Permalink"></a></h4><pre><code class="nohighlight hljs">────────────────────────────────────────────────────────────────────────────────────────
+                                               Time                    Allocations      
+                                      ───────────────────────   ────────────────────────
+          Tot / % measured:                 550s /  99.9%            202MiB /  11.6%    
+
+Section                       ncalls     time    %tot     avg     alloc    %tot      avg
+────────────────────────────────────────────────────────────────────────────────────────
+main loop                          1     549s  100.0%    549s    636KiB    2.6%   636KiB
+  sort                         50.0k     164s   29.9%  3.28ms     0.00B    0.0%    0.00B
+  collide                       100M     115s   20.9%  1.15μs     0.00B    0.0%    0.00B
+  convect + surface compute    36.0k     113s   20.6%  3.14ms     0.00B    0.0%    0.00B
+  props compute                36.0k    89.9s   16.4%  2.50ms     0.00B    0.0%    0.00B
+  convect                      14.0k    37.8s    6.9%  2.70ms     0.00B    0.0%    0.00B
+  restore ordering             5.00k    26.9s    4.9%  5.39ms     0.00B    0.0%    0.00B
+  avg physprops                36.0k    180ms    0.0%  4.99μs     0.00B    0.0%    0.00B
+  I/O                             13   3.38ms    0.0%   260μs   3.05KiB    0.0%     240B
+  avg surfprops                36.0k   3.05ms    0.0%  84.8ns     0.00B    0.0%    0.00B
+sampling                           1   24.8ms    0.0%  24.8ms   22.9MiB   97.4%  22.9MiB
+I/O final                          2    272μs    0.0%   136μs      544B    0.0%     272B
+────────────────────────────────────────────────────────────────────────────────────────</code></pre><h4 id="SPARTA-5"><a class="docs-heading-anchor" href="#SPARTA-5">SPARTA</a><a class="docs-heading-anchor-permalink" href="#SPARTA-5" title="Permalink"></a></h4><pre><code class="nohighlight hljs">Loop time of 1418.29 on 1 procs for 50000 steps with 500000 particles
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Move    | 885.53     | 885.53     | 885.53     |   0.0 | 62.44
+Coll    | 274.42     | 274.42     | 274.42     |   0.0 | 19.35
+Sort    | 45.409     | 45.409     | 45.409     |   0.0 |  3.20
+Comm    | 0.0055656  | 0.0055656  | 0.0055656  |   0.0 |  0.00
+Modify  | 212.91     | 212.91     | 212.91     |   0.0 | 15.01
+Output  | 0.0032787  | 0.0032787  | 0.0032787  |   0.0 |  0.00
+Other   |            | 0.006827   |            |       |  0.00</code></pre><h3 id="AMD-EPYC-9374F,-378-GB-RAM-2"><a class="docs-heading-anchor" href="#AMD-EPYC-9374F,-378-GB-RAM-2">AMD EPYC 9374F, 378 GB RAM</a><a class="docs-heading-anchor-permalink" href="#AMD-EPYC-9374F,-378-GB-RAM-2" title="Permalink"></a></h3><h4 id="Merzbild.jl-6"><a class="docs-heading-anchor" href="#Merzbild.jl-6">Merzbild.jl</a><a class="docs-heading-anchor-permalink" href="#Merzbild.jl-6" title="Permalink"></a></h4><pre><code class="nohighlight hljs">────────────────────────────────────────────────────────────────────────────────────────
+                                               Time                    Allocations      
+                                      ───────────────────────   ────────────────────────
+          Tot / % measured:                 902s /  99.9%            202MiB /  11.7%    
+
+Section                       ncalls     time    %tot     avg     alloc    %tot      avg
+────────────────────────────────────────────────────────────────────────────────────────
+main loop                          1     901s  100.0%    901s    631KiB    2.6%   631KiB
+  sort                         50.0k     256s   28.4%  5.11ms     0.00B    0.0%    0.00B
+  convect + surface compute    36.0k     219s   24.3%  6.08ms     0.00B    0.0%    0.00B
+  collide                       100M     146s   16.2%  1.46μs     0.00B    0.0%    0.00B
+  props compute                36.0k     140s   15.5%  3.88ms     0.00B    0.0%    0.00B
+  convect                      14.0k    93.2s   10.3%  6.66ms     0.00B    0.0%    0.00B
+  restore ordering             5.00k    42.9s    4.8%  8.58ms     0.00B    0.0%    0.00B
+  avg physprops                36.0k    354ms    0.0%  9.83μs     0.00B    0.0%    0.00B
+  avg surfprops                36.0k   18.1ms    0.0%   502ns     0.00B    0.0%    0.00B
+  I/O                             13   3.75ms    0.0%   288μs   3.05KiB    0.0%     240B
+sampling                           1   23.8ms    0.0%  23.8ms   22.9MiB   97.4%  22.9MiB
+I/O final                          2    397μs    0.0%   199μs      544B    0.0%     272B
+────────────────────────────────────────────────────────────────────────────────────────</code></pre><h4 id="SPARTA-6"><a class="docs-heading-anchor" href="#SPARTA-6">SPARTA</a><a class="docs-heading-anchor-permalink" href="#SPARTA-6" title="Permalink"></a></h4><pre><code class="nohighlight hljs">Loop time of 1728.54 on 1 procs for 50000 steps with 500000 particles
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Move    | 876.94     | 876.94     | 876.94     |   0.0 | 50.73
+Coll    | 481.02     | 481.02     | 481.02     |   0.0 | 27.83
+Sort    | 60.717     | 60.717     | 60.717     |   0.0 |  3.51
+Comm    | 0.070553   | 0.070553   | 0.070553   |   0.0 |  0.00
+Modify  | 309.76     | 309.76     | 309.76     |   0.0 | 17.92
+Output  | 0.0039017  | 0.0039017  | 0.0039017  |   0.0 |  0.00
+Other   |            | 0.02432    |            |       |  0.00</code></pre><h2 id="Couette-flow,-variable-weight-particles,-octree-merging-2"><a class="docs-heading-anchor" href="#Couette-flow,-variable-weight-particles,-octree-merging-2">Couette flow, variable-weight particles, octree merging</a><a class="docs-heading-anchor-permalink" href="#Couette-flow,-variable-weight-particles,-octree-merging-2" title="Permalink"></a></h2><p>This simulation uses 200 cells, 250 initial particles per cell, octree N:2 merging down to 100 particles when particle count exceeds 150 particles in a cell. The simulation file is <code>simulations/1D/couette_varweight_octree.jl</code>, run with <code>run(1234, 300.0, 500.0, 5e-4, 5e22, 200, 250, 150, 100, 2.59e-9, 1000, n_t, 14000; debug=false)</code>.</p><h3 id="Intel-Core-i9-13900K,-128-GB-RAM-3"><a class="docs-heading-anchor" href="#Intel-Core-i9-13900K,-128-GB-RAM-3">Intel Core i9-13900K, 128 GB RAM</a><a class="docs-heading-anchor-permalink" href="#Intel-Core-i9-13900K,-128-GB-RAM-3" title="Permalink"></a></h3><p>Ubuntu 22.04.5, Julia version 1.12.5.</p><pre><code class="nohighlight hljs">──────────────────────────────────────────────────────────────────────────────────────
+                                             Time                    Allocations      
+                                    ───────────────────────   ────────────────────────
+         Tot / % measured:               23.7s /  95.4%            144MiB /   2.1%    
+
+Section                     ncalls     time    %tot     avg     alloc    %tot      avg
+──────────────────────────────────────────────────────────────────────────────────────
+collide                      10.0M    10.1s   44.8%  1.01μs     0.00B    0.0%    0.00B
+sort                         50.0k    3.86s   17.0%  77.2μs     0.00B    0.0%    0.00B
+merge                         569k    2.80s   12.4%  4.92μs     0.00B    0.0%    0.00B
+props compute                36.0k    2.11s    9.3%  58.7μs     0.00B    0.0%    0.00B
+convect + surface compute    36.0k    1.87s    8.2%  51.9μs     0.00B    0.0%    0.00B
+restore ordering             5.00k    729ms    3.2%   146μs     0.00B    0.0%    0.00B
+convect                      14.0k    724ms    3.2%  51.7μs     0.00B    0.0%    0.00B
+squash                       50.0k    415ms    1.8%  8.30μs     0.00B    0.0%    0.00B
+sampling                         1   2.63ms    0.0%  2.63ms   3.05MiB   99.6%  3.05MiB
+I/O                             52   2.18ms    0.0%  42.0μs   12.2KiB    0.4%     241B
+merge (t=0)                    200   1.29ms    0.0%  6.46μs     0.00B    0.0%    0.00B
+squash (t=0)                     1   21.1μs    0.0%  21.1μs     0.00B    0.0%    0.00B
+──────────────────────────────────────────────────────────────────────────────────────</code></pre><h3 id="M1-Pro-(Macbook-Pro),-32-GB-RAM-3"><a class="docs-heading-anchor" href="#M1-Pro-(Macbook-Pro),-32-GB-RAM-3">M1 Pro (Macbook Pro), 32 GB RAM</a><a class="docs-heading-anchor-permalink" href="#M1-Pro-(Macbook-Pro),-32-GB-RAM-3" title="Permalink"></a></h3><pre><code class="nohighlight hljs">──────────────────────────────────────────────────────────────────────────────────────
+                                             Time                    Allocations      
+                                    ───────────────────────   ────────────────────────
+         Tot / % measured:               28.1s /  95.8%            145MiB /   2.1%    
+
+Section                     ncalls     time    %tot     avg     alloc    %tot      avg
+──────────────────────────────────────────────────────────────────────────────────────
+collide                      10.0M    11.7s   43.3%  1.17μs     0.00B    0.0%    0.00B
+sort                         50.0k    5.33s   19.8%   107μs     0.00B    0.0%    0.00B
+merge                         569k    3.28s   12.2%  5.77μs     0.00B    0.0%    0.00B
+props compute                36.0k    2.22s    8.2%  61.6μs     0.00B    0.0%    0.00B
+convect + surface compute    36.0k    2.19s    8.1%  60.9μs     0.00B    0.0%    0.00B
+restore ordering             5.00k    915ms    3.4%   183μs     0.00B    0.0%    0.00B
+convect                      14.0k    713ms    2.6%  50.9μs     0.00B    0.0%    0.00B
+squash                       50.0k    628ms    2.3%  12.6μs     0.00B    0.0%    0.00B
+I/O                             52   3.00ms    0.0%  57.7μs   12.2KiB    0.4%     241B
+sampling                         1   2.65ms    0.0%  2.65ms   3.05MiB   99.6%  3.05MiB
+merge (t=0)                    200   1.60ms    0.0%  7.98μs     0.00B    0.0%    0.00B
+squash (t=0)                     1   26.4μs    0.0%  26.4μs     0.00B    0.0%    0.00B
+──────────────────────────────────────────────────────────────────────────────────────</code></pre><h3 id="AMD-EPYC-9374F,-378-GB-RAM-3"><a class="docs-heading-anchor" href="#AMD-EPYC-9374F,-378-GB-RAM-3">AMD EPYC 9374F, 378 GB RAM</a><a class="docs-heading-anchor-permalink" href="#AMD-EPYC-9374F,-378-GB-RAM-3" title="Permalink"></a></h3><pre><code class="nohighlight hljs">──────────────────────────────────────────────────────────────────────────────────────
+                                             Time                    Allocations      
+                                    ───────────────────────   ────────────────────────
+         Tot / % measured:               31.8s /  98.3%           12.1MiB /  25.4%    
+
+Section                     ncalls     time    %tot     avg     alloc    %tot      avg
+──────────────────────────────────────────────────────────────────────────────────────
+collide                      10.0M    13.9s   44.6%  1.39μs     0.00B    0.0%    0.00B
+sort                         50.0k    5.31s   17.0%   106μs     0.00B    0.0%    0.00B
+merge                         569k    3.76s   12.0%  6.61μs     0.00B    0.0%    0.00B
+convect + surface compute    36.0k    3.14s   10.1%  87.3μs     0.00B    0.0%    0.00B
+props compute                36.0k    2.41s    7.7%  66.8μs     0.00B    0.0%    0.00B
+convect                      14.0k    1.24s    4.0%  88.2μs     0.00B    0.0%    0.00B
+restore ordering             5.00k    937ms    3.0%   187μs     0.00B    0.0%    0.00B
+squash                       50.0k    517ms    1.7%  10.3μs     0.00B    0.0%    0.00B
+I/O                             52   3.74ms    0.0%  72.0μs   12.2KiB    0.4%     241B
+sampling                         1   3.17ms    0.0%  3.17ms   3.05MiB   99.6%  3.05MiB
+merge (t=0)                    200   1.66ms    0.0%  8.29μs     0.00B    0.0%    0.00B
+squash (t=0)                     1   12.4μs    0.0%  12.4μs     0.00B    0.0%    0.00B
+──────────────────────────────────────────────────────────────────────────────────────</code></pre><h2 id="0D-ionization,-variable-weight-particles,-octree-merging-2"><a class="docs-heading-anchor" href="#0D-ionization,-variable-weight-particles,-octree-merging-2">0D ionization, variable-weight particles, octree merging</a><a class="docs-heading-anchor-permalink" href="#0D-ionization,-variable-weight-particles,-octree-merging-2" title="Permalink"></a></h2><p>This simulation can be found under <code>simulations/0D/0D_ionization_1neutralspecies_es.jl</code>. Lisbon IST data was used for the cross-sections, the run is <code>run(1234, 400.0, 500000, 500, 350, cs_n_e_filepath; merging_bin_split=OctreeBinMidSplit, adds=0, do_es=true)</code>. Octree N:2 merging is used with a threshold of 500 particles and a target of 350 particles, along with event splitting.</p><h3 id="Intel-Core-i9-13900K,-128-GB-RAM-4"><a class="docs-heading-anchor" href="#Intel-Core-i9-13900K,-128-GB-RAM-4">Intel Core i9-13900K, 128 GB RAM</a><a class="docs-heading-anchor-permalink" href="#Intel-Core-i9-13900K,-128-GB-RAM-4" title="Permalink"></a></h3><pre><code class="nohighlight hljs">──────────────────────────────────────────────────────────────────────────
+                                 Time                    Allocations      
+                        ───────────────────────   ────────────────────────
+   Tot / % measured:         4.72s /  82.0%            244MiB /  41.2%    
+
+Section         ncalls     time    %tot     avg     alloc    %tot      avg
+──────────────────────────────────────────────────────────────────────────
+props             500k    1.63s   42.1%  3.26μs     0.00B    0.0%    0.00B
+coll n-e ES       500k    725ms   18.7%  1.45μs     0.00B    0.0%    0.00B
+acc e             500k    689ms   17.8%  1.38μs     0.00B    0.0%    0.00B
+I/O               500k    668ms   17.3%  1.34μs   99.2MiB   98.5%     208B
+merge e            697   98.9ms    2.6%   142μs     0.00B    0.0%    0.00B
+merge n          6.10k   34.2ms    0.9%  5.61μs     0.00B    0.0%    0.00B
+coll n-n          500k   18.8ms    0.5%  37.7ns     0.00B    0.0%    0.00B
+merge i          1.80k   4.09ms    0.1%  2.27μs     0.00B    0.0%    0.00B
+merge e (t=0)        1   1.42ms    0.0%  1.42ms   1.48MiB    1.5%  1.48MiB
+merge i (t=0)        1    148μs    0.0%   148μs     0.00B    0.0%    0.00B
+merge n (t=0)        1    123μs    0.0%   123μs     0.00B    0.0%    0.00B
+──────────────────────────────────────────────────────────────────────────</code></pre><h3 id="M1-Pro-(Macbook-Pro),-32-GB-RAM-4"><a class="docs-heading-anchor" href="#M1-Pro-(Macbook-Pro),-32-GB-RAM-4">M1 Pro (Macbook Pro), 32 GB RAM</a><a class="docs-heading-anchor-permalink" href="#M1-Pro-(Macbook-Pro),-32-GB-RAM-4" title="Permalink"></a></h3><pre><code class="nohighlight hljs">──────────────────────────────────────────────────────────────────────────
+                                 Time                    Allocations      
+                        ───────────────────────   ────────────────────────
+   Tot / % measured:         6.62s /  86.8%            245MiB /  41.1%    
+
+Section         ncalls     time    %tot     avg     alloc    %tot      avg
+──────────────────────────────────────────────────────────────────────────
+props             500k    2.48s   43.0%  4.95μs     0.00B    0.0%    0.00B
+acc e             500k    1.09s   19.0%  2.19μs     0.00B    0.0%    0.00B
+I/O               500k    1.01s   17.6%  2.02μs   99.2MiB   98.5%     208B
+coll n-e ES       500k    973ms   16.9%  1.95μs     0.00B    0.0%    0.00B
+merge e            697    132ms    2.3%   190μs     0.00B    0.0%    0.00B
+merge n          6.10k   40.4ms    0.7%  6.62μs     0.00B    0.0%    0.00B
+coll n-n          500k   17.5ms    0.3%  35.0ns     0.00B    0.0%    0.00B
+merge i          1.80k   5.45ms    0.1%  3.02μs     0.00B    0.0%    0.00B
+merge e (t=0)        1   1.70ms    0.0%  1.70ms   1.50MiB    1.5%  1.50MiB
+merge i (t=0)        1    239μs    0.0%   239μs     0.00B    0.0%    0.00B
+merge n (t=0)        1    203μs    0.0%   203μs     0.00B    0.0%    0.00B
+──────────────────────────────────────────────────────────────────────────</code></pre><h3 id="AMD-EPYC-9374F,-378-GB-RAM-4"><a class="docs-heading-anchor" href="#AMD-EPYC-9374F,-378-GB-RAM-4">AMD EPYC 9374F, 378 GB RAM</a><a class="docs-heading-anchor-permalink" href="#AMD-EPYC-9374F,-378-GB-RAM-4" title="Permalink"></a></h3><pre><code class="nohighlight hljs">──────────────────────────────────────────────────────────────────────────
+                                 Time                    Allocations      
+                        ───────────────────────   ────────────────────────
+   Tot / % measured:         6.83s /  78.6%            244MiB /  41.2%    
+
+Section         ncalls     time    %tot     avg     alloc    %tot      avg
+──────────────────────────────────────────────────────────────────────────
+props             500k    1.94s   36.2%  3.89μs     0.00B    0.0%    0.00B
+acc e             500k    1.18s   22.1%  2.37μs     0.00B    0.0%    0.00B
+coll n-e ES       500k    1.02s   19.1%  2.05μs     0.00B    0.0%    0.00B
+I/O               500k    988ms   18.4%  1.98μs   99.2MiB   98.5%     208B
+merge e            697    153ms    2.9%   220μs     0.00B    0.0%    0.00B
+merge n          6.10k   42.4ms    0.8%  6.94μs     0.00B    0.0%    0.00B
+coll n-n          500k   23.4ms    0.4%  46.8ns     0.00B    0.0%    0.00B
+merge i          1.80k   6.21ms    0.1%  3.44μs     0.00B    0.0%    0.00B
+merge e (t=0)        1   2.30ms    0.0%  2.30ms   1.47MiB    1.5%  1.47MiB
+merge i (t=0)        1    259μs    0.0%   259μs     0.00B    0.0%    0.00B
+merge n (t=0)        1    187μs    0.0%   187μs     0.00B    0.0%    0.00B
+──────────────────────────────────────────────────────────────────────────</code></pre><h2 id="0D-ionization,-variable-weight-particles,-NNLS-merging-2"><a class="docs-heading-anchor" href="#0D-ionization,-variable-weight-particles,-NNLS-merging-2">0D ionization, variable-weight particles, NNLS merging</a><a class="docs-heading-anchor-permalink" href="#0D-ionization,-variable-weight-particles,-NNLS-merging-2" title="Permalink"></a></h2><p>This simulation can be found under <code>simulations/0D/0D_ionization_1neutralspecies_nnls_es.jl</code>. Lisbon IST data was used for the cross-sections This uses event splitting and non-rate-preserving NNLS merging conserving all mixed-order moments up to total order 6. Event splitting is used. <code>run(1234, 400.0, 500000, 6, 95, 88, cs_n_e_filepath; adds=0, rate_preserving=:off, do_es=true)</code></p><h3 id="Intel-Core-i9-13900K,-128-GB-RAM-5"><a class="docs-heading-anchor" href="#Intel-Core-i9-13900K,-128-GB-RAM-5">Intel Core i9-13900K, 128 GB RAM</a><a class="docs-heading-anchor-permalink" href="#Intel-Core-i9-13900K,-128-GB-RAM-5" title="Permalink"></a></h3><pre><code class="nohighlight hljs">────────────────────────────────────────────────────────────────────────
+                               Time                    Allocations      
+                      ───────────────────────   ────────────────────────
+  Tot / % measured:        3.98s /  76.8%            802MiB /  80.4%    
+
+Section       ncalls     time    %tot     avg     alloc    %tot      avg
+────────────────────────────────────────────────────────────────────────
+NNLSmerge e    3.04k    987ms   32.3%   325μs    391MiB   60.6%   132KiB
+merge e t=0        1    940ms   30.8%   940ms    126MiB   19.6%   126MiB
+I/O             500k    686ms   22.5%  1.37μs    114MiB   17.7%     240B
+props           500k    261ms    8.6%   523ns     0.00B    0.0%    0.00B
+coll n-e ES     500k   60.5ms    2.0%   121ns     0.00B    0.0%    0.00B
+NNLSinit           2   54.7ms    1.8%  27.4ms   13.2MiB    2.0%  6.59MiB
+acc e           500k   46.3ms    1.5%  92.6ns     0.00B    0.0%    0.00B
+coll n-n        500k   16.5ms    0.5%  32.9ns     0.00B    0.0%    0.00B
+merge n          390   2.53ms    0.1%  6.49μs     0.00B    0.0%    0.00B
+merge i          184    489μs    0.0%  2.66μs     0.00B    0.0%    0.00B
+merge i t=0        1    167μs    0.0%   167μs     0.00B    0.0%    0.00B
+merge n t=0        1    127μs    0.0%   127μs     0.00B    0.0%    0.00B
+NNLSinit RP        1   16.6μs    0.0%  16.6μs    142KiB    0.0%   142KiB
+────────────────────────────────────────────────────────────────────────</code></pre><h3 id="M1-Pro-(Macbook-Pro),-32-GB-RAM-5"><a class="docs-heading-anchor" href="#M1-Pro-(Macbook-Pro),-32-GB-RAM-5">M1 Pro (Macbook Pro), 32 GB RAM</a><a class="docs-heading-anchor-permalink" href="#M1-Pro-(Macbook-Pro),-32-GB-RAM-5" title="Permalink"></a></h3><pre><code class="nohighlight hljs">────────────────────────────────────────────────────────────────────────
+                               Time                    Allocations      
+                      ───────────────────────   ────────────────────────
+  Tot / % measured:        4.95s /  79.6%            809MiB /  80.5%    
+
+Section       ncalls     time    %tot     avg     alloc    %tot      avg
+────────────────────────────────────────────────────────────────────────
+NNLSmerge e    3.03k    1.46s   37.1%   483μs    396MiB   60.8%   134KiB
+I/O             500k    1.08s   27.5%  2.16μs    114MiB   17.6%     240B
+merge e t=0        1    809ms   20.5%   809ms    127MiB   19.5%   127MiB
+props           500k    384ms    9.8%   769ns     0.00B    0.0%    0.00B
+coll n-e ES     500k   76.0ms    1.9%   152ns     0.00B    0.0%    0.00B
+NNLSinit           2   57.4ms    1.5%  28.7ms   13.3MiB    2.0%  6.64MiB
+acc e           500k   51.5ms    1.3%   103ns     0.00B    0.0%    0.00B
+coll n-n        500k   12.1ms    0.3%  24.3ns     0.00B    0.0%    0.00B
+merge n          393   3.12ms    0.1%  7.95μs     0.00B    0.0%    0.00B
+merge i          183    714μs    0.0%  3.90μs     0.00B    0.0%    0.00B
+merge i t=0        1    246μs    0.0%   246μs     0.00B    0.0%    0.00B
+merge n t=0        1    237μs    0.0%   237μs     0.00B    0.0%    0.00B
+NNLSinit RP        1   12.8μs    0.0%  12.8μs    142KiB    0.0%   142KiB
+────────────────────────────────────────────────────────────────────────</code></pre><h3 id="AMD-EPYC-9374F,-378-GB-RAM-5"><a class="docs-heading-anchor" href="#AMD-EPYC-9374F,-378-GB-RAM-5">AMD EPYC 9374F, 378 GB RAM</a><a class="docs-heading-anchor-permalink" href="#AMD-EPYC-9374F,-378-GB-RAM-5" title="Permalink"></a></h3><pre><code class="nohighlight hljs">────────────────────────────────────────────────────────────────────────
+                               Time                    Allocations      
+                      ───────────────────────   ────────────────────────
+  Tot / % measured:        5.98s /  74.4%            805MiB /  80.5%    
+
+Section       ncalls     time    %tot     avg     alloc    %tot      avg
+────────────────────────────────────────────────────────────────────────
+NNLSmerge e    3.07k    1.78s   39.9%   579μs    394MiB   60.8%   132KiB
+merge e t=0        1    1.05s   23.5%   1.05s    126MiB   19.5%   126MiB
+I/O             500k    1.03s   23.2%  2.06μs    114MiB   17.7%     240B
+props           500k    327ms    7.3%   654ns     0.00B    0.0%    0.00B
+coll n-e ES     500k   89.7ms    2.0%   179ns     0.00B    0.0%    0.00B
+NNLSinit           2   78.1ms    1.8%  39.0ms   13.2MiB    2.0%  6.59MiB
+acc e           500k   64.7ms    1.5%   129ns     0.00B    0.0%    0.00B
+coll n-n        500k   30.0ms    0.7%  60.1ns     0.00B    0.0%    0.00B
+merge n          393   3.23ms    0.1%  8.21μs     0.00B    0.0%    0.00B
+merge i          186    745μs    0.0%  4.00μs     0.00B    0.0%    0.00B
+merge i t=0        1    395μs    0.0%   395μs     0.00B    0.0%    0.00B
+merge n t=0        1    280μs    0.0%   280μs     0.00B    0.0%    0.00B
+NNLSinit RP        1   16.9μs    0.0%  16.9μs    142KiB    0.0%   142KiB
+────────────────────────────────────────────────────────────────────────</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../reference_internal/">« Internal API reference</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Friday 24 July 2026 14:45">Friday 24 July 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
