@@ -14,17 +14,20 @@ particle sampling and indexing, collisions, merging, computation of physical pro
 Currently the code supports serial and multithreaded operation.
 
 ## Installation
-For now, **Merzbild.jl** needs to be cloned to be run. Once cloned, navigate to the directory, run `julia --project=.`, and in the
-Julia interpreter run `using Pkg; Pkg.resolve(); Pkg.instantiate()` to install the required packages.
-Running `Pkg.test()` afterwards will install the test environment dependencies and run the tests.
+You can either install **Merzbild.jl** as a package via the Julia package manager (`using Pkg; Pkg.add("Merzbild")`).
+You can run tests by entering the package manager (`]`) and running `test Merzbild`.
+
+
 The package has been tested with the latest stable version of Julia 1.* (currently `1.12`), as well as the latest
 Julia LTS version (currently `1.10`).
 
 ## Usage
-Currently, the way to use the code is to 1) clone it 2) create a new file in the `simulations` directory
-3) `adding Merzbild` to the start of the file.
-A simulation file can be run by calling `julia --project=. simulations/path/to/simulation_file.jl` from the project
-root directory, or by running `julia --project=.` followed by `include("simulations/path/to/simulation_file.jl")`.
+An example simulation from the `simulations` folder bundled with Merzbild can be run by typing
+`include(joinpath(MERZBILD_SIMULATIONS_PATH, "relative/path/to_simulation.jl"))`.
+Simulations bundled with Merzbild output data to `scratch/data` and will crash if the directory is not present.
+
+The constant `MERZBILD_DATA_PATH` is exported and points to the `data` directory of the package which stores
+species and interaction data.
 
 Some usage examples can be found in the `simulations` directory.
 A detailed overview of the structures required can be found in [the documentation](https://merzbild.github.io/Merzbild.jl/dev/),

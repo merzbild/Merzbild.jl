@@ -29,6 +29,6 @@
     @test abs(cf2n/cf1 - 2.0) <= 2*eps()
 
     # create hard sphere molecule gas by hand, then MFP is independent of T
-    interaction_data[1,1] = Interaction(species_data[1].mass/2, 0.5, 0.5, 4.11e-10, 0.5, 300.0, 0.0, 0.0)
+    interaction_data[1,1] = Interaction(species_data[1].mass/2, 0.5, 0.5, 4.11e-10, 0.5, 0.0, 300.0, 0.0, 0.0)
     @test abs(mean_free_path(interaction_data, 1, 1e23, 300.0) - mean_free_path(interaction_data, 1, 1e23, 5000.0)) <= 2*eps()
 end

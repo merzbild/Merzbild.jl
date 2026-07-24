@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.8.1
+* Clean-up of roulette merging code and minor optimizations
+* Documentation improvements
+* Minor optimizations in computation of fluxes on grid
+* Minor optimizations in computation of collision cross-sections (`1 - 2 vhs_o` factor used to compute VHS cross-sections now pre-computed
+and stored for each interaction)
+* Added simplified `Interaction` constructor
+* NNLS merging speed-ups and code clean-up
+
 ## v0.8.0
 
 ### Breaking changes

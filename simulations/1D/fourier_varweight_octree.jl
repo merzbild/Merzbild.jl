@@ -139,10 +139,9 @@ function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
             ncolls += collision_factors[1, 1, cell].n_coll_performed
             if pia.indexer[cell,1].n_local > merge_threshold
                 @timeit "merge" merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
-                @timeit "squash" squash_pia!(particles, pia)
             end
         end
-        # println("ncolls = $(ncolls)")
+        @timeit "squash" squash_pia!(particles, pia)
 
         # convect particles
         if (t < avg_start)

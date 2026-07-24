@@ -206,9 +206,10 @@ function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
                 if nnls_success_flag == -1
                     @timeit "merge octree" merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
                 end
-                @timeit "squash" squash_pia!(particles, pia)
             end
         end
+        
+        @timeit "squash" squash_pia!(particles, pia)
 
         # convect particles
         if (t < avg_start)

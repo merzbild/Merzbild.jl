@@ -324,7 +324,7 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
         @inbounds for i in iz1:iz2
             idxi = idx[i]
             sm = zero(T)
-            for l in (nsetp + 1):m
+            @simd for l in (nsetp + 1):m
                 sm = sm + A[l, idxi] * b[l]
             end
             w[idxi] = sm
@@ -480,14 +480,25 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
                         cc, ss, sig = orthogonal_rotmat(A[j - 1, ii], A[j, ii])
                         A[j - 1, ii] = sig
                         A[j, ii] = zero(T)
-                        for l in Base.OneTo(n)
-                            if l != ii
-                                # Apply procedure G2 (CC,SS,A(J-1,L),A(J,L))
-                                temp = A[j - 1, l]
-                                t2 = A[j, l]
-                                A[j - 1, l] = cc * temp + ss * t2
-                                A[j, l] = -ss * temp + cc * t2
-                            end
+
+                        # equivalent to 
+                        # for l in Base.OneTo(n)
+                        #     if l != ii
+                        # but split into two loops for SIMD
+                        @simd for l in 1:ii-1
+                            # Apply procedure G2 (CC,SS,A(J-1,L),A(J,L))
+                            temp = A[j - 1, l]
+                            t2 = A[j, l]
+                            A[j - 1, l] = cc * temp + ss * t2
+                            A[j, l] = -ss * temp + cc * t2
+                        end
+
+                        @simd for l in ii+1:n
+                            # Apply procedure G2 (CC,SS,A(J-1,L),A(J,L))
+                            temp = A[j - 1, l]
+                            t2 = A[j, l]
+                            A[j - 1, l] = cc * temp + ss * t2
+                            A[j, l] = -ss * temp + cc * t2
                         end
 
                         # Apply procedure G2 (CC,SS,B(J-1),B(J))

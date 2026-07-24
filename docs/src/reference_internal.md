@@ -93,7 +93,9 @@ Merzbild.vy_sign
 Merzbild.vz_sign
 Merzbild.base_multi_index_moments
 Merzbild.compute_w_total_v0!
-Merzbild.ccm
+Merzbild.fill_powers!
+Merzbild.ccm_vel
+Merzbild.ccm_pos
 Merzbild.compute_lhs_and_rhs!
 Merzbild.compute_lhs_and_rhs_rate_preserving!
 Merzbild.scale_lhs_rhs_variance!
@@ -131,6 +133,7 @@ Merzbild.get_cell
 ## Particle movement
 ```@docs
 Merzbild.convect_single_particle!
+Merzbild.convect_single_particle_periodic!
 Merzbild.set_x
 ```
 

@@ -1,0 +1,52 @@
+stages:          # List of stages for jobs, and their order of execution
+  - test
+
+# Only run one pipeline per change: for merge requests, the default branch, and tags.
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+
+variables:
+  # Keep the Julia depot inside the project dir so it can be cached between runs.
+  JULIA_DEPOT_PATH: "$CI_PROJECT_DIR/.julia"
+
+default:
+  image: julia:1.12
+  cache:
+    # Cache the depot (installed/precompiled packages) keyed on the dependency spec.
+    key:
+      files:
+        - Project.toml
+    paths:
+      - .julia/
+
+# Shared test logic, parametrized over the Julia image below.
+.unit-test: &unit-test
+  stage: test
+  script:
+    - echo "Running unit tests with coverage..."
+    - julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.test(coverage = true)'
+    # Summarize coverage without adding Coverage.jl as a project dependency
+    # (installed into a throwaway environment so Project.toml/Manifest.toml stay untouched).
+    - |
+      julia -e '
+        using Pkg
+        Pkg.activate(; temp = true)
+        Pkg.add("Coverage")
+        using Coverage, Printf
+        covered, total = get_summary(process_folder())
+        @printf("(%.4f%%) covered\n", total == 0 ? 0.0 : covered / total * 100)'
+  # Let GitLab pick the coverage percentage out of the job log (shown in the UI / MR widget).
+  coverage: '/\(\d+\.\d+\%\) covered/'
+
+# Lowest supported Julia (compat is julia = "^1.10").
+unit-test:lts:
+  <<: *unit-test
+  image: julia:1.10
+
+# Current Julia release.
+unit-test:latest:
+  <<: *unit-test
+  image: julia:1.12
