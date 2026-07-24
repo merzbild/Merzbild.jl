@@ -7,6 +7,7 @@
 * Minor optimizations in computation of collision cross-sections (`1 - 2 vhs_o` factor used to compute VHS cross-sections now pre-computed
 and stored for each interaction)
 * Added simplified `Interaction` constructor
+* NNLS merging speed-ups and code clean-up
 
 ## v0.8.0
 
