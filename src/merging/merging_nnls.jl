@@ -332,6 +332,7 @@ function compute_w_total_v0!(nnls_merging, particles::ParticleVector{D}, pia, ce
 
     nnls_merging.v0 = nnls_merging.v0 / nnls_merging.w_total
     nnls_merging.x0 = nnls_merging.x0 / nnls_merging.w_total
+    return nothing
 end
 
 """
@@ -896,6 +897,7 @@ function scale_lhs_rhs_vref!(nnls_merging::NNLSMerge{D}, lhs_matrix, lhs_ncols) 
         end
     end
     nnls_merging.scalev = SVector{3,Float64}(nnls_merging.vref, nnls_merging.vref, nnls_merging.vref)
+    return nothing
 end
 
 """
@@ -927,6 +929,7 @@ function scale_lhs_rhs_variance!(nnls_merging::NNLSMerge{D}, lhs_matrix, lhs_nco
         end
     end
     nnls_merging.scalev = 1.0 ./ inv_ev
+    return nothing
 end
 
 """
@@ -963,6 +966,7 @@ function scale_lhs_rhs_spatial_variance!(nnls_merging::NNLSMerge{D}, lhs_matrix,
         end
     end
     nnls_merging.scalex = 1.0 ./ inv_ex
+    return nothing
 end
 
 """
@@ -985,6 +989,7 @@ function scale_lhs_rhs!(nnls_merging::NNLSMerge{D}, lhs_matrix, scaling, lhs_nco
         scale_lhs_rhs_vref!(nnls_merging, lhs_matrix, lhs_ncols)
         scale_lhs_rhs_spatial_variance!(nnls_merging, lhs_matrix, lhs_ncols)
     end
+    return nothing
 end
 
 """
@@ -1019,6 +1024,7 @@ function scale_lhs_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_matrix, 
 
     @inbounds nnls_merging.rhs_vector[nnls_merging.n_moments_vel+1] *= scaler_el
     @inbounds nnls_merging.rhs_vector[nnls_merging.n_moments_vel+2] *= scaler_ion
+    return nothing
 end
 
 """

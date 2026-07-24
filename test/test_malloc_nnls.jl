@@ -97,6 +97,19 @@
 
     lhs_ncols = 24
 
+    # The rate-preserving routines take the interaction data, which is defined in this outer
+    # testset. Referencing it directly from an inner testset captures it as an untyped variable,
+    # so the call is dispatched dynamically and its arguments are boxed - on Julia LTS that shows
+    # up as a spurious 80 bytes. Measuring inside a function gives the arguments concrete types,
+    # which is also how these routines are called from merge_nnls_based_rate_preserving!.
+    alloc_lhs_rate_preserving(nnls, lhs, vel_pos, interaction, n_e_int, cs, pv, pia_, extend) =
+        @allocated Merzbild.compute_lhs_and_rhs_rate_preserving!(nnls, lhs, vel_pos, interaction,
+                                                                 n_e_int, cs, pv, pia_, 1, 2, 1, extend)
+
+    alloc_lhs_rate_preserving(nnls, lhs, vel_pos, interaction, n_e_int, cs, pv, pv_n, pia_, extend) =
+        @allocated Merzbild.compute_lhs_and_rhs_rate_preserving!(nnls, lhs, vel_pos, interaction,
+                                                                 n_e_int, cs, pv, pv_n, pia_, 1, 2, 1, extend)
+
     @testset "velocity-moment computes (non rate-preserving)" begin
         nnls = NNLSMerge(mim, 30)
         nnls.vref = vref
@@ -146,9 +159,9 @@
                                                       pv, pia, 1, 2, 1, CSExtendConstant)
         Merzbild.scale_lhs_rhs_rate_preserving!(nnls_rp, lhs_matrix, cs_ref, cs_ref, :variance, lhs_ncols)
 
-        bytes_lhs = @allocated Merzbild.compute_lhs_and_rhs_rate_preserving!(nnls_rp, lhs_matrix, vel_pos_matrix,
-                                                                            interaction_data[1,2], n_e_interactions, computed_cs,
-                                                                            pv, pia, 1, 2, 1, CSExtendConstant)
+        bytes_lhs = alloc_lhs_rate_preserving(nnls_rp, lhs_matrix, vel_pos_matrix,
+                                              interaction_data[1,2], n_e_interactions, computed_cs,
+                                              pv, pia, CSExtendConstant)
         @test bytes_lhs == 0
 
         bytes_scale = @allocated Merzbild.scale_lhs_rhs_rate_preserving!(nnls_rp, lhs_matrix, cs_ref, cs_ref, :variance, lhs_ncols)
@@ -172,9 +185,9 @@
                                                       interaction_data[1,2], n_e_interactions, computed_cs,
                                                       pv, pv_neutral, pia, 1, 2, 1, CSExtendConstant)
 
-        bytes_lhs = @allocated Merzbild.compute_lhs_and_rhs_rate_preserving!(nnls_rp, lhs_matrix, vel_pos_matrix,
-                                                                            interaction_data[1,2], n_e_interactions, computed_cs,
-                                                                            pv, pv_neutral, pia, 1, 2, 1, CSExtendConstant)
+        bytes_lhs = alloc_lhs_rate_preserving(nnls_rp, lhs_matrix, vel_pos_matrix,
+                                              interaction_data[1,2], n_e_interactions, computed_cs,
+                                              pv, pv_neutral, pia, CSExtendConstant)
         @test bytes_lhs == 0
     end
 end
