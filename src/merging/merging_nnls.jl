@@ -20,9 +20,11 @@ Struct for keeping track of merging-related quantities for NNLS-based merging of
 * `row_scale`: scratch vector of the row-wise scaling factors applied to the LHS matrix
 * `mim`: vector of 3-tuples of multi-indices for the velocity moments to preserve
 * `tot_order`: vector of total orders of the velocity moments to preserve
+* `vel_powers`: scratch table of powers of the centered velocity components of a particle
 * `n_moments_pos`: number of spatial moments to preserve
 * `mim_pos`: vector of 3-tuples of multi-indices for the spatial moments to preserve
 * `tot_order_pos`: vector of total orders of the spatial moments to preserve
+* `pos_powers`: scratch table of powers of the centered position components of a particle
 * `pos_i_x`: index of the spatial moment corresponding to preservation of the center of mass in the x direction
 * `pos_i_y`: index of the spatial moment corresponding to preservation of the center of mass in the y direction
 * `pos_i_z`: index of the spatial moment corresponding to preservation of the center of mass in the z direction
@@ -50,11 +52,13 @@ mutable struct NNLSMerge{D}
     n_moments_vel::Int64
     rhs_vector::Vector{Float64}
     row_scale::Vector{Float64}
-    mim::Vector{Vector{Int64}}  # mult-index moments
+    mim::Vector{SVector{3,Int64}}  # mult-index moments
     tot_order::Vector{Int64}
+    vel_powers::Matrix{Float64}
     n_moments_pos::Int64
-    mim_pos::Vector{Vector{Int64}}  # mult-index moments
+    mim_pos::Vector{SVector{3,Int64}}  # mult-index moments
     tot_order_pos::Vector{Int64}
+    pos_powers::Matrix{Float64}
     pos_i_x::Int64
     pos_i_y::Int64
     pos_i_z::Int64
@@ -96,10 +100,13 @@ mutable struct NNLSMerge{D}
     * `multi_index_moments`: vector of mixed moments to preserve of the form `[(i1, j1, k1), (i2, j2, k2), ...]``
     * `init_np`: assumption on pre-merge number of particles to pre-allocate memory for
     
-    Keyword arguments:
+    # Keyword arguments:
     * `rate_preserving`: used for rate-preserving merging of electrons, preserves approximate elastic collision and ionization rates
     * `multi_index_moments_pos`: list of spatial moments to preserve
     * `matrix_ncol_nprealloc`: number of NNLS workspaces with a fixed number of columns to pre-allocate
+
+    # Throws
+    * `ArgumentError`: if any of moment powers is negative
     """
     function NNLSMerge{D}(multi_index_moments, init_np; rate_preserving=false, multi_index_moments_pos=[], matrix_ncol_nprealloc=0) where D
         add_length = 0
@@ -136,8 +143,22 @@ mutable struct NNLSMerge{D}
                 pos_i_y = i
             elseif (mimpos[i][1] == 0) && (mimpos[i][2] == 0) && (mimpos[i][3] == 1)
                 pos_i_z = i
-            end 
+            end
         end
+
+        # moments are evaluated off tables of powers of the centered velocities/positions,
+        # which only makes sense for non-negative multi-indices
+        for m in Iterators.flatten((base_moments, mimpos))
+            if minimum(m) < 0
+                throw(ArgumentError("multi-index moment components must be non-negative, got $m"))
+            end
+        end
+
+        mim_svec = SVector{3,Int64}[SVector{3,Int64}(m[1], m[2], m[3]) for m in base_moments]
+        mim_pos_svec = SVector{3,Int64}[SVector{3,Int64}(m[1], m[2], m[3]) for m in mimpos]
+
+        max_pow_vel = maximum(maximum(m) for m in mim_svec)
+        max_pow_pos = length(mim_pos_svec) > 0 ? maximum(maximum(m) for m in mim_pos_svec) : 0
 
         column_norms = Vector{Vector{Float64}}([])
         nnls_ws_preallocated = Vector{NNLSWorkspace{Float64, Int}}([])
@@ -168,8 +189,8 @@ mutable struct NNLSMerge{D}
                       length(base_moments),
                       zeros(n_total_conserved),  # rhs_vector
                       zeros(n_total_conserved),  # row_scale
-                      base_moments, tot_order,
-                      length(mimpos), mimpos, tot_order_pos,
+                      mim_svec, tot_order, zeros(3, max_pow_vel+1),
+                      length(mim_pos_svec), mim_pos_svec, tot_order_pos, zeros(D, max_pow_pos+1),
                       pos_i_x, pos_i_y, pos_i_z,
                       init_np, init_np+matrix_ncol_nprealloc,
                       column_norms,
@@ -207,10 +228,13 @@ mutable struct NNLSMerge{D}
     * `multi_index_moments`: vector of mixed moments to preserve of the form `[(i1, j1, k1), (i2, j2, k2), ...]``
     * `init_np`: assumption on pre-merge number of particles to pre-allocate memory for
     
-    Keyword arguments:
+    # Keyword arguments:
     * `rate_preserving`: used for rate-preserving merging of electrons, preserves approximate elastic collision and ionization rates
     * `multi_index_moments_pos`: list of spatial moments to preserve
     * `matrix_ncol_nprealloc`: number of NNLS workspaces with a fixed number of columns to pre-allocate
+
+    # Throws
+    * `ArgumentError`: if any of moment powers is negative
     """
     function NNLSMerge(multi_index_moments, init_np; rate_preserving=false, multi_index_moments_pos=[], matrix_ncol_nprealloc=0)
         return NNLSMerge{3}(multi_index_moments, init_np; rate_preserving=rate_preserving, multi_index_moments_pos=multi_index_moments_pos, matrix_ncol_nprealloc=matrix_ncol_nprealloc)
@@ -311,54 +335,71 @@ function compute_w_total_v0!(nnls_merging, particles::ParticleVector{D}, pia, ce
 end
 
 """
-    ccm(v::SVector{3,Float64}, v0::SVector{3,Float64}, mim)
+    fill_powers!(powers, v, v0)
 
-Compute unweighted central velocity or spatial moment.
+Fill a table of the powers of the components of the centered velocity / position vector `v - v0`,
+so that `powers[j, e+1]` holds `(v[j] - v0[j])^e`. Only the first `size(powers, 1)` components
+are considered, and powers up to `size(powers, 2) - 1` are computed.
+Evaluating the moments off such a table avoids the runtime-exponent `^` calls that dominate
+the cost of building the LHS matrix.
 
 # Positional arguments
-* `v`: the 3-dimensional velocity / position vector
-* `v0`: the 3-dimensional mean velocity / position vector
-* `mim`: the 3-dimensional multi-index
-
-# Returns
-Computed unweighted central moment.
+* `powers`: the table of powers to fill
+* `v`: the velocity / position vector
+* `v0`: the mean velocity / position vector
 """
-@inline function ccm(v::SVector{3,Float64}, v0::SVector{3,Float64}, mim)
-    @inbounds return (v[1] - v0[1])^mim[1] * (v[2] - v0[2])^mim[2] * (v[3] - v0[3])^mim[3]
+@inline function fill_powers!(powers, v, v0)
+    n_dim = size(powers, 1)
+    n_pow = size(powers, 2)
+
+    @inbounds for j in 1:n_dim
+        powers[j, 1] = 1.0
+    end
+
+    @inbounds for e in 2:n_pow
+        for j in 1:n_dim
+            powers[j, e] = powers[j, e-1] * (v[j] - v0[j])
+        end
+    end
 end
 
 """
-    ccm(v::SVector{2,Float64}, v0::SVector{2,Float64}, mim)
+    ccm_vel(vel_powers, mim)
 
-Compute unweighted central velocity or spatial moment.
+Compute an unweighted central velocity moment from a table of powers filled by [`fill_powers!`](@ref).
 
 # Positional arguments
-* `v`: the 3-dimensional velocity / position vector
-* `v0`: the 3-dimensional mean velocity / position vector
+* `vel_powers`: the table of powers of the centered velocity components
 * `mim`: the 3-dimensional multi-index
 
 # Returns
 Computed unweighted central moment.
 """
-@inline function ccm(v::SVector{2,Float64}, v0::SVector{2,Float64}, mim)
-    @inbounds return (v[1] - v0[1])^mim[1] * (v[2] - v0[2])^mim[2]
+@inline function ccm_vel(vel_powers, mim)
+    @inbounds return vel_powers[1, mim[1]+1] * vel_powers[2, mim[2]+1] * vel_powers[3, mim[3]+1]
 end
 
 """
-    ccm(v::SVector{1,Float64}, v0::SVector{1,Float64}, mim)
+    ccm_pos(pos_powers, mim, D)
 
-Compute unweighted central velocity or spatial moment.
+Compute an unweighted central spatial moment from a table of powers filled by [`fill_powers!`](@ref).
+Only the first `D` components of the multi-index are used, matching the dimensionality of the
+particle position vectors.
 
 # Positional arguments
-* `v`: the 3-dimensional velocity / position vector
-* `v0`: the 3-dimensional mean velocity / position vector
+* `pos_powers`: the table of powers of the centered position components
 * `mim`: the 3-dimensional multi-index
+* `D`: the dimensionality of the position vectors
 
 # Returns
 Computed unweighted central moment.
 """
-@inline function ccm(v::SVector{1,Float64}, v0::SVector{1,Float64}, mim)
-    @inbounds return (v[1] - v0[1])^mim[1]
+@inline function ccm_pos(pos_powers, mim, D)
+    res = 1.0
+    @inbounds for j in 1:D
+        res *= pos_powers[j, mim[j]+1]
+    end
+    return res
 end
 
 
@@ -385,26 +426,35 @@ The pre-merge number of particles.
 function compute_lhs_and_rhs!(nnls_merging::NNLSMerge{D}, lhs_matrix, vel_pos_matrix,
                               particles::ParticleVector{D}, pia, cell, species) where D
     n_moms = nnls_merging.n_moments_vel
-    
-    nnls_merging.Ev = zero(SVector{3,Float64})
-    nnls_merging.Ex = zero(SVector{D,Float64})
+    n_moms_pos = nnls_merging.n_moments_pos
+
     fill!(nnls_merging.rhs_vector, 0.0)
 
     compute_w_total_v0!(nnls_merging, particles, pia, cell, species)
+
+    rhs_vector = nnls_merging.rhs_vector
+    mim = nnls_merging.mim
+    mim_pos = nnls_merging.mim_pos
+    vel_powers = nnls_merging.vel_powers
+    pos_powers = nnls_merging.pos_powers
+    v0 = nnls_merging.v0
+    x0 = nnls_merging.x0
+
+    Ev = zero(SVector{3,Float64})
+    Ex = zero(SVector{D,Float64})
 
     col_index = 1
     @inbounds s1 = pia.indexer[cell,species].start1
     @inbounds e1 = pia.indexer[cell,species].end1
 
     @inbounds for i in s1:e1
-        # w_total += particles[i].w
         p_i = particles[i]
         w = p_i.w
         v = p_i.v
         x = p_i.x
 
-        nnls_merging.Ev = nnls_merging.Ev + w * (v - nnls_merging.v0).^2
-        nnls_merging.Ex = nnls_merging.Ex + w * (x - nnls_merging.x0).^2
+        Ev = Ev + w * (v - v0).^2
+        Ex = Ex + w * (x - x0).^2
 
         vel_pos_matrix[1, col_index] = v[1]
         vel_pos_matrix[2, col_index] = v[2]
@@ -414,15 +464,20 @@ function compute_lhs_and_rhs!(nnls_merging::NNLSMerge{D}, lhs_matrix, vel_pos_ma
             vel_pos_matrix[3+j, col_index] = x[j]
         end
 
+        fill_powers!(vel_powers, v, v0)
         for n_mom in 1:n_moms
-            tmp_ccm = ccm(v, nnls_merging.v0, nnls_merging.mim[n_mom])
-            nnls_merging.rhs_vector[n_mom] = nnls_merging.rhs_vector[n_mom] + w * tmp_ccm
+            tmp_ccm = ccm_vel(vel_powers, mim[n_mom])
+            rhs_vector[n_mom] = rhs_vector[n_mom] + w * tmp_ccm
             lhs_matrix[n_mom, col_index] = tmp_ccm
         end
-        for n_mom in 1:nnls_merging.n_moments_pos
-            tmp_ccm = ccm(x, nnls_merging.x0, nnls_merging.mim_pos[n_mom])
-            nnls_merging.rhs_vector[n_moms+n_mom] = nnls_merging.rhs_vector[n_moms+n_mom] + w * tmp_ccm
-            lhs_matrix[n_moms+n_mom, col_index] = tmp_ccm
+
+        if n_moms_pos > 0
+            fill_powers!(pos_powers, x, x0)
+            for n_mom in 1:n_moms_pos
+                tmp_ccm = ccm_pos(pos_powers, mim_pos[n_mom], D)
+                rhs_vector[n_moms+n_mom] = rhs_vector[n_moms+n_mom] + w * tmp_ccm
+                lhs_matrix[n_moms+n_mom, col_index] = tmp_ccm
+            end
         end
         col_index += 1
     end
@@ -438,8 +493,8 @@ function compute_lhs_and_rhs!(nnls_merging::NNLSMerge{D}, lhs_matrix, vel_pos_ma
             v = p_i.v
             x = p_i.x
 
-            nnls_merging.Ev = nnls_merging.Ev + w * (v - nnls_merging.v0).^2
-            nnls_merging.Ex = nnls_merging.Ex + w * (x - nnls_merging.x0).^2
+            Ev = Ev + w * (v - v0).^2
+            Ex = Ex + w * (x - x0).^2
 
             vel_pos_matrix[1, col_index] = v[1]
             vel_pos_matrix[2, col_index] = v[2]
@@ -449,16 +504,20 @@ function compute_lhs_and_rhs!(nnls_merging::NNLSMerge{D}, lhs_matrix, vel_pos_ma
                 vel_pos_matrix[3+j, col_index] = x[j]
             end
 
-            # w_total += particles[i].w
-            for n_mom in 1:nnls_merging.n_moments_vel
-                tmp_ccm = ccm(v, nnls_merging.v0, nnls_merging.mim[n_mom])
-                nnls_merging.rhs_vector[n_mom] = nnls_merging.rhs_vector[n_mom] + w * tmp_ccm
+            fill_powers!(vel_powers, v, v0)
+            for n_mom in 1:n_moms
+                tmp_ccm = ccm_vel(vel_powers, mim[n_mom])
+                rhs_vector[n_mom] = rhs_vector[n_mom] + w * tmp_ccm
                 lhs_matrix[n_mom, col_index] = tmp_ccm
             end
-            for n_mom in 1:nnls_merging.n_moments_pos
-                tmp_ccm = ccm(x, nnls_merging.x0, nnls_merging.mim_pos[n_mom])
-                nnls_merging.rhs_vector[n_moms+n_mom] = nnls_merging.rhs_vector[n_moms+n_mom] + w * tmp_ccm
-                lhs_matrix[n_moms+n_mom, col_index] = tmp_ccm
+
+            if n_moms_pos > 0
+                fill_powers!(pos_powers, x, x0)
+                for n_mom in 1:n_moms_pos
+                    tmp_ccm = ccm_pos(pos_powers, mim_pos[n_mom], D)
+                    rhs_vector[n_moms+n_mom] = rhs_vector[n_moms+n_mom] + w * tmp_ccm
+                    lhs_matrix[n_moms+n_mom, col_index] = tmp_ccm
+                end
             end
             col_index += 1
         end
@@ -468,11 +527,11 @@ function compute_lhs_and_rhs!(nnls_merging::NNLSMerge{D}, lhs_matrix, vel_pos_ma
     w_tot = nnls_merging.w_total
 
     @inbounds @simd for i in 1:n_total_conserved
-        nnls_merging.rhs_vector[i] /= w_tot
+        rhs_vector[i] /= w_tot
     end
 
-    nnls_merging.Ev = sqrt.(nnls_merging.Ev / w_tot)
-    nnls_merging.Ex = sqrt.(nnls_merging.Ex / w_tot)
+    nnls_merging.Ev = sqrt.(Ev / w_tot)
+    nnls_merging.Ex = sqrt.(Ex / w_tot)
 
     return col_index
 end
@@ -508,13 +567,19 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
                                               interaction, electron_neutral_interactions, computed_cs,
                                               particles::ParticleVector{D}, pia, cell, species, neutral_species_index, extend) where D
     n_moms = nnls_merging.n_moments_vel
-    
-    nnls_merging.Ev = zero(SVector{3,Float64})
-    nnls_merging.Ex = zero(SVector{D,Float64})
+
     fill!(nnls_merging.rhs_vector, 0.0)
 
     compute_w_total_v0!(nnls_merging, particles, pia, cell, species)
-    # v0 = norm(nnls_merging.v0)
+
+    rhs_vector = nnls_merging.rhs_vector
+    mim = nnls_merging.mim
+    vel_powers = nnls_merging.vel_powers
+    v0 = nnls_merging.v0
+    x0 = nnls_merging.x0
+
+    Ev = zero(SVector{3,Float64})
+    Ex = zero(SVector{D,Float64})
 
     col_index = 1
     @inbounds s1 = pia.indexer[cell,species].start1
@@ -526,8 +591,8 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
         v = p_i.v
         x = p_i.x
 
-        nnls_merging.Ev = nnls_merging.Ev + w * (v - nnls_merging.v0).^2
-        nnls_merging.Ex = nnls_merging.Ex + w * (x - nnls_merging.x0).^2
+        Ev = Ev + w * (v - v0).^2
+        Ex = Ex + w * (x - x0).^2
 
         vel_pos_matrix[1, col_index] = v[1]
         vel_pos_matrix[2, col_index] = v[2]
@@ -537,9 +602,10 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
             vel_pos_matrix[3+j, col_index] = x[j]
         end
 
+        fill_powers!(vel_powers, v, v0)
         for n_mom in 1:n_moms
-            tmp_ccm = ccm(v, nnls_merging.v0, nnls_merging.mim[n_mom])
-            nnls_merging.rhs_vector[n_mom] = nnls_merging.rhs_vector[n_mom] + w * tmp_ccm
+            tmp_ccm = ccm_vel(vel_powers, mim[n_mom])
+            rhs_vector[n_mom] = rhs_vector[n_mom] + w * tmp_ccm
             lhs_matrix[n_mom, col_index] = tmp_ccm
         end
 
@@ -549,8 +615,8 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
         csi_g = get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g
         lhs_matrix[n_moms+1, col_index] = cse_g
         lhs_matrix[n_moms+2, col_index] = csi_g
-        nnls_merging.rhs_vector[n_moms+1] = nnls_merging.rhs_vector[n_moms+1] + cse_g * w
-        nnls_merging.rhs_vector[n_moms+2] = nnls_merging.rhs_vector[n_moms+2] + csi_g * w
+        rhs_vector[n_moms+1] = rhs_vector[n_moms+1] + cse_g * w
+        rhs_vector[n_moms+2] = rhs_vector[n_moms+2] + csi_g * w
 
         col_index += 1
     end
@@ -565,8 +631,8 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
             v = p_i.v
             x = p_i.x
 
-            nnls_merging.Ev = nnls_merging.Ev + w * (v - nnls_merging.v0).^2
-            nnls_merging.Ex = nnls_merging.Ex + w * (x - nnls_merging.x0).^2
+            Ev = Ev + w * (v - v0).^2
+            Ex = Ex + w * (x - x0).^2
 
             vel_pos_matrix[1, col_index] = v[1]
             vel_pos_matrix[2, col_index] = v[2]
@@ -577,9 +643,10 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
             end
 
             # w_total += particles[i].w
+            fill_powers!(vel_powers, v, v0)
             for n_mom in 1:n_moms
-                tmp_ccm = ccm(v, nnls_merging.v0, nnls_merging.mim[n_mom])
-                nnls_merging.rhs_vector[n_mom] = nnls_merging.rhs_vector[n_mom] + w * tmp_ccm
+                tmp_ccm = ccm_vel(vel_powers, mim[n_mom])
+                rhs_vector[n_mom] = rhs_vector[n_mom] + w * tmp_ccm
                 lhs_matrix[n_mom, col_index] = tmp_ccm
             end
 
@@ -589,8 +656,8 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
             csi_g = get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g
             lhs_matrix[n_moms+1, col_index] = cse_g
             lhs_matrix[n_moms+2, col_index] = csi_g
-            nnls_merging.rhs_vector[n_moms+1] = nnls_merging.rhs_vector[n_moms+1] + cse_g * w
-            nnls_merging.rhs_vector[n_moms+2] = nnls_merging.rhs_vector[n_moms+2] + csi_g * w
+            rhs_vector[n_moms+1] = rhs_vector[n_moms+1] + cse_g * w
+            rhs_vector[n_moms+2] = rhs_vector[n_moms+2] + csi_g * w
 
             col_index += 1
         end
@@ -600,11 +667,11 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
     w_tot = nnls_merging.w_total
 
     @inbounds @simd for i in 1:n_total_conserved
-        nnls_merging.rhs_vector[i] /= w_tot
+        rhs_vector[i] /= w_tot
     end
 
-    nnls_merging.Ev = sqrt.(nnls_merging.Ev / w_tot)
-    nnls_merging.Ex = sqrt.(nnls_merging.Ex / w_tot)
+    nnls_merging.Ev = sqrt.(Ev / w_tot)
+    nnls_merging.Ex = sqrt.(Ex / w_tot)
 
     return col_index
 end
@@ -641,12 +708,19 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
                                               interaction, electron_neutral_interactions, computed_cs,
                                               particles::ParticleVector{D}, particles_neutral::ParticleVector{D}, pia, cell, species, neutral_species_index, extend) where D
     n_moms = nnls_merging.n_moments_vel
-    
-    nnls_merging.Ev = zero(SVector{3,Float64})
-    nnls_merging.Ex = zero(SVector{D,Float64})
+
     fill!(nnls_merging.rhs_vector, 0.0)
 
     compute_w_total_v0!(nnls_merging, particles, pia, cell, species)
+
+    rhs_vector = nnls_merging.rhs_vector
+    mim = nnls_merging.mim
+    vel_powers = nnls_merging.vel_powers
+    v0 = nnls_merging.v0
+    x0 = nnls_merging.x0
+
+    Ev = zero(SVector{3,Float64})
+    Ex = zero(SVector{D,Float64})
 
     col_index = 1
     @inbounds s1 = pia.indexer[cell,species].start1
@@ -661,8 +735,8 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
         v = p_i.v
         x = p_i.x
 
-        nnls_merging.Ev = nnls_merging.Ev + w * (v - nnls_merging.v0).^2
-        nnls_merging.Ex = nnls_merging.Ex + w * (x - nnls_merging.x0).^2
+        Ev = Ev + w * (v - v0).^2
+        Ex = Ex + w * (x - x0).^2
 
         vel_pos_matrix[1, col_index] = v[1]
         vel_pos_matrix[2, col_index] = v[2]
@@ -672,9 +746,10 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
             vel_pos_matrix[3+j, col_index] = x[j]
         end
 
+        fill_powers!(vel_powers, v, v0)
         for n_mom in 1:n_moms
-            tmp_ccm = ccm(v, nnls_merging.v0, nnls_merging.mim[n_mom])
-            nnls_merging.rhs_vector[n_mom] = nnls_merging.rhs_vector[n_mom] + w * tmp_ccm
+            tmp_ccm = ccm_vel(vel_powers, mim[n_mom])
+            rhs_vector[n_mom] = rhs_vector[n_mom] + w * tmp_ccm
             lhs_matrix[n_mom, col_index] = tmp_ccm
         end
 
@@ -710,8 +785,8 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
 
         lhs_matrix[n_moms+1, col_index] = cse_g
         lhs_matrix[n_moms+2, col_index] = csi_g
-        nnls_merging.rhs_vector[n_moms+1] = nnls_merging.rhs_vector[n_moms+1] + cse_g * w
-        nnls_merging.rhs_vector[n_moms+2] = nnls_merging.rhs_vector[n_moms+2] + csi_g * w
+        rhs_vector[n_moms+1] = rhs_vector[n_moms+1] + cse_g * w
+        rhs_vector[n_moms+2] = rhs_vector[n_moms+2] + csi_g * w
 
         col_index += 1
     end
@@ -726,8 +801,8 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
             v = p_i.v
             x = p_i.x
 
-            nnls_merging.Ev = nnls_merging.Ev + w * (v - nnls_merging.v0).^2
-            nnls_merging.Ex = nnls_merging.Ex + w * (x - nnls_merging.x0).^2
+            Ev = Ev + w * (v - v0).^2
+            Ex = Ex + w * (x - x0).^2
 
             vel_pos_matrix[1, col_index] = v[1]
             vel_pos_matrix[2, col_index] = v[2]
@@ -737,9 +812,10 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
                 vel_pos_matrix[3+j, col_index] = x[j]
             end
 
+            fill_powers!(vel_powers, v, v0)
             for n_mom in 1:n_moms
-                tmp_ccm = ccm(v, nnls_merging.v0, nnls_merging.mim[n_mom])
-                nnls_merging.rhs_vector[n_mom] = nnls_merging.rhs_vector[n_mom] + w * tmp_ccm
+                tmp_ccm = ccm_vel(vel_powers, mim[n_mom])
+                rhs_vector[n_mom] = rhs_vector[n_mom] + w * tmp_ccm
                 lhs_matrix[n_mom, col_index] = tmp_ccm
             end
 
@@ -774,8 +850,8 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
 
             lhs_matrix[n_moms+1, col_index] = cse_g
             lhs_matrix[n_moms+2, col_index] = csi_g
-            nnls_merging.rhs_vector[n_moms+1] = nnls_merging.rhs_vector[n_moms+1] + cse_g * w
-            nnls_merging.rhs_vector[n_moms+2] = nnls_merging.rhs_vector[n_moms+2] + csi_g * w
+            rhs_vector[n_moms+1] = rhs_vector[n_moms+1] + cse_g * w
+            rhs_vector[n_moms+2] = rhs_vector[n_moms+2] + csi_g * w
 
             col_index += 1
         end
@@ -785,11 +861,11 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
     w_tot = nnls_merging.w_total
 
     @inbounds @simd for i in 1:n_total_conserved
-        nnls_merging.rhs_vector[i] /= w_tot
+        rhs_vector[i] /= w_tot
     end
 
-    nnls_merging.Ev = sqrt.(nnls_merging.Ev / w_tot)
-    nnls_merging.Ex = sqrt.(nnls_merging.Ex / w_tot)
+    nnls_merging.Ev = sqrt.(Ev / w_tot)
+    nnls_merging.Ex = sqrt.(Ex / w_tot)
 
     return col_index
 end

@@ -546,4 +546,11 @@
 
     @test result == 1
     @test pia.n_total[1] < 16
+
+    @test_throws ArgumentError mnnls_wrong = NNLSMerge([[-1, 2, 3]], 25; multi_index_moments_pos=[], matrix_ncol_nprealloc=10)
+    @test_throws ArgumentError mnnls_wrong = NNLSMerge([[1, -1, 3]], 25; multi_index_moments_pos=[], matrix_ncol_nprealloc=10)
+    @test_throws ArgumentError mnnls_wrong = NNLSMerge([[1, 1, -3]], 25; multi_index_moments_pos=[], matrix_ncol_nprealloc=10)
+    @test_throws ArgumentError mnnls_wrong = NNLSMerge([[1, 1, 3]], 25; multi_index_moments_pos=[[-1, 1, 1]], matrix_ncol_nprealloc=10)
+    @test_throws ArgumentError mnnls_wrong = NNLSMerge([[1, 1, 3]], 25; multi_index_moments_pos=[[1, -1, 1]], matrix_ncol_nprealloc=10)
+    @test_throws ArgumentError mnnls_wrong = NNLSMerge([[1, 1, 3]], 25; multi_index_moments_pos=[[1, 1, -1]], matrix_ncol_nprealloc=10)
 end
