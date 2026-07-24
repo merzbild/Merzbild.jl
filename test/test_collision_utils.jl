@@ -9,10 +9,14 @@
     @test size(interaction_data) == (1,1)
     @test abs(interaction_data[1,1].μ1 - 0.5) < eps()
     @test abs(interaction_data[1,1].μ2 - 0.5) < eps()
+    @test abs(interaction_data[1,1].vhs_exp - (1.0 - 2 * interaction_data[1,1].vhs_o)) < eps()
+
+    # mu_Bird (hard spheres) = (5.0/16.0) * (k_B * T/m/pi)^(0.5) * (m/(d^2)) (3.58)
+    # for argon (m=6.63e-26, d=4.11e-10) at T=1000.0: 3.157838004259937e-5
+    @test abs(Merzbild.compute_mu_ref(6.63e-26, 0.5, 1000.0, 4.11e-10) - 3.157838004259937e-5) < 2 * eps()
 
     p1 = Particle(1e10, [2.0, 1.0, 0.0], [0.0, 0.0, 0.0])
     p2 = Particle(1e10, [0.0, -1.0, -1.0], [0.0, 0.0, 0.0])
-
 
     collision_data = CollisionData()
 
