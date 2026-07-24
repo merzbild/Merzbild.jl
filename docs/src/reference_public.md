@@ -36,6 +36,7 @@ check_unique_buffer
 MERZBILD_DATA_PATH
 Species
 Interaction
+Interaction(m1::Float64, m2::Float64, vhs_d::Float64, vhs_o::Float64, vhs_Tref::Float64)
 load_species_data
 load_interaction_data
 load_interaction_data_with_dummy
