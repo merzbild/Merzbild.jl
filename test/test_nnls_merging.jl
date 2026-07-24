@@ -474,13 +474,19 @@
     end
 
     mnnls_pos = NNLSMerge(add_vel_moments, 25; multi_index_moments_pos=pos_moments, matrix_ncol_nprealloc=10)
-    @test length(mnnls_pos.lhs_matrices) == 11
+    @test length(mnnls_pos.vel_pos_matrices) == 11
+    @test length(mnnls_pos.column_norms) == 11
     @test length(mnnls_pos.work) == 12
     @test mnnls_pos.lhs_matrix_ncols_start == 25
     @test mnnls_pos.lhs_matrix_ncols_end == 35
 
+    # scratch buffers for column counts outside the pre-allocated range
+    @test size(mnnls_pos.vel_pos_matrix_scratch) == (3+3, 36)
+    @test length(mnnls_pos.column_norms_scratch) == 36
+
     for i in 25:35
-        @test size(mnnls_pos.lhs_matrices[i-25+1],2) == i
+        @test size(mnnls_pos.vel_pos_matrices[i-25+1]) == (3+3, i)
+        @test length(mnnls_pos.column_norms[i-25+1]) == i
         @test size(mnnls_pos.work[i-25+1].QA,2) == i
 
         @test size(mnnls_pos.work[i-25+1].x) == (i,)
