@@ -50,5 +50,7 @@ collisions, merging, property computation, I/O) and the user writes their own ti
 * New features must have corresponding tests and documentation added (see the checklist in
   `CONTRIBUTING.md`).
 * `run_examples.py` runs all examples in `simulations/` for 10 timesteps/ensembles and writes errors to directory
-  given by the `logdir` command line argument (defaults to `scratch/logs`). Use to verify simulation examples work after
-  changes to code.
+  given by the `logdir` command line argument (defaults to `scratch/logs`). Its only purpose is to check that no example
+  uses an outdated API — it verifies nothing about correctness of results, and 10 timesteps/ensembles is far too few to
+  be physically meaningful. Run it only after changing an API that examples call (function signatures, exported names,
+  struct constructors); internal-only changes cannot be caught by it.
