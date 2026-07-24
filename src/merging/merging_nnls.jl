@@ -26,11 +26,12 @@ Struct for keeping track of merging-related quantities for NNLS-based merging of
 * `pos_i_x`: index of the spatial moment corresponding to preservation of the center of mass in the x direction
 * `pos_i_y`: index of the spatial moment corresponding to preservation of the center of mass in the y direction
 * `pos_i_z`: index of the spatial moment corresponding to preservation of the center of mass in the z direction
-* `lhs_matrices`: Vector of matrices for the LHS of the NNLS system
-* `lhs_matrix_ncols_start`: the number of columns in the first matrix in `lhs_matrices`
-* `lhs_matrix_ncols_end`: the number of columns in the last matrix in `lhs_matrices`
+* `lhs_matrix_ncols_start`: the number of columns in the first pre-allocated matrix
+* `lhs_matrix_ncols_end`: the number of columns in the last pre-allocated matrix
 * `column_norms`: vector of vectors of the column-wise inverse norms of the LHS matrices
-* `vel_pos_matrices`: vector of matrices of size `6xNp` that store the velocities and positions of the particles
+* `vel_pos_matrices`: vector of matrices of size `(3+D)xNp` that store the velocities and positions of the particles
+* `column_norms_scratch`: column-wise inverse norms used when the number of columns is outside the pre-allocated range
+* `vel_pos_matrix_scratch`: velocities and positions used when the number of columns is outside the pre-allocated range
 * `work`: Vector of `NNLSWorkspace` instances
 """
 mutable struct NNLSMerge{D}
@@ -58,11 +59,12 @@ mutable struct NNLSMerge{D}
     pos_i_y::Int64
     pos_i_z::Int64
 
-    lhs_matrices::Vector{Matrix{Float64}}
     lhs_matrix_ncols_start::Int64
     lhs_matrix_ncols_end::Int64
     column_norms::Vector{Vector{Float64}}
     vel_pos_matrices::Vector{Matrix{Float64}}
+    column_norms_scratch::Vector{Float64}
+    vel_pos_matrix_scratch::Matrix{Float64}
 
     work::Vector{NNLSWorkspace{Float64, Int}}
 
@@ -77,15 +79,18 @@ mutable struct NNLSMerge{D}
     If `multi_index_moments_pos` is non-empty, it is currently left to the user to include any relevant 1st order moments
     (corresponding center of mass conservation) i.e. `(1, 0, 0)`, `(0, 1, 0)`, `(0, 0, 1)`; otherwise
     the corresponding spatial moments including higher-order ones will not be conserved.
-    By default, a single `NNLSWorkspace` is pre-allocated for the system, and no LHS matrices are pre-allocated.
+    By default, a single `NNLSWorkspace` is pre-allocated for the system.
     The number of columns in the LHS matrix is the number of particles to be merged (+ any fictitious particles);
     so it cannot be fixed in advance. By setting `matrix_ncol_nprealloc` to a value larger than 0,
-    one can pre-allocate a range of matrices and
-    corresponding workspaces with a fixed number of columns spanning `[init_np, init_np+matrix_ncol_nprealloc]`.
-    In this case, `matrix_ncol_nprealloc+1` `NNLSWorkspace` instances are pre-allocated, with the last one being used
-    in case the number of columns is not in the range (and the LHS matrix is constructed on the fly).
-    A vector `column_norms` is also then pre-allocated, which is a vector of vectors, each containing the inverses of the
-    column-wise norms of the LHS matrices, used for their scaling.
+    one can pre-allocate a range of workspaces with a fixed number of columns
+    spanning `[init_np, init_np+matrix_ncol_nprealloc]`.
+    In this case, `matrix_ncol_nprealloc+2` `NNLSWorkspace` instances are pre-allocated, with the last one being used
+    in case the number of columns is not in the range (its LHS matrix is then re-allocated on the fly, but only
+    when the number of columns differs from the previous call).
+    Vectors `column_norms` and `vel_pos_matrices` are also then pre-allocated, holding respectively the inverses of the
+    column-wise norms of the LHS matrices used for their scaling, and the particle velocities and positions.
+    Outside the pre-allocated range the `column_norms_scratch` / `vel_pos_matrix_scratch` buffers are used instead;
+    these grow as needed and are re-used across calls.
 
     # Positional arguments
     * `multi_index_moments`: vector of mixed moments to preserve of the form `[(i1, j1, k1), (i2, j2, k2), ...]``
@@ -94,7 +99,7 @@ mutable struct NNLSMerge{D}
     Keyword arguments:
     * `rate_preserving`: used for rate-preserving merging of electrons, preserves approximate elastic collision and ionization rates
     * `multi_index_moments_pos`: list of spatial moments to preserve
-    * `matrix_ncol_nprealloc`: number of LHS matrices and NNLS workspaces with a fixed number of columns to pre-allocate
+    * `matrix_ncol_nprealloc`: number of NNLS workspaces with a fixed number of columns to pre-allocate
     """
     function NNLSMerge{D}(multi_index_moments, init_np; rate_preserving=false, multi_index_moments_pos=[], matrix_ncol_nprealloc=0) where D
         add_length = 0
@@ -134,25 +139,24 @@ mutable struct NNLSMerge{D}
             end 
         end
 
-        matrices_preallocated = Vector{Matrix{Float64}}([])
         column_norms = Vector{Vector{Float64}}([])
         nnls_ws_preallocated = Vector{NNLSWorkspace{Float64, Int}}([])
         vel_pos_matrices = Vector{Matrix{Float64}}([])
         if matrix_ncol_nprealloc > 0
             for i in init_np:init_np+matrix_ncol_nprealloc
-                push!(matrices_preallocated, zeros(n_total_conserved, i))
                 push!(column_norms, ones(i))
                 push!(nnls_ws_preallocated, NNLSWorkspace(zeros(n_total_conserved, i), zeros(n_total_conserved)))
                 push!(vel_pos_matrices, zeros(3+D, i))
             end
 
             # one extra workspace
-            push!(nnls_ws_preallocated, NNLSWorkspace(zeros(n_total_conserved,
-                  init_np+matrix_ncol_nprealloc+1), zeros(n_total_conserved)))
+            scratch_ncols = init_np + matrix_ncol_nprealloc + 1
+            push!(nnls_ws_preallocated, NNLSWorkspace(zeros(n_total_conserved, scratch_ncols), zeros(n_total_conserved)))
         else
-            push!(nnls_ws_preallocated, NNLSWorkspace(zeros(n_total_conserved, init_np), zeros(n_total_conserved)))
+            scratch_ncols = init_np
+            push!(nnls_ws_preallocated, NNLSWorkspace(zeros(n_total_conserved, scratch_ncols), zeros(n_total_conserved)))
         end
-        
+
         return new{D}(SVector{3,Float64}(0.0, 0.0, 0.0), zero(SVector{D,Float64}),
                       1.0, 1.0, # vref, inv_vref
                       SVector{3,Float64}(0.0, 0.0, 0.0),   # std(v)
@@ -167,9 +171,11 @@ mutable struct NNLSMerge{D}
                       base_moments, tot_order,
                       length(mimpos), mimpos, tot_order_pos,
                       pos_i_x, pos_i_y, pos_i_z,
-                      matrices_preallocated, init_np, init_np+matrix_ncol_nprealloc,
+                      init_np, init_np+matrix_ncol_nprealloc,
                       column_norms,
                       vel_pos_matrices,
+                      ones(scratch_ncols),
+                      zeros(3+D, scratch_ncols),
                       nnls_ws_preallocated)
     end
 
@@ -184,15 +190,18 @@ mutable struct NNLSMerge{D}
     If `multi_index_moments_pos` is non-empty, it is currently left to the user to include any relevant 1st order moments
     (corresponding center of mass conservation) i.e. `(1, 0, 0)`, `(0, 1, 0)`, `(0, 0, 1)`; otherwise
     the corresponding spatial moments including higher-order ones will not be conserved.
-    By default, a single `NNLSWorkspace` is pre-allocated for the system, and no LHS matrices are pre-allocated.
+    By default, a single `NNLSWorkspace` is pre-allocated for the system.
     The number of columns in the LHS matrix is the number of particles to be merged (+ any fictitious particles);
     so it cannot be fixed in advance. By setting `matrix_ncol_nprealloc` to a value larger than 0,
-    one can pre-allocate a range of matrices and
-    corresponding workspaces with a fixed number of columns spanning `[init_np, init_np+matrix_ncol_nprealloc]`.
-    In this case, `matrix_ncol_nprealloc+1` `NNLSWorkspace` instances are pre-allocated, with the last one being used
-    in case the number of columns is not in the range (and the LHS matrix is constructed on the fly).
-    A vector `column_norms` is also then pre-allocated, which is a vector of vectors, each containing the inverses of the
-    column-wise norms of the LHS matrices, used for their scaling.
+    one can pre-allocate a range of workspaces with a fixed number of columns
+    spanning `[init_np, init_np+matrix_ncol_nprealloc]`.
+    In this case, `matrix_ncol_nprealloc+2` `NNLSWorkspace` instances are pre-allocated, with the last one being used
+    in case the number of columns is not in the range (its LHS matrix is then re-allocated on the fly, but only
+    when the number of columns differs from the previous call).
+    Vectors `column_norms` and `vel_pos_matrices` are also then pre-allocated, holding respectively the inverses of the
+    column-wise norms of the LHS matrices used for their scaling, and the particle velocities and positions.
+    Outside the pre-allocated range the `column_norms_scratch` / `vel_pos_matrix_scratch` buffers are used instead;
+    these grow as needed and are re-used across calls.
 
     # Positional arguments
     * `multi_index_moments`: vector of mixed moments to preserve of the form `[(i1, j1, k1), (i2, j2, k2), ...]``
@@ -201,7 +210,7 @@ mutable struct NNLSMerge{D}
     Keyword arguments:
     * `rate_preserving`: used for rate-preserving merging of electrons, preserves approximate elastic collision and ionization rates
     * `multi_index_moments_pos`: list of spatial moments to preserve
-    * `matrix_ncol_nprealloc`: number of LHS matrices and NNLS workspaces with a fixed number of columns to pre-allocate
+    * `matrix_ncol_nprealloc`: number of NNLS workspaces with a fixed number of columns to pre-allocate
     """
     function NNLSMerge(multi_index_moments, init_np; rate_preserving=false, multi_index_moments_pos=[], matrix_ncol_nprealloc=0)
         return NNLSMerge{3}(multi_index_moments, init_np; rate_preserving=rate_preserving, multi_index_moments_pos=multi_index_moments_pos, matrix_ncol_nprealloc=matrix_ncol_nprealloc)
@@ -1374,7 +1383,7 @@ function merge_nnls_based!(rng, nnls_merging::NNLSMerge{D}, particles::ParticleV
     # create LHS matrix
     @inbounds lhs_ncols = pia.indexer[cell, species].n_local
 
-    if (lhs_ncols > nnls_merging.lhs_matrix_ncols_end) || (lhs_ncols < nnls_merging.lhs_matrix_ncols_start) || length(nnls_merging.lhs_matrices) == 0
+    if (lhs_ncols > nnls_merging.lhs_matrix_ncols_end) || (lhs_ncols < nnls_merging.lhs_matrix_ncols_start) || length(nnls_merging.vel_pos_matrices) == 0
         indexer = nnls_merging.lhs_matrix_ncols_end - nnls_merging.lhs_matrix_ncols_start + 2
 
         # we either have pre-allocation [1,2,...[Workspace]]
@@ -1391,13 +1400,17 @@ function merge_nnls_based!(rng, nnls_merging::NNLSMerge{D}, particles::ParticleV
             resize!(nnls_ws.w, lhs_ncols)
             resize!(nnls_ws.idx, lhs_ncols)
         end
-        lhs_matrix = zeros(nnls_merging.n_total_conserved, lhs_ncols)
-        vel_pos_matrix = zeros(6, lhs_ncols)
-        column_norms = ones(lhs_ncols)
+        if size(nnls_merging.vel_pos_matrix_scratch, 2) < lhs_ncols
+            nnls_merging.vel_pos_matrix_scratch = zeros(3+D, lhs_ncols)
+        end
+        if length(nnls_merging.column_norms_scratch) < lhs_ncols
+            resize!(nnls_merging.column_norms_scratch, lhs_ncols)
+        end
+        vel_pos_matrix = nnls_merging.vel_pos_matrix_scratch
+        column_norms = nnls_merging.column_norms_scratch
     else
         indexer = lhs_ncols - nnls_merging.lhs_matrix_ncols_start + 1
-        @inbounds lhs_matrix = nnls_merging.lhs_matrices[lhs_ncols - nnls_merging.lhs_matrix_ncols_start + 1]
-        @inbounds vel_pos_matrix = nnls_merging.vel_pos_matrices[lhs_ncols - nnls_merging.lhs_matrix_ncols_start + 1]
+        @inbounds vel_pos_matrix = nnls_merging.vel_pos_matrices[indexer]
         @inbounds column_norms = nnls_merging.column_norms[indexer]
     end
     nnls_merging.vref = vref
@@ -1485,7 +1498,7 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging::NNLSMerge{D},
     # create LHS matrix
     @inbounds lhs_ncols = pia.indexer[cell, species].n_local
 
-    if (lhs_ncols > nnls_merging.lhs_matrix_ncols_end) || (lhs_ncols < nnls_merging.lhs_matrix_ncols_start) || length(nnls_merging.lhs_matrices) == 0
+    if (lhs_ncols > nnls_merging.lhs_matrix_ncols_end) || (lhs_ncols < nnls_merging.lhs_matrix_ncols_start) || length(nnls_merging.vel_pos_matrices) == 0
         indexer = nnls_merging.lhs_matrix_ncols_end - nnls_merging.lhs_matrix_ncols_start + 2
 
         # we either have pre-allocation [1,2,...[Workspace]]
@@ -1502,13 +1515,17 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging::NNLSMerge{D},
             resize!(nnls_ws.w, lhs_ncols)
             resize!(nnls_ws.idx, lhs_ncols)
         end
-        lhs_matrix = zeros(nnls_merging.n_total_conserved, lhs_ncols)
-        vel_pos_matrix = zeros(6, lhs_ncols)
-        column_norms = zeros(lhs_ncols)
+        if size(nnls_merging.vel_pos_matrix_scratch, 2) < lhs_ncols
+            nnls_merging.vel_pos_matrix_scratch = zeros(3+D, lhs_ncols)
+        end
+        if length(nnls_merging.column_norms_scratch) < lhs_ncols
+            resize!(nnls_merging.column_norms_scratch, lhs_ncols)
+        end
+        vel_pos_matrix = nnls_merging.vel_pos_matrix_scratch
+        column_norms = nnls_merging.column_norms_scratch
     else
         indexer = lhs_ncols - nnls_merging.lhs_matrix_ncols_start + 1
-        @inbounds lhs_matrix = nnls_merging.lhs_matrices[lhs_ncols - nnls_merging.lhs_matrix_ncols_start + 1]
-        @inbounds vel_pos_matrix = nnls_merging.vel_pos_matrices[lhs_ncols - nnls_merging.lhs_matrix_ncols_start + 1]
+        @inbounds vel_pos_matrix = nnls_merging.vel_pos_matrices[indexer]
         @inbounds column_norms = nnls_merging.column_norms[indexer]
     end
     nnls_merging.vref = vref
@@ -1609,7 +1626,7 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging::NNLSMerge{D},
     # create LHS matrix
     @inbounds lhs_ncols = pia.indexer[cell, species].n_local
 
-    if (lhs_ncols > nnls_merging.lhs_matrix_ncols_end) || (lhs_ncols < nnls_merging.lhs_matrix_ncols_start) || length(nnls_merging.lhs_matrices) == 0
+    if (lhs_ncols > nnls_merging.lhs_matrix_ncols_end) || (lhs_ncols < nnls_merging.lhs_matrix_ncols_start) || length(nnls_merging.vel_pos_matrices) == 0
         indexer = nnls_merging.lhs_matrix_ncols_end - nnls_merging.lhs_matrix_ncols_start + 2
 
         # we either have pre-allocation [1,2,...[Workspace]]
@@ -1626,13 +1643,17 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging::NNLSMerge{D},
             resize!(nnls_ws.w, lhs_ncols)
             resize!(nnls_ws.idx, lhs_ncols)
         end
-        lhs_matrix = zeros(nnls_merging.n_total_conserved, lhs_ncols)
-        vel_pos_matrix = zeros(6, lhs_ncols)
-        column_norms = zeros(lhs_ncols)
+        if size(nnls_merging.vel_pos_matrix_scratch, 2) < lhs_ncols
+            nnls_merging.vel_pos_matrix_scratch = zeros(3+D, lhs_ncols)
+        end
+        if length(nnls_merging.column_norms_scratch) < lhs_ncols
+            resize!(nnls_merging.column_norms_scratch, lhs_ncols)
+        end
+        vel_pos_matrix = nnls_merging.vel_pos_matrix_scratch
+        column_norms = nnls_merging.column_norms_scratch
     else
         indexer = lhs_ncols - nnls_merging.lhs_matrix_ncols_start + 1
-        @inbounds lhs_matrix = nnls_merging.lhs_matrices[lhs_ncols - nnls_merging.lhs_matrix_ncols_start + 1]
-        @inbounds vel_pos_matrix = nnls_merging.vel_pos_matrices[lhs_ncols - nnls_merging.lhs_matrix_ncols_start + 1]
+        @inbounds vel_pos_matrix = nnls_merging.vel_pos_matrices[indexer]
         @inbounds column_norms = nnls_merging.column_norms[indexer]
     end
     nnls_merging.vref = vref
