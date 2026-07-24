@@ -91,9 +91,9 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
 
             if pia.indexer[cell,1].n_local > merge_threshold
                 @timeit "merge" merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
-                @timeit "squash" squash_pia!(particles, pia)
             end
         end
+        @timeit "squash" squash_pia!(particles, pia)
 
         # convect particles
         if (t < avg_start)

@@ -5,7 +5,7 @@ using Random
 using TimerOutputs
 
 function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, merge_target, n_vel_up_total, n_vel_up_total_backup,
-             Δt, output_freq, n_timesteps, avg_start)
+             Δt, output_freq, n_timesteps, avg_start; debug=false)
     reset_timer!()
 
     Random.seed!(seed)
@@ -121,7 +121,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     index_inv_map = zeros(Int64, n_particles)
 
     for t in 1:n_timesteps
-        if t % 1000 == 0
+        if t % 1000 == 0 && debug
             println("$t, # of particles=$(pia.n_total[1])")
         end
 
@@ -139,9 +139,9 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
                 if nnls_success_flag == -1
                     @timeit "merge octree" merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
                 end
-                @timeit "squash" squash_pia!(particles, pia)
             end
         end
+        @timeit "squash" squash_pia!(particles, pia)
 
         # convect particles
         if (t < avg_start)
@@ -174,6 +174,12 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
         end
     end
 
+    if debug
+        println(check_pia_is_correct(pia, 1))
+        println(check_unique_buffer(particles[1]))
+        println(check_unique_index(particles[1], pia, 1))
+    end
+
     @timeit "I/O" write_netcdf(ds_avg, phys_props_avg, n_timesteps)
     @timeit "I/O" write_netcdf(ds_surf_avg, surf_props_avg, n_timesteps)
 
@@ -184,6 +190,6 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     print_timer()
 end
 
-const n_t = 50000
+const n_t = 2000
 # preserve all velocity moments up to order 5, fall back to 4 moments if required
-run(1234, 300.0, 500.0, 5e-4, 5e22, 50, 250, 80, 60, 5, 4, 2.59e-9, 1000, n_t, 14000)
+run(1234, 300.0, 500.0, 5e-4, 5e22, 50, 250, 80, 60, 5, 4, 2.59e-9, 1000, n_t, 14000; debug=false)

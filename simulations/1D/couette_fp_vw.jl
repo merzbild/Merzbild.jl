@@ -81,13 +81,11 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, merge_threshold, merge_tar
             @timeit "collide" fp_linear!(rng, collision_data_fp, interaction_data[1, 1], particles[1], pia, cell, 1, species_data, Δt, grid.cells[cell].V)
 
             if pia.indexer[cell,1].n_local > merge_threshold
-                println("$(cell) $(pia.indexer[cell,1].n_local) $merge_threshold $merge_target")
                 @timeit "merge" merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
-                @timeit "squash" squash_pia!(particles, pia)
-                println("Post: $(cell) $(pia.indexer[cell,1].n_local) $merge_threshold $merge_target")
-                println("$(pia.n_total[1]/nx) avg")
             end
         end
+
+        @timeit "squash" squash_pia!(particles, pia)
 
         # convect particles
         @timeit "convect" convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, Δt)
