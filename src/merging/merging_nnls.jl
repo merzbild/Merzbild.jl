@@ -263,7 +263,8 @@ set of particles in each velocity direction.
 * `species`: the index of the species being merged
 """
 function compute_w_total_v0!(nnls_merging, particles::ParticleVector{D}, pia, cell, species) where D
-    nnls_merging.v0 = SVector{3,Float64}(0.0, 0.0, 0.0)
+    nnls_merging.v0 = zero(SVector{3,Float64})
+    nnls_merging.x0 = zero(SVector{D,Float64})
     nnls_merging.w_total = 0.0
 
     @inbounds s1 = pia.indexer[cell,species].start1
