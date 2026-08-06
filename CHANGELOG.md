@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.8.2
+* NNLS merging speed-ups
+
 ## v0.8.1
 * Clean-up of roulette merging code and minor optimizations
 * Documentation improvements
