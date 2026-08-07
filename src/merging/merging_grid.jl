@@ -539,9 +539,7 @@ function compute_new_particles!(rng, merging_grid::GridN2Merge{D}, particles::Pa
         pia.contiguous[species] = false
     end
 
-    for _ in 1:n_particles_to_delete
-        delete_particle_end!(particles, pia, cell, species)
-    end
+    delete_batch_end!(particles, pia, cell, species, n_particles_to_delete)
 end
 
 """
@@ -639,9 +637,7 @@ function compute_new_particles!(rng, merging_grid::GridN2Merge{D}, particles::Pa
         pia.contiguous[species] = false
     end
 
-    for _ in 1:n_particles_to_delete
-        delete_particle_end!(particles, pia, cell, species)
-    end
+    delete_batch_end!(particles, pia, cell, species, n_particles_to_delete)
 end
 
 """

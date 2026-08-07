@@ -1121,9 +1121,7 @@ function compute_post_merge_particles_nnls!(nnls_merging::NNLSMerge{3}, x::Vecto
         pia.contiguous[species] = false
     end
 
-    for _ in 1:n_particles_to_delete
-        delete_particle_end!(particles, pia, cell, species)
-    end
+    delete_batch_end!(particles, pia, cell, species, n_particles_to_delete)
 
     return 1
 end
@@ -1221,9 +1219,7 @@ function compute_post_merge_particles_nnls!(nnls_merging::NNLSMerge{2}, x::Vecto
         pia.contiguous[species] = false
     end
 
-    for _ in 1:n_particles_to_delete
-        delete_particle_end!(particles, pia, cell, species)
-    end
+    delete_batch_end!(particles, pia, cell, species, n_particles_to_delete)
 
     return 1
 end
@@ -1320,9 +1316,7 @@ function compute_post_merge_particles_nnls!(nnls_merging::NNLSMerge{1}, x::Vecto
         pia.contiguous[species] = false
     end
 
-    for _ in 1:n_particles_to_delete
-        delete_particle_end!(particles, pia, cell, species)
-    end
+    delete_batch_end!(particles, pia, cell, species, n_particles_to_delete)
 
     return 1
 end
@@ -1416,9 +1410,7 @@ function compute_post_merge_particles_nnls!(nnls_merging::NNLSMerge{0}, x::Vecto
         pia.contiguous[species] = false
     end
 
-    for _ in 1:n_particles_to_delete
-        delete_particle_end!(particles, pia, cell, species)
-    end
+    delete_batch_end!(particles, pia, cell, species, n_particles_to_delete)
 
     return 1
 end
