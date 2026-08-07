@@ -217,4 +217,158 @@
 
     Merzbild.delete_particle_end!(particles, pia, 3, 1)
     @test pia.index_last[1] == 7
+
+    # now we test batch deletion
+    pia, particles = generate_pia_and_particles(30, [4, 0, 3], [0, 2, 2])
+
+    @test pia.index_last[1] == 11
+    @test pia.n_total[1] == 11
+
+    Merzbild.delete_batch_end!(particles, pia, 3, 1, 1)
+
+    @test pia.index_last[1] == 10
+    @test pia.n_total[1] == 10
+
+    @test pia.indexer[1,1].n_local == 4
+    @test pia.indexer[1,1].n_group1 == 4
+    @test pia.indexer[1,1].start1 == 1
+    @test pia.indexer[1,1].end1 == 4
+    @test pia.indexer[1,1].n_group2 == 0
+    @test pia.indexer[1,1].start2 == 0
+    @test pia.indexer[1,1].end2 == -1
+
+    @test pia.indexer[2,1].n_local == 2
+    @test pia.indexer[2,1].n_group1 == 0
+    @test pia.indexer[2,1].start1 == 0
+    @test pia.indexer[2,1].end1 == -1
+    @test pia.indexer[2,1].n_group2 == 2
+    @test pia.indexer[2,1].start2 == 8
+    @test pia.indexer[2,1].end2 == 9
+
+    @test pia.indexer[3,1].n_local == 4
+    @test pia.indexer[3,1].n_group1 == 3
+    @test pia.indexer[3,1].n_group2 == 1
+    @test pia.indexer[3,1].start1 == 5
+    @test pia.indexer[3,1].end1 == 7
+    @test pia.indexer[3,1].start2 == 10
+    @test pia.indexer[3,1].end2 == 10
+
+    Merzbild.delete_batch_end!(particles, pia, 2, 1, 3)
+
+    @test pia.index_last[1] == 10
+    @test pia.n_total[1] == 8
+
+    @test pia.indexer[1,1].n_local == 4
+    @test pia.indexer[1,1].n_group1 == 4
+    @test pia.indexer[1,1].start1 == 1
+    @test pia.indexer[1,1].end1 == 4
+    @test pia.indexer[1,1].n_group2 == 0
+    @test pia.indexer[1,1].start2 == 0
+    @test pia.indexer[1,1].end2 == -1
+
+    @test pia.indexer[2,1].n_local == 0
+    @test pia.indexer[2,1].n_group1 == 0
+    @test pia.indexer[2,1].start1 == 0
+    @test pia.indexer[2,1].end1 == -1
+    @test pia.indexer[2,1].n_group2 == 0
+    @test pia.indexer[2,1].start2 == 0
+    @test pia.indexer[2,1].end2 == -1
+
+    @test pia.indexer[3,1].n_local == 4
+    @test pia.indexer[3,1].n_group1 == 3
+    @test pia.indexer[3,1].n_group2 == 1
+    @test pia.indexer[3,1].start1 == 5
+    @test pia.indexer[3,1].end1 == 7
+    @test pia.indexer[3,1].start2 == 10
+    @test pia.indexer[3,1].end2 == 10
+
+    # current state is [4, 0, 3], [0, 0, 1]
+    Merzbild.delete_batch_end!(particles, pia, 1, 1, 2)
+
+    @test pia.index_last[1] == 10
+    @test pia.n_total[1] == 6
+
+    @test pia.indexer[1,1].n_local == 2
+    @test pia.indexer[1,1].n_group1 == 2
+    @test pia.indexer[1,1].start1 == 1
+    @test pia.indexer[1,1].end1 == 2
+    @test pia.indexer[1,1].n_group2 == 0
+    @test pia.indexer[1,1].start2 == 0
+    @test pia.indexer[1,1].end2 == -1
+
+    @test pia.indexer[2,1].n_local == 0
+    @test pia.indexer[2,1].n_group1 == 0
+    @test pia.indexer[2,1].start1 == 0
+    @test pia.indexer[2,1].end1 == -1
+    @test pia.indexer[2,1].n_group2 == 0
+    @test pia.indexer[2,1].start2 == 0
+    @test pia.indexer[2,1].end2 == -1
+
+    @test pia.indexer[3,1].n_local == 4
+    @test pia.indexer[3,1].n_group1 == 3
+    @test pia.indexer[3,1].n_group2 == 1
+    @test pia.indexer[3,1].start1 == 5
+    @test pia.indexer[3,1].end1 == 7
+    @test pia.indexer[3,1].start2 == 10
+    @test pia.indexer[3,1].end2 == 10
+
+    # current state is [2, 0, 3], [0, 0, 1]
+    # will become [2, 0, 1], [0, 0, 0]
+    Merzbild.delete_batch_end!(particles, pia, 3, 1, 3)
+
+    @test pia.index_last[1] == 5
+    @test pia.n_total[1] == 3
+
+    @test pia.indexer[1,1].n_local == 2
+    @test pia.indexer[1,1].n_group1 == 2
+    @test pia.indexer[1,1].start1 == 1
+    @test pia.indexer[1,1].end1 == 2
+    @test pia.indexer[1,1].n_group2 == 0
+    @test pia.indexer[1,1].start2 == 0
+    @test pia.indexer[1,1].end2 == -1
+
+    @test pia.indexer[2,1].n_local == 0
+    @test pia.indexer[2,1].n_group1 == 0
+    @test pia.indexer[2,1].start1 == 0
+    @test pia.indexer[2,1].end1 == -1
+    @test pia.indexer[2,1].n_group2 == 0
+    @test pia.indexer[2,1].start2 == 0
+    @test pia.indexer[2,1].end2 == -1
+
+    @test pia.indexer[3,1].n_local == 1
+    @test pia.indexer[3,1].n_group1 == 1
+    @test pia.indexer[3,1].n_group2 == 0
+    @test pia.indexer[3,1].start1 == 5
+    @test pia.indexer[3,1].end1 == 5
+    @test pia.indexer[3,1].start2 == 0
+    @test pia.indexer[3,1].end2 == -1
+
+    Merzbild.delete_batch_end!(particles, pia, 3, 1, 3)
+
+    @test pia.index_last[1] == 2
+    @test pia.n_total[1] == 2
+
+    @test pia.indexer[1,1].n_local == 2
+    @test pia.indexer[1,1].n_group1 == 2
+    @test pia.indexer[1,1].start1 == 1
+    @test pia.indexer[1,1].end1 == 2
+    @test pia.indexer[1,1].n_group2 == 0
+    @test pia.indexer[1,1].start2 == 0
+    @test pia.indexer[1,1].end2 == -1
+
+    @test pia.indexer[2,1].n_local == 0
+    @test pia.indexer[2,1].n_group1 == 0
+    @test pia.indexer[2,1].start1 == 0
+    @test pia.indexer[2,1].end1 == -1
+    @test pia.indexer[2,1].n_group2 == 0
+    @test pia.indexer[2,1].start2 == 0
+    @test pia.indexer[2,1].end2 == -1
+
+    @test pia.indexer[3,1].n_local == 0
+    @test pia.indexer[3,1].n_group1 == 0
+    @test pia.indexer[3,1].n_group2 == 0
+    @test pia.indexer[3,1].start1 == 0
+    @test pia.indexer[3,1].end1 == -1
+    @test pia.indexer[3,1].start2 == 0
+    @test pia.indexer[3,1].end2 == -1
 end
