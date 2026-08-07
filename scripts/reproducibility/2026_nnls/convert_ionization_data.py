@@ -19,19 +19,30 @@ dt = 5e-14
 pref = "scratch/data/"
 
 # octree simulation parameters, uncomment these and comment out the NNLS run_names to use the former
+# threshold = 1.075 * target
 # octree_runs = [[41, 38], [62, 58], [95, 88], [131, 122], [178, 166], [236, 220]]
 # n_seeds_for_run = [63, 63, 63, 15, 15, 15]
-# run_names_and_seeds = [(f"{pref}ionization_Ar_{field_Tn}Tn_octree_mid_{run[0]}_to_{run[1]}_es", ns)
-#                        for run, ns in zip(octree_runs, n_seeds_for_run)]
-# print(run_names_and_seeds)
+
+# threshold = 1.5 * target
+octree_runs = [57, 38], [87, 58], [132, 88], [183, 122], [250, 166], [330, 220]
+n_seeds_for_run = [31, 31, 31, 7, 7, 7]
+run_names_and_seeds = [(f"{pref}ionization_Ar_{field_Tn}Tn_octree_mid_{run[0]}_to_{run[1]}_es", ns)
+                       for run, ns in zip(octree_runs, n_seeds_for_run)]
+print(run_names_and_seeds)
 
 # NNLS simulation parameters, uncomment these and comment out the octree run_names to use the former
 # nnlstypes refers to whether rate preservation is exact, approximate, or turned off
-nnls_runs = [[4, 41, 38], [5, 62, 58], [6, 95, 88], [7, 131, 122], [8, 178, 166], [9, 236, 220]] 
-n_seeds_for_run = [63, 63, 63, 15, 15, 15]
+
+# threshold = 1.075 * target
+# nnls_runs = [[4, 41, 38], [5, 62, 58], [6, 95, 88], [7, 131, 122], [8, 178, 166], [9, 236, 220]] 
+# n_seeds_for_run = [63, 63, 63, 15, 15, 15]
+
+# threshold = 1.5 * target
+nnls_runs = [[4, 57, 38], [5, 87, 58], [6, 132, 88], [7, 183, 122], [8, 250, 166], [9, 330, 220]] 
+n_seeds_for_run = [31, 31, 31, 7, 7, 7]
 nnlstypes = ["", "rate_exact", "rate_approx"]
-run_names_and_seeds = [(f"{pref}ionization_Ar_{field_Tn}Tn_NNLS{rp}_{run[0]}full_{run[1]}_es", ns)
-                       for run, ns in zip(nnls_runs, n_seeds_for_run) for rp in nnlstypes]
+# run_names_and_seeds = [(f"{pref}ionization_Ar_{field_Tn}Tn_NNLS{rp}_{run[0]}full_{run[1]}_es", ns)
+#                        for run, ns in zip(nnls_runs, n_seeds_for_run) for rp in nnlstypes]
 
 print(run_names_and_seeds)
 
