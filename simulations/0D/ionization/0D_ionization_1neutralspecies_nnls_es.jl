@@ -300,6 +300,7 @@ end
 #  # a single 100 Tn simulation file is 2+ GB in size
 
 # params = [[4, 41, 38, 64], [5, 62, 58, 64], [6, 95, 88, 64], [7, 131, 122, 16], [8, 178, 166, 16], [9, 236, 220, 16]]  # 1.075
+# params = [[4, 57, 38, 32], [5, 87, 58, 32], [6, 132, 88, 32], [7, 183, 122, 8], [8, 250, 166, 8], [9, 330, 220, 8]]  # 1.5
 
 #  # we need more timesteps for the weaker field
 # for (n_t, external_E_field_Tn) in zip([500000, 5000000], [400.0, 100.0])
