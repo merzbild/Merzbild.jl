@@ -17,6 +17,11 @@ Merzbild.delete_particle!
 Merzbild.delete_particle_end!
 Merzbild.delete_particle_end_group1!
 Merzbild.delete_particle_end_group2!
+Merzbild.delete_batch_end!
+Merzbild.delete_batch_end_group1!
+Merzbild.delete_batch_end_group2!
+Merzbild.find_index_last_after_group1_delete!
+Merzbild.find_index_last_after_group2_delete!
 ```
 
 ## Loading species and interaction data

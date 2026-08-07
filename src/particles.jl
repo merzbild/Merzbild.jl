@@ -490,7 +490,7 @@ If no particles are present in the 1st group of particles, the function does not
         return
     end
 
-    @inbounds index_of_deleted = pia.indexer[cell, species].end1
+    index_of_deleted = indexer.end1
 
     # set weight to 0
     @inbounds pv[index_of_deleted].w = 0.0
@@ -513,21 +513,7 @@ If no particles are present in the 1st group of particles, the function does not
         indexer.end1 = -1
 
         if new_last
-            # need to find new index_last, iterate only over group1 since we're already in that part
-            found = false
-            if !found
-                @inbounds for c in cell-1:-1:1
-                    indexer_c = pia.indexer[c, species]
-                    if indexer_c.n_group1 > 0
-                        index_last[species] = indexer_c.end1
-                        found = true
-                        break
-                    end
-                end
-            end
-            if !found
-                index_last[species] = 0
-            end
+            find_index_last_after_group1_delete!(pia, cell, species)
         end
     end
 
@@ -583,38 +569,242 @@ If no particles are present in the 2nd group of particles, the function does not
 
         # need to find new index_last
         if new_last
-            found = false
-            @inbounds for c in cell-1:-1:1
-                indexer_c = pia.indexer[c, species]
-                if indexer_c.n_group2 > 0
-                    index_last[species] = indexer_c.end2
-                    found = true
-                    break
-                end
-            end
-
-            # if we start searching for group1, we need to include all cells!
-            n_cells = pia.n_cells
-
-            if !found
-                @inbounds for c in n_cells:-1:1
-                    indexer_c = pia.indexer[c, species]
-                    if indexer_c.n_group1 > 0
-                        index_last[species] = indexer_c.end1
-                        found = true
-                        break
-                    end
-                end
-            end
-            if !found
-                @inbounds index_last[species] = 0
-            end
+            find_index_last_after_group2_delete!(pia, cell, species)
         end
     end
 
     # add the deleted particle to the buffer
     @inbounds pv.nbuffer += 1
     @inbounds pv.buffer[pv.nbuffer] = pv.index[index_of_deleted]
+end
+
+
+
+"""
+    delete_batch_end!(pv::ParticleVector{D}, pia, cell, species, n) where D
+
+Delete the last `n` particles of species `species` in cell `cell`: first any particles in the 2nd
+group of the indices stored in the `ParticleIndexer` instance will be deleted;
+followed by particles in the 1st group of particles pointed to by the `ParticleIndexer` instance (starting at the end
+of each group)
+If no particles are present in the cell, the function does nothing. This does not set the value of the `contiguous` field of
+`pia` to `false` even if `pia` becomes discontinuous; this has to be done outside of this function.
+This updates the indexing, the buffer, `n_total` and `index_last`.
+It is equivalent to calling [`delete_particle_end!`](@ref) `n` times, but does the bookkeeping
+once for the whole batch and resolves `index_last` with at most one scan over the cells.
+**Note**: this assumes that `n <= n_group1 + n_group2`.
+
+# Positional arguments
+* `pv`: `ParticleVector` instance
+* `pia`: the `ParticleIndexerArray` instance
+* `cell`: the index of the cell in which the particle is deleted
+* `species`: the index of the species of which the particle is deleted
+"""
+@inline function delete_batch_end!(pv::ParticleVector{D}, pia, cell, species, n) where D
+    if n == 0
+        return
+    end
+
+    @inbounds indexer = pia.indexer[cell, species]
+    index_last = pia.index_last
+
+    n_g2 = min(n, indexer.n_group2)
+    # clamped so that an over-large `n` deletes what is there and stops, as repeated
+    # calls to delete_particle_end! would, rather than running off the start of group1
+    n_g1 = min(n - n_g2, indexer.n_group1)
+
+    if n_g2 > 0
+        # the deleted indices run end2, end2-1, ..., so `index_last` is affected only if
+        # `end2` holds it, in which case every one of the `n_g2` deletions decrements it
+        @inbounds was_last = indexer.end2 == index_last[species]
+
+        delete_batch_end_group2!(pv, indexer, n_g2)
+        @inbounds pia.n_total[species] -= n_g2
+
+        if was_last
+            if indexer.n_group2 == 0
+                # emptied group2, the new index_last is elsewhere. Note that group1 of this
+                # cell has not been touched yet, so it is still a valid candidate.
+                find_index_last_after_group2_delete!(pia, cell, species)
+            else
+                @inbounds index_last[species] -= n_g2
+            end
+        end
+    end
+
+    if n_g1 > 0
+        # same reasoning as for group2; `index_last` may have been reset above, so this
+        # has to be re-tested rather than carried over
+        @inbounds was_last = indexer.end1 == index_last[species]
+
+        delete_batch_end_group1!(pv, indexer, n_g1)
+        @inbounds pia.n_total[species] -= n_g1
+
+        if was_last
+            if indexer.n_group1 == 0
+                find_index_last_after_group1_delete!(pia, cell, species)
+            else
+                @inbounds index_last[species] -= n_g1
+            end
+        end
+    end
+end
+
+"""
+    find_index_last_after_group2_delete!(pia, cell, species)
+
+Find and set the new value of `pia.index_last[species]` after the 2nd group of particles of
+species `species` in cell `cell` has been emptied whilst holding the last index.
+Cells before `cell` are searched for a non-empty 2nd group; failing that, *all* cells are
+searched for a non-empty 1st group; failing that, `index_last` is set to 0.
+
+# Positional arguments
+* `pia`: the `ParticleIndexerArray` instance
+* `cell`: the index of the cell the particles were deleted from
+* `species`: the index of the species the particles were deleted from
+"""
+function find_index_last_after_group2_delete!(pia, cell, species)
+    index_last = pia.index_last
+
+    @inbounds for c in cell-1:-1:1
+        indexer_c = pia.indexer[c, species]
+        if indexer_c.n_group2 > 0
+            index_last[species] = indexer_c.end2
+            return
+        end
+    end
+
+    # if we start searching for group1, we need to include all cells!
+    @inbounds for c in pia.n_cells:-1:1
+        indexer_c = pia.indexer[c, species]
+        if indexer_c.n_group1 > 0
+            index_last[species] = indexer_c.end1
+            return
+        end
+    end
+
+    @inbounds index_last[species] = 0
+end
+
+"""
+    find_index_last_after_group1_delete!(pia, cell, species)
+
+Find and set the new value of `pia.index_last[species]` after the 1st group of particles of
+species `species` in cell `cell` has been emptied whilst holding the last index.
+Only the 1st groups of the cells before `cell` are searched, since a 1st group holding the
+last index implies that no 2nd group is populated; failing that, `index_last` is set to 0.
+
+# Positional arguments
+* `pia`: the `ParticleIndexerArray` instance
+* `cell`: the index of the cell the particles were deleted from
+* `species`: the index of the species the particles were deleted from
+"""
+function find_index_last_after_group1_delete!(pia, cell, species)
+    index_last = pia.index_last
+
+    @inbounds for c in cell-1:-1:1
+        indexer_c = pia.indexer[c, species]
+        if indexer_c.n_group1 > 0
+            index_last[species] = indexer_c.end1
+            return
+        end
+    end
+
+    @inbounds index_last[species] = 0
+end
+
+"""
+    delete_batch_end_group1!(pv::ParticleVector{D}, indexer, n) where D
+
+Delete `n` particles from the end of the 1st group  of particles of a given species in a given cell
+indexed by `indexer`
+and update the particle indexer and buffer accordingly. This also sets the weight of the deleted particles to 0.
+If `n` is 0, the function does nothing. This does not set the value of the `contiguous` field of
+`pia` to `false` even if `pia` becomes discontinuous; this has to be done outside of this function.
+**Note**: 1) This does not check that `n` is not larger than the number of particles in the 1st group of particles.
+2) This also does not update `index_last` or `n_total`; use [`delete_batch_end!`](@ref) to have those updated.
+
+# Positional arguments
+* `pv`: `ParticleVector` instance
+* `indexer`: the `ParticleIndexer` instance
+* `n`: the number of particles to delete
+"""
+@inline function delete_batch_end_group1!(pv::ParticleVector{D}, indexer, n) where D
+    if n == 0
+        return
+    end
+
+    # hoisted out of the loop: `pv` and `indexer` are mutable, so these would otherwise be
+    # re-loaded on every iteration. The true index is read once and reused for both the
+    # buffer entry and the weight, instead of going through `pv[i]` (which re-reads `pv.index`)
+    index = pv.index
+    particles = pv.particles
+    buffer = pv.buffer
+    nbuffer = pv.nbuffer
+    end1 = indexer.end1
+
+    @inbounds for i in 1:n
+        true_index = index[end1 - i + 1]
+        buffer[nbuffer + i] = true_index
+        particles[true_index].w = 0.0
+    end
+    pv.nbuffer = nbuffer + n
+
+    if n == indexer.n_group1
+        indexer.start1 = 0
+        indexer.end1 = -1
+    else
+        indexer.end1 = end1 - n
+    end
+
+    indexer.n_local -= n
+    indexer.n_group1 -= n
+end
+
+"""
+    delete_batch_end_group2!(pv::ParticleVector{D}, indexer, n) where D
+
+Delete `n` particles from the end of the 2nd group of particles of a given species in a given cell
+indexed by `indexer`
+and update the particle indexer and buffer accordingly. This also sets the weight of the deleted particles to 0.
+If `n` is 0, the function does nothing. This does not set the value of the `contiguous` field of
+`pia` to `false` even if `pia` becomes discontinuous; this has to be done outside of this function.
+**Note**: 1) This does not check that `n` is not larger than the number of particles in the 2nd group of particles of species
+in the cell. 2) This also does not update `index_last` or `n_total`; use [`delete_batch_end!`](@ref) to have those updated.
+
+# Positional arguments
+* `pv`: `ParticleVector` instance
+* `indexer`: the `ParticleIndexer` instance
+* `n`: the number of particles to delete
+"""
+@inline function delete_batch_end_group2!(pv::ParticleVector{D}, indexer, n) where D
+    if n == 0
+        return
+    end
+
+    # see delete_batch_end_group1! for why these are hoisted
+    index = pv.index
+    particles = pv.particles
+    buffer = pv.buffer
+    nbuffer = pv.nbuffer
+    end2 = indexer.end2
+
+    @inbounds for i in 1:n
+        true_index = index[end2 - i + 1]
+        buffer[nbuffer + i] = true_index
+        particles[true_index].w = 0.0
+    end
+    pv.nbuffer = nbuffer + n
+
+    if n == indexer.n_group2
+        indexer.start2 = 0
+        indexer.end2 = -1
+    else
+        indexer.end2 = end2 - n
+    end
+
+    indexer.n_local -= n
+    indexer.n_group2 -= n
 end
 
 """
