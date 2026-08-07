@@ -487,7 +487,7 @@ If no particles are present in the 1st group of particles, the function does not
     index_last = pia.index_last
 
     if indexer.n_group1 == 0
-        return
+        return nothing
     end
 
     index_of_deleted = indexer.end1
@@ -520,6 +520,7 @@ If no particles are present in the 1st group of particles, the function does not
     # add the deleted particle to the buffer
     pv.nbuffer += 1
     @inbounds pv.buffer[pv.nbuffer] = pv.index[index_of_deleted]
+    return nothing
 end
 
 """
@@ -542,7 +543,7 @@ If no particles are present in the 2nd group of particles, the function does not
     index_last = pia.index_last
 
     if indexer.n_group2 == 0
-        return
+        return nothing
     end
 
     index_of_deleted = indexer.end2
@@ -576,6 +577,7 @@ If no particles are present in the 2nd group of particles, the function does not
     # add the deleted particle to the buffer
     @inbounds pv.nbuffer += 1
     @inbounds pv.buffer[pv.nbuffer] = pv.index[index_of_deleted]
+    return nothing
 end
 
 
@@ -602,7 +604,7 @@ once for the whole batch and resolves `index_last` with at most one scan over th
 """
 @inline function delete_batch_end!(pv::ParticleVector{D}, pia, cell, species, n) where D
     if n == 0
-        return
+        return nothing
     end
 
     @inbounds indexer = pia.indexer[cell, species]
@@ -648,6 +650,7 @@ once for the whole batch and resolves `index_last` with at most one scan over th
             end
         end
     end
+    return nothing
 end
 
 """
@@ -670,7 +673,7 @@ function find_index_last_after_group2_delete!(pia, cell, species)
         indexer_c = pia.indexer[c, species]
         if indexer_c.n_group2 > 0
             index_last[species] = indexer_c.end2
-            return
+            return nothing
         end
     end
 
@@ -679,11 +682,12 @@ function find_index_last_after_group2_delete!(pia, cell, species)
         indexer_c = pia.indexer[c, species]
         if indexer_c.n_group1 > 0
             index_last[species] = indexer_c.end1
-            return
+            return nothing
         end
     end
 
     @inbounds index_last[species] = 0
+    return nothing
 end
 
 """
@@ -706,11 +710,12 @@ function find_index_last_after_group1_delete!(pia, cell, species)
         indexer_c = pia.indexer[c, species]
         if indexer_c.n_group1 > 0
             index_last[species] = indexer_c.end1
-            return
+            return nothing
         end
     end
 
     @inbounds index_last[species] = 0
+    return nothing
 end
 
 """
@@ -731,7 +736,7 @@ If `n` is 0, the function does nothing. This does not set the value of the `cont
 """
 @inline function delete_batch_end_group1!(pv::ParticleVector{D}, indexer, n) where D
     if n == 0
-        return
+        return nothing
     end
 
     # hoisted out of the loop: `pv` and `indexer` are mutable, so these would otherwise be
@@ -759,6 +764,7 @@ If `n` is 0, the function does nothing. This does not set the value of the `cont
 
     indexer.n_local -= n
     indexer.n_group1 -= n
+    return nothing
 end
 
 """
@@ -779,7 +785,7 @@ in the cell. 2) This also does not update `index_last` or `n_total`; use [`delet
 """
 @inline function delete_batch_end_group2!(pv::ParticleVector{D}, indexer, n) where D
     if n == 0
-        return
+        return nothing
     end
 
     # see delete_batch_end_group1! for why these are hoisted
@@ -805,6 +811,7 @@ in the cell. 2) This also does not update `index_last` or `n_total`; use [`delet
 
     indexer.n_local -= n
     indexer.n_group2 -= n
+    return nothing
 end
 
 """
