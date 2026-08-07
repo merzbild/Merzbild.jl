@@ -221,28 +221,29 @@ end
 #  # Uncomment set-up below to run over the parameter sets used for "Moment-preserving particle merging via non-negative least squares"
 #  # the 3rd value in each parameter list is the number of ensembles that are run with different random seeds 
 
-# params = [[41, 38, 64], [62, 58, 64], [95, 88, 64], [131, 122, 16], [178, 166, 16], [236, 220, 16]] 
+# params = [[41, 38, 64], [62, 58, 64], [95, 88, 64], [131, 122, 16], [178, 166, 16], [236, 220, 16]] # 1.075
+# params = [[57, 38, 32], [87, 58, 32], [132, 88, 32], [183, 122, 8], [250, 166, 8], [330, 220, 8]]  # 1.5
 
 #  # we need more timesteps for the weaker field
 # for (n_t, external_E_field_Tn) in zip([500000, 5000000], [400.0, 100.0])
 
 #     # iterate over parameters 
 #     for paramset in params
-#         for sadd in 0:params[3]-1
+#         for sadd in 0:paramset[3]-1
 #             run(1234, external_E_field_Tn, n_t,
 #                 paramset[1], paramset[2], cs_n_e_filepath; merging_bin_split=OctreeBinMidSplit, adds=sadd, do_es=true)
 #         end
 #     end
 
 #     for paramset in params
-#         for sadd in 0:params[3]-1
+#         for sadd in 0:paramset[3]-1
 #             run(1234, external_E_field_Tn, n_t,
 #                 paramset[1], paramset[2], cs_n_e_filepath; merging_bin_split=OctreeBinMidSplit, adds=sadd, do_es=true)
 #         end
 #     end
 
 #     for paramset in params
-#         for sadd in 0:params[3]-1
+#         for sadd in 0:paramset[3]-1
 #             run(1234, external_E_field_Tn, n_t,
 #                 paramset[1], paramset[2], cs_n_e_filepath; merging_bin_split=OctreeBinMidSplit, adds=sadd, do_es=true)
 #         end
