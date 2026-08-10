@@ -195,8 +195,8 @@ for M, ax in zip([4,8], [ax1,ax2]):
 
     ax.set_xlabel(r"$\overline{N_p}$", fontsize=label_size)
     ax.set_ylabel(r"$\mathcal{B}(\hat{M}_"+ f"{M}" +")$", fontsize=label_size)
-    ax.text(xmean_vals+1, y_vals[0], s="$L=4$", fontsize=legend_size-2)
-    ax.text(xmean_vals-20,y_vals[-1], s="$L=9$", fontsize=legend_size-2)
+    ax.text(xmean_vals[0]+1, y_vals[0], s="$L=4$", fontsize=legend_size-2)
+    ax.text(xmean_vals[-1]-20,y_vals[-1], s="$L=9$", fontsize=legend_size-2)
 
 if savefigs:
     fig.savefig(f"bkw_bias_M_both.pdf", bbox_inches="tight")
