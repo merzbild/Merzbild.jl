@@ -80,12 +80,16 @@ for stype in ["equalweight", "weighted"]:
     t500_mean = np.mean(octree_data["tailf_500_orig"])
     ax1.plot([xl1, xl2], [t500_mean, t500_mean], color="k", linewidth=2)
     ax1.set_xlim([xl1, xl2])
+    ax1.text(nnls_data["np_mean"][0]+1, nnls_data["tailf_500"][0], s="$L=4$", fontsize=legend_size-2)
+    ax1.text(nnls_data["np_mean"][-1]-20, nnls_data["tailf_500"][-1], s="$L=9$", fontsize=legend_size-2)
 
     ax2 = fig.add_subplot(1,2,2)
     t750_mean = np.mean(octree_data["tailf_750_orig"])
     ax2.plot([xl1, xl2], [t750_mean, t750_mean], color="k", linewidth=2, label="Sample value")
     ax2.plot(octree_data["np_mean"], octree_data["tailf_750"], marker="o", linewidth=2, label=f"Octree")
     ax2.plot(nnls_data["np_mean"], nnls_data["tailf_750"], marker="d", linewidth=2, label=f"NNLS")
+    ax2.text(nnls_data["np_mean"][0]+1, nnls_data["tailf_750"][0], s="$L=4$", fontsize=legend_size-2)
+    ax2.text(nnls_data["np_mean"][-1]-20, nnls_data["tailf_750"][-1], s="$L=9$", fontsize=legend_size-2)
     ax2.set_xlim([xl1, xl2])
 
     for ax in [ax1, ax2]:
@@ -108,6 +112,8 @@ for stype in ["equalweight", "weighted"]:
         ax1.plot([xl1, xl2], [octree_data["w_std_orig"][0], octree_data["w_std_orig"][0]], linewidth=2, color="k", label="Sample value")
     ax1.plot(octree_data["np_mean"], octree_data["w_std"], marker="o", linewidth=2, color="tab:blue", label="Octree")
     ax1.plot(nnls_data["np_mean"], nnls_data["w_std"], marker="d", linewidth=2, color="tab:orange", label="NNLS")
+    ax1.text(nnls_data["np_mean"][0]+1, nnls_data["w_std"][0], s="$L=4$", fontsize=legend_size-2)
+    ax1.text(nnls_data["np_mean"][-1]-20, nnls_data["w_std"][-1], s="$L=9$", fontsize=legend_size-2)
     ax1.set_xlim([xl1, xl2])
 
     ax2 = fig.add_subplot(1,2,2)
@@ -116,6 +122,8 @@ for stype in ["equalweight", "weighted"]:
         ax2.plot([xl1, xl2], [octree_data["w_log_std_orig"][0], octree_data["w_log_std_orig"][0]], linewidth=2, color="k", label="Sample value")
     ax2.plot(octree_data["np_mean"], octree_data["w_log_std"], marker="o", linewidth=2, color="tab:blue", label="Octree")
     ax2.plot(nnls_data["np_mean"], nnls_data["w_log_std"], marker="d", linewidth=2, color="tab:orange", label="NNLS")
+    ax2.text(nnls_data["np_mean"][0]+1, nnls_data["w_log_std"][0], s="$L=4$", fontsize=legend_size-2)
+    ax2.text(nnls_data["np_mean"][-1]-20, nnls_data["w_log_std"][-1], s="$L=9$", fontsize=legend_size-2)
     ax2.set_xlim([xl1, xl2])
 
     for ax in [ax1, ax2]:
@@ -137,6 +145,8 @@ for stype in ["equalweight", "weighted"]:
         ax.plot([xl1, xl2], [octree_data["w_r_orig"][0], octree_data["w_r_orig"][0]], linewidth=2, color="k", label="Sample value")
     ax.plot(octree_data["np_mean"], octree_data["w_r"], marker="o", linewidth=2, label=f"Octree")
     ax.plot(nnls_data["np_mean"], nnls_data["w_r"], marker="o", linewidth=2, label=f"NNLS")
+    ax.text(nnls_data["np_mean"][0]+1, nnls_data["w_r"][0], s="$L=4$", fontsize=legend_size-2)
+    ax.text(nnls_data["np_mean"][-1]-20, nnls_data["w_r"][-1], s="$L=9$", fontsize=legend_size-2)
     ax.set_xlim([xl1, xl2])
 
     ax.grid()
