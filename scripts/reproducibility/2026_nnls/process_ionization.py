@@ -54,7 +54,7 @@ field_vals = [100, 400]
 # process files with ionization rate data produced by convert_ionization_data.py
 #
 # the bias is the signed deviation of the ENSEMBLE-MEAN rate from the reference.
-# The absolute value has to come after the ensemble average, or not at all -- the signed
+# The absolute value has to come after the ensemble average, or not at all: the signed
 # value is plotted here so that the sign of the bias stays visible.
 #
 # bias_se is the standard error of the ensemble mean.
@@ -161,6 +161,10 @@ for ax, field_Tn in zip([ax1, ax2], field_vals):
         xmean_vals, y_vals, y_err = get_bias_of_avg_data(data[field_Tn], runs, ref_vals[field_Tn])
         ax.plot(xmean_vals, y_vals, marker='o', linewidth=2, label=label)
 
+        if label == "NNLS":
+            ax.text(xmean_vals[0]+5, y_vals[0], f"L={runs[0][0]}", fontsize=legend_size-2)
+            ax.text(xmean_vals[-1]-20, y_vals[-1], f"L={runs[-1][0]}", fontsize=legend_size-2)
+
     ax.axhline(0.0, color='k', linewidth=0.8)
 
 
@@ -196,6 +200,9 @@ for ax, field_Tn in zip([ax1, ax2], field_vals):
 
     xmean_vals, y_vals = get_noise_data(nnls_data[field_Tn], nnls_runs)
     ax.plot(xmean_vals, y_vals, '-o', linewidth=2, label=f"NNLS")
+
+    ax.text(xmean_vals[0]+5, y_vals[0], f"L={runs[0][0]}", fontsize=legend_size-2)
+    ax.text(xmean_vals[-1]-20, y_vals[-1], f"L={runs[-1][0]}", fontsize=legend_size-2)
 
     xmean_vals, y_vals = get_noise_data(nnls_erp_data[field_Tn], nnls_erp_runs)
     ax.plot(xmean_vals, y_vals, '-o', linewidth=2, label=f"NNLS, RP")
@@ -237,6 +244,9 @@ for ax, field_Tn in zip([ax1, ax2], field_vals):
 
     xmean_vals, y_vals = get_temperature_data(nnls_data[field_Tn], nnls_runs)
     ax.plot(xmean_vals, y_vals, '-o', linewidth=2, label=f"NNLS")
+
+    ax.text(xmean_vals[0]+5, y_vals[0], f"L={runs[0][0]}", fontsize=legend_size-2)
+    ax.text(xmean_vals[-1]-20, y_vals[-1], f"L={runs[-1][0]}", fontsize=legend_size-2)
 
     xmean_vals, y_vals = get_temperature_data(nnls_erp_data[field_Tn], nnls_erp_runs)
     ax.plot(xmean_vals, y_vals, '-o', linewidth=2, label=f"NNLS, RP")
@@ -355,6 +365,28 @@ def get_post_merge_effect_single(ref_rate_mean, ref_T_mean, start_t, end_t, fnam
             np.mean(d_T_merge) - np.mean(d_T_control),
             n_merges, n_between)
 
+# bias immediately after merging event
+def get_post_merge_rate_single(ref_rate_mean, ref_T_mean, start_t, end_t, fname, window_size):
+    ds = Dataset(fname)
+    k_ion = np.asarray(ds.variables["k_ion"]) / (1e15 * ref_rate_mean)
+    npart = np.asarray(ds.variables["np_e"])
+    Te = np.asarray(ds.variables["T_e"]) / ref_T_mean
+    ds.close()
+
+    n_ts = len(k_ion)
+    ts = np.arange(1, n_ts + 1)
+
+    start_t = max(0, start_t)
+    end_t = min(end_t, n_ts)
+
+    merge_timesteps = ts[1:][npart[1:] < npart[:-1]]
+    
+    k_ion_post = np.array([np.mean(k_ion[t0:t0+window_size])/(1e15 * ref_rate_mean) for t0 in merge_timesteps])
+    Te_post = np.array([np.mean(Te[t0+1:t0+1+window_size])/ref_T_mean for t0 in merge_timesteps])
+
+    return (np.mean(k_ion_post),
+            np.mean(Te_post))
+
 # process a group of files with different random seeds
 def get_post_merge_effect(ref_rate_mean, ref_T_mean, start_t, end_t, fname, nseeds, window_size):
     per_seed = np.asarray([get_post_merge_effect_single(ref_rate_mean, ref_T_mean, start_t, end_t,
@@ -371,11 +403,30 @@ def get_post_merge_effect(ref_rate_mean, ref_T_mean, start_t, end_t, fname, nsee
             "n_merge_avg": np.mean(per_seed[:, 2]), "n_between": np.nanmean(per_seed[:, 3])}
 
 
+
+# process a group of files with different random seeds
+def get_post_merge_bias(ref_rate_mean, ref_T_mean, start_t, end_t, fname, nseeds, window_size):
+    per_seed = np.asarray([get_post_merge_rate_single(ref_rate_mean, ref_T_mean, start_t, end_t,
+                                                        fname + (f"_seed{adds}" if adds > 0 else "")
+                                                        + "_rate_data_only.nc",
+                                                        window_size)
+                           for adds in range(nseeds + 1)])
+
+    return {"bias_k": np.mean(per_seed[:, 0]) / ref_rate_mean - 1,
+            "bias_T": np.mean(per_seed[:, 1]) / ref_T_mean - 1}
+
+
+
 octree_data_window = {}
 nnls_data_window = {}
 nnls_rp_data_window = {}
 nnls_erp_data_window = {}
+octree_bias_data_window = {}
+nnls_bias_data_window = {}
+nnls_rp_bias_data_window = {}
+nnls_erp_bias_data_window = {}
 ws = 50 # window size
+
 
 for field_Tn in field_vals:
     print(f"Processing windowed data for E = {field_Tn}Tn")
@@ -400,6 +451,18 @@ for field_Tn in field_vals:
                                                            filename,
                                                            ns, ws)
 
+    for label, data_bias, runs, tag in  [("Octree",   octree_bias_data_window,   octree_runs,   "octree_mid_{0}_to_{1}"),
+                                   ("NNLS",     nnls_bias_data_window,     nnls_runs,     "NNLS_{0}full_{1}"),
+                                   ("NNLS ARP", nnls_rp_bias_data_window,  nnls_rp_runs,  "NNLSrate_approx_{0}full_{1}"),
+                                   ("NNLS RP",  nnls_erp_bias_data_window, nnls_erp_runs, "NNLSrate_exact_{0}full_{1}")]:
+        data_bias[field_Tn] = {}
+        for ns, run in zip(n_seeds_for_run, runs):
+            print(f"{label}: ", run)
+            filename = f"{pref}ionization_Ar_{field_Tn}Tn_" + tag.format(*run[:2]) + "_es"
+            data[field_Tn][run[0]] = get_post_merge_bias(ref_val_mean, ref_T_val * 11605.0,
+                                                           ts_min, ts_max,
+                                                           filename,
+                                                           ns, ws)
 
 def get_window_effect_k(rundata, runs):
     y_vals_ = np.asarray([rundata[run[0]][f"effect_k"] * 100 for run in runs])
@@ -410,6 +473,14 @@ def get_window_effect_T(rundata, runs):
     y_vals_ = np.asarray([rundata[run[0]][f"effect_T"] * 100 for run in runs])
     y_err_ = np.asarray([rundata[run[0]][f"effect_T_se"] * 100 for run in runs])
     return y_vals_, y_err_
+
+def get_bias_window_k(rundata, runs):
+    y_vals_ = np.asarray([rundata[run[0]][f"bias_k"] * 100 for run in runs])
+    return y_vals_
+
+def get_bias_window_T(rundata, runs):
+    y_vals_ = np.asarray([rundata[run[0]][f"bias_T"] * 100 for run in runs])
+    return y_vals_
 
 # plot bias in rate in 50 steps after merging event
 fig = plt.figure(figsize=(18,6))
@@ -447,9 +518,8 @@ for ax in [ax1, ax2]:
     ax.set_xlabel(r"$\overline{N_p}$", fontsize=label_size)
 ax1.set_ylabel(r"$\Delta_{50}(k_{ion})$, \%", fontsize=label_size)
 
-# ax1.text(x=150
 if savefigs:
-    fig.savefig(f"ionization_bias_k_ion_50.pdf", bbox_inches="tight")
+    fig.savefig(f"ionization_dk_ion_50.pdf", bbox_inches="tight")
 
 
 # plot bias in temperature in 50 steps after merging event
@@ -465,6 +535,51 @@ for ax, field_Tn in zip([ax1, ax2], field_vals):
                                       (nnls_rp_data, nnls_rp_data_window, nnls_rp_runs, "NNLS, ARP")]:
         xmean_vals = get_np_data(data[field_Tn], runs)
         y_vals, y_err = get_window_effect_T(data_w[field_Tn], runs)
+        mask = ~np.isnan(y_vals)
+
+        ax.plot(xmean_vals[mask], y_vals[mask], marker='o', linewidth=2, label=label)
+
+        if label == "NNLS":
+            ax.text(xmean_vals[0]+5, y_vals[0], f"L={runs[0][0]}", fontsize=legend_size-2)
+            ax.text(xmean_vals[-1]-20, y_vals[-1], f"L={runs[-1][0]}", fontsize=legend_size-2)
+
+    ax.axhline(0.0, color='k', linewidth=0.8)
+
+
+ax1.legend(fontsize=legend_size, framealpha=1.0, title="E = 100 Tn",
+    title_fontsize=legend_size)
+
+ax2.legend([],
+    [],
+    title="E = 400 Tn",
+    framealpha=1.0,
+    title_fontsize=legend_size
+)
+
+for ax in [ax1, ax2]:
+    ax.grid()
+    ax.tick_params(axis='both', labelsize=tick_size,)
+    ax.set_xlabel(r"$\overline{N_p}$", fontsize=label_size)
+ax1.set_ylabel(r"$\Delta_{50}(T_e)$, \%", fontsize=label_size)
+
+if savefigs:
+    fig.savefig(f"ionization_dT_ion_50.pdf", bbox_inches="tight")
+
+
+
+# plot bias in rate in 50 steps after merging event
+fig = plt.figure(figsize=(18,6))
+
+ax1 = fig.add_subplot(1,2,1)
+ax2 = fig.add_subplot(1,2,2)
+
+for ax, field_Tn in zip([ax1, ax2], field_vals):
+    for data, data_w, runs, label in [(octree_data, octree_bias_data_window, octree_runs, "Octree"),
+                                      (nnls_data, nnls_bias_data_window, nnls_runs, "NNLS"),
+                                      (nnls_erp_data, nnls_erp_bias_data_window, nnls_erp_runs, "NNLS, RP"),
+                                      (nnls_rp_data, nnls_rp_bias_data_window, nnls_rp_runs, "NNLS, ARP")]:
+        xmean_vals = get_np_data(data[field_Tn], runs)
+        y_vals = get_bias_window_k(data_w[field_Tn], runs)
         mask = ~np.isnan(y_vals)
 
         ax.plot(xmean_vals[mask], y_vals[mask], marker='o', linewidth=2, label=label)
@@ -486,7 +601,51 @@ for ax in [ax1, ax2]:
     ax.grid()
     ax.tick_params(axis='both', labelsize=tick_size,)
     ax.set_xlabel(r"$\overline{N_p}$", fontsize=label_size)
-ax1.set_ylabel(r"$\Delta_{50}(T_e)$, \%", fontsize=label_size)
+ax1.set_ylabel(r"$\overline{\mathcal{B}}_{50}(k_{ion})$, \%", fontsize=label_size)
+
+if savefigs:
+    fig.savefig(f"ionization_bias_k_ion_50.pdf", bbox_inches="tight")
+
+
+# plot bias in temperature in 50 steps after merging event
+fig = plt.figure(figsize=(18,6))
+
+ax1 = fig.add_subplot(1,2,1)
+ax2 = fig.add_subplot(1,2,2)
+
+for ax, field_Tn in zip([ax1, ax2], field_vals):
+    for data, data_w, runs, label in [(octree_data, octree_bias_data_window, octree_runs, "Octree"),
+                                      (nnls_data, nnls_bias_data_window, nnls_runs, "NNLS"),
+                                      (nnls_erp_data, nnls_erp_bias_data_window, nnls_erp_runs, "NNLS, RP"),
+                                      (nnls_rp_data, nnls_rp_bias_data_window, nnls_rp_runs, "NNLS, ARP")]:
+        xmean_vals = get_np_data(data[field_Tn], runs)
+        y_vals = get_bias_window_T(data_w[field_Tn], runs)
+        mask = ~np.isnan(y_vals)
+
+        ax.plot(xmean_vals[mask], y_vals[mask], marker='o', linewidth=2, label=label)
+
+        if label == "NNLS":
+            ax.text(xmean_vals[0]+5, y_vals[0], f"L={runs[0][0]}", fontsize=legend_size-2)
+            ax.text(xmean_vals[-1]-20, y_vals[-1], f"L={runs[-1][0]}", fontsize=legend_size-2)
+
+    ax.axhline(0.0, color='k', linewidth=0.8)
+
+
+ax1.legend(fontsize=legend_size, framealpha=1.0, title="E = 100 Tn",
+    title_fontsize=legend_size)
+
+ax2.legend([],
+    [],
+    title="E = 400 Tn",
+    framealpha=1.0,
+    title_fontsize=legend_size
+)
+
+for ax in [ax1, ax2]:
+    ax.grid()
+    ax.tick_params(axis='both', labelsize=tick_size,)
+    ax.set_xlabel(r"$\overline{N_p}$", fontsize=label_size)
+ax1.set_ylabel(r"$\overline{\mathcal{B}}_{50}(T_e)$, \%", fontsize=label_size)
 
 if savefigs:
     fig.savefig(f"ionization_bias_T_ion_50.pdf", bbox_inches="tight")
