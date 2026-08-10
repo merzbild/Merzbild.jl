@@ -54,8 +54,9 @@ plt.rcParams["font.family"] = "serif"
 plt.rcParams["font.serif"] = ["Computer Modern Roman"]
 plt.rcParams["axes.linewidth"] = 0.8
 
-# the weight-spread quantities, which are recorded pre- and post-merge like the tail functions
-weight_names = ["w_ratio", "sigma_w", "sigma_logw"]
+# the weight-spread quantities, which are recorded pre- and post-merge like the tail functions.
+# w_ratio is summarised in log space by the converter, since w_max/w_min spans hundreds of decades
+weight_names = ["log10_w_ratio", "sigma_w", "sigma_logw"]
 
 
 # read one run's summary, returning a flat dict of scalars: F{i} / dF{i} are the mean tail fraction
@@ -130,7 +131,7 @@ print()
 hdr = f"{'run':<24}{'Np':>8}{'merges':>9}{'fallb':>7}{'n_coll':>9}"
 for i in cutoff_indices:
     hdr += f"{f'F({energies[i]:.1f})':>11}{'dF %':>9}"
-hdr += f"{'w_max/w_min':>13}{'dw %':>9}{'sig_lnw':>10}{'dsig %':>9}"
+hdr += f"{'log10 w_r':>11}{'dlog10':>9}{'sig_lnw':>10}{'dsig %':>9}"
 print(hdr)
 for label, _, _, _ in schemes:
     for d in data[label]:
@@ -139,28 +140,40 @@ for label, _, _, _ in schemes:
         line = f"{label:<24}{d['np']:8.1f}{d['n_merges']:9.0f}{d['fallback_frac']*100:6.1f}%{d['n_coll']:9.2f}"
         for i in cutoff_indices:
             line += f"{d[f'F{i}']:11.5f}{d[f'dF{i}']*100:9.3f}"
-        line += f"{d['w_ratio']:13.4g}{d['dw_ratio']*100:9.2f}{d['sigma_logw']:10.4f}{d['dsigma_logw']*100:9.2f}"
+        line += (f"{d['log10_w_ratio']:11.3f}{d['dlog10_w_ratio']:9.3f}"
+                 f"{d['sigma_logw']:10.4f}{d['dsigma_logw']*100:9.2f}")
         print(line)
     print()
 
 
-# plot one quantity per subplot against the mean number of particles, one curve per scheme
+# plot one quantity per subplot against the mean number of particles, one curve per scheme.
+# scale is either one factor for both panels or one per panel (the per-merge change of a log
+# quantity is in decades, while the others are percentages)
 def plot_vs_np(keys, ylabels, fname, ref=False, logy=False, zero_line=False, scale=1.0):
     fig = plt.figure(figsize=(18, 6))
     axes = [fig.add_subplot(1, 2, 1), fig.add_subplot(1, 2, 2)]
+    scales = scale if np.iterable(scale) else [scale] * len(keys)
 
-    for ax, key, ylabel in zip(axes, keys, ylabels):
-        if ref and reference is not None:
-            ax.plot([xl1, xl2], [reference[key] * scale] * 2, color="k", linewidth=2, label="Reference")
+    for ax, key, ylabel, sc in zip(axes, keys, ylabels, scales):
+        if ref and reference is not None and np.isfinite(reference[key]):
+            ax.plot([xl1, xl2], [reference[key] * sc] * 2, color="k", linewidth=2, label="Reference")
 
         for label, _, _, marker in schemes:
             present = [d for d in data[label] if d is not None]
             if not present:
                 continue
             x = np.asarray([d["np"] for d in present])
-            y = np.asarray([d[key] for d in present]) * scale
-            e = np.asarray([d[key + "_se"] for d in present]) * scale
-            ax.errorbar(x, y, yerr=e, marker=marker, capsize=4, linewidth=2, label=label)
+            y = np.asarray([d[key] for d in present]) * sc
+            e = np.asarray([d[key + "_se"] for d in present]) * sc
+
+            # a single non-finite point would otherwise take the whole axis with it
+            ok = np.isfinite(x) & np.isfinite(y)
+            if not ok.any():
+                print(f"  no finite {key} for {label}")
+                continue
+
+            ax.errorbar(x[ok], y[ok], yerr=np.where(np.isfinite(e[ok]), e[ok], 0.0),
+                        marker=marker, capsize=4, linewidth=2, label=label)
 
         if zero_line:
             ax.axhline(0.0, color='k', linewidth=0.8)
@@ -197,13 +210,17 @@ plot_vs_np([f"dF{i1}", f"dF{i2}"],
            f"ionization_tail_change_per_merge_{field_Tn}Tn.pdf", zero_line=True, scale=100.0)
 
 # weight spread, and its change per merging event
-plot_vs_np(["w_ratio", "sigma_logw"],
-           [r"$w_{\mathrm{max}}/w_{\mathrm{min}}$", r"$\sigma_{\ln w}$"],
-           f"ionization_weight_spread_{field_Tn}Tn.pdf", ref=True, logy=True)
+plot_vs_np(["log10_w_ratio", "sigma_logw"],
+           [r"$\log_{10}(w_{\mathrm{max}}/w_{\mathrm{min}})$", r"$\sigma_{\ln w}$"],
+           f"ionization_weight_spread_{field_Tn}Tn.pdf", ref=True)
 
-plot_vs_np(["dw_ratio", "dsigma_logw"],
-           [r"$\Delta (w_{\mathrm{max}}/w_{\mathrm{min}})$, \%", r"$\Delta \sigma_{\ln w}$, \%"],
-           f"ionization_weight_change_per_merge_{field_Tn}Tn.pdf", zero_line=True, scale=100.0)
+# the change in log10_w_ratio is a difference of logarithms, i.e. decades removed per merge, so it
+# is plotted unscaled while the change in sigma_ln w stays a percentage
+plot_vs_np(["dlog10_w_ratio", "dsigma_logw"],
+           [r"$\Delta \log_{10}(w_{\mathrm{max}}/w_{\mathrm{min}})$, decades",
+            r"$\Delta \sigma_{\ln w}$, \%"],
+           f"ionization_weight_change_per_merge_{field_Tn}Tn.pdf", zero_line=True,
+           scale=[1.0, 100.0])
 
 # collision work: candidate pairs tested per timestep, and the NTC majorant that sets it
 plot_vs_np(["n_coll", "sigma_g_w_max"],

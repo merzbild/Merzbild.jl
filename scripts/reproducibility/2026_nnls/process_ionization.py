@@ -16,15 +16,16 @@ n_seeds_for_run = [63, 63, 63, 15, 15, 15]
 
 # parameters of runs with octree merging
 octree_runs = [[41, 38], [62, 58], [95, 88], [131, 122], [178, 166], [236, 220]]
+# octree_runs = [[57, 38], [87, 58], [132, 88], [183, 122], [250, 166], [330, 220]]
 
 # parameters of runs with nnls merging without rate preservation
-nnls_runs = [[4, 41, 38], [5, 62, 58], [6, 95, 88], [7, 131, 122], [8, 178, 166], [9, 236, 220]]
+nnls_runs = [[4, 41, 38], [5, 62, 58], [6, 95, 88], [7, 131, 122], [8, 178, 166], [9, 236, 220]] 
 
 # parameters of runs with nnls merging with approximate rate preservation
-nnls_rp_runs = [[4, 41, 38], [5, 62, 58], [6, 95, 88], [7, 131, 122], [8, 178, 166], [9, 236, 220]]
+nnls_rp_runs = nnls_runs
 
 # parameters of runs with nnls merging with exact rate preservation
-nnls_erp_runs = [[4, 41, 38], [5, 62, 58], [6, 95, 88], [7, 131, 122], [8, 178, 166], [9, 236, 220]]
+nnls_erp_runs = nnls_runs
 
 # in which time window is averaging performed for the two different field strengths
 times = {400: (0.75e-8, 2.5e-8), 100: (0.75e-7, 2.55e-7)}
@@ -47,6 +48,8 @@ octree_data = {}
 nnls_data = {}
 nnls_rp_data = {}
 nnls_erp_data = {}
+
+field_vals = [100, 400]
 
 # process files with ionization rate data produced by convert_ionization_data.py
 #
@@ -90,7 +93,7 @@ def get_bias_mean_noise_np_from_rate_file(ref_rate, start_t, end_t, fname, nseed
             "T_e": np.mean(T_e),
             "std_T_e": np.std(T_e)}
 
-for field_Tn in [100, 400]:
+for field_Tn in field_vals:
     ref_val_mean = ref_vals[field_Tn]
     ref_T_val = ref_T_vals[field_Tn]
     t_min = times[field_Tn][0]
@@ -151,7 +154,7 @@ fig = plt.figure(figsize=(18,6))
 ax1 = fig.add_subplot(1,2,1)
 ax2 = fig.add_subplot(1,2,2)
 
-for ax, field_Tn in zip([ax1, ax2], [100, 400]):
+for ax, field_Tn in zip([ax1, ax2], field_vals):
     for data, runs, label in [(octree_data, octree_runs, "Octree"), (nnls_data, nnls_runs, "NNLS"),
                               (nnls_erp_data, nnls_erp_runs, "NNLS, RP"),
                               (nnls_rp_data, nnls_rp_runs, "NNLS, ARP")]:
@@ -187,7 +190,7 @@ fig = plt.figure(figsize=(18,6))
 ax1 = fig.add_subplot(1,2,1)
 ax2 = fig.add_subplot(1,2,2)
 
-for ax, field_Tn in zip([ax1, ax2], [100, 400]):
+for ax, field_Tn in zip([ax1, ax2], field_vals):
     xmean_vals, y_vals = get_noise_data(octree_data[field_Tn], octree_runs)
     ax.plot(xmean_vals, y_vals, '-o', linewidth=2, label=f"Octree")
 
@@ -226,7 +229,7 @@ fig = plt.figure(figsize=(18,6))
 ax1 = fig.add_subplot(1,2,1)
 ax2 = fig.add_subplot(1,2,2)
 
-for ax, field_Tn in zip([ax1, ax2], [100, 400]):
+for ax, field_Tn in zip([ax1, ax2], field_vals):
     ax.plot([20, 250], [ref_T_vals[field_Tn], ref_T_vals[field_Tn]], 'k', linewidth=2, label="Reference")
     
     xmean_vals, y_vals = get_temperature_data(octree_data[field_Tn], octree_runs)
@@ -374,7 +377,7 @@ nnls_rp_data_window = {}
 nnls_erp_data_window = {}
 ws = 50 # window size
 
-for field_Tn in [100, 400]:
+for field_Tn in field_vals:
     print(f"Processing windowed data for E = {field_Tn}Tn")
     ref_val_mean = ref_vals[field_Tn]
     ref_T_val = ref_T_vals[field_Tn]
@@ -414,7 +417,7 @@ fig = plt.figure(figsize=(18,6))
 ax1 = fig.add_subplot(1,2,1)
 ax2 = fig.add_subplot(1,2,2)
 
-for ax, field_Tn in zip([ax1, ax2], [100, 400]):
+for ax, field_Tn in zip([ax1, ax2], field_vals):
     for data, data_w, runs, label in [(octree_data, octree_data_window, octree_runs, "Octree"),
                                       (nnls_data, nnls_data_window, nnls_runs, "NNLS"),
                                       (nnls_erp_data, nnls_erp_data_window, nnls_erp_runs, "NNLS, RP"),
@@ -455,7 +458,7 @@ fig = plt.figure(figsize=(18,6))
 ax1 = fig.add_subplot(1,2,1)
 ax2 = fig.add_subplot(1,2,2)
 
-for ax, field_Tn in zip([ax1, ax2], [100, 400]):
+for ax, field_Tn in zip([ax1, ax2], field_vals):
     for data, data_w, runs, label in [(octree_data, octree_data_window, octree_runs, "Octree"),
                                       (nnls_data, nnls_data_window, nnls_runs, "NNLS"),
                                       (nnls_erp_data, nnls_erp_data_window, nnls_erp_runs, "NNLS, RP"),

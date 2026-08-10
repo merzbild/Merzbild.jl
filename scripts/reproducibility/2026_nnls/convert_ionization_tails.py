@@ -56,11 +56,22 @@ run_names_and_seeds += [(f"{pref}ionization_Ar_{field_Tn}Tn_octree_mid_24000_to_
 
 print(run_names_and_seeds)
 
-# quantities recorded pre- and post-merge alongside the tail functions
-weight_names = ["w_ratio", "sigma_w", "sigma_logw"]
+# quantities recorded pre- and post-merge alongside the tail functions. w_ratio is reduced in log
+# space: w_max/w_min spans hundreds of decades (the 24000-particle reference run reaches ~1e298, as
+# event splitting keeps making ever smaller fractional weights and merging rarely fires), so its
+# arithmetic mean is dominated by the single smallest weight and overflows as soon as a variance is
+# taken across seeds. the change in a log quantity is a plain difference, i.e. decades removed by a
+# merge, rather than a fraction
+weight_names = ["log10_w_ratio", "sigma_w", "sigma_logw"]
+log_names = ["log10_w_ratio"]
 
 # quantities recorded once per timestep
 step_names = ["sigma_g_w_max", "n_coll", "n_eq_w_coll"]
+
+
+# mean over the finite entries only, so that a stray Inf does not wipe out a whole run
+def finite_mean(a, axis=0):
+    return np.nanmean(np.where(np.isfinite(a), a, np.nan), axis=axis)
 
 
 # reduce a single run to its summary values over [start_t, end_t)
@@ -79,8 +90,13 @@ def summarize_single_run(fname, start_t, end_t):
     w_total_post = np.asarray(ds.variables["w_total_post"])[sl]
     merge_kind = np.asarray(ds.variables["merge_kind"])[sl]
 
-    wstats = {n: (np.asarray(ds.variables[n + "_pre"])[sl], np.asarray(ds.variables[n + "_post"])[sl])
-              for n in weight_names}
+    wstats = {}
+    for n in weight_names:
+        src = n[len("log10_"):] if n in log_names else n
+        pre = np.asarray(ds.variables[src + "_pre"])[sl]
+        post = np.asarray(ds.variables[src + "_post"])[sl]
+        wstats[n] = (np.log10(pre), np.log10(post)) if n in log_names else (pre, post)
+
     steps = {n: np.asarray(ds.variables[n])[sl] for n in step_names}
     ds.close()
 
@@ -102,34 +118,39 @@ def summarize_single_run(fname, start_t, end_t):
         print(f"  no merges in [{start_t}, {end_t}] for {fname}")
 
     def at_merge(a):
-        return a[merged].mean(axis=0) if n_merges > 0 else np.full(a.shape[1:], np.nan)
+        return finite_mean(a[merged]) if n_merges > 0 else np.full(a.shape[1:], np.nan)
+
+    # the change across a merge is a fraction of the pre-merge value *at the merge steps*, not of
+    # the window mean: merges fire when the weight spread has grown most, so the two differ a lot
+    # and normalising by the window mean would put the change past -100%. for a log quantity the
+    # natural change is the plain difference, i.e. the number of decades a merge removes
+    def add(out, name, pre, post):
+        out[name] = finite_mean(pre)
+        out[name + "_merge_pre"] = at_merge(pre)
+        out[name + "_merge_post"] = at_merge(post)
+        out["d" + name] = (out[name + "_merge_post"] - out[name + "_merge_pre"])
+
+        if name not in log_names:
+            out["d" + name] = out["d" + name] / out[name + "_merge_pre"]
 
     out = {"np": npmean,
            "n_merges": n_merges,
            # fraction of merges that fell back to a lower-order NNLS or to octree
-           "fallback_frac": np.count_nonzero(merge_kind >= 2) / n_merges if n_merges > 0 else np.nan,
-           "F": frac_pre.mean(axis=0),
-           "F_merge_pre": at_merge(frac_pre),
-           "F_merge_post": at_merge(frac_post)}
+           "fallback_frac": np.count_nonzero(merge_kind >= 2) / n_merges if n_merges > 0 else np.nan}
+
+    add(out, "F", frac_pre, frac_post)
 
     for n in weight_names:
-        pre, post = wstats[n]
-        out[n] = pre.mean()
-        out[n + "_merge_pre"] = at_merge(pre)
-        out[n + "_merge_post"] = at_merge(post)
+        add(out, n, *wstats[n])
 
     for n in step_names:
-        out[n] = steps[n].mean()
+        out[n] = finite_mean(steps[n])
 
     return energies, out
 
 
 # write the summary of a single run. the derived per-merge changes are stored alongside the raw
-# merge-step means so that the file can be plotted as-is, and renormalised if needed.
-#
-# the change is normalised by the pre-merge value *at the merge steps*, not by the window mean:
-# merges fire when the weight spread has grown most, so the two differ a lot for w_ratio and
-# normalising by the window mean would put the change past -100%
+# merge-step means, so that the file can be plotted as-is and renormalised if needed
 def write_summary(fname, energies, summary, start_t, end_t):
     rootgrp = Dataset(fname + "_tail_summary.nc", "w")
     rootgrp.createDimension("cutoff", len(energies))
@@ -137,20 +158,18 @@ def write_summary(fname, energies, summary, start_t, end_t):
     rootgrp.start_t = start_t
     rootgrp.end_t = end_t
     rootgrp.COMMENT = ("per-run summary of {fname}_tail.nc over [start_t, end_t). F is the mean "
-                       "tail weight fraction at each cutoff energy; d<name> is the mean signed "
-                       "fractional change of <name> across a single merging event, normalised by "
-                       "its pre-merge value at the merge steps")
+                       "tail weight fraction at each cutoff energy. d<name> is the mean change of "
+                       "<name> across a single merging event: a fraction of its pre-merge value at "
+                       "the merge steps, or, for the log10_ quantities, a plain difference in "
+                       "decades")
 
     rootgrp.createVariable("cutoff_energy_eV", "f8", ("cutoff",))[:] = energies
 
     for name in ["F"] + weight_names:
         dims = ("cutoff",) if name == "F" else ()
-        pre, post = summary[name + "_merge_pre"], summary[name + "_merge_post"]
 
-        rootgrp.createVariable(name, "f8", dims)[...] = summary[name]
-        rootgrp.createVariable(name + "_merge_pre", "f8", dims)[...] = pre
-        rootgrp.createVariable(name + "_merge_post", "f8", dims)[...] = post
-        rootgrp.createVariable("d" + name, "f8", dims)[...] = (post - pre) / pre
+        for key in [name, name + "_merge_pre", name + "_merge_post", "d" + name]:
+            rootgrp.createVariable(key, "f8", dims)[...] = summary[key]
 
     for name in step_names + ["np", "fallback_frac"]:
         rootgrp.createVariable(name, "f8", ())[...] = summary[name]
