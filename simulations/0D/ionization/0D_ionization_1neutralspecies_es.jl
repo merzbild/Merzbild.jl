@@ -234,20 +234,6 @@ end
 #                 paramset[1], paramset[2], cs_n_e_filepath; merging_bin_split=OctreeBinMidSplit, adds=sadd, do_es=true)
 #         end
 #     end
-
-#     for paramset in params
-#         for sadd in 0:paramset[3]-1
-#             run(1234, external_E_field_Tn, n_t,
-#                 paramset[1], paramset[2], cs_n_e_filepath; merging_bin_split=OctreeBinMidSplit, adds=sadd, do_es=true)
-#         end
-#     end
-
-#     for paramset in params
-#         for sadd in 0:paramset[3]-1
-#             run(1234, external_E_field_Tn, n_t,
-#                 paramset[1], paramset[2], cs_n_e_filepath; merging_bin_split=OctreeBinMidSplit, adds=sadd, do_es=true)
-#         end
-#     end
 # end
 
 
