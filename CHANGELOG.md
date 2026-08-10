@@ -2,6 +2,7 @@
 
 ## v0.8.2
 * NNLS merging speed-ups
+* Batched particle deletion for more efficient deletion of particles in merging routines
 
 ## v0.8.1
 * Clean-up of roulette merging code and minor optimizations
