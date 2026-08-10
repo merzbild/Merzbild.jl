@@ -194,6 +194,8 @@ for nnls in nnls_runs:
     x_np.append(np.mean(nnls_np[nnls]))
     y_n.append(np.sqrt(np.sum((nnls_T[nnls]/ref_T - 1)**2)/1000) * 100)
 ax1.plot(x_np, y_n, label="NNLS", color="tab:orange", linewidth=2, marker="o")
+ax1.text(x_np[0]+1, y_n[0], s="$L=4$", fontsize=legend_size-2)
+ax1.text(x_np[-1]-15,y_n[-1], s="$L=8$", fontsize=legend_size-2)
 
 x_np = []
 y_n = []
@@ -208,6 +210,8 @@ for nnls in nnls_runs:
     x_np.append(np.mean(nnls_np[nnls]))
     y_n.append(np.sqrt(np.sum((nnls_n[nnls]/ref_n - 1)**2)/1000) * 100)
 ax2.plot(x_np, y_n, label="NNLS", color="tab:orange", linewidth=2, marker="o")
+ax2.text(x_np[0]+1, y_n[0], s="$L=4$", fontsize=legend_size-2)
+ax2.text(x_np[-1]-15,y_n[-1], s="$L=8$", fontsize=legend_size-2)
     
 
 ax1.legend(fontsize=legend_size, framealpha=1.0)
@@ -242,6 +246,8 @@ for nnls in nnls_runs:
     x_np.append(np.mean(nnls_np[nnls]))
     y_n.append(np.sqrt(np.sum((nnls_s_fi[nnls][wall]/ref_s_fi[wall] - 1)**2)) * 100)
 ax.plot(x_np, y_n, label="NNLS", color="tab:orange", linewidth=2, marker="o")
+ax.text(x_np[0]+1, y_n[0], s="$L=4$", fontsize=legend_size-2)
+ax.text(x_np[-1]-15,y_n[-1], s="$L=8$", fontsize=legend_size-2)
 
 ax.legend(fontsize=legend_size, framealpha=1.0)
 
@@ -275,6 +281,8 @@ for nnls in nnls_runs:
     y_n.append(np.sqrt(np.sum((nnls_s_p[nnls][wall]/ref_s_p[wall] - 1)**2)) * 100)
 
 ax.plot(x_np, y_n, label="NNLS", color="tab:orange", linewidth=2, marker="o")
+ax.text(x_np[0]+1, y_n[0], s="$L=4$", fontsize=legend_size-2)
+ax.text(x_np[-1]-15,y_n[-1], s="$L=8$", fontsize=legend_size-2)
 
 ax.legend(fontsize=legend_size, framealpha=1.0)
 
@@ -307,6 +315,8 @@ for nnls in nnls_runs:
     y_n.append(np.sqrt(np.sum((nnls_s_ke[nnls][wall]/ref_s_ke[wall] - 1)**2)) * 100)
 
 ax.plot(x_np, y_n, label="NNLS", color="tab:orange", linewidth=2, marker="o")
+ax.text(x_np[0]+1, y_n[0], s="$L=4$", fontsize=legend_size-2)
+ax.text(x_np[-1]-15,y_n[-1], s="$L=8$", fontsize=legend_size-2)
 
 ax.legend(fontsize=legend_size, framealpha=1.0)
 
