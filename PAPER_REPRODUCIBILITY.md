@@ -5,7 +5,7 @@ the specific version of `Merzbild.jl` used to perform the simulations.
 
 ## "Moment-preserving particle merging via non-negative least squares" (2026)
 For the paper ["Moment-preserving particle merging via non-negative least squares"](https://doi.org/10.48550/arXiv.2604.00668) by G. Oblapenko and M. Torrilhon,
-the following setup was used: `Merzbild.jl` version `0.7.8`, Julia version `1.12`.
+the following setups were used: `Merzbild.jl` version `0.7.8` and `0.8.2`, Julia version `1.12`.
 First, one should produce the data by running the various simulation files located in the `simulations` directory,
 then the output data can be processed via use of scripts in the `scripts/reproducibility/2026_nnls` directory.
 The data produced by `Merzbild.jl` can also be downloaded [from Zenodo](https://doi.org/10.5281/zenodo.19352778) (note that the ionization data
@@ -26,6 +26,8 @@ Specific simulation files used for the paper:
 For the sampling test case:
 * `simulations/0D/basic/sample_and_merge.jl` - for the simulations that sample particles and merge them (using two different sampling
 strategies)
+* `simulations/0D/basic/merge_sensitivity.jl` - analysis of chamfer distance between post-merge distributions of non-perturbed and perturbed sets of particles
+(used in the ionization test case).
 
 For the BKW test case (see the commented-out part on "multiple runs with ensembling if needed" for running with multiple ensembles):
 * `simulations/0D/BKW/bkw_varweight_octree.jl` - for the variable-weight simulations using octree N:2 merging
