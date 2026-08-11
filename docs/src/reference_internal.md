@@ -200,4 +200,5 @@ Merzbild.solve_triangular_system!
 Merzbild.UnsafeVectorView
 Merzbild.orthogonal_rotmat
 Merzbild.apply_householder!
+Merzbild.apply_householder_sweep!
 ```
