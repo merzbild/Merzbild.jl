@@ -163,6 +163,9 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons,
                                     n_e_interactions, n_e_cs,
                                     particles[s1], particles[s2], pia, 1, s1, s2, Δt, V, min_coll=15, n_loops=6)
 
+    # Uncomment to have output of average number of electron particles in simulation
+    # np_e_mean = 0.0
+
     for ts in 1:n_t
         if ts % 20000 == 0
             println(ts)
@@ -193,6 +196,8 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons,
             @timeit "merge e" merge_octree!(rng, oc_electrons, particles[3], pia, 1, 3, np_target_electrons)
         end
 
+        # np_e_mean += pia.n_total[3] / n_t
+
         @timeit "acc e" accelerate_constant_field_x!(particles[index_electron],
                                      pia, 1, index_electron, species_data,
                                      E_field, Δt)
@@ -203,6 +208,7 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons,
     end
     print_timer()
     close_netcdf(ds)
+    # println("$np_e_mean \n\n\n")
 end
 
 # paramset is a list with 2 elements: threshold number of particles,
@@ -222,7 +228,6 @@ end
 #  # the 3rd value in each parameter list is the number of ensembles that are run with different random seeds 
 
 # params = [[41, 38, 64], [62, 58, 64], [95, 88, 64], [131, 122, 16], [178, 166, 16], [236, 220, 16]] # 1.075
-# params = [[57, 38, 32], [87, 58, 32], [132, 88, 32], [183, 122, 8], [250, 166, 8], [330, 220, 8]]  # 1.5
 
 #  # we need more timesteps for the weaker field
 # for (n_t, external_E_field_Tn) in zip([500000, 5000000], [400.0, 100.0])
