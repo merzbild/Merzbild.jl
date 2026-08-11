@@ -610,7 +610,7 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
             lhs_matrix[n_mom, col_index] = tmp_ccm
         end
 
-        g = norm(v)
+        g = norm3(v)
         compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index, extend)
         cse_g = get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g
         csi_g = get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g
@@ -651,7 +651,7 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
                 lhs_matrix[n_mom, col_index] = tmp_ccm
             end
 
-            g = norm(v)
+            g = norm3(v)
             compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index, extend)
             cse_g = get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g
             csi_g = get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g
@@ -761,7 +761,7 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
             p_k = particles_neutral[k]
             p_k_w = p_k.w
 
-            g = norm(v - p_k.v)
+            g = norm3(v - p_k.v)
             compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index, extend)
             cse_g = cse_g + get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g * p_k_w
             csi_g = csi_g + get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g * p_k_w
@@ -772,7 +772,7 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
             p_k = particles_neutral[k]
             p_k_w = p_k.w
 
-            g = norm(v - p_k.v)
+            g = norm3(v - p_k.v)
             compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index, extend)
             cse_g = cse_g + get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g * p_k_w
             csi_g = csi_g + get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g * p_k_w
@@ -827,7 +827,7 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
                 p_k = particles_neutral[k]
                 p_k_w = p_k.w
 
-                g = norm(v - p_k.v)
+                g = norm3(v - p_k.v)
                 compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index, extend)
                 cse_g = cse_g + get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g * p_k_w
                 csi_g = csi_g + get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g * p_k_w
@@ -837,7 +837,7 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
                 p_k = particles_neutral[k]
                 p_k_w = p_k.w
 
-                g = norm(v - p_k.v)
+                g = norm3(v - p_k.v)
                 compute_cross_sections_only!(computed_cs, interaction, g, electron_neutral_interactions, neutral_species_index, extend)
                 cse_g = cse_g + get_cs_elastic(electron_neutral_interactions, computed_cs, neutral_species_index) * g * p_k_w
                 csi_g = csi_g + get_cs_ionization(electron_neutral_interactions, computed_cs, neutral_species_index) * g * p_k_w

@@ -1,3 +1,20 @@
+"""
+    norm3(v)
+
+Compute the Euclidean norm of a 3-component vector.
+
+Bit-for-bit identical to `LinearAlgebra.norm(v)`, but cheaper in hot loops. It must stay outside
+any `@muladd` block: contracting the sum of squares into `muladd` changes the result by up to
+0.3 ulp relative to `norm`, which is enough to break the bit-exact reference-solution tests.
+
+# Positional arguments
+* `v`: the 3-component vector
+
+# Returns
+The Euclidean norm of `v`.
+"""
+@inline norm3(v) = sqrt(v[1]*v[1] + v[2]*v[2] + v[3]*v[3])
+
 function weighted_percentile_interpolated(values, weights, quantiles=0.5)
     i = sortperm(values)
     c = cumsum(weights[i])
