@@ -48,11 +48,12 @@ contains all the different target and threshold particle numbers used in the sim
 
 ### Post-processing of results
 Once the simulations have finished, Python scripts that post-process the results and produce plots should be run;
-these are available in `scripts/reproducibility/2026_nnls`: `process_sample_and_merge.py`, `process_bkw.py`, `convert_ionization_data.py`, `process_ionization.py`, `process_fourier.py`.
+these are available in `scripts/reproducibility/2026_nnls`: `process_sample_and_merge.py`, `process_bkw.py`, `convert_ionization_data.py`, `process_ionization.py`, `process_fourier.py`,
+`process_merge_sensitivity.py`.
 By default it is assumed that the outputs of the simulations are located in `scratch/data`, this can be adjusted by changing the value of the `pref` variable
 at the start of the scripts. Change `savefigs` to `False` to turn off saving figures as PDFs.
 
-The results were computed using `Merzbild.jl` version `0.7.8`, Julia version `1.12`. The Python
+The results were computed using `Merzbild.jl` versions `0.7.8` and `0.8.2`, Julia version `1.12`. The Python
 scripts require `numpy`, `scipy`, `matplotlib`, `netCDF4`.
 
 #### Post-processing of sample-and-merge results
@@ -65,6 +66,15 @@ NNLS results are assumed to be named `nnls_equalweight.log` and `octree_weighted
 The plotting parameters (font sizes, font families) are set at the top of the script after the imports.
 
 The file produces 6 plots.
+
+#### Post-processing of perturbed sample-and-merge results
+The numerical results produced by `merge_sensitivity.jl` can be post-processed with the `process_merge_sensitivity.py` script.
+The script loads the files automatically: output files are assumed to be located in
+`scratch/data`, the results are assumed to be named `merge_sensitivity_equalweight.log` and merge_sensitivity_weighted.log`.
+
+The plotting parameters (font sizes, font families) are set at the top of the script after the imports.
+
+The file produces 1 plot.
 
 #### Post-processing of BKW results
 The numerical results produced by `bkw_varweight_octree.jl` and `bkw_varweight_nnls.jl` can be post-processed
