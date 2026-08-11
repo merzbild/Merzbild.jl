@@ -4,6 +4,7 @@
 * NNLS merging speed-ups
 * Batched particle deletion for more efficient deletion of particles in merging routines
 * Use unrolled function for norm of 3-vectors
+* Faster exponentiation in computation of VHS cross-sections
 
 ## v0.8.1
 * Clean-up of roulette merging code and minor optimizations
