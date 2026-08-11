@@ -85,7 +85,7 @@ NNLS results are assumed to be named `bkw_nnls_$(n_full_up_to_total)full_$(thres
 The parameters of the simulations (number of random seeds, timestep, etc.) are set at the top of the script after the imports;
 then plotting parameters (font sizes, font families) are set. If `savefigs` is set to true, the produced figures will be saved as PDFs.
 
-The file produces 3 plots.
+The file produces 4 plots.
 
 #### Post-processing of 0D ionization results
 The numerical results produced by `0D_ionization_1neutralspecies_es.jl` and `0D_ionization_1neutralspecies_nnls_es.jl`
@@ -112,6 +112,11 @@ The parameters of the simulations (size of cells, etc.) are set at the top of th
 then plotting parameters (font sizes, font families) are set. If `savefigs` is set to true, the produced figures will be saved as PDFs.
 
 The file produces 5 plots.
+
+#### Performance analysis
+The scripts `plot_performance_ionization.py` and `plot_performance_fourier.py` plot cost of merging and cost of simulation timestep as a function of the number of particles in the simulation.
+The input is the stdout of the simulations.
+Each script produces 1 plot.
 
 ### Reference values
 Reference values that can be expected to be produced by some of the simulations are provided below. `Merzbild.jl` version `0.7.8`, Julia version `1.12`.
