@@ -41,6 +41,7 @@ Merzbild.sample_maxwellian!
 
 ## Collision computations
 ```@docs
+Merzbild.norm3
 Merzbild.compute_n_coll_single_species
 Merzbild.compute_n_coll_two_species
 Merzbild.collide_2particles_vhs!
