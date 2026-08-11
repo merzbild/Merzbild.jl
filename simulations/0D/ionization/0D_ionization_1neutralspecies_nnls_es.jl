@@ -204,6 +204,9 @@ function run(seed, E_Tn, n_t,
     firstm = true
     nnls_success_flag = 1
 
+    # Uncomment to have output of average number of electron particles in simulation
+    # np_e_mean = 0.0
+
     for ts in 1:n_t
 
         if ts % 20000 == 0
@@ -262,6 +265,8 @@ function run(seed, E_Tn, n_t,
             end
         end
 
+        # np_e_mean += pia.n_total[3] / n_t
+
         @timeit "acc e" accelerate_constant_field_x!(particles[index_electron],
                                      pia, 1, index_electron, species_data,
                                      E_field, Δt)
@@ -272,6 +277,7 @@ function run(seed, E_Tn, n_t,
     end
     print_timer()
     close_netcdf(ds)
+    # println("$np_e_mean \n\n\n")
 end
 
 # paramset is a list with 3 elements: number of velocity moments conserved, threshold number of particles,
@@ -300,7 +306,6 @@ end
 #  # a single 100 Tn simulation file is 2+ GB in size
 
 # params = [[4, 41, 38, 64], [5, 62, 58, 64], [6, 95, 88, 64], [7, 131, 122, 16], [8, 178, 166, 16], [9, 236, 220, 16]]  # 1.075
-# params = [[4, 57, 38, 32], [5, 87, 58, 32], [6, 132, 88, 32], [7, 183, 122, 8], [8, 250, 166, 8], [9, 330, 220, 8]]  # 1.5
 
 #  # we need more timesteps for the weaker field
 # for (n_t, external_E_field_Tn) in zip([500000, 5000000], [400.0, 100.0])
