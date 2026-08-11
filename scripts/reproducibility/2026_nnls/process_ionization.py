@@ -9,7 +9,7 @@ savefigs = True
 
 dt = 5e-14
 
-pref = "scratch/data/"
+pref = "/home/georgii/Data/Sciebo/PIC_DSMC/NNLS_Paper/ionization/"
 
 # assumed to be equal across all runs
 n_seeds_for_run = [63, 63, 63, 15, 15, 15]
@@ -163,7 +163,7 @@ for ax, field_Tn in zip([ax1, ax2], field_vals):
 
         if label == "NNLS":
             ax.text(xmean_vals[0]+5, y_vals[0], f"L={runs[0][0]}", fontsize=legend_size-2)
-            ax.text(xmean_vals[-1]-20, y_vals[-1], f"L={runs[-1][0]}", fontsize=legend_size-2)
+            ax.text(xmean_vals[-1]-15, y_vals[-1], f"L={runs[-1][0]}", fontsize=legend_size-2)
 
     ax.axhline(0.0, color='k', linewidth=0.8)
 
@@ -202,7 +202,7 @@ for ax, field_Tn in zip([ax1, ax2], field_vals):
     ax.plot(xmean_vals, y_vals, '-o', linewidth=2, label=f"NNLS")
 
     ax.text(xmean_vals[0]+5, y_vals[0], f"L={runs[0][0]}", fontsize=legend_size-2)
-    ax.text(xmean_vals[-1]-20, y_vals[-1], f"L={runs[-1][0]}", fontsize=legend_size-2)
+    ax.text(xmean_vals[-1]-5, y_vals[-1], f"L={runs[-1][0]}", fontsize=legend_size-2)
 
     xmean_vals, y_vals = get_noise_data(nnls_erp_data[field_Tn], nnls_erp_runs)
     ax.plot(xmean_vals, y_vals, '-o', linewidth=2, label=f"NNLS, RP")
@@ -380,9 +380,21 @@ def get_post_merge_rate_single(ref_rate_mean, ref_T_mean, start_t, end_t, fname,
     end_t = min(end_t, n_ts)
 
     merge_timesteps = ts[1:][npart[1:] < npart[:-1]]
+
+    # avoid window being outside of range
+    if merge_timesteps[-1] + window_size > n_ts:
+        merge_timesteps = merge_timesteps[:-1]
     
-    k_ion_post = np.array([np.mean(k_ion[t0:t0+window_size])/(1e15 * ref_rate_mean) for t0 in merge_timesteps])
-    Te_post = np.array([np.mean(Te[t0+1:t0+1+window_size])/ref_T_mean for t0 in merge_timesteps])
+    k_ion_post = np.array([np.mean(k_ion[t0:t0+window_size]) for t0 in merge_timesteps])
+    Te_post = np.array([np.mean(Te[t0+1:t0+1+window_size]) for t0 in merge_timesteps])
+
+    if np.isnan(np.mean(k_ion_post)):
+        print(len(merge_timesteps))
+        print("k ion isnan", k_ion_post)
+
+    if np.isnan(np.mean(Te_post)):
+        print(len(merge_timesteps))
+        print("Te isnan", Te_post)
 
     return (np.mean(k_ion_post),
             np.mean(Te_post))
@@ -412,8 +424,8 @@ def get_post_merge_bias(ref_rate_mean, ref_T_mean, start_t, end_t, fname, nseeds
                                                         window_size)
                            for adds in range(nseeds + 1)])
 
-    return {"bias_k": np.mean(per_seed[:, 0]) / ref_rate_mean - 1,
-            "bias_T": np.mean(per_seed[:, 1]) / ref_T_mean - 1}
+    return {"bias_k": np.mean(per_seed[:, 0]) - 1,
+            "bias_T": np.mean(per_seed[:, 1]) - 1}
 
 
 
@@ -459,7 +471,7 @@ for field_Tn in field_vals:
         for ns, run in zip(n_seeds_for_run, runs):
             print(f"{label}: ", run)
             filename = f"{pref}ionization_Ar_{field_Tn}Tn_" + tag.format(*run[:2]) + "_es"
-            data[field_Tn][run[0]] = get_post_merge_bias(ref_val_mean, ref_T_val * 11605.0,
+            data_bias[field_Tn][run[0]] = get_post_merge_bias(ref_val_mean, ref_T_val * 11605.0,
                                                            ts_min, ts_max,
                                                            filename,
                                                            ns, ws)
@@ -581,6 +593,10 @@ for ax, field_Tn in zip([ax1, ax2], field_vals):
         xmean_vals = get_np_data(data[field_Tn], runs)
         y_vals = get_bias_window_k(data_w[field_Tn], runs)
         mask = ~np.isnan(y_vals)
+
+        if label == "NNLS":
+            ax.text(xmean_vals[0]+5, y_vals[0], f"L={runs[0][0]}", fontsize=legend_size-2)
+            ax.text(xmean_vals[-1]-20, y_vals[-1], f"L={runs[-1][0]}", fontsize=legend_size-2)
 
         ax.plot(xmean_vals[mask], y_vals[mask], marker='o', linewidth=2, label=label)
 
