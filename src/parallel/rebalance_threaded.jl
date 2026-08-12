@@ -4,24 +4,29 @@ mutable struct LoadBalancerNcoll
     n_cells::Int64
     n_chunks::Int64
     n_collisions::Vector{Float64}
+    n_coll_total_per_chunk::Vector{Float64}
     n_coll_total::Float64
     chunked_indices::Vector{UnitRange{Int64}}
 
     function LoadBalancerNcoll(n_cells, n_chunks)
-        chunked_indices = chunks(Vector(1:n_cells); n=n_chunks)
-        return new(n_cells, n_chunks, zeros(Float64, n_cells), 0.0,
-                   [chunk[1]:chunk[end] for chunk in chunked_indices])
+        n_chunks > n_cells && throw(ArgumentError("n_chunks ($n_chunks) cannot exceed n_cells ($n_cells)"))
+        chunked_indices = index_chunks(1:n_cells; n=n_chunks)
+        return new(n_cells, n_chunks, zeros(Float64, n_cells),
+                   zeros(Float64, n_chunks),
+                   0.0,
+                   [chunk_index for chunk_index in chunked_indices])
     end
 end
 
-@inline function update_n_collisions!(lb::LoadBalancerNcoll, n_collisions, cell, averaging_window)
+@inline function update_n_collisions!(lb::LoadBalancerNcoll, chunk_id, n_collisions, cell, averaging_window)
     n_c_avg = n_collisions / averaging_window
     lb.n_collisions[cell] += n_c_avg
-    lb.n_coll_total += n_c_avg
+    lb.n_coll_total_per_chunk[chunk_id] += n_c_avg
 end
 
 function rebalance_lb!(lb::LoadBalancerNcoll)
     current_chunk = 1
+    lb.n_coll_total = sum(lb.n_coll_total_per_chunk)
     colls_per_chunk = lb.n_coll_total / lb.n_chunks
     coll_counter = lb.n_collisions[1]
     start_cell = 1
@@ -70,5 +75,6 @@ end
 
 function reset_lb!(lb::LoadBalancerNcoll)
     fill!(lb.n_collisions, 0.0)
+    fill!(lb.n_coll_total_per_chunk, 0.0)
     lb.n_coll_total = 0.0
 end
