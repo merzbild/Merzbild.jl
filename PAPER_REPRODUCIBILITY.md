@@ -117,6 +117,9 @@ The file produces 5 plots.
 The scripts `plot_performance_ionization.py` and `plot_performance_fourier.py` plot cost of merging and cost of simulation timestep as a function of the number of particles in the simulation.
 The input is the stdout of the simulations.
 Each script produces 1 plot.
+The commented-out tracking of the average number of particles in the simulation in the ionization and Fourier flow setup files need to be uncommented (as the scripts read that in from the parsed stdout).
+The script `plot_fourier_error_vs_cost.py` plots the error (bias) in the surface pressure of the Fourier flow simulation against the cost of a timestep of the simulation using the logs from the parsed
+stdout and the netCDF output of the simulation.
 
 ### Reference values
 Reference values that can be expected to be produced by some of the simulations are provided below. `Merzbild.jl` version `0.7.8`, Julia version `1.12`.
