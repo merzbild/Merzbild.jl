@@ -20,7 +20,7 @@ include("properties/surface_props.jl")
 include("io.jl")
 include("io_moments.jl")
 include("convection/convection.jl")
-include("parallel.jl")
+include("parallel/parallel.jl")
 
 const OCTREE_DEFAULT_BUFFER_SIZE::Int64 = 8192
 const DELTA_PARTICLES::Int64 = 256
