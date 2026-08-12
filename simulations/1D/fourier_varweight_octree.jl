@@ -126,6 +126,8 @@ function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
 
     n_avg = n_timesteps - avg_start + 1
 
+    # n_p_avg = 0.0
+
     for t in 1:n_timesteps
         if t % 1000 == 0
             println(t)
@@ -153,6 +155,8 @@ function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
 
         # sort particles
         @timeit "sort" sort_particles!(gridsorter, grid, particles[1], pia, 1)
+
+        # n_p_avg += pia.n_total[1] / n_timesteps
 
         if t%reorder_freq == 0
             @timeit "restore ordering" restore_particle_ordering!(particles[1], index_inv_map)
@@ -182,6 +186,8 @@ function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
     close_netcdf(ds_flux_avg)
 
     print_timer()
+    # uncomment to print out avg number of particles in simulation
+    # print("n_p_avg = $(n_p_avg / grid.n_cells) \n\n\n")
 end
 
 const n_t = 3500000

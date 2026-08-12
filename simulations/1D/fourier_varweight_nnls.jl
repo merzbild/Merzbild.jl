@@ -158,20 +158,19 @@ function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
         if pia.indexer[cell,1].n_local > merge_threshold
             
             if pia.indexer[cell,1].n_local > merge_threshold
-                @timeit "merge NNLS" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1;
+                @timeit "merge NNLS (t=0)" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1;
                                                                            scaling=:variance, iteration_mult=5,
                                                                            w_threshold=1e-12)
     
                 if nnls_success_flag == -1
-                    @timeit "merge NNLS backup" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1;
+                    @timeit "merge NNLS backup (t=0)" nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1;
                                                                                       scaling=:variance, iteration_mult=5,
                                                                                       w_threshold=1e-12)
                 end
     
                 if nnls_success_flag == -1
-                    @timeit "merge octree" merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
+                    @timeit "merge octree (t=0)" merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
                 end
-                @timeit "squash" squash_pia!(particles, pia)
             end
         end
     end
@@ -180,6 +179,8 @@ function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
     write_grid("scratch/data/couette_$(L)_$(nx)_grid.nc", grid)
 
     n_avg = n_timesteps - avg_start + 1
+
+    # n_p_avg = 0.0
 
     for t in 1:n_timesteps
         if t % 1000 == 0
@@ -222,6 +223,8 @@ function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
         # sort particles
         @timeit "sort" sort_particles!(gridsorter, grid, particles[1], pia, 1)
 
+        # n_p_avg += pia.n_total[1] / n_timesteps
+
         if t%reorder_freq == 0
             @timeit "restore ordering" restore_particle_ordering!(particles[1], index_inv_map)
         end
@@ -243,6 +246,8 @@ function run(seed, T_bg0, T_wall1, T_wall2, v_wall, L, p0, nx,
     close_netcdf(ds_flux_avg)
 
     print_timer()
+    # uncomment to print out avg number of particles in simulation
+    # print("n_p_avg = $(n_p_avg / grid.n_cells) \n\n\n")
 end
 
 
