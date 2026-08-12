@@ -31,7 +31,6 @@ function rebalance_lb!(lb::LoadBalancerNcoll)
     coll_counter = lb.n_collisions[1]
     start_cell = 1
     for i in 1:lb.n_cells-1
-
         if coll_counter + lb.n_collisions[i+1] > colls_per_chunk
             # find which one is actually closer to colls_per_chunk
             if abs(coll_counter - colls_per_chunk) < abs(coll_counter + lb.n_collisions[i+1] - colls_per_chunk)
