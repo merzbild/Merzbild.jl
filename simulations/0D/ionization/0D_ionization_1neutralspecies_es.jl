@@ -208,6 +208,7 @@ function run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons,
     end
     print_timer()
     close_netcdf(ds)
+    # uncomment to print out avg number of particles in simulation
     # println("$np_e_mean \n\n\n")
 end
 
