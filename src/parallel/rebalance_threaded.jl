@@ -21,7 +21,7 @@ mutable struct LoadBalancerCellQ
     end
 end
 
-@inline function update_lb_cellq!(lb::LoadBalancerCellQ, chunk_id, q, cell, averaging_window)
+@inline function update_lb_cellq!(lb::LoadBalancerCellQ, chunk_id, cell, q, averaging_window)
     n_c_avg = q / averaging_window
     lb.q[cell] += n_c_avg
     lb.q_total_per_chunk[chunk_id] += n_c_avg
