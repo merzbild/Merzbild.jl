@@ -110,6 +110,6 @@ export FluxProps, compute_flux_props!, compute_flux_props_sorted!
 export mean_free_path, mean_collision_frequency
 export generate_1_factorization
 export restore_particle_ordering!
-export LoadBalancerNcoll, rebalance_lb!, update_n_collisions!, reset_lb!
+export LoadBalancerCellQ, rebalance_lb!, update_lb_cellq!, reset_lb!
 
 end # module merzbild

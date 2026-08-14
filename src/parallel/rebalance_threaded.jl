@@ -1,14 +1,14 @@
 using ChunkSplitters
 
-mutable struct LoadBalancerNcoll
+mutable struct LoadBalancerCellQ
     n_cells::Int64
     n_chunks::Int64
-    n_collisions::Vector{Float64}
-    n_coll_total_per_chunk::Vector{Float64}
-    n_coll_total::Float64
+    q::Vector{Float64}
+    q_total_per_chunk::Vector{Float64}
+    q_total::Float64
     chunked_indices::Vector{UnitRange{Int64}}
 
-    function LoadBalancerNcoll(n_cells, n_chunks)
+    function LoadBalancerCellQ(n_cells, n_chunks)
         n_chunks > n_cells && throw(ArgumentError("n_chunks ($n_chunks) cannot exceed n_cells ($n_cells)"))
         chunked_indices = index_chunks(1:n_cells; n=n_chunks)
         return new(n_cells, n_chunks, zeros(Float64, n_cells),
@@ -18,39 +18,39 @@ mutable struct LoadBalancerNcoll
     end
 end
 
-@inline function update_n_collisions!(lb::LoadBalancerNcoll, chunk_id, n_collisions, cell, averaging_window)
-    n_c_avg = n_collisions / averaging_window
-    lb.n_collisions[cell] += n_c_avg
-    lb.n_coll_total_per_chunk[chunk_id] += n_c_avg
+@inline function update_lb_cellq!(lb::LoadBalancerCellQ, chunk_id, q, cell, averaging_window)
+    n_c_avg = q / averaging_window
+    lb.q[cell] += n_c_avg
+    lb.q_total_per_chunk[chunk_id] += n_c_avg
 end
 
-function rebalance_lb!(lb::LoadBalancerNcoll)
+function rebalance_lb!(lb::LoadBalancerCellQ)
     current_chunk = 1
-    lb.n_coll_total = sum(lb.n_coll_total_per_chunk)
-    colls_per_chunk = lb.n_coll_total / lb.n_chunks
-    coll_counter = lb.n_collisions[1]
+    lb.q_total = sum(lb.q_total_per_chunk)
+    q_per_chunk = lb.q_total / lb.n_chunks
+    q_counter = lb.q[1]
     start_cell = 1
     for i in 1:lb.n_cells-1
-        if coll_counter + lb.n_collisions[i+1] > colls_per_chunk
-            # find which one is actually closer to colls_per_chunk
-            if abs(coll_counter - colls_per_chunk) < abs(coll_counter + lb.n_collisions[i+1] - colls_per_chunk)
+        if q_counter + lb.q[i+1] > q_per_chunk
+            # find which one is actually closer to q_per_chunk
+            if abs(q_counter - q_per_chunk) < abs(q_counter + lb.q[i+1] - q_per_chunk)
                 # current cell is end of new chunk
-                coll_counter = lb.n_collisions[i+1]
+                q_counter = lb.q[i+1]
                 lb.chunked_indices[current_chunk] = start_cell:i
                 current_chunk += 1
                 start_cell = i+1
-            elseif coll_counter > colls_per_chunk
+            elseif q_counter > q_per_chunk
                 # current cell is end of new chunk
-                coll_counter = lb.n_collisions[i+1]
+                q_counter = lb.q[i+1]
                 lb.chunked_indices[current_chunk] = start_cell:i
                 current_chunk += 1
                 start_cell = i+1
             else
                 # postpone until next chunk
-                coll_counter += lb.n_collisions[i+1]
+                q_counter += lb.q[i+1]
             end
         else
-            coll_counter += lb.n_collisions[i+1]
+            q_counter += lb.q[i+1]
         end
 
         if current_chunk == lb.n_chunks
@@ -72,8 +72,8 @@ function rebalance_lb!(lb::LoadBalancerNcoll)
     end
 end
 
-function reset_lb!(lb::LoadBalancerNcoll)
-    fill!(lb.n_collisions, 0.0)
-    fill!(lb.n_coll_total_per_chunk, 0.0)
-    lb.n_coll_total = 0.0
+function reset_lb!(lb::LoadBalancerCellQ)
+    fill!(lb.q, 0.0)
+    fill!(lb.q_total_per_chunk, 0.0)
+    lb.q_total = 0.0
 end
