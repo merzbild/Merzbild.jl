@@ -8,6 +8,9 @@ mutable struct LoadBalancerCellQ
     q_total::Float64
     chunked_indices::Vector{UnitRange{Int64}}
 
+    """
+    Note: this uses `index_chunks`, i.e. it is assumed that cell indexing starts from 1 and is contiguous!
+    """
     function LoadBalancerCellQ(n_cells, n_chunks)
         n_chunks > n_cells && throw(ArgumentError("n_chunks ($n_chunks) cannot exceed n_cells ($n_cells)"))
         chunked_indices = index_chunks(1:n_cells; n=n_chunks)
