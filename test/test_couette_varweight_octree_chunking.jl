@@ -80,11 +80,6 @@
         compute_props_sorted!(particles_chunks[chunk_id], pia_chunks[chunk_id], species_data, phys_props, cell_chunks[chunk_id])
     end
 
-    # compute data at t=0
-    for (chunk_id, cell_chunk) in enumerate(cell_chunks)
-        compute_props_sorted!(particles_chunks[chunk_id], pia_chunks[chunk_id], species_data, phys_props, cell_chunk)
-    end
-
     for t in 1:n_timesteps
         
         # check indexing correctness
