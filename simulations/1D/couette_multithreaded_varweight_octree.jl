@@ -1,5 +1,3 @@
-# include("../../src/Merzbild.jl")
-
 using Merzbild
 using Random
 using TimerOutputs
