@@ -27,6 +27,8 @@
     seed = 1234
     rng_chunks = [StableRNG(seed + i) for i in 0:n_chunks-1]
 
+    lbq = LoadBalancerCellQ(nx, n_chunks)
+
     # load particle and interaction data
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
     species_data = load_species_data(particles_data_path, "Ar")
@@ -112,26 +114,16 @@
     end
 
     ndens_t0 = sum(phys_props.n)
+    old_chunks = copy(cell_chunks)
 
     for t in 1:n_timesteps
-        
-        # check indexing correctness
-        pia_correct = [check_pia_is_correct(pia_chunks[chunk_id], 1) for chunk_id in 1:n_chunks]
-        for chunk_id in 1:n_chunks
-            @test pia_correct[chunk_id] == (1,0)
-        end
-
-        index_correct = [check_unique_index(particles_chunks[chunk_id][1], pia_chunks[chunk_id], 1) for chunk_id in 1:n_chunks]
-        for chunk_id in 1:n_chunks
-            @test index_correct[chunk_id] == (1,0)
-        end
         # collide, convect, sort particles
         for chunk_id in 1:n_chunks
             for cell in cell_chunks[chunk_id]
                 ntc!(rng_chunks[chunk_id], collision_factors[chunk_id][1, 1, cell],
                                collision_data[chunk_id], interaction_data, particles_chunks[chunk_id][1],
                                pia_chunks[chunk_id], cell, 1, Δt, grid.cells[cell].V)
-
+                update_lb_cellq!(lbq, chunk_id, cell, collision_factors[chunk_id][1, 1, cell].n_coll_performed, 1.0)
                 if pia_chunks[chunk_id].indexer[cell,1].n_local > merge_threshold
                     merge_octree!(rng_chunks[chunk_id], oc_chunks[chunk_id], particles_chunks[chunk_id][1], pia_chunks[chunk_id], cell, 1, merge_target, grid)
                     squash_pia!(particles_chunks[chunk_id], pia_chunks[chunk_id])
@@ -150,6 +142,32 @@
             sort_particles!(gridsorter_chunks[chunk_id], grid, particles_chunks[chunk_id][1], pia_chunks[chunk_id], 1)
         end
 
+        # perform re-balancing and test that we find all cells, chunks are consistent
+        if t%10 == 0
+            rebalance_lb!(lbq)
+            reset_lb!(lbq)
+            cell_chunks = lbq.chunked_indices
+            for i in 1:n_chunks-1
+                @test cell_chunks[i][end] + 1 == cell_chunks[i+1][1]
+            end
+            for cell in 1:nx
+                found = false
+                for i in 1:n_chunks
+                    if cell in cell_chunks[i]
+                        found = true
+                    end
+                end
+                @test found == true
+            end
+        end
+
+        if t == 10
+            # test that first chunk now has more cells than before
+            # and last chunk has fewer cells than before
+            @test length(cell_chunks[1]) > length(old_chunks[1])
+            @test length(cell_chunks[end]) < length(old_chunks[end])
+        end
+
         # move particles between chunks
         exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, 1)
 
@@ -160,6 +178,17 @@
                                            cell_chunks[chunk_id], 1)
             compute_props_sorted!(particles_chunks[chunk_id], pia_chunks[chunk_id],
                                   species_data, phys_props, cell_chunks[chunk_id])
+        end
+        
+        # check indexing correctness
+        pia_correct = [check_pia_is_correct(pia_chunks[chunk_id], 1) for chunk_id in 1:n_chunks]
+        for chunk_id in 1:n_chunks
+            @test pia_correct[chunk_id] == (1,0)
+        end
+
+        index_correct = [check_unique_index(particles_chunks[chunk_id][1], pia_chunks[chunk_id], 1) for chunk_id in 1:n_chunks]
+        for chunk_id in 1:n_chunks
+            @test index_correct[chunk_id] == (1,0)
         end
 
         # check that total number density is not lost
