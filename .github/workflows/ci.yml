@@ -34,6 +34,10 @@ jobs:
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
+        env:
+          # Pkg.test() propagates this into the test subprocess, so the tests in
+          # test/runtests_multithreaded.jl run in-process instead of relaunching themselves
+          JULIA_NUM_THREADS: 4
       - uses: julia-actions/julia-processcoverage@v1
       - name: Upload results to Codecov
         uses: codecov/codecov-action@v5
