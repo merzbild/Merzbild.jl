@@ -136,7 +136,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
             end
 
             # need to clear the data in the chunk exchanger
-            reset!(chunk_exchanger, chunk_id)
+            @timeit local_timer "reset CE (t)" reset!(chunk_exchanger, chunk_id)
 
             # sort particles
             @timeit local_timer "sort (t)" @inbounds sort_particles!(gridsorter_chunks[chunk_id], grid, particles_local[1], pia_local, 1)
@@ -215,7 +215,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
     end
 
     # we now fix ncall, timing, allocation counts for the threaded timers by hand
-    timers_to_average = ["collide (t)", "sort (t)", "restore ordering (t)", "convect (t)", "convect + surface compute (t)", "sort post-exchange (t)", "props compute (t)"]
+    timers_to_average = ["collide (t)", "sort (t)", "restore ordering (t)", "convect (t)", "convect + surface compute (t)", "sort post-exchange (t)", "props compute (t)", "reset CE (t)"]
 
     for timer_name in timers_to_average
         try
@@ -226,6 +226,11 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
         catch
             nothing
         end
+    end
+
+    # print out how many cells in each chunk
+    for i in 1:n_chunks
+        println("chunk $i has $(cell_chunks[i][end] - cell_chunks[i][1] + 1) cells ($(cell_chunks[i][1]):$(cell_chunks[i][end]))")
     end
 
     print_timer(main_to)
