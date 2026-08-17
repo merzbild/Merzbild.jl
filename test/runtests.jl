@@ -1,14 +1,4 @@
-using Aqua
-using Test
-using Merzbild
-using Random
-using NCDatasets
-using SpecialFunctions
-using StaticArrays
-using StableRNGs
-using LinearAlgebra
-using ChunkSplitters
-using NetCDF
+include("preamble.jl")  # shared imports, also used by the multi-threaded subprocess driver
 
 include("runtests_basics.jl")  # fundamental blocks - indexing, sorting
 include("runtests_computes.jl")  # various computes
@@ -17,6 +7,7 @@ include("runtests_collisions_dsmc.jl")  # DSMC collisions
 include("runtests_1DUniform.jl")  # 1D uniform grid, computes on grid, sorting routines
 include("runtests_merging.jl")  # tests for merging routines
 include("runtests_threading.jl")  # particle routines for multi-threading
+include("runtests_multithreaded.jl")  # tests that actually run under Threads.@threads
 include("runtests_FP.jl")  # tests for Fokker-Planck
 include("runtests_io.jl")  # I/O tests
 include("runtests_swpm.jl")  # SWPM tests
