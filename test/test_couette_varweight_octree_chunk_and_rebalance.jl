@@ -123,7 +123,7 @@
                 ntc!(rng_chunks[chunk_id], collision_factors[chunk_id][1, 1, cell],
                                collision_data[chunk_id], interaction_data, particles_chunks[chunk_id][1],
                                pia_chunks[chunk_id], cell, 1, Δt, grid.cells[cell].V)
-                update_lb_cellq!(lbq, chunk_id, cell, collision_factors[chunk_id][1, 1, cell].n_coll_performed, 1.0)
+                update_lb_cellq!(lbq, chunk_id, cell, collision_factors[chunk_id][1, 1, cell].n_coll_performed; averaging_window=1.0)
                 if pia_chunks[chunk_id].indexer[cell,1].n_local > merge_threshold
                     merge_octree!(rng_chunks[chunk_id], oc_chunks[chunk_id], particles_chunks[chunk_id][1], pia_chunks[chunk_id], cell, 1, merge_target, grid)
                     squash_pia!(particles_chunks[chunk_id], pia_chunks[chunk_id])

@@ -121,7 +121,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
                 @timeit local_timer "collide (t)" ntc_equal_weight!(rng_local, collision_factors_local[1, 1, cell],
                                   coll_data, interaction_data, particles_local[1],
                                   pia_local, cell, 1, Δt, grid.cells[cell].V)
-                update_lb_cellq!(lbq, chunk_id, cell, collision_factors[chunk_id][1, 1, cell].n_coll_performed, 1.0)
+                update_lb_cellq!(lbq, chunk_id, cell, collision_factors[chunk_id][1, 1, cell].n_coll_performed; averaging_window=1.0)
             end
 
             if (t >= avg_start)

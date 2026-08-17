@@ -15,11 +15,11 @@
         lb = LoadBalancerCellQ(6, 4)
 
         # chunks are 1:3, 4:6, 7:8, 9:10
-        update_lb_cellq!(lb, 1, 1, 3, 2)  # 3/2
-        update_lb_cellq!(lb, 1, 2, 0, 2)  # 0
-        update_lb_cellq!(lb, 1, 3, 2, 2)  # 2/2
-        update_lb_cellq!(lb, 3, 4, 1, 2)  # 1/2
-        update_lb_cellq!(lb, 3, 4, 6, 2)  # 6/2
+        update_lb_cellq!(lb, 1, 1, 3; averaging_window=2)  # 3/2
+        update_lb_cellq!(lb, 1, 2, 0; averaging_window=2)  # 0
+        update_lb_cellq!(lb, 1, 3, 2; averaging_window=2)  # 2/2
+        update_lb_cellq!(lb, 3, 4, 1; averaging_window=2)  # 1/2
+        update_lb_cellq!(lb, 3, 4, 6; averaging_window=2)  # 6/2
 
         @test lb.q_total == 0.0 # not set yet
         @test lb.q == [1.5, 0.0, 1.0, 3.5, 0.0, 0.0]
