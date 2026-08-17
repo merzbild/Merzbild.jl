@@ -227,6 +227,11 @@ sort_particles_after_exchange!
 reset!
 reduce_surf_props!
 generate_1_factorization
+LoadBalancerCellQ
+LoadBalancerCellQ(n_cells, n_chunks)
+update_lb_cellq!
+rebalance_lb!
+reset_lb!
 ```
 
 ## Particle-in-Cell
