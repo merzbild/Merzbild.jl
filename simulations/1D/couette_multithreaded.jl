@@ -148,7 +148,11 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
         if t%rebalance_freq == 0
             @timeit main_to "rebalance" rebalance_lb!(lbq)
             @timeit main_to "rebalance" reset_lb!(lbq)
-            cell_chunks = lbq.chunked_indices
+            # NB: do not re-bind cell_chunks to lbq.chunked_indices here. rebalance_lb! updates
+            # the ranges in place, so it would be a no-op, but assigning to a variable that the
+            # @threads closures capture makes Julia box it: cell_chunks, and hence the cell
+            # index, become Any, and every call taking a cell index goes through dynamic
+            # dispatch (~80 B/collision call, and ~10x the allocations of the whole main loop)
         end
 
         # move particles between chunks
