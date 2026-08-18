@@ -32,7 +32,7 @@
         @test lb.q == [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     end
 
-    @testset "cell quantity based load balancing re-balancing: n_cells=10, n_chunks=4" begin
+    @testset "cell quantity based load re-balancing: n_cells=10, n_chunks=4" begin
         lb = LoadBalancerCellQ(10, 4)
 
         lb.q = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 11.0]  # 56 collisions
@@ -46,7 +46,7 @@
         @test lb.chunked_indices == [1:5, 6:7, 8:9, 10:10]
     end
 
-    @testset "cell quantity based load balancing re-balancing: n_cells=10, n_chunks=2" begin
+    @testset "cell quantity based load re-balancing: n_cells=10, n_chunks=2" begin
         lb = LoadBalancerCellQ(10, 2)
 
         lb.q = [2.0, 3.0, 4.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # 11 collisions
@@ -59,7 +59,7 @@
         @test lb.chunked_indices == [1:2, 3:10]
     end
 
-    @testset "cell quantity based load balancing re-balancing: n_cells=10, n_chunks=4" begin
+    @testset "cell quantity based load re-balancing: n_cells=10, n_chunks=4" begin
         lb = LoadBalancerCellQ(10, 4)
 
         lb.q = [2.0, 3.0, 4.0, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0]  # 11 collisions
@@ -72,7 +72,7 @@
         @test lb.chunked_indices == [1:1, 2:2, 3:3, 4:10]
     end
 
-    @testset "cell quantity based load balancing re-balancing: n_cells=10, n_chunks=4" begin
+    @testset "cell quantity based load re-balancing: n_cells=10, n_chunks=4" begin
         lb = LoadBalancerCellQ(10, 4)
 
         lb.q = [0.0, 2.0, 0.0, 0.0, 3.0, 0.0, 4.0, 0.0, 2.0, 0.0]  # 11 collisions
@@ -85,7 +85,7 @@
         @test lb.chunked_indices == [1:4, 5:5, 6:7, 8:10]
     end
 
-    @testset "cell quantity based load balancing re-balancing: n_cells=10, n_chunks=4, fitting all chunks in" begin
+    @testset "cell quantity based load re-balancing: n_cells=10, n_chunks=4, fitting all chunks in" begin
         lb = LoadBalancerCellQ(10, 4)
 
         lb.q = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 0.0] 
@@ -95,7 +95,7 @@
         @test lb.chunked_indices == [1:7, 8:8, 9:9, 10:10]
     end
 
-    @testset "cell quantity based load balancing re-balancing: n_cells=10, n_chunks=4, fitting all chunks in" begin
+    @testset "cell quantity based load re-balancing: n_cells=10, n_chunks=4, fitting all chunks in" begin
         lb = LoadBalancerCellQ(10, 4)
 
         lb.q = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 20.0] 
@@ -105,7 +105,7 @@
         @test lb.chunked_indices == [1:7, 8:8, 9:9, 10:10]
     end
 
-    @testset "cell quantity based load balancing re-balancing: n_cells=10, n_chunks=4, fitting all chunks in" begin
+    @testset "cell quantity based load re-balancing: n_cells=10, n_chunks=4, fitting all chunks in" begin
         lb = LoadBalancerCellQ(10, 4)
 
         lb.q = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 20.0]  
@@ -118,7 +118,7 @@
         @test lb.chunked_indices == [1:6, 7:7, 8:9, 10:10]
     end
 
-    @testset "cell quantity based load balancing re-balancing: n_cells=10, n_chunks=4, no collisions" begin
+    @testset "cell quantity based load re-balancing: n_cells=10, n_chunks=4, no collisions" begin
         lb = LoadBalancerCellQ(10, 3)
 
         lb.q = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  
@@ -126,5 +126,52 @@
 
         rebalance_lb!(lb)
         @test lb.chunked_indices == [1:8, 9:9, 10:10]
+    end
+
+    @testset "cell quantity based load re-balancing: n_cells=10, n_chunks=4, cell indexing starts with 5" begin
+        lb = LoadBalancerCellQ(10, 4; cell_start=5)
+
+        @test lb.n_cells == 10
+        @test lb.cell_start == 5
+        @test lb.cell_end == 14
+
+        lb.q = [0.0, 2.0, 0.0, 0.0, 3.0, 0.0, 4.0, 0.0, 2.0, 0.0]  # 11 collisions
+        lb.q_total_per_chunk = [0.0, sum(lb.q), 0.0, 0.0]  # doesn't matter how it's split
+
+        # 11 collisions in total: 11/4 = 2.75 per chunk
+        # sums: [2.0], [3.0], [4.0], [2.0]
+        # a chunk is cut off even if some cells at the end have n_coll == 0
+        rebalance_lb!(lb)
+        @test lb.chunked_indices == [5:8, 9:9, 10:11, 12:14]
+    end
+
+    @testset "cell quantity based load re-balancing: n_cells=10, n_chunks=4, fitting all chunks in, cell indexing starts with 5" begin
+        lb = LoadBalancerCellQ(10, 4; cell_start=5)
+
+        lb.q = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 0.0] 
+        lb.q_total_per_chunk = [0.0, sum(lb.q), 0.0, 0.0]  # doesn't matter how it's split
+
+        rebalance_lb!(lb)
+        @test lb.chunked_indices == [5:11, 12:12, 13:13, 14:14]
+    end
+
+    @testset "cell quantity based load re-balancing: n_cells=10, n_chunks=4, fitting all chunks in, cell indexing starts with 5" begin
+        lb = LoadBalancerCellQ(10, 4; cell_start=5)
+
+        lb.q = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 20.0] 
+        lb.q_total_per_chunk = [0.0, sum(lb.q), 0.0, 0.0]  # doesn't matter how it's split
+
+        rebalance_lb!(lb)
+        @test lb.chunked_indices == [5:11, 12:12, 13:13, 14:14]
+    end
+
+    @testset "cell quantity based load re-balancing: n_cells=10, n_chunks=4, fitting all chunks in, cell indexing starts with 5" begin
+        lb = LoadBalancerCellQ(10, 4; cell_start=5)
+
+        lb.q = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 0.0] 
+        lb.q_total_per_chunk = [0.0, sum(lb.q), 0.0, 0.0]  # doesn't matter how it's split
+
+        rebalance_lb!(lb)
+        @test lb.chunked_indices == [5:11, 12:12, 13:13, 14:14]
     end
 end
