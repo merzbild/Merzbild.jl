@@ -3,12 +3,10 @@
 function test_chunk_exchanger_empty(chunk_exchanger)
     for cell in 1:chunk_exchanger.n_cells
         for chunk_id in 1:chunk_exchanger.n_chunks
-            @test chunk_exchanger.indexer[chunk_id,cell].n_group1 == 0
-            @test chunk_exchanger.indexer[chunk_id,cell].start1 == 0
-            @test chunk_exchanger.indexer[chunk_id,cell].end1 == -1
-            @test chunk_exchanger.indexer[chunk_id,cell].n_group2 == 0
-            @test chunk_exchanger.indexer[chunk_id,cell].start2 == 0
-            @test chunk_exchanger.indexer[chunk_id,cell].end2 == -1
+            @test chunk_exchanger.n_group1[chunk_id,cell] == 0
+            @test chunk_exchanger.start1[chunk_id,cell] == 0
+            @test chunk_exchanger.n_group2[chunk_id,cell] == 0
+            @test chunk_exchanger.start2[chunk_id,cell] == 0
         end
     end
 end
