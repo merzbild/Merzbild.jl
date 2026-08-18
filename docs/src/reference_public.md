@@ -222,6 +222,7 @@ close_netcdf
 ```@docs
 ChunkExchanger
 ChunkExchanger(chunks, n_cells) 
+update_occupancy_bounds!
 exchange_particles!
 sort_particles_after_exchange!
 reset!

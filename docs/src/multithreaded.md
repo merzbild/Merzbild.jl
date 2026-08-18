@@ -210,6 +210,10 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
 
             # sort particles
             @inbounds sort_particles!(gridsorter_chunks[chunk_id], grid, particles_chunks[chunk_id][1], pia_chunks[chunk_id], 1)
+
+            # tell the exchanger which cells this chunk holds particles in, so that pairs of
+            # chunks with nothing to exchange are rejected without scanning any cells
+            @inbounds update_occupancy_bounds!(chunk_exchanger, gridsorter_chunks[chunk_id], pia_chunks[chunk_id], chunk_id, 1)
         end
 
         # move particles between chunks
