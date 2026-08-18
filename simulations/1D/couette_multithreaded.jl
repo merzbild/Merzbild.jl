@@ -214,7 +214,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
     end
 
     # we now fix ncall, timing, allocation counts for the threaded timers by hand
-    timers_to_average = ["collide (t)", "sort (t)", "restore ordering (t)", "convect (t)", "convect + surface compute (t)", "sort post-exchange (t)", "props compute (t)", "reset CE (t)"]
+    timers_to_average = ["collide (t)", "sort (t)", "restore ordering (t)", "convect (t)", "convect + surface compute (t)", "sort post-exchange (t)", "props compute (t)", "reset CE (t)", "occ bounds (t)"]
 
     for timer_name in timers_to_average
         try
