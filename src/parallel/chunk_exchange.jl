@@ -13,6 +13,12 @@ Group 2 of `ParticleIndexer[chunk_id,cell]` holds the range of particles that
 belong to cell `cell` that came from a particle chunk `chunk_id` via pushing, i.e.
 they have been added to the end of the particle array.
 
+The table is self-clearing: every entry written during an exchange is read exactly once,
+in the same timestep, by the chunk owning the cell, and
+[`sort_particles_after_exchange!`](@ref) zeroes it as it reads it.
+It is therefore already empty at the start of each timestep and does not need to be
+[`reset!`](@ref) between timesteps.
+
 # Fields
 * `n_chunks`: number of chunks used in the simulation
 * `n_cells`: number of grid cells in the simulation
@@ -49,6 +55,12 @@ end
     reset!(chunk_exchanger, chunk_id)
 
 Reset all indexing of `chunk_exchanger.indexer[chunk_id,:]`.
+
+A newly constructed `ChunkExchanger` is already empty, and
+[`sort_particles_after_exchange!`](@ref) clears the entries it reads, so in a time loop
+that sorts every chunk after every exchange this does not need to be called at all.
+It is intended for re-using a `ChunkExchanger` whose indexing was left in an
+unknown state, e.g. after an exchange that was not followed by a re-sort.
 
 # Positional arguments
 * `chunk_exchanger`: the `ChunkExchanger` instance
@@ -535,14 +547,24 @@ function sort_particles_after_exchange!(chunk_exchanger, gridsort, particles::Pa
             ng2 = chunk_exchanger_i.n_group2
             cc += ng1 + ng2
 
+            # entries are cleared as they are read, so that the exchanger table stays
+            # zeroed for the next timestep without a separate sweep over all cells
             if ng1 > 0
                 unsafe_copyto!(sorted_indices, ci+1, p_index, chunk_exchanger_i.start1, ng1)
                 ci += ng1
+
+                chunk_exchanger_i.n_group1 = 0
+                chunk_exchanger_i.start1 = 0
+                chunk_exchanger_i.end1 = -1
             end
 
             if ng2 > 0
                 unsafe_copyto!(sorted_indices, ci+1, p_index, chunk_exchanger_i.start2, ng2)
                 ci += ng2
+
+                chunk_exchanger_i.n_group2 = 0
+                chunk_exchanger_i.start2 = 0
+                chunk_exchanger_i.end2 = -1
             end
         end
         n_tot += cc
