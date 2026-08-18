@@ -104,7 +104,7 @@ export GridSortInPlace, sort_particles!
 export FullyDiffuseBC1D, MaxwellWallBC1D, FullySpecularBC1D, convect_particles!, convect_particles_and_compute_cell!
 export convect_particles_periodic!, convect_particles_and_compute_cell_periodic!
 export pretty_print_pia
-export ChunkExchanger, exchange_particles!, reset!, sort_particles_after_exchange!
+export ChunkExchanger, exchange_particles!, reset!, sort_particles_after_exchange!, update_occupancy_bounds!
 export count_disordered_particles, check_pia_is_correct, check_unique_index, check_unique_buffer
 export FluxProps, compute_flux_props!, compute_flux_props_sorted!
 export mean_free_path, mean_collision_frequency

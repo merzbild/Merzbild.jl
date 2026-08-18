@@ -152,6 +152,8 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
             # sort particles
             @timeit local_timer "sort (t)" @inbounds sort_particles!(gridsorter_chunks[chunk_id], grid, particles_chunks[chunk_id][1], pia_chunks[chunk_id], 1)
 
+            @inbounds update_occupancy_bounds!(chunk_exchanger, gridsorter_chunks[chunk_id], pia_chunks[chunk_id], chunk_id, 1)
+
             if t%10 == 0
                 @timeit local_timer "restore ordering (t)" restore_particle_ordering!(particles_chunks[chunk_id][1], index_inv_map[chunk_id])
             end

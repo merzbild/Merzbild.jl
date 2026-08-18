@@ -138,6 +138,8 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
             # sort particles
             @timeit local_timer "sort (t)" @inbounds sort_particles!(gridsorter_chunks[chunk_id], grid, particles_local[1], pia_local, 1)
 
+            @timeit local_timer "occ bounds (t)" @inbounds update_occupancy_bounds!(chunk_exchanger, gridsorter_chunks[chunk_id], pia_local, chunk_id, 1)
+
             if t%10 == 0
                 @timeit local_timer "restore ordering (t)" restore_particle_ordering!(particles_local[1], index_inv_map[chunk_id])
             end
@@ -235,5 +237,5 @@ end
 
 const n_t = 50000
 run(1234, 300.0, 500.0, 5e-4, 5e22, 2000, 250, 2.59e-9, 1000, n_t, 14000;
-    chunk_count_multiplier=1, preallocation_margin_multiplier=1.5, parallel_exchange=false, final_debug=true,
+    chunk_count_multiplier=1, preallocation_margin_multiplier=2.0, parallel_exchange=false, final_debug=true,
     rebalance_freq=2500)

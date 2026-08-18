@@ -18,6 +18,12 @@ in the same timestep, by the chunk owning the cell, and
 It is therefore already empty at the start of each timestep and does not need to be
 [`reset!`](@ref) between timesteps.
 
+The `occ_lo`/`occ_hi` fields hold, per chunk, the first and last cell in which the chunk
+holds any particles. They let [`exchange_particles!`](@ref) reject a pair of chunks that
+cannot have anything to exchange without scanning the cells of either chunk. They are
+updated by [`update_occupancy_bounds!`](@ref) and start out as the whole grid, i.e. a
+simulation that never calls it is still correct, just slower.
+
 # Fields
 * `n_chunks`: number of chunks used in the simulation
 * `n_cells`: number of grid cells in the simulation
@@ -25,6 +31,8 @@ It is therefore already empty at the start of each timestep and does not need to
 * `n_group1`: number of particles in group 1
 * `start2`: index of the first particle of group 2
 * `n_group2`: number of particles in group 2
+* `occ_lo`: first cell in which a chunk holds particles
+* `occ_hi`: last cell in which a chunk holds particles
 """
 mutable struct ChunkExchanger
     n_chunks::Int64
@@ -33,6 +41,8 @@ mutable struct ChunkExchanger
     n_group1::Array{Int64, 2}
     start2::Array{Int64, 2}
     n_group2::Array{Int64, 2}
+    occ_lo::Vector{Int64}  # n_chunks
+    occ_hi::Vector{Int64}
 end
 
 """
@@ -48,7 +58,43 @@ function ChunkExchanger(chunks, n_cells)
     n_chunks = length(chunks)
     return ChunkExchanger(n_chunks, n_cells,
                           zeros(Int64, n_chunks, n_cells), zeros(Int64, n_chunks, n_cells),
-                          zeros(Int64, n_chunks, n_cells), zeros(Int64, n_chunks, n_cells))
+                          zeros(Int64, n_chunks, n_cells), zeros(Int64, n_chunks, n_cells),
+                          ones(Int64, n_chunks), fill(n_cells, n_chunks))
+end
+
+"""
+    update_occupancy_bounds!(chunk_exchanger, gridsort, pia, chunk_id, species)
+
+Update the first and last cell in which chunk `chunk_id` holds particles of the given `species`,
+so that [`exchange_particles!`](@ref) can reject pairs of chunks with nothing to exchange
+without scanning any cells.
+
+Must be called after [`sort_particles!`](@ref) and before [`exchange_particles!`](@ref),
+as it relies on `gridsort.cell_counts` holding the prefix sum of the per-cell particle counts
+left there by the sort. If not called, one should set `occ_lo` to 1 and `occ_hi` to `n_cells`
+in each chunk.
+
+# Positional arguments
+* `chunk_exchanger`: the `ChunkExchanger` instance in which to store the bounds
+* `gridsort`: the `GridSortInPlace` used to sort the chunk's particles
+* `pia`: the `ParticleIndexerArray` instance associated with the chunk
+* `chunk_id`: the chunk for which to update the bounds
+* `species`: the particle species for which the bounds are computed
+"""
+function update_occupancy_bounds!(chunk_exchanger, gridsort, pia, chunk_id, species)
+    @inbounds n_tot = pia.n_total[species]
+    cell_counts = gridsort.cell_counts
+
+    if n_tot == 0
+        @inbounds chunk_exchanger.occ_lo[chunk_id] = 1
+        @inbounds chunk_exchanger.occ_hi[chunk_id] = 0
+    else
+        # after sorting, cell_counts[cell+1] holds the number of particles in cells 1:cell-1,
+        # so the first entry reaching 1 (n_tot) is 2 past the first (last) occupied cell
+        @inbounds chunk_exchanger.occ_lo[chunk_id] = searchsortedfirst(cell_counts, 1) - 2
+        @inbounds chunk_exchanger.occ_hi[chunk_id] = searchsortedfirst(cell_counts, n_tot) - 2
+    end
+    return nothing
 end
 
 """
@@ -322,14 +368,18 @@ indexing should not be relied on until particles are re-sorted, see (`sort_parti
 * `j`: index of second chunk
 """
 function exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{ParticleVector{D}}}, pia_chunks, cell_chunks, species, i, j) where D
-    n_chunks = length(cell_chunks)
+    # the cells of chunk j that chunk i could possibly hold particles for: the cells owned by j,
+    # restricted to the cells in which chunk i holds anything at all. If this range is empty,
+    # chunk i has nothing for chunk j and no cell has to be looked at
+    @inbounds lo_ij = max(first(cell_chunks[j]), chunk_exchanger.occ_lo[i])
+    @inbounds hi_ij = min(last(cell_chunks[j]), chunk_exchanger.occ_hi[i])
 
     # find how many particles need to be transferred from i to j
     # we find first index of particles in chunk i that belong to a cell
     # assigned to chunk j
     s_ij = 0
     s_ci_ij = 0 # index of the cell
-    @inbounds for cj in cell_chunks[j]
+    @inbounds for cj in lo_ij:hi_ij
         st = pia_chunks[i].indexer[cj, species].start1
         if st > 0
             s_ij = st
@@ -340,11 +390,9 @@ function exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{Pa
 
     # we find last index of particles in chunk i that belong to a cell
     # assigned to chunk j
-    l_cj = length(cell_chunks[j])
     e_ij = -1
     e_ci_ij = 0 # index of the cell
-    @inbounds for cji in l_cj:-1:1
-        cj = cell_chunks[j][cji]
+    @inbounds for cj in hi_ij:-1:lo_ij
         et = pia_chunks[i].indexer[cj, species].end1
         if et > 0
             e_ij = et
@@ -357,9 +405,12 @@ function exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{Pa
 
     # now we do the same, but for particles in chunk j
     # that should be transferred to chunk i
+    @inbounds lo_ji = max(first(cell_chunks[i]), chunk_exchanger.occ_lo[j])
+    @inbounds hi_ji = min(last(cell_chunks[i]), chunk_exchanger.occ_hi[j])
+
     s_ji = 0
     s_ci_ji = 0 # index of the cell
-    @inbounds for ci in cell_chunks[i]
+    @inbounds for ci in lo_ji:hi_ji
         st = pia_chunks[j].indexer[ci, species].start1
         if st > 0
             s_ji = st
@@ -368,11 +419,9 @@ function exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{Pa
         end
     end
 
-    l_ci = length(cell_chunks[i])
     e_ji = -1
     e_ci_ji = 0 # index of the cell
-    @inbounds for cij in l_ci:-1:1
-        ci = cell_chunks[i][cij]
+    @inbounds for ci in hi_ji:-1:lo_ji
         et = pia_chunks[j].indexer[ci, species].end1
         if et > 0
             e_ji = et
@@ -382,6 +431,10 @@ function exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{Pa
     end
 
     np_from_j_to_i = e_ji - s_ji + 1
+
+    if np_from_i_to_j <= 0 && np_from_j_to_i <= 0
+        return nothing
+    end
 
     # compute whether we need to increase sizes of the particle vectors
     # how many particles does chunk i receive
