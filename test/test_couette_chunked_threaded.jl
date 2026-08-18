@@ -57,6 +57,7 @@ function run_chunked_couette(n_chunks, n_timesteps; threaded, factorized_exchang
                            pia_chunks[chunk_id], 1, species_data, Δt)
 
         sort_particles!(gridsorter_chunks[chunk_id], grid, particles_chunks[chunk_id][1], pia_chunks[chunk_id], 1)
+        update_occupancy_bounds!(chunk_exchanger, gridsorter_chunks[chunk_id], pia_chunks[chunk_id], chunk_id, 1)
     end
 
     function restore_indexing_and_compute_props!(chunk_id)
