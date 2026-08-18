@@ -67,6 +67,48 @@ function reset!(chunk_exchanger, chunk_id)
 end
 
 """
+    push_particles_to_end!(pv_i::ParticleVector{D}, pv_j::ParticleVector{D}, s2, e2, offset) where D
+
+Copy the particles `pv_i[s2+offset:e2+offset]` to the positions `s2:e2` of `pv_j`,
+taking new particles in `pv_j` from its buffer, and adding the freed particles of `pv_i`
+to its buffer. This does not update any `ParticleIndexer`/`ParticleIndexerArray` indexing.
+
+# Positional arguments
+* `pv_i`: the source `ParticleVector`
+* `pv_j`: the destination `ParticleVector`
+* `s2`: first index in `pv_j` to write to
+* `e2`: last index in `pv_j` to write to
+* `offset`: offset between the indices in `pv_j` and the indices of the particles in `pv_i`
+"""
+@inline function push_particles_to_end!(pv_i::ParticleVector{D}, pv_j::ParticleVector{D}, s2, e2, offset) where D
+    # hoisted out of the loop: `pv_i`/`pv_j` are mutable, so these would otherwise be
+    # re-loaded on every iteration, as would `nbuffer` be read-modify-written in place
+    index_i = pv_i.index
+    index_j = pv_j.index
+    buffer_i = pv_i.buffer
+    nbuffer_i = pv_i.nbuffer
+    particles_i = pv_i.particles
+    particles_j = pv_j.particles
+
+    @inbounds for pid in s2:e2
+        update_particle_buffer_new_particle!(pv_j, pid)
+
+        true_index_i = index_i[pid + offset]
+        p_j = particles_j[index_j[pid]]
+        p_i = particles_i[true_index_i]
+
+        p_j.w = p_i.w
+        p_j.v = p_i.v
+        p_j.x = p_i.x
+
+        nbuffer_i += 1
+        buffer_i[nbuffer_i] = true_index_i
+    end
+    pv_i.nbuffer = nbuffer_i
+    return nothing
+end
+
+"""
     push_particles!(chunk_exchanger, particles_chunks::Vector{Vector{ParticleVector{D}}}, pia_chunks, species, i, j, offset_ij, s_ci_ij2, e_ci_ij) where D
 
 Pushes particles of the specified `species` from chunk `i` to the end of chunk `j`,
@@ -103,6 +145,9 @@ function push_particles!(chunk_exchanger, particles_chunks::Vector{Vector{Partic
     @inbounds pia_chunk_j = pia_chunks[j]
     @inbounds indexer = pia_chunks[i].indexer[cell,species]
 
+    @inbounds pv_i = particles_chunks[i][species]
+    @inbounds pv_j = particles_chunks[j][species]
+
     # println("Push from $i to $j")
     # println("Starting from cell $s_ci_ij2, already pushed $offset_ij from there")
     # println("In total it has $(pia_chunks[i].indexer[cell,species].n_group1) particles that need to be pushed")
@@ -125,23 +170,7 @@ function push_particles!(chunk_exchanger, particles_chunks::Vector{Vector{Partic
 
         # println("will write to $s2:$e2 in chunk $j")
 
-        @inbounds for pid in s2:e2
-            # println("Writing to $pid in $j using particle $(pid + offset) from $i")
-            # move particle to chunk j
-            update_particle_buffer_new_particle!(particles_chunks[j][species], pid)
-
-            p_j = particles_chunks[j][species][pid]
-            p_i = particles_chunks[i][species][pid + offset]
-
-            p_j.w = p_i.w
-            p_j.v = p_i.v
-            p_j.x = p_i.x
-            
-            # update buffer in chunk i
-            particles_chunks[i][species].nbuffer += 1
-            particles_chunks[i][species].buffer[particles_chunks[i][species].nbuffer] =
-                particles_chunks[i][species].index[pid + offset]
-        end
+        push_particles_to_end!(pv_i, pv_j, s2, e2, offset)
 
         indexer.n_local = 0
         indexer.n_group1 = 0
@@ -161,23 +190,8 @@ function push_particles!(chunk_exchanger, particles_chunks::Vector{Vector{Partic
             e2 = chunk_exchanger_i.end2
             offset = -s2 + indexer.start1
 
-            # write particles to chunk j
-            for pid in s2:e2
-                # move particle to chunk j
-                update_particle_buffer_new_particle!(particles_chunks[j][species], pid)
+            push_particles_to_end!(pv_i, pv_j, s2, e2, offset)
 
-                p_j = particles_chunks[j][species][pid]
-                p_i = particles_chunks[i][species][pid + offset]
-
-                p_j.w = p_i.w
-                p_j.v = p_i.v
-                p_j.x = p_i.x
-                
-                # update buffer in chunk i
-                particles_chunks[i][species].nbuffer += 1
-                particles_chunks[i][species].buffer[particles_chunks[i][species].nbuffer] =
-                    particles_chunks[i][species].index[pid + offset]
-            end
             indexer.n_local = 0
             indexer.n_group1 = 0
             indexer.start1 = 0
@@ -403,9 +417,11 @@ function exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{Pa
     # println("n_swap = $n_swap")
     # now update chunk_exchanger indexing
     if n_swap > 0
+        @inbounds pv_i = particles_chunks[i][species]
+        @inbounds pv_j = particles_chunks[j][species]
+
         @inbounds for nsw in 1:n_swap
-            swap_particles!(particles_chunks[i][species], particles_chunks[j][species],
-                            s_ij+nsw-1, s_ji+nsw-1)
+            swap_particles!(pv_i, pv_j, s_ij+nsw-1, s_ji+nsw-1)
             # println("Swapping $(s_ij+nsw-1) from $i with $(s_ji+nsw-1) from $j")
         end
 

@@ -166,6 +166,7 @@ Merzbild.swap_particles_true_index!
 Merzbild.swap_particles!
 Merzbild.update_swap_indexing!
 Merzbild.push_particles!
+Merzbild.push_particles_to_end!
 ```
 
 ## Constants
