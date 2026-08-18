@@ -21,6 +21,8 @@ The approach is relatively straightforward:
     data between chunks. This is can be done either in serial mode or in threaded mode, see below for details.
 5. Then, [`sort_particles_after_exchange!`](@ref) is called to reset indexing without having to
     completely resort all the new particles. This can be done using multithreading.
+    It also clears the entries of the `ChunkExchanger` as it reads them, so the exchanger
+    is ready for the next timestep and does not need to be [`reset!`](@ref) explicitly.
 6. Physical grid properties are computed using multithreading, as they can easily be computed
     only for cells assigned to the chunk, thus avoiding any race conditions.
     In case surface properties were computed during particle movement, a
@@ -83,8 +85,7 @@ The surface properties are collected into `surf_props_reduced` via a call to [`r
 Before the start of the time loop, the sampling procedure is multithreaded via the `@threads` macro.
 The physical properties are also computed in multithreaded mode.
 
-Inside the time loop, collisions, convection, and sorting are performed inside a `@threads` block. The `chunk_exchanger` data
-is also cleared in this multithreaded loop to prepare it for the movement of particles between chunks.
+Inside the time loop, collisions, convection, and sorting are performed inside a `@threads` block.
 Once the block finishes, the particles are moved between chunks.
 Here, a serial call to [`exchange_particles!`](@ref) is used.
 
@@ -206,9 +207,6 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
                                     particles_chunks[chunk_id][1], pia_chunks[chunk_id],
                                     1, species_data, Δt)
             end
-
-            # need to clear the data in the chunk exchanger
-            @inbounds reset!(chunk_exchanger, chunk_id)
 
             # sort particles
             @inbounds sort_particles!(gridsorter_chunks[chunk_id], grid, particles_chunks[chunk_id][1], pia_chunks[chunk_id], 1)
