@@ -1,5 +1,20 @@
+# sort_particles_after_exchange! clears the ChunkExchanger entries as it reads them, so once
+# every chunk has been re-sorted the whole table must be empty again, without any call to reset!
+function test_chunk_exchanger_empty(chunk_exchanger)
+    for cell in 1:chunk_exchanger.n_cells
+        for chunk_id in 1:chunk_exchanger.n_chunks
+            @test chunk_exchanger.indexer[chunk_id,cell].n_group1 == 0
+            @test chunk_exchanger.indexer[chunk_id,cell].start1 == 0
+            @test chunk_exchanger.indexer[chunk_id,cell].end1 == -1
+            @test chunk_exchanger.indexer[chunk_id,cell].n_group2 == 0
+            @test chunk_exchanger.indexer[chunk_id,cell].start2 == 0
+            @test chunk_exchanger.indexer[chunk_id,cell].end2 == -1
+        end
+    end
+end
+
 @testset "particle re-sorting after exchange between chunks" begin
-    
+
     # case 1
     # 4 cells, 3 chunks
     # [1], [2,3], [4]
@@ -47,6 +62,8 @@
                                        particles_chunks[chunk_id][1], pia_chunks[chunk_id],
                                        cell_chunks[chunk_id], 1)
     end
+
+    test_chunk_exchanger_empty(chunk_exchanger)
 
     np_actual = [4,6,3]  # this does not include particles pushed to another chunk anymore
 
@@ -203,6 +220,8 @@
                                        cell_chunks[chunk_id], 1)
     end
 
+    test_chunk_exchanger_empty(chunk_exchanger)
+
     new_lengths = [4 + Merzbild.DELTA_PARTICLES, 4]
     np_actual = [4,3]  # this does not include particles pushed to another chunk anymore
 
@@ -348,6 +367,8 @@
     @test pia_chunks[2].n_total[1] == 3
     @test pia_chunks[1].index_last[1] == 4
     @test pia_chunks[2].index_last[1] == 3
+
+    test_chunk_exchanger_empty(chunk_exchanger)
 
     # add a new particle to chunk 2
     chunk_id = 2
