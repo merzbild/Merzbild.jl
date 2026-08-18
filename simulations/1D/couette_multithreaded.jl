@@ -238,4 +238,5 @@ end
 
 const n_t = 50000
 run(1234, 300.0, 500.0, 5e-4, 5e22, 2000, 250, 2.59e-9, 1000, n_t, 14000;
-    chunk_count_multiplier=1, preallocation_margin_multiplier=1.5, parallel_exchange=false, final_debug=true)
+    chunk_count_multiplier=1, preallocation_margin_multiplier=1.5, parallel_exchange=false, final_debug=true,
+    rebalance_freq=2500)
