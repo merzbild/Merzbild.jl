@@ -56,7 +56,6 @@ function run_chunked_couette(n_chunks, n_timesteps; threaded, factorized_exchang
         convect_particles!(rng_chunks[chunk_id], grid, bc_list, particles_chunks[chunk_id][1],
                            pia_chunks[chunk_id], 1, species_data, Δt)
 
-        reset!(chunk_exchanger, chunk_id)
         sort_particles!(gridsorter_chunks[chunk_id], grid, particles_chunks[chunk_id][1], pia_chunks[chunk_id], 1)
     end
 

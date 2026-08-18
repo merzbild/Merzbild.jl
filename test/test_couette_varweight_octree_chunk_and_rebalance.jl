@@ -135,9 +135,6 @@
                                 1, species_data, Δt)
         
 
-            # need to clear the data in the chunk exchanger
-            reset!(chunk_exchanger, chunk_id)
-
             # sort particles
             sort_particles!(gridsorter_chunks[chunk_id], grid, particles_chunks[chunk_id][1], pia_chunks[chunk_id], 1)
         end

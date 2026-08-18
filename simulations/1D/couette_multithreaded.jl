@@ -135,9 +135,6 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
                                     1, species_data, Δt)
             end
 
-            # need to clear the data in the chunk exchanger
-            @timeit local_timer "reset CE (t)" reset!(chunk_exchanger, chunk_id)
-
             # sort particles
             @timeit local_timer "sort (t)" @inbounds sort_particles!(gridsorter_chunks[chunk_id], grid, particles_local[1], pia_local, 1)
 
