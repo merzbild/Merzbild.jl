@@ -49,17 +49,15 @@
     chunk_exchanger = ChunkExchanger(chunks, 4)
     @test chunk_exchanger.n_chunks == 2
     @test chunk_exchanger.n_cells == 4
-    @test size(chunk_exchanger.indexer) == (2,4)
+    @test size(chunk_exchanger.n_group1) == (2,4)
 
     # test that reset! works
     for i in 1:4
         for j in 1:2
-            chunk_exchanger.indexer[j,i].n_group1 = 105 - i
-            chunk_exchanger.indexer[j,i].start1 = i+j
-            chunk_exchanger.indexer[j,i].end1 = 240+j
-            chunk_exchanger.indexer[j,i].n_group2 = 777
-            chunk_exchanger.indexer[j,i].start2 = 3+i
-            chunk_exchanger.indexer[j,i].end2 = 11+j
+            chunk_exchanger.n_group1[j,i] = 105 - i
+            chunk_exchanger.start1[j,i] = i+j
+            chunk_exchanger.n_group2[j,i] = 777
+            chunk_exchanger.start2[j,i] = 3+i
         end
     end
 
@@ -69,12 +67,10 @@
 
     for i in 1:4
         for j in 1:2
-            @test chunk_exchanger.indexer[j,i].n_group1 == 0
-            @test chunk_exchanger.indexer[j,i].start1 == 0
-            @test chunk_exchanger.indexer[j,i].end1 == -1
-            @test chunk_exchanger.indexer[j,i].n_group2 == 0
-            @test chunk_exchanger.indexer[j,i].start2 == 0
-            @test chunk_exchanger.indexer[j,i].end2 == -1
+            @test chunk_exchanger.n_group1[j,i] == 0
+            @test chunk_exchanger.start1[j,i] == 0
+            @test chunk_exchanger.n_group2[j,i] == 0
+            @test chunk_exchanger.start2[j,i] == 0
         end
     end
 
@@ -162,26 +158,23 @@
     end
     # test that indexing points to the new groups of particles
     # new particles in cell 1 came from chunk 2
-    @test chunk_exchanger.indexer[2,1].n_group1 == 2
-    @test chunk_exchanger.indexer[2,1].start1 == 3
-    @test chunk_exchanger.indexer[2,1].end1 == 4
+    @test chunk_exchanger.n_group1[2,1] == 2
+    @test chunk_exchanger.start1[2,1] == 3
     # particles don't come from the chunk themselves, obviously
-    @test chunk_exchanger.indexer[1,1].start1 == 0
-    @test chunk_exchanger.indexer[1,1].end1 == -1
+    @test chunk_exchanger.n_group1[1,1] == 0
+    @test chunk_exchanger.start1[1,1] == 0
 
     # new particles in cell 2 came from chunk 1
-    @test chunk_exchanger.indexer[1,2].n_group1 == 2
-    @test chunk_exchanger.indexer[1,2].start1 == 1
-    @test chunk_exchanger.indexer[1,2].end1 == 2
+    @test chunk_exchanger.n_group1[1,2] == 2
+    @test chunk_exchanger.start1[1,2] == 1
     # particles don't come from the chunk themselves, obviously
-    @test chunk_exchanger.indexer[2,2].start1 == 0
-    @test chunk_exchanger.indexer[2,2].end1 == -1
+    @test chunk_exchanger.n_group1[2,2] == 0
+    @test chunk_exchanger.start1[2,2] == 0
 
     for chunk_id in 1:2
         for cell in 1:2
-            @test chunk_exchanger.indexer[chunk_id,cell].n_group2 == 0
-            @test chunk_exchanger.indexer[chunk_id,cell].start2 == 0
-            @test chunk_exchanger.indexer[chunk_id,cell].end2 == -1
+            @test chunk_exchanger.n_group2[chunk_id,cell] == 0
+            @test chunk_exchanger.start2[chunk_id,cell] == 0
         end
     end
 
@@ -302,32 +295,26 @@
     # test that indexing points to the new groups of particles
     # new particles in cell 1 came from chunk 2
     # first the particles due to swapping
-    @test chunk_exchanger.indexer[2,1].n_group1 == 1
-    @test chunk_exchanger.indexer[2,1].start1 == 3
-    @test chunk_exchanger.indexer[2,1].end1 == 3
+    @test chunk_exchanger.n_group1[2,1] == 1
+    @test chunk_exchanger.start1[2,1] == 3
     # then the extra pushed particles
-    @test chunk_exchanger.indexer[2,1].n_group2 == 2
-    @test chunk_exchanger.indexer[2,1].start2 == 4
-    @test chunk_exchanger.indexer[2,1].end2 == 5
+    @test chunk_exchanger.n_group2[2,1] == 2
+    @test chunk_exchanger.start2[2,1] == 4
 
     # new particles in cell 2 came from chunk 1
-    @test chunk_exchanger.indexer[1,2].n_group1 == 1
-    @test chunk_exchanger.indexer[1,2].start1 == 1
-    @test chunk_exchanger.indexer[1,2].end1 == 1
+    @test chunk_exchanger.n_group1[1,2] == 1
+    @test chunk_exchanger.start1[1,2] == 1
     # but no pushed particles
-    @test chunk_exchanger.indexer[1,2].n_group2 == 0
-    @test chunk_exchanger.indexer[1,2].start2 == 0
-    @test chunk_exchanger.indexer[1,2].end2 == -1
+    @test chunk_exchanger.n_group2[1,2] == 0
+    @test chunk_exchanger.start2[1,2] == 0
 
     # particles don't come from the chunk themselves, obviously
     # and in this simple case chunk_id = cell_id
     for i in 1:2
-        @test chunk_exchanger.indexer[i,i].n_group1 == 0
-        @test chunk_exchanger.indexer[i,i].start1 == 0
-        @test chunk_exchanger.indexer[i,i].end1 == -1
-        @test chunk_exchanger.indexer[i,i].n_group2 == 0
-        @test chunk_exchanger.indexer[i,i].start2 == 0
-        @test chunk_exchanger.indexer[i,i].end2 == -1
+        @test chunk_exchanger.n_group1[i,i] == 0
+        @test chunk_exchanger.start1[i,i] == 0
+        @test chunk_exchanger.n_group2[i,i] == 0
+        @test chunk_exchanger.start2[i,i] == 0
     end
 
     # test case where all particles from chunk 2 are moved into chunk 1
@@ -403,32 +390,26 @@
 
     # test chunk_exchanger
     # no new particles in cell 1 from chunk 2 due to swaps
-    @test chunk_exchanger.indexer[2,1].n_group1 == 0
-    @test chunk_exchanger.indexer[2,1].start1 == 0
-    @test chunk_exchanger.indexer[2,1].end1 == -1
+    @test chunk_exchanger.n_group1[2,1] == 0
+    @test chunk_exchanger.start1[2,1] == 0
     # all particles due to push
-    @test chunk_exchanger.indexer[2,1].n_group2 == 4
-    @test chunk_exchanger.indexer[2,1].start2 == 3
-    @test chunk_exchanger.indexer[2,1].end2 == 6
+    @test chunk_exchanger.n_group2[2,1] == 4
+    @test chunk_exchanger.start2[2,1] == 3
 
     # no new particles in cell 2
-    @test chunk_exchanger.indexer[1,2].n_group1 == 0
-    @test chunk_exchanger.indexer[1,2].start1 == 0
-    @test chunk_exchanger.indexer[1,2].end1 == -1
+    @test chunk_exchanger.n_group1[1,2] == 0
+    @test chunk_exchanger.start1[1,2] == 0
     # but no pushed particles
-    @test chunk_exchanger.indexer[1,2].n_group2 == 0
-    @test chunk_exchanger.indexer[1,2].start2 == 0
-    @test chunk_exchanger.indexer[1,2].end2 == -1
+    @test chunk_exchanger.n_group2[1,2] == 0
+    @test chunk_exchanger.start2[1,2] == 0
 
     # particles don't come from the chunk themselves, obviously
     # and in this simple case chunk_id = cell_id
     for i in 1:2
-        @test chunk_exchanger.indexer[i,i].n_group1 == 0
-        @test chunk_exchanger.indexer[i,i].start1 == 0
-        @test chunk_exchanger.indexer[i,i].end1 == -1
-        @test chunk_exchanger.indexer[i,i].n_group2 == 0
-        @test chunk_exchanger.indexer[i,i].start2 == 0
-        @test chunk_exchanger.indexer[i,i].end2 == -1
+        @test chunk_exchanger.n_group1[i,i] == 0
+        @test chunk_exchanger.start1[i,i] == 0
+        @test chunk_exchanger.n_group2[i,i] == 0
+        @test chunk_exchanger.start2[i,i] == 0
     end
 
     # 3 cells, 2 chunks
@@ -509,33 +490,27 @@
     # no new particles in cells 1, 2 in both chunks
     for chunk_id in 1:2
         for cell in 1:2
-            @test chunk_exchanger.indexer[chunk_id,cell].n_group1 == 0
-            @test chunk_exchanger.indexer[chunk_id,cell].start1 == 0
-            @test chunk_exchanger.indexer[chunk_id,cell].end1 == -1
+            @test chunk_exchanger.n_group1[chunk_id,cell] == 0
+            @test chunk_exchanger.start1[chunk_id,cell] == 0
 
-            @test chunk_exchanger.indexer[chunk_id,cell].n_group2 == 0
-            @test chunk_exchanger.indexer[chunk_id,cell].start2 == 0
-            @test chunk_exchanger.indexer[chunk_id,cell].end2 == -1
+            @test chunk_exchanger.n_group2[chunk_id,cell] == 0
+            @test chunk_exchanger.start2[chunk_id,cell] == 0
         end
     end
 
     # cell 3 belongs to chunk 2, therefore nothing 
-    @test chunk_exchanger.indexer[2,3].n_group1 == 0
-    @test chunk_exchanger.indexer[2,3].start1 == 0
-    @test chunk_exchanger.indexer[2,3].end1 == -1
+    @test chunk_exchanger.n_group1[2,3] == 0
+    @test chunk_exchanger.start1[2,3] == 0
 
-    @test chunk_exchanger.indexer[2,3].n_group2 == 0
-    @test chunk_exchanger.indexer[2,3].start2 == 0
-    @test chunk_exchanger.indexer[2,3].end2 == -1
+    @test chunk_exchanger.n_group2[2,3] == 0
+    @test chunk_exchanger.start2[2,3] == 0
 
     # no new particles in cell 3 due to swap
-    @test chunk_exchanger.indexer[1,3].n_group1 == 0
-    @test chunk_exchanger.indexer[1,3].start1 == 0
-    @test chunk_exchanger.indexer[1,3].end1 == -1
+    @test chunk_exchanger.n_group1[1,3] == 0
+    @test chunk_exchanger.start1[1,3] == 0
     # and everything due to push
-    @test chunk_exchanger.indexer[1,3].n_group2 == 2
-    @test chunk_exchanger.indexer[1,3].start2 == 1
-    @test chunk_exchanger.indexer[1,3].end2 == 2
+    @test chunk_exchanger.n_group2[1,3] == 2
+    @test chunk_exchanger.start2[1,3] == 1
 
 
     # 4 cells, 3 chunks
@@ -644,95 +619,75 @@
     end
 
     # cell 1
-    @test chunk_exchanger.indexer[1,1].n_group1 == 0
-    @test chunk_exchanger.indexer[1,1].start1 == 0
-    @test chunk_exchanger.indexer[1,1].end1 == -1
+    @test chunk_exchanger.n_group1[1,1] == 0
+    @test chunk_exchanger.start1[1,1] == 0
 
-    @test chunk_exchanger.indexer[2,1].n_group1 == 1
-    @test chunk_exchanger.indexer[2,1].start1 == 3
-    @test chunk_exchanger.indexer[2,1].end1 == 3
+    @test chunk_exchanger.n_group1[2,1] == 1
+    @test chunk_exchanger.start1[2,1] == 3
 
-    @test chunk_exchanger.indexer[3,1].n_group1 == 1
-    @test chunk_exchanger.indexer[3,1].start1 == 5
-    @test chunk_exchanger.indexer[3,1].end1 == 5
+    @test chunk_exchanger.n_group1[3,1] == 1
+    @test chunk_exchanger.start1[3,1] == 5
     
     # cell 1, no pushes, only swaps, therefore group2 is empty
     for chunk_id in 1:3
-        @test chunk_exchanger.indexer[chunk_id,1].n_group2 == 0
-        @test chunk_exchanger.indexer[chunk_id,1].start2 == 0
-        @test chunk_exchanger.indexer[chunk_id,1].end2 == -1
+        @test chunk_exchanger.n_group2[chunk_id,1] == 0
+        @test chunk_exchanger.start2[chunk_id,1] == 0
     end
     
     # cell 2
-    @test chunk_exchanger.indexer[1,2].n_group1 == 1
-    @test chunk_exchanger.indexer[1,2].start1 == 1
-    @test chunk_exchanger.indexer[1,2].end1 == 1
+    @test chunk_exchanger.n_group1[1,2] == 1
+    @test chunk_exchanger.start1[1,2] == 1
 
-    @test chunk_exchanger.indexer[1,2].n_group2 == 0
-    @test chunk_exchanger.indexer[1,2].start2 == 0
-    @test chunk_exchanger.indexer[1,2].end2 == -1
+    @test chunk_exchanger.n_group2[1,2] == 0
+    @test chunk_exchanger.start2[1,2] == 0
 
     # no self-pushes/swaps
     for cell in [2,3]
-        @test chunk_exchanger.indexer[2,cell].n_group1 == 0
-        @test chunk_exchanger.indexer[2,cell].start1 == 0
-        @test chunk_exchanger.indexer[2,cell].end1 == -1
+        @test chunk_exchanger.n_group1[2,cell] == 0
+        @test chunk_exchanger.start1[2,cell] == 0
 
-        @test chunk_exchanger.indexer[2,cell].n_group2 == 0
-        @test chunk_exchanger.indexer[2,cell].start2 == 0
-        @test chunk_exchanger.indexer[2,cell].end2 == -1
+        @test chunk_exchanger.n_group2[2,cell] == 0
+        @test chunk_exchanger.start2[2,cell] == 0
     end
 
-    @test chunk_exchanger.indexer[3,2].n_group1 == 1
-    @test chunk_exchanger.indexer[3,2].start1 == 3
-    @test chunk_exchanger.indexer[3,2].end1 == 3
+    @test chunk_exchanger.n_group1[3,2] == 1
+    @test chunk_exchanger.start1[3,2] == 3
 
-    @test chunk_exchanger.indexer[3,2].n_group2 == 0
-    @test chunk_exchanger.indexer[3,2].start2 == 0
-    @test chunk_exchanger.indexer[3,2].end2 == -1
+    @test chunk_exchanger.n_group2[3,2] == 0
+    @test chunk_exchanger.start2[3,2] == 0
 
     # cell 3
-    @test chunk_exchanger.indexer[1,3].n_group1 == 0
-    @test chunk_exchanger.indexer[1,3].start1 == 0
-    @test chunk_exchanger.indexer[1,3].end1 == -1
+    @test chunk_exchanger.n_group1[1,3] == 0
+    @test chunk_exchanger.start1[1,3] == 0
 
-    @test chunk_exchanger.indexer[1,3].n_group2 == 1
-    @test chunk_exchanger.indexer[1,3].start2 == 4
-    @test chunk_exchanger.indexer[1,3].end2 == 4
+    @test chunk_exchanger.n_group2[1,3] == 1
+    @test chunk_exchanger.start2[1,3] == 4
 
     # from chunk 3
-    @test chunk_exchanger.indexer[3,3].n_group1 == 0
-    @test chunk_exchanger.indexer[3,3].start1 == 0
-    @test chunk_exchanger.indexer[3,3].end1 == -1
+    @test chunk_exchanger.n_group1[3,3] == 0
+    @test chunk_exchanger.start1[3,3] == 0
 
-    @test chunk_exchanger.indexer[3,3].n_group2 == 2
-    @test chunk_exchanger.indexer[3,3].start2 == 5
-    @test chunk_exchanger.indexer[3,3].end2 == 6
+    @test chunk_exchanger.n_group2[3,3] == 2
+    @test chunk_exchanger.start2[3,3] == 5
 
     # cell 4
-    @test chunk_exchanger.indexer[1,4].n_group1 == 1
-    @test chunk_exchanger.indexer[1,4].start1 == 1
-    @test chunk_exchanger.indexer[1,4].end1 == 1
+    @test chunk_exchanger.n_group1[1,4] == 1
+    @test chunk_exchanger.start1[1,4] == 1
 
-    @test chunk_exchanger.indexer[1,4].n_group2 == 1
-    @test chunk_exchanger.indexer[1,4].start2 == 5
-    @test chunk_exchanger.indexer[1,4].end2 == 5
+    @test chunk_exchanger.n_group2[1,4] == 1
+    @test chunk_exchanger.start2[1,4] == 5
 
-    @test chunk_exchanger.indexer[2,4].n_group1 == 1
-    @test chunk_exchanger.indexer[2,4].start1 == 2
-    @test chunk_exchanger.indexer[2,4].end1 == 2
+    @test chunk_exchanger.n_group1[2,4] == 1
+    @test chunk_exchanger.start1[2,4] == 2
 
-    @test chunk_exchanger.indexer[2,4].n_group2 == 0
-    @test chunk_exchanger.indexer[2,4].start2 == 0
-    @test chunk_exchanger.indexer[2,4].end2 == -1
+    @test chunk_exchanger.n_group2[2,4] == 0
+    @test chunk_exchanger.start2[2,4] == 0
 
-    @test chunk_exchanger.indexer[3,4].n_group1 == 0
-    @test chunk_exchanger.indexer[3,4].start1 == 0
-    @test chunk_exchanger.indexer[3,4].end1 == -1
+    @test chunk_exchanger.n_group1[3,4] == 0
+    @test chunk_exchanger.start1[3,4] == 0
 
-    @test chunk_exchanger.indexer[3,4].n_group2 == 0
-    @test chunk_exchanger.indexer[3,4].start2 == 0
-    @test chunk_exchanger.indexer[3,4].end2 == -1
+    @test chunk_exchanger.n_group2[3,4] == 0
+    @test chunk_exchanger.start2[3,4] == 0
 
     # number of particles in a cell
     # [1,1,2,3,4,4], [1,3,4], [1,2,3,3] - what we had
@@ -755,10 +710,10 @@
 
         for chunk_id_2 in 1:3
             # we iterate over all chunks
-            s1 = chunk_exchanger.indexer[chunk_id_2,cell].start1
-            e1 = chunk_exchanger.indexer[chunk_id_2,cell].end1
-            s2 = chunk_exchanger.indexer[chunk_id_2,cell].start2
-            e2 = chunk_exchanger.indexer[chunk_id_2,cell].end2
+            s1 = chunk_exchanger.start1[chunk_id_2,cell]
+            e1 = s1 + chunk_exchanger.n_group1[chunk_id_2,cell] - 1
+            s2 = chunk_exchanger.start2[chunk_id_2,cell]
+            e2 = s2 + chunk_exchanger.n_group2[chunk_id_2,cell] - 1
             for i in s1:e1
                 np += 1
                 w += particles_chunks[chunk_id][1][i].w
@@ -833,52 +788,42 @@
 
     # cell 1
     # nothing from self
-    @test chunk_exchanger.indexer[1,1].n_group1 == 0
-    @test chunk_exchanger.indexer[1,1].start1 == 0
-    @test chunk_exchanger.indexer[1,1].end1 == -1
+    @test chunk_exchanger.n_group1[1,1] == 0
+    @test chunk_exchanger.start1[1,1] == 0
 
-    @test chunk_exchanger.indexer[1,1].n_group2 == 0
-    @test chunk_exchanger.indexer[1,1].start2 == 0
-    @test chunk_exchanger.indexer[1,1].end2 == -1
+    @test chunk_exchanger.n_group2[1,1] == 0
+    @test chunk_exchanger.start2[1,1] == 0
 
     # 3 via swaps
-    @test chunk_exchanger.indexer[2,1].n_group1 == 3
-    @test chunk_exchanger.indexer[2,1].start1 == 1
-    @test chunk_exchanger.indexer[2,1].end1 == 3
+    @test chunk_exchanger.n_group1[2,1] == 3
+    @test chunk_exchanger.start1[2,1] == 1
 
     # 1 via push
-    @test chunk_exchanger.indexer[2,1].n_group2 == 1
-    @test chunk_exchanger.indexer[2,1].start2 == 4
-    @test chunk_exchanger.indexer[2,1].end2 == 4
+    @test chunk_exchanger.n_group2[2,1] == 1
+    @test chunk_exchanger.start2[2,1] == 4
 
 
     # cells 2,3,4
     for cell in [2,3,4]
         # nothing from self
-        @test chunk_exchanger.indexer[2,cell].n_group1 == 0
-        @test chunk_exchanger.indexer[2,cell].start1 == 0
-        @test chunk_exchanger.indexer[2,cell].end1 == -1
+        @test chunk_exchanger.n_group1[2,cell] == 0
+        @test chunk_exchanger.start1[2,cell] == 0
 
-        @test chunk_exchanger.indexer[2,cell].n_group2 == 0
-        @test chunk_exchanger.indexer[2,cell].start2 == 0
-        @test chunk_exchanger.indexer[2,cell].end2 == -1
+        @test chunk_exchanger.n_group2[2,cell] == 0
+        @test chunk_exchanger.start2[2,cell] == 0
 
         # and nothing pushed from chunk 1
-        @test chunk_exchanger.indexer[1,cell].n_group2 == 0
-        @test chunk_exchanger.indexer[1,cell].start2 == 0
-        @test chunk_exchanger.indexer[1,cell].end2 == -1
+        @test chunk_exchanger.n_group2[1,cell] == 0
+        @test chunk_exchanger.start2[1,cell] == 0
     end
 
     # test swaps from chunk 1
-    @test chunk_exchanger.indexer[1,2].n_group1 == 1
-    @test chunk_exchanger.indexer[1,2].start1 == 1
-    @test chunk_exchanger.indexer[1,2].end1 == 1
+    @test chunk_exchanger.n_group1[1,2] == 1
+    @test chunk_exchanger.start1[1,2] == 1
 
-    @test chunk_exchanger.indexer[1,3].n_group1 == 1
-    @test chunk_exchanger.indexer[1,3].start1 == 2
-    @test chunk_exchanger.indexer[1,3].end1 == 2
+    @test chunk_exchanger.n_group1[1,3] == 1
+    @test chunk_exchanger.start1[1,3] == 2
 
-    @test chunk_exchanger.indexer[1,4].n_group1 == 1
-    @test chunk_exchanger.indexer[1,4].start1 == 3
-    @test chunk_exchanger.indexer[1,4].end1 == 3
+    @test chunk_exchanger.n_group1[1,4] == 1
+    @test chunk_exchanger.start1[1,4] == 3
 end

@@ -7,6 +7,9 @@ The approach is relatively straightforward:
     Within each chunk the cell indices should be continuous.
     For example, a 4-cell domain may be decomposed into `[[1,2],[3,4]]` (2 chunks),
     `[[1], [2,3], [4]` (3 chunks), `[[1], [2], [3], [4]]` (4 chunks), etc.
+    A [`LoadBalancerCellQ`](@ref) instance can be used to perform both the initial decomposition
+    and on-the-fly decomposition with load balancing; it stores the chunked indices
+    as ranges of cell indices, i.e. `[1:2, 3:4]` for the first example above.
 2. Several variables are instantiated for each chunk:
     - `n_chunks` arrays of `ParticleVector`s (each hold `n_species` `ParticleVector`s)
     - `n_chunks` RNGs
@@ -21,6 +24,8 @@ The approach is relatively straightforward:
     data between chunks. This is can be done either in serial mode or in threaded mode, see below for details.
 5. Then, [`sort_particles_after_exchange!`](@ref) is called to reset indexing without having to
     completely resort all the new particles. This can be done using multithreading.
+    It also clears the entries of the `ChunkExchanger` as it reads them, so the exchanger
+    is ready for the next timestep and does not need to be [`reset!`](@ref) explicitly.
 6. Physical grid properties are computed using multithreading, as they can easily be computed
     only for cells assigned to the chunk, thus avoiding any race conditions.
     In case surface properties were computed during particle movement, a
@@ -65,33 +70,44 @@ It should be noted that threaded particle exchange is not necessarily faster tha
 of threading. Example multi-threaded simulations in the `simulations` directory have an optional parameter `parallel_exchange`
 that can be used to toggle serial and parallel particle exchange to see which is faster for a given problem.
 
-## Example: multithreaded Couette flow simulation
+## Example: multithreaded Couette flow simulation with load balancing
 
 Below is an example of a fixed-weight DSMC multithreaded Couette flow simulation. To run in multithreaded mode, one should start
 julia specifying the number of threads: `julia --threads NTHREADS`. The file can also be found under `simulations/1D/couette_multithreaded.jl`.
 A variable-weight example can be found under `simulations/1D/couette_multithreaded_varweight_octree.jl`.
 
 The [ChunkSplitters.jl](https://github.com/JuliaFolds2/ChunkSplitters.jl)
-library is used to perform domain decomposition, by splitting the range of cell indices `1:nx` into independent chunks.
+library is used internally to perform domain decomposition, by splitting the range of cell indices `1:nx` into independent chunks.
 By default, the number of chunks is set equal to the number of threads; it can be set to a multiple of the number of threads
 by setting a value of the `chunk_count_multiplier` parameter. `preallocation_margin_multiplier` allocates additional unused
 particles in the per-chunk `ParticleVector` instances, since otherwise the transfer of particles might lead to frequent
 calls to `resize!` at the start of the simulation as the solution approaches steady state and the average number of particles in a chunk
 changes significantly. A value of `1.0` means no additional particle storage is allocated.
+We perform the domain decomposition into chunks indirectly by instantiating a [`LoadBalancerCellQ`](@ref) object, which
+is also used to perform load balancing (see below).
 
 The surface properties are collected into `surf_props_reduced` via a call to [`reduce_surf_props!`](@ref).
 Before the start of the time loop, the sampling procedure is multithreaded via the `@threads` macro.
 The physical properties are also computed in multithreaded mode.
 
-Inside the time loop, collisions, convection, and sorting are performed inside a `@threads` block. The `chunk_exchanger` data
-is also cleared in this multithreaded loop to prepare it for the movement of particles between chunks.
+Inside the time loop, collisions, convection, and sorting are performed inside a `@threads` block.
 Once the block finishes, the particles are moved between chunks.
-Here, a serial call to [`exchange_particles!`](@ref) is used.
+To improve the speed of this procedure, first the [`update_occupancy_bounds!`](@ref) is called, which takes in
+the grid sorting structure from the sorting step and determines the upper and lower bounds of the cells
+outside of the range pointed by the current chunk to which particles have moved during the convection step.
+Therefore, one can avoid scanning across all cells in the grid in the exchange step, but one can also set
+the lower bound to 1 and upper bound to `n_cells` if the occupancy bound computation step is note performed.
+Next, a serial call to [`exchange_particles!`](@ref) is used.
 
 After the particles have been exchanged, they are sorted via a threaded call to [`sort_particles_after_exchange!`](@ref).
 Finally, the indexing is reset, and physical grid properties are computed, again inside a `@threads` block.
 The reduction operation for the surface properties, as well as averaging of grid and surface properties, is performed serially
 at the end of the timestep.
+
+The `LoadBalancerCellQ` performs load-balancing by tracking a per-cell quantity (i.e. number of collisions, number of particles, density, etc.) and rebalancing the assignment of cells to chunks so that each chunk contains approximately the same total quantity.
+The [`update_lb_cellq!`](@ref) function can be used to update the per-cell quantity in the load balancer, and the [`rebalance_lb!`](@ref) function can be used to rebalance the assignment of cells to chunks based on that quantity. [`reset_lb!`](@ref) then resets the
+tracking of the per-cell quantity to 0, if required to do so.
+In the example below, the number of collisions performed in a cell is used to perform load-balancing, and the load balancer is updated every 5000 timesteps.
 
 ```julia
 using Merzbild
@@ -122,8 +138,8 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
                FullyDiffuseBC1D(1, species_data, T_wall, [0.0, v_wall, 0.0]))
 
     # split cell indices into chunks
-    cell_indices = Vector(1:nx)
-    cell_chunks = chunks(cell_indices; n=n_chunks)
+    lbq = LoadBalancerCellQ(nx, n_chunks)
+    cell_chunks = lbq.chunked_indices
 
     # init per-chunk particle vectors, particle indexers, grid particle sorters
     n_particles_chunks = [floor(Int64, ppc * length(cell_chunk) * preallocation_margin_multiplier) for cell_chunk in cell_chunks]
@@ -139,10 +155,10 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
     Fnum = grid.cells[1].V * ndens / ppc
 
     # sample particles per-chunk
-    @timeit "sampling" @threads for (chunk_id, cell_chunk) in enumerate(cell_chunks)
+    @timeit "sampling" @threads for chunk_id in 1:n_chunks
         @inbounds sample_particles_equal_weight!(rng_chunks[chunk_id], grid, particles_chunks[chunk_id][1],
                                                     pia_chunks[chunk_id],
-                                                    1, species_data, ndens, T_wall, Fnum, cell_chunk)
+                                                    1, species_data, ndens, T_wall, Fnum, cell_chunks[chunk_id])
     end
      
     # create collision structs
@@ -176,8 +192,8 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
                          for pia in pia_chunks]
 
     # compute data at t=0
-    @timeit "props compute" @threads for (chunk_id, cell_chunk) in enumerate(cell_chunks)
-        compute_props_sorted!(particles_chunks[chunk_id], pia_chunks[chunk_id], species_data, phys_props, cell_chunk)
+    @timeit "props compute" @threads for chunk_id in 1:n_chunks
+        compute_props_sorted!(particles_chunks[chunk_id], pia_chunks[chunk_id], species_data, phys_props, cell_chunks[chunk_id])
     end
 
     n_avg = n_timesteps - avg_start + 1
@@ -194,6 +210,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
                 @inbounds ntc!(rng_chunks[chunk_id], collision_factors[chunk_id][1, 1, cell],
                                collision_data[chunk_id], interaction_data, particles_chunks[chunk_id][1],
                                pia_chunks[chunk_id], cell, 1, Δt, grid.cells[cell].V)
+                update_lb_cellq!(lbq, chunk_id, cell, collision_factors[chunk_id][1, 1, cell].n_coll_performed; averaging_window=1.0)
             end
 
             if (t >= avg_start)
@@ -207,11 +224,17 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
                                     1, species_data, Δt)
             end
 
-            # need to clear the data in the chunk exchanger
-            @inbounds reset!(chunk_exchanger, chunk_id)
-
             # sort particles
             @inbounds sort_particles!(gridsorter_chunks[chunk_id], grid, particles_chunks[chunk_id][1], pia_chunks[chunk_id], 1)
+
+            # tell the exchanger which cells this chunk holds particles in, so that pairs of
+            # chunks with nothing to exchange are rejected without scanning any cells
+            @inbounds update_occupancy_bounds!(chunk_exchanger, gridsorter_chunks[chunk_id], pia_chunks[chunk_id], chunk_id, 1)
+        end
+
+        if t%5000 == 0
+            @timeit "rebalance" rebalance_lb!(lbq)
+            @timeit "rebalance" reset_lb!(lbq)
         end
 
         # move particles between chunks
@@ -241,6 +264,11 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, n_timesteps, avg_star
 
     close_netcdf(ds_avg)
     close_netcdf(ds_surf_avg)
+
+    # print out how many cells in each chunk
+    for i in 1:n_chunks
+        println("chunk $i has $(cell_chunks[i][end] - cell_chunks[i][1] + 1) cells ($(cell_chunks[i][1]):$(cell_chunks[i][end]))")
+    end
 
     print_timer()
 end

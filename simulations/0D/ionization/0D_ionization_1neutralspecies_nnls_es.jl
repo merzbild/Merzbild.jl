@@ -204,6 +204,9 @@ function run(seed, E_Tn, n_t,
     firstm = true
     nnls_success_flag = 1
 
+    # Uncomment to have output of average number of electron particles in simulation
+    # np_e_mean = 0.0
+
     for ts in 1:n_t
 
         if ts % 20000 == 0
@@ -262,6 +265,8 @@ function run(seed, E_Tn, n_t,
             end
         end
 
+        # np_e_mean += pia.n_total[3] / n_t
+
         @timeit "acc e" accelerate_constant_field_x!(particles[index_electron],
                                      pia, 1, index_electron, species_data,
                                      E_field, Δt)
@@ -272,6 +277,8 @@ function run(seed, E_Tn, n_t,
     end
     print_timer()
     close_netcdf(ds)
+    # uncomment to print out avg number of particles in simulation
+    # println("$np_e_mean \n\n\n")
 end
 
 # paramset is a list with 3 elements: number of velocity moments conserved, threshold number of particles,

@@ -169,6 +169,11 @@ end
 
 Computes the VHS cross-section.
 
+The power law is evaluated as `exp2(vhs_exp * log2(g))` rather than `g^vhs_exp`: `Float64^Float64`
+carries the logarithm in double-double precision so that the result stays below 1 ulp for any
+exponent, which costs roughly twice the work. Since `vhs_exp` is a small fixed exponent, the plain
+decomposition is accurate to ~2 ulp and is worth about 10% of the NTC inner loop.
+
 # Positional arguments
 * `interaction`: the `Interaction` instance
 * `g`: the relative velocity of the collision
@@ -177,7 +182,7 @@ Computes the VHS cross-section.
 The value of the computed cross-section.
 """
 @inline function sigma_vhs(interaction, g)
-    return interaction.vhs_factor * g^(interaction.vhs_exp)
+    return interaction.vhs_factor * exp2(interaction.vhs_exp * log2(g))
 end
 
 """

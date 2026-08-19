@@ -385,7 +385,7 @@ Compute relative velocity (vector and its magnitude) of two particles.
 """
 @inline function compute_g!(collision_data::CollisionData, p1, p2)
     collision_data.g_vec = p1.v - p2.v
-    collision_data.g = norm(collision_data.g_vec)
+    collision_data.g = norm3(collision_data.g_vec)
 end
 
 """

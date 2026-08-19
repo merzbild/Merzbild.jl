@@ -65,7 +65,7 @@ function compute_moments!(moment_values, moment_scaling, moment_powers, particle
         e1 = indexer.end1
 
         @inbounds for i in s1:e1
-            normv = norm(particles[species][i].v - v_mean)
+            normv = norm3(particles[species][i].v - v_mean)
             for (n_mom, m) in enumerate(moment_powers)
                 moment_values[n_mom] += particles[species][i].w * normv^m
             end
@@ -76,7 +76,7 @@ function compute_moments!(moment_values, moment_scaling, moment_powers, particle
             s2 = indexer.start2
             e2 = indexer.end2
             @inbounds for i in s2:e2
-                normv = norm(particles[species][i].v - v_mean)
+                normv = norm3(particles[species][i].v - v_mean)
                 for (n_mom, m) in enumerate(moment_powers)
                     moment_values[n_mom] += particles[species][i].w * normv^m
                 end

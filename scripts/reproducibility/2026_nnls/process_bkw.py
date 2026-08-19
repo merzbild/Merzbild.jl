@@ -175,6 +175,14 @@ def get_bias_data(rundata, runs, MM):
     
     return xmin_vals_, xmean_vals_, xmax_vals_, y_vals_
 
+def get_noise_data(rundata, runs, MM):
+    xmin_vals_ = [rundata[run[0]]["np_min"] for run in runs]
+    xmean_vals_ = [rundata[run[0]]["np_avg"] for run in runs]
+    xmax_vals_ = [rundata[run[0]]["np_max"] for run in runs]
+    y_vals_ = [np.mean(rundata[run[0]][f"M{MM}_std"] / rundata[run[0]][f"M{MM}_avg"]) * 100 for run in runs]
+    
+    return xmin_vals_, xmean_vals_, xmax_vals_, y_vals_
+
 # plot bias in moments as function of average number of particles
 fig = plt.figure(figsize=(18,6))
 
@@ -195,6 +203,34 @@ for M, ax in zip([4,8], [ax1,ax2]):
 
     ax.set_xlabel(r"$\overline{N_p}$", fontsize=label_size)
     ax.set_ylabel(r"$\mathcal{B}(\hat{M}_"+ f"{M}" +")$", fontsize=label_size)
+    ax.text(xmean_vals[0]+1, y_vals[0], s="$L=4$", fontsize=legend_size-2)
+    ax.text(xmean_vals[-1]-20,y_vals[-1], s="$L=9$", fontsize=legend_size-2)
 
 if savefigs:
     fig.savefig(f"bkw_bias_M_both.pdf", bbox_inches="tight")
+
+# plot noise in moments as function of average number of particles
+fig = plt.figure(figsize=(18,6))
+
+ax1 = fig.add_subplot(1,2,1)
+ax2 = fig.add_subplot(1,2,2)
+
+for M, ax in zip([4,8], [ax1,ax2]):
+    xmin_vals, xmean_vals, xmax_vals, y_vals = get_noise_data(octree_mid_data, octree_mid_runs, M)
+    ax.plot(xmean_vals, y_vals, '-o', linewidth=2, label=f"Octree")
+
+    xmin_vals, xmean_vals, xmax_vals, y_vals = get_noise_data(nnls_data, nnls_runs, M)
+    ax.plot(xmean_vals, y_vals, '-o', linewidth=2, label=f"NNLS")
+
+    if M == 4:
+        ax.legend(fontsize=legend_size, framealpha=1.0)
+    ax.grid()
+    ax.tick_params(axis='both', labelsize=tick_size,)
+
+    ax.set_xlabel(r"$\overline{N_p}$", fontsize=label_size)
+    ax.set_ylabel(r"$\mathcal{N}(\hat{M}_"+ f"{M}" +")$, \%", fontsize=label_size)
+    ax.text(xmean_vals[0]+1, y_vals[0], s="$L=4$", fontsize=legend_size-2)
+    ax.text(xmean_vals[-1]-20,y_vals[-1], s="$L=9$", fontsize=legend_size-2)
+
+if savefigs:
+    fig.savefig(f"bkw_noise_M_both.pdf", bbox_inches="tight")

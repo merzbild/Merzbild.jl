@@ -116,7 +116,9 @@ function compute_props!(particles, pia, species_data, phys_props)
             phys_props.lpa[species] = length(particles[species])
             phys_props.np[cell,species] = np
             phys_props.n[cell,species] = n
-            phys_props.v[:,cell,species] = v
+            phys_props.v[1,cell,species] = v[1]
+            phys_props.v[2,cell,species] = v[2]
+            phys_props.v[3,cell,species] = v[3]
             phys_props.T[cell,species] = T
         end
     end

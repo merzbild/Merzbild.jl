@@ -104,6 +104,9 @@ function sort_particles!(gridsort::GridSortInPlace, grid, particles::ParticleVec
         indexer.n_local = cell_np
     end
 
+    # the scatter pass decrements each entry back by the number of particles in the cell,
+    # leaving cell_counts[cell+1] equal to the number of particles in cells 1:cell-1.
+    # This (non-decreasing) state is relied upon by `update_occupancy_bounds!`
     @inbounds for i in n_tot:-1:1
         curr_cell = p_cell[i]
         sorted_indices[cell_counts[curr_cell+1]] = p_index[i]
@@ -175,6 +178,9 @@ function sort_particles!(gridsort::GridSortInPlace, particles, pia, species)
         indexer.n_local = cell_np
     end
 
+    # the scatter pass decrements each entry back by the number of particles in the cell,
+    # leaving cell_counts[cell+1] equal to the number of particles in cells 1:cell-1.
+    # This (non-decreasing) state is relied upon by `update_occupancy_bounds!`
     @inbounds for i in n_tot:-1:1
         curr_cell = p_cell[i]
         sorted_indices[cell_counts[curr_cell+1]] = p_index[i]

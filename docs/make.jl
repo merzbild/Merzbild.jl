@@ -1,11 +1,13 @@
 using Documenter
 using Merzbild
+using DocumenterCodeBlocks
 
 makedocs(
     sitename = "Merzbild",
     format = Documenter.HTML(; size_threshold=400_000),
     modules = [Merzbild],
     remotes = nothing,
+    plugins = [CodeBlocks()],
     pages = [
         "Home" => "index.md",
         "Overview of capabilities" => "overview_capabilities.md",

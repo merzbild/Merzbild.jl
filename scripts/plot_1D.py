@@ -1,5 +1,5 @@
 # Usage example:
-# python scripts/plot_1D.py --file scratch/data/couette_0.0005_50_500.0_300.0_1000.nc --propname T --startt 1
+# python scripts/plot_1D.py --files scratch/data/couette_0.0005_50_500.0_300.0_1000.nc --propname T --startt 1
 # --plotname plots/couette_T.png --labels "Couette" --scalex 1
 # velocity is plotted with an offset of a linear profile that goes from -500 to 500 m/s
 # spartafile: optional path to SPARTA output file

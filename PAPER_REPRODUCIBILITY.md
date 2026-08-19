@@ -5,7 +5,7 @@ the specific version of `Merzbild.jl` used to perform the simulations.
 
 ## "Moment-preserving particle merging via non-negative least squares" (2026)
 For the paper ["Moment-preserving particle merging via non-negative least squares"](https://doi.org/10.48550/arXiv.2604.00668) by G. Oblapenko and M. Torrilhon,
-the following setup was used: `Merzbild.jl` version `0.7.8`, Julia version `1.12`.
+the following setups were used: `Merzbild.jl` version `0.7.8` and `0.8.2`, Julia version `1.12`.
 First, one should produce the data by running the various simulation files located in the `simulations` directory,
 then the output data can be processed via use of scripts in the `scripts/reproducibility/2026_nnls` directory.
 The data produced by `Merzbild.jl` can also be downloaded [from Zenodo](https://doi.org/10.5281/zenodo.19352778) (note that the ionization data
@@ -26,6 +26,8 @@ Specific simulation files used for the paper:
 For the sampling test case:
 * `simulations/0D/basic/sample_and_merge.jl` - for the simulations that sample particles and merge them (using two different sampling
 strategies)
+* `simulations/0D/basic/merge_sensitivity.jl` - analysis of chamfer distance between post-merge distributions of non-perturbed and perturbed sets of particles
+(used in the ionization test case).
 
 For the BKW test case (see the commented-out part on "multiple runs with ensembling if needed" for running with multiple ensembles):
 * `simulations/0D/BKW/bkw_varweight_octree.jl` - for the variable-weight simulations using octree N:2 merging
@@ -46,11 +48,12 @@ contains all the different target and threshold particle numbers used in the sim
 
 ### Post-processing of results
 Once the simulations have finished, Python scripts that post-process the results and produce plots should be run;
-these are available in `scripts/reproducibility/2026_nnls`: `process_sample_and_merge.py`, `process_bkw.py`, `convert_ionization_data.py`, `process_ionization.py`, `process_fourier.py`.
+these are available in `scripts/reproducibility/2026_nnls`: `process_sample_and_merge.py`, `process_bkw.py`, `convert_ionization_data.py`, `process_ionization.py`, `process_fourier.py`,
+`process_merge_sensitivity.py`.
 By default it is assumed that the outputs of the simulations are located in `scratch/data`, this can be adjusted by changing the value of the `pref` variable
 at the start of the scripts. Change `savefigs` to `False` to turn off saving figures as PDFs.
 
-The results were computed using `Merzbild.jl` version `0.7.8`, Julia version `1.12`. The Python
+The results were computed using `Merzbild.jl` versions `0.7.8` and `0.8.2`, Julia version `1.12`. The Python
 scripts require `numpy`, `scipy`, `matplotlib`, `netCDF4`.
 
 #### Post-processing of sample-and-merge results
@@ -64,6 +67,15 @@ The plotting parameters (font sizes, font families) are set at the top of the sc
 
 The file produces 6 plots.
 
+#### Post-processing of perturbed sample-and-merge results
+The numerical results produced by `merge_sensitivity.jl` can be post-processed with the `process_merge_sensitivity.py` script.
+The script loads the files automatically: output files are assumed to be located in
+`scratch/data`, the results are assumed to be named `merge_sensitivity_equalweight.log` and merge_sensitivity_weighted.log`.
+
+The plotting parameters (font sizes, font families) are set at the top of the script after the imports.
+
+The file produces 1 plot.
+
 #### Post-processing of BKW results
 The numerical results produced by `bkw_varweight_octree.jl` and `bkw_varweight_nnls.jl` can be post-processed
 with the `process_bkw.py` script. The script loads the files automatically: output files are assumed to be located in
@@ -73,7 +85,7 @@ NNLS results are assumed to be named `bkw_nnls_$(n_full_up_to_total)full_$(thres
 The parameters of the simulations (number of random seeds, timestep, etc.) are set at the top of the script after the imports;
 then plotting parameters (font sizes, font families) are set. If `savefigs` is set to true, the produced figures will be saved as PDFs.
 
-The file produces 3 plots.
+The file produces 4 plots.
 
 #### Post-processing of 0D ionization results
 The numerical results produced by `0D_ionization_1neutralspecies_es.jl` and `0D_ionization_1neutralspecies_nnls_es.jl`
@@ -100,6 +112,14 @@ The parameters of the simulations (size of cells, etc.) are set at the top of th
 then plotting parameters (font sizes, font families) are set. If `savefigs` is set to true, the produced figures will be saved as PDFs.
 
 The file produces 5 plots.
+
+#### Performance analysis
+The scripts `plot_performance_ionization.py` and `plot_performance_fourier.py` plot cost of merging and cost of simulation timestep as a function of the number of particles in the simulation.
+The input is the stdout of the simulations.
+Each script produces 1 plot.
+The commented-out tracking of the average number of particles in the simulation in the ionization and Fourier flow setup files need to be uncommented (as the scripts read that in from the parsed stdout).
+The script `plot_fourier_error_vs_cost.py` plots the error (bias) in the surface pressure of the Fourier flow simulation against the cost of a timestep of the simulation using the logs from the parsed
+stdout and the netCDF output of the simulation.
 
 ### Reference values
 Reference values that can be expected to be produced by some of the simulations are provided below. `Merzbild.jl` version `0.7.8`, Julia version `1.12`.

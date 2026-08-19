@@ -25,6 +25,10 @@ default:
 # Shared test logic, parametrized over the Julia image below.
 .unit-test: &unit-test
   stage: test
+  variables:
+    # Pkg.test() propagates this into the test subprocess, so the tests in
+    # test/runtests_multithreaded.jl run in-process instead of relaunching themselves
+    JULIA_NUM_THREADS: "4"
   script:
     - echo "Running unit tests with coverage..."
     - julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.test(coverage = true)'

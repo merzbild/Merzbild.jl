@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.8.2
+* NNLS merging speed-ups
+* Batched particle deletion for more efficient deletion of particles in merging routines
+* Use unrolled function for norm of 3-vectors
+* Faster exponentiation in computation of VHS cross-sections
+* Load re-balancing via `LoadBalancerCellQ`
+* Speed-ups in particle exchange and re-sorting in multi-threaded simulations
+* `ChunkExchanger` now stores its indexing as a structure of arrays (`start1`, `n_group1`, `start2`, `n_group2`)
+instead of an array of `ParticleIndexer` instances; the group ends are no longer stored, as they are given by
+`start + n_group - 1`
+* Added `update_occupancy_bounds!`, which records the first and last cell in which a chunk holds particles,
+so that `exchange_particles!` can reject a pair of chunks with nothing to exchange without scanning any cells
+* Better documentation through use of `DocumenterCodeBlocks.jl`
+* Documentation on load balancing
+* Statistical tests for isotropic (VHS) scattering
+
 ## v0.8.1
 * Clean-up of roulette merging code and minor optimizations
 * Documentation improvements

@@ -1,5 +1,3 @@
-# include("../../src/Merzbild.jl")
-
 using Merzbild
 using Random
 using TimerOutputs
@@ -7,7 +5,7 @@ using Base.Threads
 using ChunkSplitters
 
 function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timesteps, avg_start; chunk_count_multiplier=1,
-             preallocation_margin_multiplier=1.0, parallel_exchange=true, final_debug=false)
+             preallocation_margin_multiplier=1.0, parallel_exchange=true, final_debug=false, rebalance_freq=5000)
     reset_timer!()
     main_to = TimerOutput()
 
@@ -29,8 +27,11 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
                FullyDiffuseBC1D(1, species_data, T_wall, [0.0, v_wall, 0.0]))
 
     # split cell indices into chunks
-    cell_indices = Vector(1:nx)
-    cell_chunks = chunks(cell_indices; n=n_chunks)
+    # cell_indices = Vector(1:nx)
+    lbq = LoadBalancerCellQ(nx, n_chunks)
+    cell_chunks = lbq.chunked_indices
+    # cell_indices = Vector(1:nx)
+    # cell_chunks = chunks(cell_indices; n=n_chunks)
 
     # init per-chunk particle vectors, particle indexers, grid particle sorters
     n_particles_chunks = [floor(Int64, ppc * length(cell_chunk) * preallocation_margin_multiplier) for cell_chunk in cell_chunks]
@@ -46,10 +47,10 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
     Fnum = grid.cells[1].V * ndens / ppc
 
     # sample particles per-chunk
-    @timeit main_to "sampling" @threads for (chunk_id, cell_chunk) in enumerate(cell_chunks)
+    @timeit main_to "sampling" @threads for chunk_id in 1:n_chunks
         @inbounds sample_particles_equal_weight!(rng_chunks[chunk_id], grid, particles_chunks[chunk_id][1],
                                                     pia_chunks[chunk_id],
-                                                    1, species_data, ndens, T_wall, Fnum, cell_chunk)
+                                                    1, species_data, ndens, T_wall, Fnum, cell_chunks[chunk_id])
     end
      
     # create collision structs
@@ -87,8 +88,9 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
                          for pia in pia_chunks]
 
     # compute data at t=0
-    @threads for (chunk_id, cell_chunk) in enumerate(cell_chunks)
-        compute_props_sorted!(particles_chunks[chunk_id], pia_chunks[chunk_id], species_data, phys_props, cell_chunk)
+    @threads for chunk_id in 1:n_chunks
+        compute_props_sorted!(particles_chunks[chunk_id], pia_chunks[chunk_id], species_data, phys_props,
+                              cell_chunks[chunk_id])
     end
 
     index_inv_map = [zeros(Int64, floor(Int64, ppc * length(cell_chunk) * preallocation_margin_multiplier)) for cell_chunk in cell_chunks]
@@ -119,6 +121,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
                 @timeit local_timer "collide (t)" ntc_equal_weight!(rng_local, collision_factors_local[1, 1, cell],
                                   coll_data, interaction_data, particles_local[1],
                                   pia_local, cell, 1, Δt, grid.cells[cell].V)
+                update_lb_cellq!(lbq, chunk_id, cell, collision_factors[chunk_id][1, 1, cell].n_coll_performed; averaging_window=1.0)
             end
 
             if (t >= avg_start)
@@ -132,15 +135,24 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
                                     1, species_data, Δt)
             end
 
-            # need to clear the data in the chunk exchanger
-            reset!(chunk_exchanger, chunk_id)
-
             # sort particles
             @timeit local_timer "sort (t)" @inbounds sort_particles!(gridsorter_chunks[chunk_id], grid, particles_local[1], pia_local, 1)
+
+            @timeit local_timer "occ bounds (t)" @inbounds update_occupancy_bounds!(chunk_exchanger, gridsorter_chunks[chunk_id], pia_local, chunk_id, 1)
 
             if t%10 == 0
                 @timeit local_timer "restore ordering (t)" restore_particle_ordering!(particles_local[1], index_inv_map[chunk_id])
             end
+        end
+
+        if t%rebalance_freq == 0
+            @timeit main_to "rebalance" rebalance_lb!(lbq)
+            @timeit main_to "rebalance" reset_lb!(lbq)
+            # NB: do not re-bind cell_chunks to lbq.chunked_indices here. rebalance_lb! updates
+            # the ranges in place, so it would be a no-op, but assigning to a variable that the
+            # @threads closures capture makes Julia box it: cell_chunks, and hence the cell
+            # index, become Any, and every call taking a cell index goes through dynamic
+            # dispatch (~80 B/collision call, and ~10x the allocations of the whole main loop)
         end
 
         # move particles between chunks
@@ -206,7 +218,7 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
     end
 
     # we now fix ncall, timing, allocation counts for the threaded timers by hand
-    timers_to_average = ["collide (t)", "sort (t)", "restore ordering (t)", "convect (t)", "convect + surface compute (t)", "sort post-exchange (t)", "props compute (t)"]
+    timers_to_average = ["collide (t)", "sort (t)", "restore ordering (t)", "convect (t)", "convect + surface compute (t)", "sort post-exchange (t)", "props compute (t)", "reset CE (t)", "occ bounds (t)"]
 
     for timer_name in timers_to_average
         try
@@ -219,9 +231,15 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
         end
     end
 
+    # print out how many cells in each chunk
+    for i in 1:n_chunks
+        println("chunk $i has $(cell_chunks[i][end] - cell_chunks[i][1] + 1) cells ($(cell_chunks[i][1]):$(cell_chunks[i][end]))")
+    end
+
     print_timer(main_to)
 end
 
 const n_t = 50000
 run(1234, 300.0, 500.0, 5e-4, 5e22, 2000, 250, 2.59e-9, 1000, n_t, 14000;
-    chunk_count_multiplier=1, preallocation_margin_multiplier=1.5, parallel_exchange=false, final_debug=true)
+    chunk_count_multiplier=1, preallocation_margin_multiplier=2.0, parallel_exchange=false, final_debug=true,
+    rebalance_freq=2500)

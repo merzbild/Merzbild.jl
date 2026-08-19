@@ -20,7 +20,7 @@ include("properties/surface_props.jl")
 include("io.jl")
 include("io_moments.jl")
 include("convection/convection.jl")
-include("parallel.jl")
+include("parallel/parallel.jl")
 
 const OCTREE_DEFAULT_BUFFER_SIZE::Int64 = 8192
 const DELTA_PARTICLES::Int64 = 256
@@ -104,11 +104,12 @@ export GridSortInPlace, sort_particles!
 export FullyDiffuseBC1D, MaxwellWallBC1D, FullySpecularBC1D, convect_particles!, convect_particles_and_compute_cell!
 export convect_particles_periodic!, convect_particles_and_compute_cell_periodic!
 export pretty_print_pia
-export ChunkExchanger, exchange_particles!, reset!, sort_particles_after_exchange!
+export ChunkExchanger, exchange_particles!, reset!, sort_particles_after_exchange!, update_occupancy_bounds!
 export count_disordered_particles, check_pia_is_correct, check_unique_index, check_unique_buffer
 export FluxProps, compute_flux_props!, compute_flux_props_sorted!
 export mean_free_path, mean_collision_frequency
 export generate_1_factorization
 export restore_particle_ordering!
+export LoadBalancerCellQ, rebalance_lb!, update_lb_cellq!, reset_lb!
 
 end # module merzbild

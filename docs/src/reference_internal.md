@@ -17,6 +17,11 @@ Merzbild.delete_particle!
 Merzbild.delete_particle_end!
 Merzbild.delete_particle_end_group1!
 Merzbild.delete_particle_end_group2!
+Merzbild.delete_batch_end!
+Merzbild.delete_batch_end_group1!
+Merzbild.delete_batch_end_group2!
+Merzbild.find_index_last_after_group1_delete!
+Merzbild.find_index_last_after_group2_delete!
 ```
 
 ## Loading species and interaction data
@@ -36,6 +41,7 @@ Merzbild.sample_maxwellian!
 
 ## Collision computations
 ```@docs
+Merzbild.norm3
 Merzbild.compute_n_coll_single_species
 Merzbild.compute_n_coll_two_species
 Merzbild.collide_2particles_vhs!
@@ -160,6 +166,7 @@ Merzbild.swap_particles_true_index!
 Merzbild.swap_particles!
 Merzbild.update_swap_indexing!
 Merzbild.push_particles!
+Merzbild.push_particles_to_end!
 ```
 
 ## Constants
@@ -194,4 +201,5 @@ Merzbild.solve_triangular_system!
 Merzbild.UnsafeVectorView
 Merzbild.orthogonal_rotmat
 Merzbild.apply_householder!
+Merzbild.apply_householder_sweep!
 ```
