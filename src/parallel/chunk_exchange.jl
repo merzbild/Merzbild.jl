@@ -368,11 +368,16 @@ indexing should not be relied on until particles are re-sorted, see (`sort_parti
 * `j`: index of second chunk
 """
 function exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{ParticleVector{D}}}, pia_chunks, cell_chunks, species, i, j) where D
+    # ChunkSplitters' chunk collections are only indexable by the native Int, so the chunk
+    # ids are converted here and any wider integer type can be passed in
+    chunk_i = Int(i)
+    chunk_j = Int(j)
+
     # the cells of chunk j that chunk i could possibly hold particles for: the cells owned by j,
     # restricted to the cells in which chunk i holds anything at all. If this range is empty,
     # chunk i has nothing for chunk j and no cell has to be looked at
-    @inbounds lo_ij = max(first(cell_chunks[j]), chunk_exchanger.occ_lo[i])
-    @inbounds hi_ij = min(last(cell_chunks[j]), chunk_exchanger.occ_hi[i])
+    @inbounds lo_ij = max(first(cell_chunks[chunk_j]), chunk_exchanger.occ_lo[i])
+    @inbounds hi_ij = min(last(cell_chunks[chunk_j]), chunk_exchanger.occ_hi[i])
 
     # find how many particles need to be transferred from i to j
     # we find first index of particles in chunk i that belong to a cell
@@ -405,8 +410,8 @@ function exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{Pa
 
     # now we do the same, but for particles in chunk j
     # that should be transferred to chunk i
-    @inbounds lo_ji = max(first(cell_chunks[i]), chunk_exchanger.occ_lo[j])
-    @inbounds hi_ji = min(last(cell_chunks[i]), chunk_exchanger.occ_hi[j])
+    @inbounds lo_ji = max(first(cell_chunks[chunk_i]), chunk_exchanger.occ_lo[j])
+    @inbounds hi_ji = min(last(cell_chunks[chunk_i]), chunk_exchanger.occ_hi[j])
 
     s_ji = 0
     s_ci_ji = 0 # index of the cell
@@ -653,7 +658,7 @@ end
 """
     generate_1_factorization(N_chunks)
 
-Construct a `Vector{Vector{Tuple{Int64,Int64}}}` with the following properties:
+Construct a `Vector{Vector{Tuple{Int,Int}}}` with the following properties:
 * tuple elements `i` and `j` range from `1` to `N_chunks`
 * tuples `(i,j)` and `(j,i)` are considered equivalent
 * each tuple `(i,j)` (up to equivalency) appears in the result exactly once
@@ -678,7 +683,7 @@ graph with `N_chunks` vertices.
 function generate_1_factorization(N_chunks)
     pairs = [(i, j) for i in 1:N_chunks for j in i+1:N_chunks]
 
-    list_of_lists::Vector{Vector{Tuple{Int64,Int64}}} = []
+    list_of_lists::Vector{Vector{Tuple{Int,Int}}} = []
 
     for (i, j) in pairs
         assigned = false
