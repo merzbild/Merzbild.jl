@@ -285,8 +285,10 @@ symmetrically swapped.
 function update_swap_indexing!(chunk_exchanger, pia_chunks, species, i, j, s_ci_ij, e_ci_ij, s_ji, n_swap)
     # update indexing in chunk_exchanger after we've swapped particles
     # this is an update for particles moved from chunk i to chunk j
-    s_ci_ij2 = s_ci_ij
-    offset_ij = 0
+    # both are declared Int64 so that the returned tuple stays concretely typed on 32-bit
+    # builds, where a bare `0` literal is an Int32 while the indexing fields are Int64
+    s_ci_ij2::Int64 = s_ci_ij
+    offset_ij::Int64 = 0
 
     ce_start1 = chunk_exchanger.start1
     ce_n_group1 = chunk_exchanger.n_group1
@@ -382,8 +384,11 @@ function exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{Pa
     # find how many particles need to be transferred from i to j
     # we find first index of particles in chunk i that belong to a cell
     # assigned to chunk j
-    s_ij = 0
-    s_ci_ij = 0 # index of the cell
+    # the particle and cell indices are declared Int64 to match the `ParticleIndexer` fields
+    # and the occupancy bounds: on 32-bit builds a bare `0` literal is an Int32 and the
+    # variable would infer as Union{Int32,Int64}, which boxes and allocates
+    s_ij::Int64 = 0
+    s_ci_ij::Int64 = 0 # index of the cell
     @inbounds for cj in lo_ij:hi_ij
         st = pia_chunks[i].indexer[cj, species].start1
         if st > 0
@@ -395,8 +400,8 @@ function exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{Pa
 
     # we find last index of particles in chunk i that belong to a cell
     # assigned to chunk j
-    e_ij = -1
-    e_ci_ij = 0 # index of the cell
+    e_ij::Int64 = -1
+    e_ci_ij::Int64 = 0 # index of the cell
     @inbounds for cj in hi_ij:-1:lo_ij
         et = pia_chunks[i].indexer[cj, species].end1
         if et > 0
@@ -413,8 +418,8 @@ function exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{Pa
     @inbounds lo_ji = max(first(cell_chunks[chunk_i]), chunk_exchanger.occ_lo[j])
     @inbounds hi_ji = min(last(cell_chunks[chunk_i]), chunk_exchanger.occ_hi[j])
 
-    s_ji = 0
-    s_ci_ji = 0 # index of the cell
+    s_ji::Int64 = 0
+    s_ci_ji::Int64 = 0 # index of the cell
     @inbounds for ci in lo_ji:hi_ji
         st = pia_chunks[j].indexer[ci, species].start1
         if st > 0
@@ -424,8 +429,8 @@ function exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{Pa
         end
     end
 
-    e_ji = -1
-    e_ci_ji = 0 # index of the cell
+    e_ji::Int64 = -1
+    e_ci_ji::Int64 = 0 # index of the cell
     @inbounds for ci in hi_ji:-1:lo_ji
         et = pia_chunks[j].indexer[ci, species].end1
         if et > 0
@@ -478,11 +483,11 @@ function exchange_particles!(chunk_exchanger, particles_chunks::Vector{Vector{Pa
     # swap particles that can be swapped
     n_swap = min(np_from_i_to_j, np_from_j_to_i)
 
-    offset_ij = 0
-    offset_ji = 0
+    offset_ij::Int64 = 0
+    offset_ji::Int64 = 0
 
-    s_ci_ij2 = s_ci_ij
-    s_ci_ji2 = s_ci_ji
+    s_ci_ij2::Int64 = s_ci_ij
+    s_ci_ji2::Int64 = s_ci_ji
 
     # println("n_swap = $n_swap")
     # now update chunk_exchanger indexing
