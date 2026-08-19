@@ -13,6 +13,8 @@ instead of an array of `ParticleIndexer` instances; the group ends are no longer
 * Added `update_occupancy_bounds!`, which records the first and last cell in which a chunk holds particles,
 so that `exchange_particles!` can reject a pair of chunks with nothing to exchange without scanning any cells
 * Better documentation through use of `DocumenterCodeBlocks.jl`
+* Documentation on load balancing
+* Statistical tests for isotropic (VHS) scattering
 
 ## v0.8.1
 * Clean-up of roulette merging code and minor optimizations
