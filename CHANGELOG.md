@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.8.3
+* Improved test coverage
+
 ## v0.8.2
 * NNLS merging speed-ups
 * Batched particle deletion for more efficient deletion of particles in merging routines
