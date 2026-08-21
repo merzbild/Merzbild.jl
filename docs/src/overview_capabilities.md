@@ -19,12 +19,12 @@ The variable-weight NTC approach of [Schmidt and Rutland (2000)](https://doi.org
 The Stochastic Weighted Particle Method (SWPM) of [Rjasanow, Wagner](https://doi.org/10.1007/3-540-27689-0) is implemented for variable-weight DSMC (currently single-species only).
 Event splitting ([Oblapenko et al. (2022)](https://doi.org/10.1016/j.jcp.2022.111390)) is implemented for neutral-electron interactions.
 
-For more details, see [Collisions](@ref).
+For more details, see [Collision algorithms](@ref).
 
 ## Fokker-Planck collisions
 As an alternative to DSMC, one can use the stochastic Fokker-Planck algorithm to simulate the particle collisions.
 Currently, the linear Fokker-Planck model of [Gorji, Torrilhon, and Jenny (2011)](https://doi.org/10.1017/jfm.2011.188) is implemented (currently single-species only). 
-For more details, see [Collisions](@ref).
+For more details, see [Collision algorithms](@ref).
 
 |                        | **Linear**                                        | **Cubic** |
 |:----------------------:|:-----------------------------------------:|:----:|
@@ -40,7 +40,7 @@ simulations:
   3. A Non-Negative Least Squares (NNLS)-based merging approach described in [Oblapenko and Torrilhon (2026)](https://doi.org/10.48550/arXiv.2604.00668)
   4. The roulette merge of [Watrous, Seidel et al (2023)](https://www.osti.gov/servlets/purl/2431184), supporting a conservative re-scaling of post-merge particles
 
-For more details, see [Merging](@ref).
+For more details, see [Merging algorithms](@ref).
 
 ## Cross-sections
 The Variable-Hard Sphere (VHS) and Variable-Soft Sphere (VSS) model are implemented for collisions of neutral particles.
