@@ -1,23 +1,16 @@
 # Changelog
 
-## Unreleased
-* Elastic scattering models are no longer hard-coded to VHS: the VSS model (`VSS`) has been added alongside
-VHS (`VHS`), and both are supported by `ntc!`, `ntc_equal_weight!`, and `swpm!`
+## v0.8.3
+* Added support for VSS cross-sections (see new bundled interaction data file `vss.toml`)
 * The elastic scattering model is fixed per species pair and is stored in the `Interaction` instance as a
 `ScatteringModel` enum value (`ScatteringVHS`, `ScatteringVSS`), set by the optional `model` key
 of the species pair's entry in the interaction data TOML file (defaults to `"VHS"`); the VSS model additionally
 requires a `vss_alpha` key
-* The collision drivers convert the stored enum value to a singleton model tag exactly once per call
-(`@scattering_barrier`), so the collision loop stays monomorphic, branch-free, and allocation-free;
-the model can also be passed explicitly as the second positional argument of the driver
-* New `Interaction` constructors dispatched on the scattering model; VSS interactions correct the reference viscosity
-by the factor `(α+1)(α+2)/(6α)`
-* New bundled interaction data file `vss.toml`
 * `collide_2particles_vhs!` and `collide_2particles_vhs_equal_weight!` renamed to `collide_2particles!` and
 `collide_2particles_equal_weight!`, and now take the scattering model tag as their second argument
-
-## v0.8.3
 * Improved test coverage
+* Elastic scattering models are no longer hard-coded to VHS: the VSS model (`VSS`) has been added alongside
+VHS (`VHS`), and both are supported by `ntc!`, `ntc_equal_weight!`, and `swpm!`
 
 ## v0.8.2
 * NNLS merging speed-ups
