@@ -206,7 +206,7 @@ If particles' weights differ by less than `dw_tol`, an equal-weight collision is
 
 # Positional arguments
 * `rng`: the random number generator
-* `model`: the `AbstractScatteringModel` singleton tag of the scattering model
+* `model`: the `AbstractScatteringModel` singleton for the scattering model
 * `collision_data`: `CollisionData` instance used for storing collisional quantities
 * `collision_factors`: the `CollisionFactors` holding the estimate of ``(\\sigma g w)_{max}``
     for the species in question in the cell
@@ -285,7 +285,7 @@ Particles can be of same or different species.
 
 # Positional arguments
 * `rng`: the random number generator
-* `model`: the `AbstractScatteringModel` singleton tag of the scattering model
+* `model`: the `AbstractScatteringModel` singleton for the scattering model
 * `collision_data`: `CollisionData` instance used for storing collisional quantities
 * `collision_factors`: the `CollisionFactors` holding the estimate of ``(\\sigma g w)_{max}``
     for the species in question in the cell
@@ -355,7 +355,7 @@ of the species pair.
 
 # Positional arguments
 * `rng`: the random number generator
-* `model`: the `AbstractScatteringModel` singleton tag of the scattering model
+* `model`: the `AbstractScatteringModel` singleton for the scattering model
 * `collision_factors`: the `CollisionFactors` for the species in question in the cell
 * `collision_data`: `CollisionData` instance used for storing collisional quantities
 * `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
@@ -475,7 +475,7 @@ of the species pair.
 
 # Positional arguments
 * `rng`: the random number generator
-* `model`: the `AbstractScatteringModel` singleton tag of the scattering model
+* `model`: the `AbstractScatteringModel` singleton for the scattering model
 * `collision_factors`: the `CollisionFactors` for the species in question in the cell
 * `collision_data`: `CollisionData` instance used for storing collisional quantities
 * `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
@@ -587,7 +587,7 @@ and no weight checks/splitting is performed.
 
 # Positional arguments
 * `rng`: the random number generator
-* `model`: the `AbstractScatteringModel` singleton tag of the scattering model
+* `model`: the `AbstractScatteringModel` singleton for the scattering model
 * `collision_factors`: the `CollisionFactors` for the species in question in the cell
 * `collision_data`: `CollisionData` instance used for storing collisional quantities
 * `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
@@ -697,7 +697,7 @@ and no weight checks/splitting is performed.
 
 # Positional arguments
 * `rng`: the random number generator
-* `model`: the `AbstractScatteringModel` singleton tag of the scattering model
+* `model`: the `AbstractScatteringModel` singleton for the scattering model
 * `collision_factors`: the `CollisionFactors` for the species in question in the cell
 * `collision_data`: `CollisionData` instance used for storing collisional quantities
 * `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
