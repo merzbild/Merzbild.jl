@@ -94,7 +94,7 @@ approximation instead of resolving individual binary collisions, following the m
 
 For plasma simulations, dedicated NTC routines model electron–neutral elastic scattering together
 with electron-impact ionization, using tabulated cross-sections stored in an
-`ElectronNeutralInteractions` instance:
+[`ElectronNeutralInteractions`](@ref) instance:
 
 * [`ntc_n_e!`](@ref) — electron–neutral elastic scattering and electron-impact ionization without
   event splitting.
