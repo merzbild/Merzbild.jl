@@ -8,7 +8,7 @@ comment = "VSS parameters from Bird (1994), Appendix A"
 
 ["Ar,He"]
 model = "VSS"
-vhs_d = 3.25e-10
+vhs_d = 3.22e-10
 vhs_o = 0.735
 vhs_Tref = 273.0
 vss_alpha = 1.33
