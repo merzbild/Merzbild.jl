@@ -197,14 +197,16 @@ function compute_n_coll_two_species(rng, collision_factors, np1, np2, Δt, V)
 end
 
 """
-    collide_2particles_vhs!(rng, collision_data, collision_factors, interaction_l, pa_i::Particle{D}, pa_k::Particle{D},
-                            particles_1::ParticleVector{D}, particles_2::ParticleVector{D}, pia, cell, species1, species2; dw_tol=1e-16) where D
+    collide_2particles!(rng, model, collision_data, collision_factors, interaction, pa_i::Particle{D}, pa_k::Particle{D},
+                        particles_1::ParticleVector{D}, particles_2::ParticleVector{D}, pia, cell, species1, species2; dw_tol=1e-16) where D
 
-Collide two particles elastically using the VHS model. Particles can be of same or different species.
+Collide two particles elastically using the elastic scattering model `model`.
+Particles can be of same or different species.
 If particles' weights differ by less than `dw_tol`, an equal-weight collision is performed and no particles are split.
 
 # Positional arguments
 * `rng`: the random number generator
+* `model`: the `AbstractScatteringModel` singleton tag of the scattering model
 * `collision_data`: `CollisionData` instance used for storing collisional quantities
 * `collision_factors`: the `CollisionFactors` holding the estimate of ``(\\sigma g w)_{max}``
     for the species in question in the cell
@@ -220,10 +222,11 @@ If particles' weights differ by less than `dw_tol`, an equal-weight collision is
 * `dw_tol`: if weights of particles differ by less than this amount, an equal-weight collision is assumed
 and no particle splitting is performed
 """
-@inline function collide_2particles_vhs!(rng, collision_data, collision_factors, interaction, pa_i::Particle{D}, pa_k::Particle{D},
-                                         particles_1::ParticleVector{D}, particles_2::ParticleVector{D}, pia, cell, species1, species2; dw_tol=1e-16) where D
-    sigma = sigma_vhs(interaction, collision_data.g)
-    sigma_g_w_max = sigma * collision_data.g * max(pa_i.w, pa_k.w)
+@inline function collide_2particles!(rng, model::AbstractScatteringModel, collision_data, collision_factors, interaction,
+                                     pa_i::Particle{D}, pa_k::Particle{D},
+                                     particles_1::ParticleVector{D}, particles_2::ParticleVector{D}, pia, cell, species1, species2; dw_tol=1e-16) where D
+    sigma_coll = sigma(model, interaction, collision_data.g)
+    sigma_g_w_max = sigma_coll * collision_data.g * max(pa_i.w, pa_k.w)
 
     # update (σ g w)_max if needed
     collision_factors.sigma_g_w_max = max(sigma_g_w_max, collision_factors.sigma_g_w_max)
@@ -269,18 +272,20 @@ and no particle splitting is performed
             p2_new.v = pa_k.v
             p2_new.x = pa_k.x
         end
-        scatter_vhs!(rng, collision_data, interaction, pa_i, pa_k)
+        scatter!(rng, model, collision_data, interaction, pa_i, pa_k)
     end
 end
 
 """
-    collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction, pa_i::Particle{D}, pa_k::Particle{D}) where D
+    collide_2particles_equal_weight!(rng, model, collision_data, collision_factors, interaction, pa_i::Particle{D}, pa_k::Particle{D}) where D
 
-Collide two particles elastically using the VHS model, assuming equal weights - no particle splitting is performed even
-if weights are unequal. Particles can be of same or different species.
+Collide two particles elastically using the elastic scattering model `model`, assuming equal weights -
+no particle splitting is performed even if weights are unequal.
+Particles can be of same or different species.
 
 # Positional arguments
 * `rng`: the random number generator
+* `model`: the `AbstractScatteringModel` singleton tag of the scattering model
 * `collision_data`: `CollisionData` instance used for storing collisional quantities
 * `collision_factors`: the `CollisionFactors` holding the estimate of ``(\\sigma g w)_{max}``
     for the species in question in the cell
@@ -288,9 +293,10 @@ if weights are unequal. Particles can be of same or different species.
 * `pa_i`: the first particle being collided
 * `pa_k`: the second particle being collided
 """
-@inline function collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction, pa_i::Particle{D}, pa_k::Particle{D}) where D
-    sigma = sigma_vhs(interaction, collision_data.g)
-    sigma_g_w_max = sigma * collision_data.g * max(pa_i.w, pa_k.w)
+@inline function collide_2particles_equal_weight!(rng, model::AbstractScatteringModel, collision_data, collision_factors, interaction,
+                                                  pa_i::Particle{D}, pa_k::Particle{D}) where D
+    sigma_coll = sigma(model, interaction, collision_data.g)
+    sigma_g_w_max = sigma_coll * collision_data.g * max(pa_i.w, pa_k.w)
 
     # update (σ g w)_max if needed
     collision_factors.sigma_g_w_max = max(sigma_g_w_max, collision_factors.sigma_g_w_max)
@@ -300,7 +306,7 @@ if weights are unequal. Particles can be of same or different species.
         collision_factors.n_eq_w_coll_performed += 1
         compute_com!(collision_data, interaction, pa_i, pa_k)
         # do collision
-        scatter_vhs!(rng, collision_data, interaction, pa_i, pa_k)
+        scatter!(rng, model, collision_data, interaction, pa_i, pa_k)
     end
 end
 
@@ -308,8 +314,8 @@ end
     ntc!(rng, collision_factors, collision_data, interaction, particles::ParticleVector{D}, pia,
          cell, species, Δt, V; dw_tol=1e-16) where D
 
-Perform elastic collisions between particles of same species using the NTC algorithm
-and the VHS cross-section model.
+Perform elastic collisions between particles of same species using the NTC algorithm.
+The elastic scattering model is taken from the `Interaction` instance of the species pair.
 
 # Positional arguments
 * `rng`: the random number generator
@@ -332,6 +338,44 @@ and no particle splitting is performed
     [J. Comput. Phys, 2000](https://doi.org/10.1006/jcph.2000.6568).
 """
 function ntc!(rng, collision_factors, collision_data, interaction, particles::ParticleVector{D}, pia,
+              cell, species, Δt, V; dw_tol=1e-16) where D
+    @inbounds model = interaction[species, species].model
+
+    @scattering_barrier model ntc!(rng, collision_factors, collision_data, interaction, particles, pia,
+                                   cell, species, Δt, V; dw_tol=dw_tol)
+end
+
+"""
+    ntc!(rng, model::AbstractScatteringModel, collision_factors, collision_data, interaction,
+         particles::ParticleVector{D}, pia, cell, species, Δt, V; dw_tol=1e-16) where D
+
+Perform elastic collisions between particles of same species using the NTC algorithm
+and the elastic scattering model `model`, overriding the model stored in the `Interaction` instance
+of the species pair.
+
+# Positional arguments
+* `rng`: the random number generator
+* `model`: the `AbstractScatteringModel` singleton tag of the scattering model
+* `collision_factors`: the `CollisionFactors` for the species in question in the cell
+* `collision_data`: `CollisionData` instance used for storing collisional quantities
+* `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
+* `particles`: `ParticleVector` of the particles being collided
+* `pia`: the `ParticleIndexerArray`
+* `cell`: the index of the cell in which collisions are performed
+* `species`: the index of the species for which collisions are performed
+* `Δt`: timestep
+* `V`: cell volume
+
+# Keyword arguments
+* `dw_tol`: if weights of particles differ by less than this amount, an equal-weight collision is assumed
+and no particle splitting is performed
+
+# References
+* D.P. Schmidt, C.J. Rutland, A New Droplet Collision Algorithm.
+    [J. Comput. Phys, 2000](https://doi.org/10.1006/jcph.2000.6568).
+"""
+function ntc!(rng, model::AbstractScatteringModel, collision_factors, collision_data, interaction,
+              particles::ParticleVector{D}, pia,
               cell, species, Δt, V; dw_tol=1e-16) where D
     # single-species ntc
     # compute ncoll
@@ -374,8 +418,8 @@ function ntc!(rng, collision_factors, collision_data, interaction, particles::Pa
         
         compute_g!(collision_data, pa_i, pa_k)
         if (collision_data.g > eps())
-            collide_2particles_vhs!(rng, collision_data, collision_factors, interaction_l, pa_i, pa_k,
-                                 particles, particles, pia, cell, species, species; dw_tol=dw_tol)
+            collide_2particles!(rng, model, collision_data, collision_factors, interaction_l, pa_i, pa_k,
+                                particles, particles, pia, cell, species, species; dw_tol=dw_tol)
         end
     end
 end
@@ -385,8 +429,8 @@ end
          particles_1::ParticleVector{D}, particles_2::ParticleVector{D}, pia,
          cell, species1, species2, Δt, V; dw_tol=1e-16) where D
 
-Perform elastic collisions between particles of different species using the NTC algorithm
-and the VHS cross-section model.
+Perform elastic collisions between particles of different species using the NTC algorithm.
+The elastic scattering model is taken from the `Interaction` instance of the species pair.
 
 # Positional arguments
 * `rng`: the random number generator
@@ -411,6 +455,48 @@ and no particle splitting is performed
     [J. Comput. Phys, 2000](https://doi.org/10.1006/jcph.2000.6568).
 """
 function ntc!(rng, collision_factors, collision_data, interaction,
+              particles_1::ParticleVector{D}, particles_2::ParticleVector{D}, pia,
+              cell, species1, species2, Δt, V; dw_tol=1e-16) where D
+    @inbounds model = interaction[species1, species2].model
+
+    @scattering_barrier model ntc!(rng, collision_factors, collision_data, interaction,
+                                   particles_1, particles_2, pia,
+                                   cell, species1, species2, Δt, V; dw_tol=dw_tol)
+end
+
+"""
+    ntc!(rng, model::AbstractScatteringModel, collision_factors, collision_data, interaction,
+         particles_1::ParticleVector{D}, particles_2::ParticleVector{D}, pia,
+         cell, species1, species2, Δt, V; dw_tol=1e-16) where D
+
+Perform elastic collisions between particles of different species using the NTC algorithm
+and the elastic scattering model `model`, overriding the model stored in the `Interaction` instance
+of the species pair.
+
+# Positional arguments
+* `rng`: the random number generator
+* `model`: the `AbstractScatteringModel` singleton tag of the scattering model
+* `collision_factors`: the `CollisionFactors` for the species in question in the cell
+* `collision_data`: `CollisionData` instance used for storing collisional quantities
+* `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
+* `particles_1`: `ParticleVector` of the particles of the first species being collided
+* `particles_2`: `ParticleVector` of the particles of the second species being collided
+* `pia`: the `ParticleIndexerArray`
+* `cell`: the index of the cell in which collisions are performed
+* `species1`: the index of the first species for which collisions are performed
+* `species2`: the index of the second species for which collisions are performed
+* `Δt`: timestep
+* `V`: cell volume
+
+# Keyword arguments
+* `dw_tol`: if weights of particles differ by less than this amount, an equal-weight collision is assumed
+and no particle splitting is performed
+
+# References
+* D.P. Schmidt, C.J. Rutland, A New Droplet Collision Algorithm.
+    [J. Comput. Phys, 2000](https://doi.org/10.1006/jcph.2000.6568).
+"""
+function ntc!(rng, model::AbstractScatteringModel, collision_factors, collision_data, interaction,
               particles_1::ParticleVector{D}, particles_2::ParticleVector{D}, pia,
               cell, species1, species2, Δt, V; dw_tol=1e-16) where D
     # compute ncoll
@@ -452,8 +538,8 @@ function ntc!(rng, collision_factors, collision_data, interaction,
         compute_g!(collision_data, pa_i, pa_k)
 
         if (collision_data.g > eps())
-            collide_2particles_vhs!(rng, collision_data, collision_factors, interaction_l, pa_i, pa_k,
-                                    particles_1, particles_2, pia, cell, species1, species2; dw_tol=dw_tol)
+            collide_2particles!(rng, model, collision_data, collision_factors, interaction_l, pa_i, pa_k,
+                                particles_1, particles_2, pia, cell, species1, species2; dw_tol=dw_tol)
         end
     end
 end
@@ -462,9 +548,9 @@ end
     ntc_equal_weight!(rng, collision_factors, collision_data, interaction, particles::ParticleVector{D}, pia,
                       cell, species, Δt, V) where D
 
-Perform elastic collisions between particles of same species using the NTC algorithm
-and the VHS cross-section model. Particle weights are assumed to be equal,
-and no weight checks/splitting is performed.
+Perform elastic collisions between particles of same species using the NTC algorithm.
+Particle weights are assumed to be equal, and no weight checks/splitting is performed.
+The elastic scattering model is taken from the `Interaction` instance of the species pair.
 
 # Positional arguments
 * `rng`: the random number generator
@@ -483,6 +569,41 @@ and no weight checks/splitting is performed.
     [Clarendon Press, Oxford, 1994](https://doi.org/10.1093/oso/9780198561958.001.0001).
 """
 function ntc_equal_weight!(rng, collision_factors, collision_data, interaction, particles::ParticleVector{D}, pia,
+                           cell, species, Δt, V) where D
+    @inbounds model = interaction[species, species].model
+
+    @scattering_barrier model ntc_equal_weight!(rng, collision_factors, collision_data, interaction, particles, pia,
+                                                 cell, species, Δt, V)
+end
+
+"""
+    ntc_equal_weight!(rng, model::AbstractScatteringModel, collision_factors, collision_data, interaction,
+                      particles::ParticleVector{D}, pia, cell, species, Δt, V) where D
+
+Perform elastic collisions between particles of same species using the NTC algorithm
+and the elastic scattering model `model`, overriding the model stored in the `Interaction` instance
+of the species pair. Particle weights are assumed to be equal,
+and no weight checks/splitting is performed.
+
+# Positional arguments
+* `rng`: the random number generator
+* `model`: the `AbstractScatteringModel` singleton tag of the scattering model
+* `collision_factors`: the `CollisionFactors` for the species in question in the cell
+* `collision_data`: `CollisionData` instance used for storing collisional quantities
+* `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
+* `particles`: `ParticleVector` of the particles being collided
+* `pia`: the `ParticleIndexerArray`
+* `cell`: the index of the cell in which collisions are performed
+* `species`: the index of the species for which collisions are performed
+* `Δt`: timestep
+* `V`: cell volume
+
+# References
+* G.A. Bird, Molecular gas dynamics and the direct simulation of gas flows,
+    [Clarendon Press, Oxford, 1994](https://doi.org/10.1093/oso/9780198561958.001.0001).
+"""
+function ntc_equal_weight!(rng, model::AbstractScatteringModel, collision_factors, collision_data, interaction,
+                           particles::ParticleVector{D}, pia,
                            cell, species, Δt, V) where D
     # single-species ntc
     # compute ncoll
@@ -522,7 +643,7 @@ function ntc_equal_weight!(rng, collision_factors, collision_data, interaction, 
         
         compute_g!(collision_data, pa_i, pa_k)
         if (collision_data.g > eps())
-            collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction_l, pa_i, pa_k)
+            collide_2particles_equal_weight!(rng, model, collision_data, collision_factors, interaction_l, pa_i, pa_k)
         end
     end
 end
@@ -532,9 +653,9 @@ end
                       particles_1, particles_2, pia,
                       cell, species1, species2, Δt, V)
 
-Perform elastic collisions between particles of different species using the NTC algorithm
-and the VHS cross-section model. Particle weights are assumed to be equal,
-and no weight checks/splitting is performed.
+Perform elastic collisions between particles of different species using the NTC algorithm.
+Particle weights are assumed to be equal, and no weight checks/splitting is performed.
+The elastic scattering model is taken from the `Interaction` instance of the species pair.
 
 # Positional arguments
 * `rng`: the random number generator
@@ -555,6 +676,45 @@ and no weight checks/splitting is performed.
     [Clarendon Press, Oxford, 1994](https://doi.org/10.1093/oso/9780198561958.001.0001).
 """
 function ntc_equal_weight!(rng, collision_factors, collision_data, interaction,
+                           particles_1, particles_2, pia,
+                           cell, species1, species2, Δt, V)
+    @inbounds model = interaction[species1, species2].model
+
+    @scattering_barrier model ntc_equal_weight!(rng, collision_factors, collision_data, interaction,
+                                                 particles_1, particles_2, pia,
+                                                 cell, species1, species2, Δt, V)
+end
+
+"""
+    ntc_equal_weight!(rng, model::AbstractScatteringModel, collision_factors, collision_data, interaction,
+                      particles_1, particles_2, pia,
+                      cell, species1, species2, Δt, V)
+
+Perform elastic collisions between particles of different species using the NTC algorithm
+and the elastic scattering model `model`, overriding the model stored in the `Interaction` instance
+of the species pair. Particle weights are assumed to be equal,
+and no weight checks/splitting is performed.
+
+# Positional arguments
+* `rng`: the random number generator
+* `model`: the `AbstractScatteringModel` singleton tag of the scattering model
+* `collision_factors`: the `CollisionFactors` for the species in question in the cell
+* `collision_data`: `CollisionData` instance used for storing collisional quantities
+* `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
+* `particles_1`: `ParticleVector` of the particles of the first species being collided
+* `particles_2`: `ParticleVector` of the particles of the second species being collided
+* `pia`: the `ParticleIndexerArray`
+* `cell`: the index of the cell in which collisions are performed
+* `species1`: the index of the first species for which collisions are performed
+* `species2`: the index of the second species for which collisions are performed
+* `Δt`: timestep
+* `V`: cell volume
+
+# References
+* G.A. Bird, Molecular gas dynamics and the direct simulation of gas flows,
+    [Clarendon Press, Oxford, 1994](https://doi.org/10.1093/oso/9780198561958.001.0001).
+"""
+function ntc_equal_weight!(rng, model::AbstractScatteringModel, collision_factors, collision_data, interaction,
                            particles_1, particles_2, pia,
                            cell, species1, species2, Δt, V)
     # compute ncoll
@@ -594,7 +754,7 @@ function ntc_equal_weight!(rng, collision_factors, collision_data, interaction,
         compute_g!(collision_data, pa_i, pa_k)
 
         if (collision_data.g > eps())
-            collide_2particles_vhs_equal_weight!(rng, collision_data, collision_factors, interaction_l, pa_i, pa_k)
+            collide_2particles_equal_weight!(rng, model, collision_data, collision_factors, interaction_l, pa_i, pa_k)
         end
     end
 end

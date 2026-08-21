@@ -1,4 +1,5 @@
 include("test_malloc_2species_equal_weight.jl")  # malloc with equal weight collisions and props computes
+include("test_malloc_scattering_models.jl")  # malloc for the NTC/SWPM drivers with all scattering models
 include("test_malloc_props_computes.jl")  # malloc with props computes
 include("test_malloc_bkw_varweight_octree.jl")  # malloc with merging and variable-weight collisions
 include("test_malloc_bkw_varweight_octree_N1.jl")  # malloc with N:1 merging
