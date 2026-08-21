@@ -98,7 +98,7 @@ VSS scattering ([`Merzbild.scatter_vss!`](@ref)) for the [`VSS`](@ref) model.
 
 # Positional arguments
 * `rng`: the random number generator
-* `model`: the `AbstractScatteringModel` singleton tag of the scattering model
+* `model`: the `AbstractScatteringModel` singleton for the scattering model
 * `collision_data`: the `CollisionData` instance which stores the center-of-mass velocity and
     the pre-collisional relative velocity of the particles, and to which
     the new post-collisional velocity will be written

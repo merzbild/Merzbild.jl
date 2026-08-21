@@ -59,12 +59,12 @@ const SCATTERING_MODEL_TAGS = ((ScatteringVHS, VHS()), (ScatteringVSS, VSS()))
 """
     @scattering_barrier model call
 
-Turn the [`Merzbild.ScatteringModel`](@ref) enum value `model` into the corresponding singleton
-scattering model tag and insert it into the function call `call` as the second positional argument
+Turn the [`Merzbild.ScatteringModel`](@ref) enum value `model` into the corresponding scattering model 
+singleton and insert it into the function call `call` as the second positional argument
 (that is, directly after `rng`).
 
-The macro expands into an `if`/`elseif` chain with a literal singleton tag in each arm, so that
-each arm is a separate call with a concrete tag type. This acts as a function barrier: the branch
+The macro expands into an `if`/`elseif` chain with a literal singleton in each arm, so that
+each arm is a separate call with a concrete singleton type. This acts as a function barrier: the branch
 is taken once per call of a collision driver, and everything below it is compiled for one fixed
 model, with the cross-section and scattering functions inlined and no dispatch left in the
 collision loop.
