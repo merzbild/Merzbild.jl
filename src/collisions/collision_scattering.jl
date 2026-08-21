@@ -38,8 +38,7 @@ The cosine of the deflection angle ``\\chi`` (the angle between the pre- and pos
 relative velocities) is sampled as ``\\cos\\chi = 2 R^{1/\\alpha} - 1``, where ``R`` is a uniformly
 distributed random number and ``\\alpha`` is the VSS exponent of the interaction; the azimuthal
 angle ``\\varepsilon`` is sampled uniformly in ``[0, 2\\pi)``. The post-collisional relative velocity
-is then computed by rotating the pre-collisional one, which requires the pre-collisional relative
-velocity vector stored in `collision_data` (as computed by [`Merzbild.compute_g!`](@ref)).
+is then computed by rotating the pre-collisional one.
 
 The power ``R^{1/\\alpha}`` is evaluated as `exp2(vss_inv_alpha * log2(R))` for the same reason
 as in [`Merzbild.sigma_vhs`](@ref).
