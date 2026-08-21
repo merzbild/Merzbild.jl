@@ -38,6 +38,13 @@ collisions, merging, property computation, I/O) and the user writes their own ti
   particle index), but a `ParticleIndexerArray` variable is called `pia`. See `CONTRIBUTING.md` for
   the full argument-order rules.
 
+## Documentation and docstrings
+
+* Do not add text to files in `docs/src` yourself, except adding "TODO" in relevant places
+* Keep docstrings terse, do not add concrete motivating examples for design decisions
+* If functions are part of the private API, be even more terse,
+  assume user knows why certain parameters are passed to the function
+
 ## Testing instructions
 
 * Run all project tests with `julia --project=. -e 'using Pkg; Pkg.test()'`.
