@@ -29,8 +29,7 @@ const DELTA_PARTICLES::Int64 = 256
     MERZBILD_DATA_PATH
 
 Absolute path to the `data` directory bundled with Merzbild.jl, holding the built-in species
-(`particles.toml`) and interaction (`vhs.toml`, `pseudo_maxwell.toml`, `vss.toml`,
-`hard_sphere.toml`) data files. Use it to load
+(`particles.toml`) and interaction (`vhs.toml`, `pseudo_maxwell.toml`, `vss.toml`) data files. Use it to load
 bundled data independently of the current working directory, e.g.
 `load_species_data(joinpath(MERZBILD_DATA_PATH, "particles.toml"), "Ar")`.
 """
@@ -66,8 +65,8 @@ export sample_maxwellian_on_grid!, sample_on_grid!, bkw, maxwellian
 export load_species_data, Particle, sample_particles_equal_weight!
 export sample_particles_phase_box_weighted!
 export Species, Interaction
-export AbstractScatteringModel, VHS, VSS, HardSphere
-export ScatteringVHS, ScatteringVSS, ScatteringHS
+export AbstractScatteringModel, VHS, VSS
+export ScatteringVHS, ScatteringVSS
 export compute_props!, compute_props_sorted!
 export compute_moment_scaling!, compute_moments!
 export clear_props!, avg_props!

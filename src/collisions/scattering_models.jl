@@ -3,8 +3,8 @@
 
 Abstract type for the elastic scattering models used by the DSMC/SWPM collision routines.
 
-Each concrete model is a zero-field singleton type ([`VHS`](@ref), [`VSS`](@ref),
-[`HardSphere`](@ref)) that is used as a compile-time tag: the total cross-section
+Each concrete model is a zero-field singleton type ([`VHS`](@ref), [`VSS`](@ref))
+that is used as a compile-time tag: the total cross-section
 [`Merzbild.sigma`](@ref) and the computation of the post-collision velocities
 [`Merzbild.scatter!`](@ref) are dispatched on it. As the tag is a zero-size value of a concrete
 type, it is not stored anywhere and the inner collision loops stay free of branching,
@@ -41,29 +41,20 @@ number and ``\\alpha`` is the VSS exponent (``\\alpha = 1`` recovers isotropic s
 struct VSS <: AbstractScatteringModel end
 
 """
-    HardSphere
-
-Singleton type tag for the hard sphere model: the total cross-section is constant,
-``\\sigma = \\pi d^2``, and the scattering is isotropic. This is the [`VHS`](@ref) model
-with ``\\omega = 1/2``.
-"""
-struct HardSphere <: AbstractScatteringModel end
-
-"""
-    ScatteringModel ScatteringVHS=1 ScatteringVSS=2 ScatteringHS=3
+    ScatteringModel ScatteringVHS=1 ScatteringVSS=2
 
 Enum of the elastic scattering models, stored in an `Interaction` instance to define
 the model used for the species pair in question. `ScatteringVHS` corresponds to [`VHS`](@ref),
-`ScatteringVSS` to [`VSS`](@ref), `ScatteringHS` to [`HardSphere`](@ref).
+`ScatteringVSS` to [`VSS`](@ref).
 """
-@enum ScatteringModel ScatteringVHS=1 ScatteringVSS=2 ScatteringHS=3
+@enum ScatteringModel ScatteringVHS=1 ScatteringVSS=2
 
 """
 Tuple of all `(enum value, singleton tag)` pairs of the implemented elastic scattering models,
 used by [`Merzbild.@scattering_barrier`](@ref) to generate the enum-to-tag conversion.
 Any newly added scattering model has to be listed here.
 """
-const SCATTERING_MODEL_TAGS = ((ScatteringVHS, VHS()), (ScatteringVSS, VSS()), (ScatteringHS, HardSphere()))
+const SCATTERING_MODEL_TAGS = ((ScatteringVHS, VHS()), (ScatteringVSS, VSS()))
 
 """
     @scattering_barrier model call
@@ -106,7 +97,7 @@ end
 
 Convert the name of an elastic scattering model, as written in an interaction data TOML file,
 to the corresponding [`Merzbild.ScatteringModel`](@ref) enum value. The comparison is
-case-insensitive; the recognized names are `"VHS"`, `"VSS"`, and `"HS"` (`"HardSphere"`).
+case-insensitive; the recognized names are `"VHS"` and `"VSS"`.
 
 # Positional arguments
 * `name`: the name of the scattering model
@@ -124,8 +115,6 @@ function parse_scattering_model(name)
         return ScatteringVHS
     elseif lowercase_name == "vss"
         return ScatteringVSS
-    elseif lowercase_name == "hs" || lowercase_name == "hardsphere" || lowercase_name == "hard_sphere"
-        return ScatteringHS
     else
         throw(ArgumentError("unknown scattering model: " * name))
     end
@@ -135,8 +124,7 @@ end
     sigma(model, interaction, g)
 
 Compute the total elastic collision cross-section for a given scattering `model`.
-The [`VSS`](@ref) model uses the same power law as the [`VHS`](@ref) model,
-whereas the [`HardSphere`](@ref) model returns the constant ``\\pi d^2``.
+The [`VSS`](@ref) model uses the same power law as the [`VHS`](@ref) model.
 
 # Positional arguments
 * `model`: the `AbstractScatteringModel` singleton tag of the scattering model
@@ -148,4 +136,3 @@ The value of the computed cross-section.
 """
 @inline sigma(::VHS, interaction, g) = sigma_vhs(interaction, g)
 @inline sigma(::VSS, interaction, g) = sigma_vhs(interaction, g)
-@inline sigma(::HardSphere, interaction, g) = interaction.vhs_factor

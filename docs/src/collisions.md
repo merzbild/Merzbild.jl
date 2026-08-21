@@ -29,7 +29,6 @@ angular scattering law (and thus the post-collisional velocities):
 | --- | --- | --- | --- | --- |
 | Variable Hard Sphere | [`VHS`](@ref) | `ScatteringVHS` | ``C g^{1 - 2\omega}`` | isotropic |
 | Variable Soft Sphere | [`VSS`](@ref) | `ScatteringVSS` | ``C g^{1 - 2\omega}`` | ``\cos\chi = 2 R^{1/\alpha} - 1`` |
-| Hard sphere | [`HardSphere`](@ref) | `ScatteringHS` | ``\pi d^2`` | isotropic |
 
 The model is fixed for a species pair and is stored in the pair's [`Interaction`](@ref) instance.
 It is set by the optional `model` key of the pair's entry in the interaction data TOML file,
@@ -44,13 +43,14 @@ vhs_Tref = 273.0
 vss_alpha = 1.40
 ```
 
-The VSS model requires the additional `vss_alpha` key; the hard sphere model requires only `vhs_d`
-and `vhs_Tref`, as the exponent is fixed to ``\omega = 1/2``. Bundled interaction data files using
-these models are `vss.toml` and `hard_sphere.toml` (see [`MERZBILD_DATA_PATH`](@ref)).
-Since the VSS model modifies the angular scattering law but not the total cross-section, the
-reference viscosity of a VSS interaction is corrected by the factor
-``(\alpha + 1)(\alpha + 2)/(6\alpha)``; ``\alpha = 1`` recovers isotropic scattering, and the VSS
-model then coincides with the VHS model.
+The VSS model requires the additional `vss_alpha` key; a bundled interaction data file using it is
+`vss.toml` (see [`MERZBILD_DATA_PATH`](@ref)). Since the VSS model modifies the angular scattering law
+but not the total cross-section, the reference viscosity of a VSS interaction is corrected by the
+factor ``(\alpha + 1)(\alpha + 2)/(6\alpha)``; ``\alpha = 1`` recovers isotropic scattering, and
+the VSS model then coincides with the VHS model.
+
+A hard sphere gas is a special case of the VHS model, obtained by setting ``\omega = 1/2`` in the
+interaction data file: the cross-section is then the constant ``\pi d^2``.
 
 The collision routines resolve the model of the species pair once per call, and are then compiled
 for that single model, so that no branching on the model, no dynamic dispatch and no allocations
@@ -60,7 +60,7 @@ stored in the `Interaction` instance.
 
 ## DSMC collisions
 
-The No-Time-Counter (NTC) algorithm is the default DSMC collision routine. Three variants are
+The No-Time-Counter (NTC) algorithm is the default DSMC collision routine. Four variants are
 available:
 
 * [`ntc_equal_weight!`](@ref) — single-species collisions assuming all particles share the same
@@ -73,7 +73,6 @@ available:
 * [`ntc!`](@ref) (two-species method) — collisions between particles of two different species,
   again supporting variable weights and particle splitting
   ([Schmidt and Rutland (2000)](https://doi.org/10.1006/jcph.2000.6568)).
-
 * [`ntc_equal_weight!`](@ref) (two-species method) — collisions between particles of two different
   species with equal computational weights.
 

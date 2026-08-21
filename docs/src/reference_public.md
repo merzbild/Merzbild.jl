@@ -39,7 +39,6 @@ Interaction
 Interaction(m1::Float64, m2::Float64, vhs_d::Float64, vhs_o::Float64, vhs_Tref::Float64)
 Interaction(::VHS, m1::Float64, m2::Float64, vhs_d::Float64, vhs_o::Float64, vhs_Tref::Float64)
 Interaction(::VSS, m1::Float64, m2::Float64, vhs_d::Float64, vhs_o::Float64, vhs_Tref::Float64, vss_alpha::Float64)
-Interaction(::HardSphere, m1::Float64, m2::Float64, vhs_d::Float64, vhs_Tref::Float64)
 load_species_data
 load_interaction_data
 load_interaction_data_with_dummy
@@ -51,7 +50,6 @@ load_species_and_interaction_data
 AbstractScatteringModel
 VHS
 VSS
-HardSphere
 Merzbild.ScatteringModel
 ```
 

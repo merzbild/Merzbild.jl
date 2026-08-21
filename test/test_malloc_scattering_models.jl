@@ -1,4 +1,4 @@
-@testset "malloc: collisions with VHS/VSS/hard sphere scattering models" begin
+@testset "malloc: collisions with VHS/VSS scattering models" begin
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
     species_data::Vector{Species} = load_species_data(particles_data_path, ["Ar", "He"])
     n_species = length(species_data)
@@ -8,11 +8,9 @@
     Fnum = 5e12
     V = 1.0
 
-    # the hard sphere cross-section is larger at thermal velocities, so a smaller timestep is used
-    # to keep the number of particles created by SWPM bounded
-    Δt_list = Dict("vhs.toml" => 2.5e-4, "vss.toml" => 2.5e-4, "hard_sphere.toml" => 2.5e-5)
+    Δt = 2.5e-4
 
-    for interaction_file in ["vhs.toml", "vss.toml", "hard_sphere.toml"]
+    for interaction_file in ["vhs.toml", "vss.toml"]
         rng = StableRNG(1234)
 
         interaction_data::Array{Interaction, 2} = load_interaction_data(joinpath(@__DIR__, "..", "data", interaction_file),
@@ -33,8 +31,6 @@
 
         estimate_sigma_g_w_max!(collision_factors, interaction_data, species_data, T0_list, Fnum)
         estimate_sigma_g_max!(collision_factors_swpm, interaction_data, species_data, T0_list)
-
-        Δt = Δt_list[interaction_file]
 
         # warm-up so that everything is compiled before the allocations are measured
         for _ in 1:3

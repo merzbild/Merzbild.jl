@@ -2,7 +2,6 @@
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
     vhs_data_path = joinpath(@__DIR__, "..", "data", "vhs.toml")
     vss_data_path = joinpath(@__DIR__, "..", "data", "vss.toml")
-    hs_data_path = joinpath(@__DIR__, "..", "data", "hard_sphere.toml")
 
     species_data = load_species_data(particles_data_path, ["Ar", "He"])
 
@@ -11,27 +10,20 @@
     @test Merzbild.parse_scattering_model("vhs") == ScatteringVHS
     @test Merzbild.parse_scattering_model("VSS") == ScatteringVSS
     @test Merzbild.parse_scattering_model("vss") == ScatteringVSS
-    @test Merzbild.parse_scattering_model("HS") == ScatteringHS
-    @test Merzbild.parse_scattering_model("HardSphere") == ScatteringHS
-    @test Merzbild.parse_scattering_model("hard_sphere") == ScatteringHS
     @test_throws ArgumentError Merzbild.parse_scattering_model("Maxwell")
 
     vhs_data = load_interaction_data(vhs_data_path, species_data)
     vss_data = load_interaction_data(vss_data_path, species_data)
-    hs_data = load_interaction_data(hs_data_path, species_data)
 
     for i in 1:2
         for k in 1:2
             # the model is stored on the interaction, the array stays concretely typed
             @test vhs_data[i,k].model == ScatteringVHS
             @test vss_data[i,k].model == ScatteringVSS
-            @test hs_data[i,k].model == ScatteringHS
 
             # models with isotropic scattering do not use the VSS exponent
             @test vhs_data[i,k].vss_alpha == 1.0
             @test vhs_data[i,k].vss_inv_alpha == 1.0
-            @test hs_data[i,k].vss_alpha == 1.0
-            @test hs_data[i,k].vss_inv_alpha == 1.0
 
             @test vss_data[i,k].vss_alpha > 1.0
             @test abs(vss_data[i,k].vss_inv_alpha - 1.0 / vss_data[i,k].vss_alpha) < eps()
@@ -45,11 +37,6 @@
             vss_factor = Merzbild.compute_vss_mu_ref_factor(vss_data[i,k].vss_alpha)
             @test vss_factor < 1.0
             @test abs(vss_data[i,k].vhs_muref - vhs_data[i,k].vhs_muref * vss_factor) < eps()
-
-            # the hard sphere model is the VHS model with omega = 0.5
-            @test hs_data[i,k].vhs_o == 0.5
-            @test hs_data[i,k].vhs_exp == 0.0
-            @test abs(hs_data[i,k].vhs_factor - π * hs_data[i,k].vhs_d^2) < eps()
 
             # the asymmetry of the interaction array is preserved
             @test vss_data[i,k].model == vss_data[k,i].model
@@ -67,26 +54,24 @@
     @test Interaction(m_Ar, m_He, 3.25e-10, 0.735, 273.0) == Interaction(VHS(), m_Ar, m_He, 3.25e-10, 0.735, 273.0)
     @test Interaction(VHS(), m_Ar, m_He, 3.25e-10, 0.735, 273.0) == vhs_data[1,2]
     @test Interaction(VSS(), m_Ar, m_He, 3.25e-10, 0.735, 273.0, 1.33) == vss_data[1,2]
-    @test Interaction(HardSphere(), m_Ar, m_He, 3.25e-10, 273.0) == hs_data[1,2]
 
     # a VSS interaction with alpha = 1 has the same parameters as the VHS one
     vss_alpha1 = Interaction(VSS(), m_Ar, m_He, 3.25e-10, 0.735, 273.0, 1.0)
     @test abs(vss_alpha1.vhs_muref - vhs_data[1,2].vhs_muref) < eps()
     @test abs(vss_alpha1.vhs_factor - vhs_data[1,2].vhs_factor) < eps()
 
-    # the hard sphere interaction is the VHS interaction with omega = 0.5
-    hs_as_vhs = Interaction(VHS(), m_Ar, m_He, 3.25e-10, 0.5, 273.0)
-    @test abs(hs_as_vhs.vhs_muref - hs_data[1,2].vhs_muref) < eps()
-    @test abs(hs_as_vhs.vhs_factor - hs_data[1,2].vhs_factor) < eps()
+    # a hard sphere gas is the VHS model with omega = 0.5: a constant cross-section
+    hard_sphere = Interaction(VHS(), m_Ar, m_He, 3.25e-10, 0.5, 273.0)
+    @test hard_sphere.vhs_exp == 0.0
+    @test abs(hard_sphere.vhs_factor - π * hard_sphere.vhs_d^2) < eps()
 
     # cross-sections
     for g in [1.0, 100.0, 1234.5, 1e5]
         @test Merzbild.sigma(VHS(), vhs_data[1,2], g) == Merzbild.sigma_vhs(vhs_data[1,2], g)
         @test Merzbild.sigma(VSS(), vss_data[1,2], g) == Merzbild.sigma_vhs(vhs_data[1,2], g)
-        @test Merzbild.sigma(HardSphere(), hs_data[1,2], g) == Merzbild.sigma_vhs(hs_data[1,2], g)
 
-        # the hard sphere cross-section does not depend on the relative velocity
-        @test Merzbild.sigma(HardSphere(), hs_data[1,2], g) == π * hs_data[1,2].vhs_d^2
+        # a hard sphere gas has a cross-section independent of the relative velocity
+        @test Merzbild.sigma(VHS(), hard_sphere, g) == π * hard_sphere.vhs_d^2
     end
 
     # missing VSS data in the interaction file
@@ -179,7 +164,7 @@ end
 
     # the model stored in the Interaction instance is picked up by the drivers, and passing
     # the model tag explicitly gives exactly the same result
-    for (interaction_file, model) in [("vhs.toml", VHS()), ("vss.toml", VSS()), ("hard_sphere.toml", HardSphere())]
+    for (interaction_file, model) in [("vhs.toml", VHS()), ("vss.toml", VSS())]
         props_from_data = run_collisions(interaction_file, nothing, 20)
         props_from_tag = run_collisions(interaction_file, model, 20)
 
@@ -194,7 +179,7 @@ end
     mass_total = sum(props_initial.n[1,s] * species_data[s].mass for s in 1:n_species)
     ΔT_initial = abs(props_initial.T[1,1] - props_initial.T[1,2])
 
-    for interaction_file in ["vhs.toml", "vss.toml", "hard_sphere.toml"]
+    for interaction_file in ["vhs.toml", "vss.toml"]
         phys_props = run_collisions(interaction_file, nothing, 800)
 
         @test phys_props.np[1,1] == n_particles[1]

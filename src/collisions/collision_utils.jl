@@ -59,8 +59,7 @@ Structure to store interaction parameters for a 2-species interaction.
 The VHS model uses the following power law: ``\\sigma_{VHS} = C g^(1 - 2 \\omega_{VHS})``, where
 ``omega`` is the exponent of the VHS potential, and ``C`` is the pre-computed factor:
 ``C = \\pi D_{VHS}^2 (2 T_{ref,VHS}/m_r)^{(\\omega_{VHS} - 0.5)} \\frac{1}{\\Gamma(2.5 - \\omega_{VHS})}``.
-The VSS model uses the same power law for the total cross-section, but a different scattering law;
-the hard sphere model is the VHS model with ``\\omega_{VHS} = 1/2``.
+The VSS model uses the same power law for the total cross-section, but a different scattering law.
 
 The elastic scattering model is fixed for a species pair and is stored in the `model` field
 as a [`Merzbild.ScatteringModel`](@ref) enum value, so that the array of `Interaction` instances
@@ -169,31 +168,6 @@ function Interaction(::VSS, m1::Float64, m2::Float64, vhs_d::Float64, vhs_o::Flo
 end
 
 """
-    Interaction(::HardSphere, m1::Float64, m2::Float64, vhs_d::Float64, vhs_Tref::Float64)
-
-Construct an Interaction instance using the hard sphere model from the masses of the two species
-and the sphere diameter. The VHS exponent is set to `0.5`, so that the cross-section
-is the constant ``\\pi d^2``.
-
-# Positional arguments
-* `m1`: molecular mass of the first species
-* `m2`: molecular mass of the second species
-* `vhs_d`: hard sphere diameter
-* `vhs_Tref`: reference temperature (used only to compute the reference viscosity)
-"""
-function Interaction(::HardSphere, m1::Float64, m2::Float64, vhs_d::Float64, vhs_Tref::Float64)
-    m_r = m1 * m2 / (m1 + m2)
-
-    μ1 = m1 / (m1 + m2)
-    μ2 = m2 / (m1 + m2)
-
-    return Interaction(m_r, μ1, μ2, vhs_d, 0.5, 0.0, vhs_Tref,
-                       compute_mu_ref(0.5 * (m1 + m2), 0.5, vhs_Tref, vhs_d),
-                       compute_vhs_factor(vhs_Tref, vhs_d, 0.5, m_r),
-                       1.0, 1.0, ScatteringHS)
-end
-
-"""
     compute_vss_mu_ref_factor(vss_alpha)
 
 Compute the factor ``(\\alpha + 1)(\\alpha + 2) / (6\\alpha)`` by which the VHS reference viscosity
@@ -276,9 +250,8 @@ of the interaction parameters of the species pair, as read from an interaction d
 
 The elastic scattering model is given by the optional `model` key
 (see [`Merzbild.parse_scattering_model`](@ref)); if it is not present, the VHS model is used.
-The VHS and VSS models require the `vhs_d`, `vhs_o`, and `vhs_Tref` keys, with the VSS model
-additionally requiring the `vss_alpha` key; the hard sphere model requires only the `vhs_d`
-and `vhs_Tref` keys (a `vhs_o` value present in the file is ignored, as the exponent is fixed to `0.5`).
+Both models require the `vhs_d`, `vhs_o`, and `vhs_Tref` keys, with the VSS model
+additionally requiring the `vss_alpha` key.
 
 # Positional arguments
 * `m1`: molecular mass of the first species
@@ -298,8 +271,6 @@ function interaction_from_toml(m1, m2, interaction_toml)
     if model == ScatteringVSS
         return Interaction(VSS(), m1, m2, interaction_toml["vhs_d"], interaction_toml["vhs_o"],
                            interaction_toml["vhs_Tref"], interaction_toml["vss_alpha"])
-    elseif model == ScatteringHS
-        return Interaction(HardSphere(), m1, m2, interaction_toml["vhs_d"], interaction_toml["vhs_Tref"])
     else
         return Interaction(VHS(), m1, m2, interaction_toml["vhs_d"], interaction_toml["vhs_o"],
                            interaction_toml["vhs_Tref"])
@@ -546,8 +517,7 @@ where ``T_1`` and ``m_1`` are the temperature and mass of the first species (`sp
 ``T_2`` and ``m_2`` are the temperature and mass of the second species (`species2`).
 This relative velocity estimate is then plugged into the VHS cross-section model to compute ``\\sigma``.
 The result is then multiplied by `Fnum` and an (optional) factor `mult_factor`.
-This is also the correct estimate for the VSS and hard sphere models, as they use the same total cross-section
-as the VHS model (with the VHS exponent fixed to `0.5` in the case of the hard sphere model).
+This is also the correct estimate for the VSS model, as it uses the same total cross-section as the VHS model.
 
 # Positional arguments
 * `interaction`: the `Interaction` instance for the interacting species

@@ -93,9 +93,8 @@ end
     scatter!(rng, model, collision_data, interaction, p1, p2)
 
 Scatter two particles using the scattering law of the elastic scattering `model`:
-isotropic scattering ([`Merzbild.scatter_vhs!`](@ref)) for the [`VHS`](@ref)
-and [`HardSphere`](@ref) models, VSS scattering ([`Merzbild.scatter_vss!`](@ref))
-for the [`VSS`](@ref) model.
+isotropic scattering ([`Merzbild.scatter_vhs!`](@ref)) for the [`VHS`](@ref) model,
+VSS scattering ([`Merzbild.scatter_vss!`](@ref)) for the [`VSS`](@ref) model.
 
 # Positional arguments
 * `rng`: the random number generator
@@ -108,7 +107,6 @@ for the [`VSS`](@ref) model.
 * `p2`: the second colliding particle
 """
 @inline scatter!(rng, ::VHS, collision_data, interaction, p1, p2) = scatter_vhs!(rng, collision_data, interaction, p1, p2)
-@inline scatter!(rng, ::HardSphere, collision_data, interaction, p1, p2) = scatter_vhs!(rng, collision_data, interaction, p1, p2)
 @inline scatter!(rng, ::VSS, collision_data, interaction, p1, p2) = scatter_vss!(rng, collision_data, interaction, p1, p2)
 
 """
