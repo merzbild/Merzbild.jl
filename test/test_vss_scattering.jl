@@ -100,6 +100,93 @@
     @test chi2_eps < dof_eps + 5 * sqrt(2 * dof_eps)
 end
 
+@testset "VSS scattering with relative velocity along the x-axis" begin
+    # exercises the branch of scatter_vss! taken when the relative velocity is nearly aligned
+    # with the x-axis and the general expressions become ill-conditioned
+    particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
+    vss_data_path = joinpath(@__DIR__, "..", "data", "vss.toml")
+
+    species_data = load_species_data(particles_data_path, ["Ar", "He"])
+    interaction = load_interaction_data(vss_data_path, species_data)[1, 2]
+    α = interaction.vss_alpha
+
+    n_samples = 400000
+    n_eps_bins = 40
+
+    # samples the post-collisional relative velocity for a fixed pre-collisional particle pair,
+    # accumulating the moments of cos(chi), the histogram of the azimuthal angle around the x-axis,
+    # and the errors in the conserved quantities
+    function scatter_along_x(rng, v1, v2)
+        p1 = Particle(1e10, v1, [0.0, 0.0, 0.0])
+        p2 = Particle(1e10, v2, [0.0, 0.0, 0.0])
+
+        collision_data = CollisionData()
+        collision_data_check = CollisionData()
+        Merzbild.compute_com!(collision_data, interaction, p1, p2)
+        Merzbild.compute_g!(collision_data, p1, p2)
+
+        v_com = collision_data.v_com
+        g = collision_data.g
+        n_par = collision_data.g_vec / g
+
+        eps_counts = zeros(Int64, n_eps_bins)
+        mean_cchi = 0.0
+        mean_cchi2 = 0.0
+        max_g_err = 0.0
+        max_v_com_err = 0.0
+
+        for _ in 1:n_samples
+            Merzbild.scatter_vss!(rng, collision_data, interaction, p1, p2)
+
+            n_vec = collision_data.g_vec_new / g
+
+            cchi = n_vec[1] * n_par[1] + n_vec[2] * n_par[2] + n_vec[3] * n_par[3]
+            mean_cchi += cchi
+            mean_cchi2 += cchi * cchi
+
+            eps_index = min(n_eps_bins, 1 + floor(Int64, (atan(n_vec[3], n_vec[2]) + pi) * n_eps_bins / (2 * pi)))
+            eps_counts[eps_index] += 1
+
+            Merzbild.compute_g!(collision_data_check, p1, p2)
+            Merzbild.compute_com!(collision_data_check, interaction, p1, p2)
+            max_g_err = max(max_g_err, abs(collision_data_check.g - g) / g)
+            max_v_com_err = max(max_v_com_err, maximum(abs.(collision_data_check.v_com - v_com)) / g)
+        end
+
+        expected_eps_count = n_samples / n_eps_bins
+        chi2_eps = 0.0
+        for index in eachindex(eps_counts)
+            chi2_eps += (eps_counts[index] - expected_eps_count)^2 / expected_eps_count
+        end
+
+        return mean_cchi / n_samples, mean_cchi2 / n_samples, max_g_err, max_v_com_err, chi2_eps
+    end
+
+    # gyz is exactly zero for the first two cases (with the relative velocity pointing along +x and -x),
+    # so these always take the near-degenerate branch, whatever value its threshold has; the last two
+    # cases have gyz/g of 1e-6 and 1e-4, bracketing the current threshold of 1e-5, so that the results
+    # on both sides of it are compared against the same analytical values
+    velocity_pairs = [([300.0, 0.0, 0.0], [0.0, 0.0, 0.0]),
+                      ([-300.0, 0.0, 0.0], [0.0, 0.0, 0.0]),
+                      ([300.0, 3e-4, 0.0], [0.0, 0.0, 0.0]),
+                      ([300.0, 3e-2, 0.0], [0.0, 0.0, 0.0])]
+
+    rng = StableRNG(1234)
+    dof_eps = n_eps_bins - 1
+
+    for (v1, v2) in velocity_pairs
+        mean_cchi, mean_cchi2, max_g_err, max_v_com_err, chi2_eps = scatter_along_x(rng, v1, v2)
+
+        @test max_g_err < 1e-10
+        @test max_v_com_err < 1e-13
+
+        @test abs(mean_cchi - (2 * α / (1 + α) - 1)) < 5e-3
+        @test abs(mean_cchi2 - (4 * α / (2 + α) - 4 * α / (1 + α) + 1)) < 5e-3
+
+        @test chi2_eps < dof_eps + 5 * sqrt(2 * dof_eps)
+    end
+end
+
 @testset "VSS scattering isotropy at alpha=1" begin
     particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
     species_data = load_species_data(particles_data_path, ["Ar", "He"])
