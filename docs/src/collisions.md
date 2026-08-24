@@ -58,7 +58,8 @@ for that single model, so that no branching on the model, no dynamic dispatch an
 are left in the collision loop itself. The model can also be passed explicitly as the second
 positional argument (e.g. `ntc!(rng, VSS(), collision_factors, ...)`), which overrides the model
 stored in the `Interaction` instance. The dispatch is on singleton subtypes of the [`AbstractScatteringModel`](@ref)
-type via use of the [`Merzbild.scattering_barrier`](@ref) macro.
+type via use of the [`Merzbild.@scattering_barrier`](@ref) macro that
+maps the scattering model enums to the singletons (via [`Merzbild.SCATTERING_MODEL_TAGS`](@ref)).
 
 ## DSMC collisions
 
