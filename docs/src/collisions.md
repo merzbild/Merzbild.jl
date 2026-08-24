@@ -66,15 +66,14 @@ available:
 * [`ntc_equal_weight!`](@ref) — single-species collisions assuming all particles share the same
   computational weight; no weight checks or particle splitting are performed. This is the classic
   NTC scheme of [Bird (1994)](https://doi.org/10.1093/oso/9780198561958.001.0001).
+* [`ntc_equal_weight!`](@ref) (two-species method) — collisions between particles of two different
+  species with equal computational weights.
 * [`ntc!`](@ref) — single-species collisions for variable-weight particles. When the collision
   partners' weights differ by more than `dw_tol`, particle splitting is used to conserve mass,
   momentum, and energy, following the variable-weight NTC approach of
   [Schmidt and Rutland (2000)](https://doi.org/10.1006/jcph.2000.6568).
 * [`ntc!`](@ref) (two-species method) — collisions between particles of two different species,
-  again supporting variable weights and particle splitting
-  ([Schmidt and Rutland (2000)](https://doi.org/10.1006/jcph.2000.6568)).
-* [`ntc_equal_weight!`](@ref) (two-species method) — collisions between particles of two different
-  species with equal computational weights.
+  again supporting variable weights and particle splitting.
 
 ## SWPM
 
