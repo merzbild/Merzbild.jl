@@ -19,7 +19,9 @@ One can also use [`load_interaction_data_with_dummy`](@ref) function, which will
 in case data for a specific interaction
 is missing in the TOML file, but will just create an interaction using the passed dummy
 parameters. This is relevant for electron-neutral interactions, for example, since 
-VHS collision parameters don't really make sense for such interactions, but are required to fill in the fields.
+VHS/VSS collision parameters don't really make sense for such interactions, but are required to fill in the fields.
+The choice between VHS and VSS models is given by the `model` keyword for an interaction pair in the TOML
+file (defaulting to the VHS model if the keyword is not specified).
 
 An additional utility function `load_species_and_interaction_data` is also available, which loads both
 the species' and interaction data for those species at the same time.
@@ -72,6 +74,9 @@ Here `collision_factors` is the specific instance of `CollisionFactors`, i.e. a 
 
 Multi-species elastic collisions are performed in a similar fashion, by calling
 `ntc!(rng, collision_factors, collision_data, interaction, particles_1, particles_2, pia, cell, species1, species2, Δt, V)`.
+
+The function will use the specific (VHS/VSS) scattering model stored in the `interaction` and specialize on that model
+for efficiency (i.e., the check for which scattering to use will not be done for every particle-particle collision).
 
 ## Example: bringing it all together
 An example of computation of collisions for a two-species mixture is presented here.
