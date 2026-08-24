@@ -30,7 +30,8 @@ angular scattering law (and thus the post-collisional velocities):
 | Variable Hard Sphere | [`VHS`](@ref) | `ScatteringVHS` | ``C g^{1 - 2\omega}`` | isotropic |
 | Variable Soft Sphere | [`VSS`](@ref) | `ScatteringVSS` | ``C g^{1 - 2\omega}`` | ``\cos\chi = 2 R^{1/\alpha} - 1`` |
 
-The model is fixed for a species pair and is stored in the pair's [`Interaction`](@ref) instance.
+The model is fixed for a species pair and is stored in the pair's [`Interaction`](@ref) instance
+as a parameter of the [`Merzbild.ScatteringModel`](@ref) enum type. 
 It is set by the optional `model` key of the pair's entry in the interaction data TOML file,
 defaulting to `"VHS"` if the key is absent:
 
@@ -56,7 +57,8 @@ The collision routines resolve the model of the species pair once per call, and 
 for that single model, so that no branching on the model, no dynamic dispatch and no allocations
 are left in the collision loop itself. The model can also be passed explicitly as the second
 positional argument (e.g. `ntc!(rng, VSS(), collision_factors, ...)`), which overrides the model
-stored in the `Interaction` instance.
+stored in the `Interaction` instance. The dispatch is on singleton subtypes of the [`AbstractScatteringModel`](@ref)
+type via use of the [`Merzbild.scattering_barrier`](@ref) macro.
 
 ## DSMC collisions
 

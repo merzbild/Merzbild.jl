@@ -12,7 +12,7 @@ dynamic dispatch, and allocations.
 
 The model of a species pair is stored in the corresponding `Interaction` instance as a
 [`Merzbild.ScatteringModel`](@ref) enum value (so that the array of `Interaction` instances stays
-concretely typed); the collision drivers convert it to the singleton tag exactly once per call,
+concretely typed); the collision routines convert it to the singleton tag exactly once per call,
 see [`Merzbild.@scattering_barrier`](@ref).
 """
 abstract type AbstractScatteringModel end
@@ -65,7 +65,7 @@ singleton and insert it into the function call `call` as the second positional a
 
 The macro expands into an `if`/`elseif` chain with a literal singleton in each arm, so that
 each arm is a separate call with a concrete singleton type. This acts as a function barrier: the branch
-is taken once per call of a collision driver, and everything below it is compiled for one fixed
+is taken once per call of a collision routine, and everything below it is compiled for one fixed
 model, with the cross-section and scattering functions inlined and no dispatch left in the
 collision loop.
 
