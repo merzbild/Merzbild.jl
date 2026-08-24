@@ -2,6 +2,7 @@
     mean_free_path(interaction, species, n, T)
 
 Compute elastic VHS mean free path for single-species collisions.
+This also holds for a VSS interaction, as the VSS model uses the same total cross-section as the VHS model.
 
 # Positional arguments
 * `interaction`: the 2-dimensional array of `Interaction` instances (of shape `(n_species, n_species)`) of all the pair-wise interactions
@@ -25,6 +26,7 @@ end
     mean_collision_frequency(interaction, species, species_data, n, T)
 
 Compute elastic VHS mean collision frequency for single-species collisions.
+This also holds for a VSS interaction, as the VSS model uses the same total cross-section as the VHS model.
 
 # Positional arguments
 * `interactions`: the 2-dimensional array of `Interaction` instances (of shape `(n_species, n_species)`) of all the pair-wise interactions
