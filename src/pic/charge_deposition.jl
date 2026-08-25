@@ -189,7 +189,7 @@ Only the charge density is reduced; the potential and the electric field of the 
 untouched, as they are computed by a single [`solve_poisson!`](@ref) call afterwards. The charge in
 the per-thread instances is expected to be the raw deposited charge, so
 [`normalize_charge_density!`](@ref) has to be called exactly once, on the target, after the
-reduction.
+reduction, in serial mode.
 
 # Positional arguments
 * `field_props_target`: the `ElectrostaticFieldProps` instance which will hold the reduced charge density
