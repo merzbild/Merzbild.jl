@@ -8,6 +8,7 @@ include("test_malloc_bkw_varweight_gridmerge.jl")  # malloc with grid merging an
 include("test_malloc_gridmerge_1Dgrid.jl")  # malloc with grid merging on 1D grid
 include("test_malloc_convection_1D.jl")  # malloc with convection on 1D grid
 include("test_malloc_accelerate_ionize.jl")  # malloc with ionization reactions and acceleration
+include("test_malloc_pic.jl")  # malloc for electrostatic PIC: deposition, Poisson solve, push
 include("test_malloc_nnls.jl")  # malloc for NNLS merging internal computes
 include("test_malloc_particle_exchange.jl")  # malloc for inter-chunk particle exchange + re-sort
 
