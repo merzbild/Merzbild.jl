@@ -1,6 +1,12 @@
 # Changelog
 
 ## v0.8.3
+* Added electrostatic Particle-in-Cell on a 1-D uniform grid: charge deposition (`deposit_charge!`,
+`normalize_charge_density!`), a Poisson solve (`PoissonSolver1DUniform`, `solve_poisson!`), and the gather + push
+(`accelerate_electric_field_x!`); `ElectrostaticFieldProps` struct to hold nodal charge density, potential, and electric field
+* Field boundary conditions `DirichletFieldBC1D`, `NeumannFieldBC1D`, and `PeriodicFieldBC1D`
+* Added `debye_length` and `plasma_frequency` functions, and the vacuum permittivity `eps_0`
+* `reduce_field_props!` for reduction after thread-safe charge deposition and 
 * Improved test coverage
 
 ## v0.8.2

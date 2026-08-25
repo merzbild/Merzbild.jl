@@ -28,6 +28,7 @@ makedocs(
             "Collisions" => "collisions.md",
             "Merging" => "merging.md",
             "Grids and particle-surface interaction models" => "grids_and_bcs.md",
+            "Particle-in-Cell" => "pic.md",
         ],
         "API reference" => [
             "Public API reference" => "reference_public.md",
