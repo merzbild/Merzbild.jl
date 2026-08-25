@@ -42,3 +42,8 @@ const direction_signs = [-1.0, 1.0]
 Elementary charge, C
 """
 const q_e = 1.602176634e-19  # elementary charge, C
+
+"""
+Vacuum permittivity, F/m
+"""
+const eps_0::Float64 = 8.8541878188e-12  # vacuum permittivity, F/m
