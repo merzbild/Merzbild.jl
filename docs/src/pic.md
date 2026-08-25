@@ -5,6 +5,9 @@ The routines are serial, but the deposition can be threaded over chunks of
 cells, see [the section on multithreading](@ref "Multithreading") below; the other
 routines are thread-safe for chunks of cells.
 
+Jump to the ["The timestep"](@ref "The timestep") section to see immediately an example
+of the function calls for a coupled PIC simulation.
+
 ## Node layout
 
 The grid ([`Grid1DUniform`](@ref)) is cell-based, whereas the field quantities are node-centered:
@@ -73,8 +76,8 @@ The Poisson equation is discretized via second-order finite differences:
 
 ### Boundary conditions
 
-The field boundary conditions subtype [`AbstractFieldBC1D`](@ref) and are separate from the particle-surface
-boundary conditions (which subtype [`AbstractBC`](@ref)):
+The field boundary conditions subtype [`Merzbild.AbstractFieldBC1D`](@ref) and are separate from the particle-surface
+boundary conditions (which subtype [`Merzbild.AbstractBC`](@ref)):
 
 | Boundary condition | Description | Type |
 | --- | --- | --- |
@@ -166,7 +169,7 @@ accelerate_electric_field_x!(grid, particles[1], pia, 1, species_data, field_pro
 
 ## The timestep
 
-A canonical PIC timestep is
+A PIC timestep is (assuming a leapfrog push with an already existing time-offset, see above)
 
 ```julia
 deposit_charge!(poisson_solver, grid, particles, pia, species_data, field_props)
@@ -183,7 +186,8 @@ end
 
 with `convect_particles_periodic!` used instead of `convect_particles!` in a periodic domain.
 The deposition has to run on sorted particles, so the sorting closes the timestep.
-Note that if merging is performed, depending on the algorithm used, particles may end up
+
+**Important note**: if merging is performed, depending on the algorithm used, particles may end up
 outside of their pre-merge cells: one needs to re-sort the particles if that is the case.
 
 ## Multithreading
