@@ -14,6 +14,7 @@ include("properties/flux_props.jl")
 include("properties/collisional_props.jl")
 include("collisions/collisions.jl")
 include("grids/grids.jl")
+include("properties/field_props.jl")
 include("merging/merging.jl")
 include("pic/pic.jl")
 include("properties/surface_props.jl")
@@ -96,7 +97,12 @@ export create_computed_crosssections, DataMissingException
 export ScatteringIsotropic, ScatteringOkhrimovskyy
 export ElectronEnergySplitEqual, ElectronEnergySplitZeroE
 export CSExtendZero, CSExtendConstant
-export accelerate_constant_field_x!
+export accelerate_constant_field_x!, accelerate_electric_field_x!
+export ElectrostaticFieldProps, clear_charge_density!
+export DirichletFieldBC1D, NeumannFieldBC1D, PeriodicFieldBC1D
+export PoissonSolver1DUniform, deposit_charge!, normalize_charge_density!, solve_poisson!
+export reduce_field_props!
+export eps_0, debye_length, plasma_frequency
 export estimate_sigma_g_w_max_ntc_n_e!, ntc_n_e!, ntc_n_e_es!
 export ParticleVector
 export AbstractGrid, Grid1DUniform, write_grid
