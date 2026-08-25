@@ -143,6 +143,26 @@ Merzbild.convect_single_particle_periodic!
 Merzbild.set_x
 ```
 
+## Particle-in-Cell
+```@docs
+Merzbild.AbstractFieldBC1D
+Merzbild.poisson_unknowns
+Merzbild.set_neumann_diagonal_left!
+Merzbild.set_neumann_diagonal_right!
+Merzbild.factorize_poisson!
+Merzbild.poisson_rhs_left!
+Merzbild.poisson_rhs_right!
+Merzbild.assemble_poisson_rhs!
+Merzbild.solve_tridiagonal!
+Merzbild.apply_gauge!
+Merzbild.finalize_potential_left!
+Merzbild.finalize_potential_right!
+Merzbild.finalize_potential!
+Merzbild.electric_field_left!
+Merzbild.electric_field_right!
+Merzbild.compute_electric_field!
+```
+
 ## Particle-surface interactions
 ```@docs
 Merzbild.AbstractBC

@@ -64,6 +64,10 @@ SurfProps(pia, grid::Grid1DUniform)
 FluxProps
 FluxProps(n_cells, n_species)
 FluxProps(pia)
+ElectrostaticFieldProps
+ElectrostaticFieldProps(n_nodes::Integer)
+ElectrostaticFieldProps(grid::Grid1DUniform)
+clear_charge_density!
 compute_props!
 compute_props_sorted!
 compute_flux_props!
@@ -78,6 +82,8 @@ compute_moments!
 ```@docs
 mean_free_path
 mean_collision_frequency
+debye_length
+plasma_frequency
 ```
 
 ## Collision computations
@@ -227,6 +233,7 @@ exchange_particles!
 sort_particles_after_exchange!
 reset!
 reduce_surf_props!
+reduce_field_props!
 generate_1_factorization
 LoadBalancerCellQ
 LoadBalancerCellQ(n_cells, n_chunks)
@@ -238,11 +245,21 @@ reset_lb!
 ## Particle-in-Cell
 ```@docs
 accelerate_constant_field_x!
+DirichletFieldBC1D
+NeumannFieldBC1D
+PeriodicFieldBC1D
+PoissonSolver1DUniform
+PoissonSolver1DUniform(grid::Grid1DUniform, bc_left::Merzbild.AbstractFieldBC1D, bc_right::Merzbild.AbstractFieldBC1D)
+deposit_charge!
+normalize_charge_density!
+solve_poisson!
+accelerate_electric_field_x!
 ```
 
 ## Constants
 ```@docs
 k_B
+eps_0
 ```
 
 ## Misc
