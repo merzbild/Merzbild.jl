@@ -45,3 +45,39 @@ function mean_collision_frequency(interaction, species, species_data, n, T)
     @inbounds nu *= (T / interaction[species, species].vhs_Tref)^(1.0 - interaction[species, species].vhs_o)
     return nu
 end
+
+"""
+    debye_length(n, T)
+
+Compute the Debye length ``\\lambda_D = \\sqrt{\\varepsilon_0 k_B T / (n q_e^2)}`` of a plasma
+with singly charged particles with density ``n`` at a temperature ``T``.
+
+# Positional arguments
+* `n`: the number density of the charged particles
+* `T`: the temperature of the charged particles
+
+# Returns
+Debye length.
+"""
+function debye_length(n, T)
+    return sqrt(eps_0 * k_B * T / (n * q_e * q_e))
+end
+
+"""
+    plasma_frequency(species, species_data, n)
+
+Compute the plasma frequency ``\\omega_p = \\sqrt{n q^2 / (\\varepsilon_0 m)}`` of a species
+with charge ``q`` and mass ``m`` with a number density ``n``.
+
+# Positional arguments
+* `species`: the species for which to compute the plasma frequency
+* `species_data`: the vector of `Species` instances of the species in the flow
+* `n`: the number density of the species
+
+# Returns
+Plasma frequency in rad/s.
+"""
+function plasma_frequency(species, species_data, n)
+    @inbounds q = q_e * species_data[species].charge
+    @inbounds return sqrt(n * q * q / (eps_0 * species_data[species].mass))
+end
