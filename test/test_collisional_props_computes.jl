@@ -32,3 +32,29 @@
     interaction_data[1,1] = Interaction(species_data[1].mass/2, 0.5, 0.5, 4.11e-10, 0.5, 0.0, 300.0, 0.0, 0.0)
     @test abs(mean_free_path(interaction_data, 1, 1e23, 300.0) - mean_free_path(interaction_data, 1, 1e23, 5000.0)) <= 2*eps()
 end
+
+@testset "plasma properties" begin
+    particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
+    species_data::Vector{Species} = load_species_data(particles_data_path, ["e-", "He+", "Ar"])
+
+    n = 1e16
+    T = 11604.0
+
+    λ_D = debye_length(n, T)
+    @test abs(λ_D - sqrt(Merzbild.eps_0 * k_B * T / (n * Merzbild.q_e^2))) <= 2*eps(λ_D)
+
+    # the Debye length grows with temperature and shrinks with density
+    @test debye_length(n, 2 * T) > λ_D
+    @test debye_length(2 * n, T) < λ_D
+    @test abs(debye_length(4 * n, T) / λ_D - 0.5) <= 4*eps()
+
+    ω_p = plasma_frequency(1, species_data, n)
+    @test abs(ω_p - sqrt(n * Merzbild.q_e^2 / (Merzbild.eps_0 * species_data[1].mass))) <= 2*eps(ω_p)
+
+    # electrons oscillate much faster than the heavier ions of the same charge
+    @test ω_p > plasma_frequency(2, species_data, n)
+    @test abs(plasma_frequency(1, species_data, 4 * n) / ω_p - 2.0) <= 4*eps()
+
+    # a neutral species has a zero plasma frequency
+    @test plasma_frequency(3, species_data, n) == 0.0
+end
