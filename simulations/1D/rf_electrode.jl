@@ -8,7 +8,8 @@ Run an electrostatic Particle-in-Cell simulation of a helium plasma between an R
 a sine voltage applied to the left wall and a grounded wall on the right.
 The particles are reflected specularly at both walls, so the particle number is conserved and no
 surface charge accumulates. The computed physical properties are written to
-`scratch/data/rf_electrode_[L]_[nx]_[ppc]_[V0]_[f_rf].nc`.
+`scratch/data/rf_electrode_[L]_[nx]_[ppc]_[V0]_[f_rf].nc`, the nodal field quantities to
+`scratch/data/rf_electrode_[L]_[nx]_[ppc]_[V0]_[f_rf]_fields.nc`.
 
 **Note**: this is currently unphysical, as no secondary emission occurs, electrons are not absorbed
 at boundaries, and no collisions are modelled in the code.
@@ -66,6 +67,7 @@ function run(seed, L, nx, ppc, ndens, T_e, T_i, V0, f_rf, n_timesteps, output_fr
 
     phys_props = PhysProps(pia)
     ds = NCDataHolder("scratch/data/rf_electrode_$(L)_$(nx)_$(ppc)_$(V0)_$(f_rf).nc", species_data, phys_props)
+    ds_field = NCDataHolderField("scratch/data/rf_electrode_$(L)_$(nx)_$(ppc)_$(V0)_$(f_rf)_fields.nc", field_props)
 
     # leapfrog: initialize the half-step staggering of the velocities
     deposit_charge!(poisson_solver, grid, particles, pia, species_data, field_props)
@@ -94,10 +96,12 @@ function run(seed, L, nx, ppc, ndens, T_e, T_i, V0, f_rf, n_timesteps, output_fr
 
             compute_props_sorted!(particles, pia, species_data, phys_props)
             write_netcdf(ds, phys_props, t)
+            write_netcdf(ds_field, field_props, t)
         end
     end
 
     close_netcdf(ds)
+    close_netcdf(ds_field)
 end
 
 n_t = 2000

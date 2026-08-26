@@ -5,6 +5,8 @@
 `normalize_charge_density!`), a Poisson solve (`PoissonSolver1DUniform`, `solve_poisson!`), and the gather + push
 (`accelerate_electric_field_x!`); `ElectrostaticFieldProps` struct to hold nodal charge density, potential, and electric field
 * Field boundary conditions `DirichletFieldBC1D`, `NeumannFieldBC1D`, and `PeriodicFieldBC1D`
+* NetCDF output of the electrostatic field quantities stored in an `ElectrostaticFieldProps` instance
+via `NCDataHolderField` and `write_netcdf`
 * Added `debye_length` and `plasma_frequency` functions, and the vacuum permittivity `eps_0`
 * `reduce_field_props!` for reduction after thread-safe charge deposition and 
 * Improved test coverage

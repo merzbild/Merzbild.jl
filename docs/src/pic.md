@@ -63,7 +63,11 @@ multi-species convenience method
 `deposit_charge!(poisson_solver, grid, particles, pia, species_data, field_props)` performs the
 clearing, the deposition of all the species, and the normalization in the correct order and is the
 recommended way of computing the charge density. The particles have to be sorted on the grid, as
-the cell indices are taken from the `ParticleIndexerArray`.
+the cell indices are taken from the `ParticleIndexerArray`. This also means that no particles should be pointed
+to by `group2` of a `ParticleIndexer`, and that even if that is the case, merging might still cause issues,
+as some merging algorithms displace particles outside of their cell; therefore, particles should be re-sorted
+if charge deposition is performed immediately after collisions and merging, even if no convection
+occurred.
 
 ## The discrete Poisson equation
 
@@ -91,8 +95,8 @@ values can be changed from within a user's time loop, for example to drive an RF
 ``\sigma`` (`bc_right.E_x = σ / eps_0`). The boundary condition *types* are type parameters of
 [`PoissonSolver1DUniform`](@ref) and cannot change.
 
-Note that the Neumann boundary condition prescribes ``E_x`` and not ``d\phi/dx = -E_x``. This is the
-natural form for plasma boundaries: ``E_x = 0`` for a symmetry plane or a floating wall, and
+Note that the Neumann boundary condition prescribes ``E_x`` and not ``d\phi/dx = -E_x``.
+Example Neumann BCs: ``E_x = 0`` for a symmetry plane or a floating wall, and
 ``E_x = \sigma / \varepsilon_0`` for an accumulated surface charge on a dielectric.
 
 Depending on the boundary conditions, the unknowns of the tridiagonal system are the values of the
@@ -236,6 +240,28 @@ which imposes
 where the Debye length and the plasma frequency are computed by [`debye_length`](@ref) and
 [`plasma_frequency`](@ref). Violating the first constraint leads to the finite-grid instability
 (a numerical heating of the plasma), violating the second one to an unstable particle push.
+
+## I/O
+
+Output of the electrostatic field data to NetCDF format is done via [`ElectrostaticFieldProps`](@ref)
+and [`write_netcdf`](@ref), with optional omitting of output fields via [`IOSkipListField`](@ref):
+
+```julia
+field_props = ElectrostaticFieldProps(grid)
+ds_field = NCDataHolderField("plasma_fields.nc", field_props)
+
+for t in 1:n_timesteps
+  # compute fields, move particles, etc.
+
+  write_netcdf(ds_field, field_props, t)
+end
+
+close_netcdf(ds_field)
+```
+
+The field data in the output is independent of the underlying grid and contains only the data
+on the electric field, potential, and charge density. The values of the boundary conditions
+are not written out but support will be added in the future.
 
 ## Examples
 

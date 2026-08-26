@@ -209,6 +209,9 @@ IOSkipListSurf()
 IOSkipListFlux
 IOSkipListFlux(list_of_variables_to_skip)
 IOSkipListFlux()
+IOSkipListField
+IOSkipListField(list_of_variables_to_skip)
+IOSkipListField()
 NCDataHolder
 NCDataHolder(nc_filename, names_skip_list, species_data, phys_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
 NCDataHolder(nc_filename, species_data, phys_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
@@ -220,6 +223,9 @@ NCDataHolderFlux(nc_filename, names_skip_list, species_data, flux_props; global_
 NCDataHolderFlux(nc_filename, species_data, flux_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
 NCDataHolderMoments
 NCDataHolderMoments(nc_filename, species_data, n_cells, n_species, moment_powers; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
+NCDataHolderField
+NCDataHolderField(nc_filename, names_skip_list, field_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
+NCDataHolderField(nc_filename, field_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
 write_netcdf
 close_netcdf
 ```

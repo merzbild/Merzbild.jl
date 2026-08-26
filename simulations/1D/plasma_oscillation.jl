@@ -7,7 +7,8 @@ Run an electrostatic Particle-in-Cell simulation of a cold electron plasma oscil
 periodic 1-D domain. The electrons are initialized on a uniform lattice with a sinusoidal
 perturbation of their positions on top of a fixed neutralizing ion background; they then oscillate
 at the plasma frequency ``\\omega_p``. The computed physical properties are written to
-`scratch/data/plasma_oscillation_[L]_[nx]_[ppc]_[ndens].nc`, the field energy is printed
+`scratch/data/plasma_oscillation_[L]_[nx]_[ppc]_[ndens].nc`, the nodal field quantities to
+`scratch/data/plasma_oscillation_[L]_[nx]_[ppc]_[ndens]_fields.nc`, the field energy is printed
 to the standard output.
 
 Positional arguments:
@@ -69,6 +70,7 @@ function run(L, nx, ppc, ndens, perturbation, n_timesteps, output_freq)
 
     phys_props = PhysProps(pia)
     ds = NCDataHolder("scratch/data/plasma_oscillation_$(L)_$(nx)_$(ppc)_$(ndens).nc", species_data, phys_props)
+    ds_field = NCDataHolderField("scratch/data/plasma_oscillation_$(L)_$(nx)_$(ppc)_$(ndens)_fields.nc", field_props)
 
     # leapfrog: the velocities are staggered by half a timestep with respect to the positions,
     # which is initialized by a single backward half-kick after the first field solve
@@ -94,10 +96,12 @@ function run(L, nx, ppc, ndens, perturbation, n_timesteps, output_freq)
 
             compute_props_sorted!(particles, pia, species_data, phys_props)
             write_netcdf(ds, phys_props, t)
+            write_netcdf(ds_field, field_props, t)
         end
     end
 
     close_netcdf(ds)
+    close_netcdf(ds_field)
 end
 
 n_t = 2000

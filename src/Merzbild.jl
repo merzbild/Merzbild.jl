@@ -18,8 +18,7 @@ include("properties/field_props.jl")
 include("merging/merging.jl")
 include("pic/pic.jl")
 include("properties/surface_props.jl")
-include("io.jl")
-include("io_moments.jl")
+include("io/io.jl")
 include("convection/convection.jl")
 include("parallel/parallel.jl")
 
@@ -76,6 +75,7 @@ export CollisionData, CollisionDataFP
 export SurfProps, reduce_surf_props!
 export squash_pia!
 export NCDataHolder, NCDataHolderSurf, IOSkipList, IOSkipListSurf, NCDataHolderFlux, IOSkipListFlux, NCDataHolderMoments
+export NCDataHolderField, IOSkipListField
 export write_netcdf
 export close_netcdf
 export load_interaction_data, load_interaction_data_with_dummy, load_species_and_interaction_data
