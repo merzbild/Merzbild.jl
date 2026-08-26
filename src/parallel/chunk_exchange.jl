@@ -70,9 +70,8 @@ so that [`exchange_particles!`](@ref) can reject pairs of chunks with nothing to
 without scanning any cells.
 
 Must be called after [`sort_particles!`](@ref) and before [`exchange_particles!`](@ref),
-as it relies on `gridsort.cell_counts` holding the prefix sum of the per-cell particle counts
-left there by the sort. If not called, one should set `occ_lo` to 1 and `occ_hi` to `n_cells`
-in each chunk.
+as it simply copies over the bounds recorded by the sort. If not called, one should set
+`occ_lo` to 1 and `occ_hi` to `n_cells` in each chunk.
 
 # Positional arguments
 * `chunk_exchanger`: the `ChunkExchanger` instance in which to store the bounds
@@ -83,16 +82,13 @@ in each chunk.
 """
 function update_occupancy_bounds!(chunk_exchanger, gridsort, pia, chunk_id, species)
     @inbounds n_tot = pia.n_total[species]
-    cell_counts = gridsort.cell_counts
 
     if n_tot == 0
         @inbounds chunk_exchanger.occ_lo[chunk_id] = 1
         @inbounds chunk_exchanger.occ_hi[chunk_id] = 0
     else
-        # after sorting, cell_counts[cell+1] holds the number of particles in cells 1:cell-1,
-        # so the first entry reaching 1 (n_tot) is 2 past the first (last) occupied cell
-        @inbounds chunk_exchanger.occ_lo[chunk_id] = searchsortedfirst(cell_counts, 1) - 2
-        @inbounds chunk_exchanger.occ_hi[chunk_id] = searchsortedfirst(cell_counts, n_tot) - 2
+        @inbounds chunk_exchanger.occ_lo[chunk_id] = gridsort.occ_lo
+        @inbounds chunk_exchanger.occ_hi[chunk_id] = gridsort.occ_hi
     end
     return nothing
 end
@@ -567,6 +563,10 @@ end
 Restore indexing of a `ParticleVector` and the associated `ParticleIndexerArray`
 after particles have been swapped and pushed between chunks.
 
+The first and last cell of the chunk holding particles are recorded in the `GridSortInPlace`
+instance, so that [`update_occupancy_bounds!`](@ref) can be called after this function as well
+as after [`sort_particles!`](@ref).
+
 # Positional arguments
 * `chunk_exchanger`: the `ChunkExchanger` instance used to track post-swap and post-push indices
 * `gridsort`: The `GridSortInPlace` associated with the chunk
@@ -585,9 +585,11 @@ function sort_particles_after_exchange!(chunk_exchanger, gridsort, particles::Pa
     n_tot = 0
     offset = 0
 
-    cell_counts = gridsort.cell_counts
     sorted_indices = gridsort.sorted_indices
     p_index = particles.index
+
+    lo = chunk_exchanger.n_cells + 1
+    hi = 0
 
     n_chunks = chunk_exchanger.n_chunks
     ce_start1 = chunk_exchanger.start1
@@ -640,14 +642,15 @@ function sort_particles_after_exchange!(chunk_exchanger, gridsort, particles::Pa
         if indexer.n_group1 > 0
             indexer.start1 = offset + 1
             indexer.end1 = offset + cc
+
+            lo = min(lo, cell)
+            hi = max(hi, cell)
         else
             indexer.start1 = 0
             indexer.end1 = -1
         end
 
         offset += cc
-
-        cell_counts[cell] = cc
 
         indexer.n_group2 = 0
         indexer.start2 = 0
@@ -656,6 +659,9 @@ function sort_particles_after_exchange!(chunk_exchanger, gridsort, particles::Pa
 
     @inbounds pia.n_total[species] = n_tot
     @inbounds pia.index_last[species] = n_tot
+
+    gridsort.occ_lo = lo
+    gridsort.occ_hi = hi
 
     unsafe_copyto!(p_index, 1, sorted_indices, 1, n_tot)
 end

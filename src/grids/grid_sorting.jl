@@ -3,13 +3,26 @@
 
 Struct for in-place sorting of particles.
 
+The `occ_lo`/`occ_hi` fields record the first and last cell holding particles, as recorded by
+the most recent sorting call performed with this instance, to be used
+for multi-threaded simulations with particle exchange between threads.
+They describe that call only, and are
+meant to be consumed right after it, by [`update_occupancy_bounds!`](@ref); a
+`GridSortInPlace` shared between species or `ParticleIndexerArray` instances therefore
+holds the bounds of whichever was sorted last. They are `1`/`n_cells` before the first sort.
+
 # Fields
-* `cell_counts`: vector to store the number of particles in each cell + number of particles in all previous cells
+* `cell_counts`: scratch vector used to count the number of particles in each cell
+    and to compute the resulting offsets
 * `sorted_indices`: vector to store sorted particle indices
+* `occ_lo`: first cell holding particles during the last sort
+* `occ_hi`: last cell holding particles during the last sort
 """
 mutable struct GridSortInPlace
     cell_counts::Vector{Int64}  # n_cells + 1
     sorted_indices::Vector{Int64}
+    occ_lo::Int64
+    occ_hi::Int64
 end
 
 @doc """
@@ -24,7 +37,7 @@ Create a `GridSortInPlace` instance given a number of grid cells and number of p
     to set this to the maximum expected number of particles in the simulation to avoid resizing of arrays
     during a simulation
 """
-GridSortInPlace(n_cells::Integer, n_particles::Integer) = GridSortInPlace(zeros(Int64, n_cells + 1), zeros(Int64, n_particles))
+GridSortInPlace(n_cells::Integer, n_particles::Integer) = GridSortInPlace(zeros(Int64, n_cells + 1), zeros(Int64, n_particles), 1, n_cells)
 
 @doc """
     GridSortInPlace(grid::G, n_particles::Integer) where {G<:AbstractGrid}
@@ -48,6 +61,9 @@ have non-contiguous indices (arising for example from merging). This function
 assumes that at the start of the sorting, it is **not known** in which cell each particle is located,
 and therefore the cell for each particle has to be determined (by calling `get_cell`).
 
+The first and last cell holding particles are recorded in the `GridSortInPlace` instance,
+for use in [`update_occupancy_bounds!`](@ref).
+
 # Positional arguments
 * `gridsort`: the `GridSortInPlace` structure
 * `grid`: the grid (should have an `n_cells` field, and a `get_cell` function has to be defined for the grid type)
@@ -62,7 +78,8 @@ function sort_particles!(gridsort::GridSortInPlace, grid, particles::ParticleVec
     p_cell = particles.cell
     p_particles = particles.particles
 
-    @inbounds n_tot = pia.n_total[species] 
+    n_cells = grid.n_cells
+    @inbounds n_tot = pia.n_total[species]
     @inbounds if n_tot > length(sorted_indices)
         resize!(sorted_indices, n_tot + DELTA_PARTICLES)
     end
@@ -73,13 +90,16 @@ function sort_particles!(gridsort::GridSortInPlace, grid, particles::ParticleVec
         squash_pia!(particles, pia, species)
     end
 
+    lo = n_cells + 1
+    hi = 0
     @inbounds for i in 1:n_tot
         newcell = get_cell(grid, p_particles[p_index[i]].x)
         p_cell[i] = newcell
         cell_counts[newcell+1] += 1
+        lo = min(lo, newcell)
+        hi = max(hi, newcell)
     end
 
-    n_cells = grid.n_cells
     @inbounds for cell in 1:n_cells
         cell_start = cell_counts[cell] + 1
         cell_np = cell_counts[cell+1]
@@ -104,15 +124,15 @@ function sort_particles!(gridsort::GridSortInPlace, grid, particles::ParticleVec
         indexer.n_local = cell_np
     end
 
-    # the scatter pass decrements each entry back by the number of particles in the cell,
-    # leaving cell_counts[cell+1] equal to the number of particles in cells 1:cell-1.
-    # This (non-decreasing) state is relied upon by `update_occupancy_bounds!`
     @inbounds for i in n_tot:-1:1
         curr_cell = p_cell[i]
         sorted_indices[cell_counts[curr_cell+1]] = p_index[i]
 
         cell_counts[curr_cell+1] -= 1
     end
+
+    gridsort.occ_lo = lo
+    gridsort.occ_hi = hi
 
     unsafe_copyto!(p_index, 1, sorted_indices, 1, n_tot)
 
@@ -125,6 +145,9 @@ end
 Sort particles on a grid using an in-place sorting algorithm. The `pia` instance is allowed to
 have non-contiguous indices (arising for example from merging). This function
 assumes that at the start of the sorting, it is **known** in which cell each particle is located.
+
+The first and last cell holding particles are recorded in the `GridSortInPlace` instance,
+for use in [`update_occupancy_bounds!`](@ref).
 
 # Positional arguments
 * `gridsort`: the `GridSortInPlace` structure
@@ -139,7 +162,7 @@ function sort_particles!(gridsort::GridSortInPlace, particles, pia, species)
     p_cell = particles.cell
 
     n_cells = pia.n_cells
-    @inbounds n_tot = pia.n_total[species] 
+    @inbounds n_tot = pia.n_total[species]
     @inbounds if n_tot > length(sorted_indices)
         resize!(sorted_indices, n_tot + DELTA_PARTICLES)
     end
@@ -150,8 +173,13 @@ function sort_particles!(gridsort::GridSortInPlace, particles, pia, species)
         squash_pia!(particles, pia, species)
     end
 
+    lo = n_cells + 1
+    hi = 0
     @inbounds for i in 1:n_tot
-        cell_counts[p_cell[i]+1] += 1
+        newcell = p_cell[i]
+        cell_counts[newcell+1] += 1
+        lo = min(lo, newcell)
+        hi = max(hi, newcell)
     end
 
     @inbounds for cell in 1:n_cells
@@ -178,15 +206,15 @@ function sort_particles!(gridsort::GridSortInPlace, particles, pia, species)
         indexer.n_local = cell_np
     end
 
-    # the scatter pass decrements each entry back by the number of particles in the cell,
-    # leaving cell_counts[cell+1] equal to the number of particles in cells 1:cell-1.
-    # This (non-decreasing) state is relied upon by `update_occupancy_bounds!`
     @inbounds for i in n_tot:-1:1
         curr_cell = p_cell[i]
         sorted_indices[cell_counts[curr_cell+1]] = p_index[i]
 
         cell_counts[curr_cell+1] -= 1
     end
+
+    gridsort.occ_lo = lo
+    gridsort.occ_hi = hi
 
     unsafe_copyto!(p_index, 1, sorted_indices, 1, n_tot)
 

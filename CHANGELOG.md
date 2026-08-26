@@ -1,6 +1,9 @@
 # Changelog
 
 ## v0.8.3
+* `sort_particles!` and `sort_particles_after_exchange!` record the first and last cell holding particles
+in the `occ_lo`/`occ_hi` fields of the
+`GridSortInPlace` instance, for use by `update_occupancy_bounds!`
 * Added electrostatic Particle-in-Cell on a 1-D uniform grid: charge deposition (`deposit_charge!`,
 `normalize_charge_density!`), a Poisson solve (`PoissonSolver1DUniform`, `solve_poisson!`), and the gather + push
 (`accelerate_electric_field_x!`); `ElectrostaticFieldProps` struct to hold nodal charge density, potential, and electric field
