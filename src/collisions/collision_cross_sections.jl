@@ -150,8 +150,8 @@ Structure to hold data on computed cross-sections of electron-neutral interactio
 * `cs_excitation`: the computed electron-impact electronic excitation cross-section
 * `prob_vec`: a vector of probabilities of the processes (of length `2+n_excitations`). `prob_vec[1]` is the probability of elastic scattering,
     `prob_vec[2]` is the probability of electron-impact ionization, `prob_vec[3:2+n_excitations]` are the probabilities
-    of th 
-* `cdf_prob_vec`: a vector of cumulative probabilities of the processes (of length `3+n_excitations`), used for sampling a specific process:
+    of the electron-impact electronic excitation processes
+* `cdf_prob_vec`: a vector of cumulative probabilities of the processes (of length `2+n_excitations`), used for sampling a specific process:
     `cfd_prob_vec[1] = 0.0`, `cfd_prob_vec[n] = cfd_prob_vec[n-1] + prob_vec[n-1], n>1`
 """
 mutable struct ComputedCrossSections
@@ -604,21 +604,30 @@ function compute_cross_sections_only!(computed_cs, interaction, g, electron_neut
 
     @inbounds i_neutral = electron_neutral_interactions.neutral_indexer[neutral_species_index]
 
-    @inbounds computed_cs[i_neutral].n_excitations = electron_neutral_interactions.excitation_sink[i_neutral].n_reactions
+    @inbounds ccs = computed_cs[i_neutral]
+    @inbounds elastic_data = electron_neutral_interactions.elastic[i_neutral].data
+    @inbounds ionization_data = electron_neutral_interactions.ionization[i_neutral].data
+    @inbounds excitation_sink = electron_neutral_interactions.excitation_sink[i_neutral]
+
+    n_excitations = excitation_sink.n_reactions
+    ccs.n_excitations = n_excitations
+
+    cs_excitation = ccs.cs_excitation
+    excitation_data = excitation_sink.data
 
     if extend == CSExtendConstant
-        @inbounds computed_cs[i_neutral].cs_elastic = compute_tabulated_cs_constant_continuation(electron_neutral_interactions.elastic[i_neutral].data, E_coll_eV)
-        @inbounds computed_cs[i_neutral].cs_ionization = compute_tabulated_cs_constant_continuation(electron_neutral_interactions.ionization[i_neutral].data, E_coll_eV)
+        ccs.cs_elastic = compute_tabulated_cs_constant_continuation(elastic_data, E_coll_eV)
+        ccs.cs_ionization = compute_tabulated_cs_constant_continuation(ionization_data, E_coll_eV)
 
-        @inbounds for i in 1:computed_cs[i_neutral].n_excitations
-            computed_cs[i_neutral].cs_excitation[i] = compute_tabulated_cs_constant_continuation(electron_neutral_interactions.excitation_sink[i_neutral].data, E_coll_eV)
+        @inbounds for i in 1:n_excitations
+            cs_excitation[i] = compute_tabulated_cs_constant_continuation(excitation_data, E_coll_eV)
         end
     else
-        @inbounds computed_cs[i_neutral].cs_elastic = compute_tabulated_cs_zero_continuation(electron_neutral_interactions.elastic[i_neutral].data, E_coll_eV)
-        @inbounds computed_cs[i_neutral].cs_ionization = compute_tabulated_cs_zero_continuation(electron_neutral_interactions.ionization[i_neutral].data, E_coll_eV)
+        ccs.cs_elastic = compute_tabulated_cs_zero_continuation(elastic_data, E_coll_eV)
+        ccs.cs_ionization = compute_tabulated_cs_zero_continuation(ionization_data, E_coll_eV)
 
-        @inbounds for i in 1:computed_cs[i_neutral].n_excitations
-            computed_cs[i_neutral].cs_excitation[i] = compute_tabulated_cs_zero_continuation(electron_neutral_interactions.excitation_sink[i_neutral].data, E_coll_eV)
+        @inbounds for i in 1:n_excitations
+            cs_excitation[i] = compute_tabulated_cs_zero_continuation(excitation_data, E_coll_eV)
         end
     end
 
@@ -657,19 +666,27 @@ function compute_cross_sections!(computed_cs, interaction, g, electron_neutral_i
 
     @inbounds i_neutral = electron_neutral_interactions.neutral_indexer[neutral_species_index]
 
-    @inbounds computed_cs[i_neutral].cs_total = computed_cs[i_neutral].cs_elastic + computed_cs[i_neutral].cs_ionization + sum(computed_cs[i_neutral].cs_excitation)
+    @inbounds ccs = computed_cs[i_neutral]
 
-    computed_cs[i_neutral].prob_vec[1] = computed_cs[i_neutral].cs_elastic / computed_cs[i_neutral].cs_total
-    computed_cs[i_neutral].prob_vec[2] = computed_cs[i_neutral].cs_ionization / computed_cs[i_neutral].cs_total
-    @inbounds for i in 1:computed_cs[i_neutral].n_excitations
-        computed_cs[i_neutral].prob_vec[2+i] = computed_cs[i_neutral].cs_excitation[i] / computed_cs[i_neutral].cs_total
+    n_excitations = ccs.n_excitations
+    cs_excitation = ccs.cs_excitation
+    prob_vec = ccs.prob_vec
+    cdf_prob_vec = ccs.cdf_prob_vec
+
+    cs_total = ccs.cs_elastic + ccs.cs_ionization + sum(cs_excitation)
+    ccs.cs_total = cs_total
+
+    @inbounds prob_vec[1] = ccs.cs_elastic / cs_total
+    @inbounds prob_vec[2] = ccs.cs_ionization / cs_total
+    @inbounds for i in 1:n_excitations
+        prob_vec[2+i] = cs_excitation[i] / cs_total
     end
 
-    @inbounds computed_cs[i_neutral].cdf_prob_vec[1] = 0.0
-    @inbounds computed_cs[i_neutral].cdf_prob_vec[2] = computed_cs[i_neutral].prob_vec[1]
+    @inbounds cdf_prob_vec[1] = 0.0
+    @inbounds cdf_prob_vec[2] = prob_vec[1]
 
-    @inbounds for i in 1:computed_cs[i_neutral].n_excitations
-        computed_cs[i_neutral].cdf_prob_vec[2+i] = computed_cs[i_neutral].prob_vec[1+i] + computed_cs[i_neutral].cdf_prob_vec[1+i]
+    @inbounds for i in 1:n_excitations
+        cdf_prob_vec[2+i] = prob_vec[1+i] + cdf_prob_vec[1+i]
     end
 
     return E_coll_eV
