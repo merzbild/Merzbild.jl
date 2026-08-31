@@ -85,14 +85,14 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc, Δt, output_freq, n_timest
 
         # convect particles
         if (t < avg_start)
-            @timeit "convect" convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, Δt)
+            @timeit "convect" convect_particles_and_compute_cell!(rng, grid, bc_list, particles[1], pia, 1, species_data, Δt)
         else
-            @timeit "convect + surface compute" convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, surf_props, Δt)
+            @timeit "convect + surface compute" convect_particles_and_compute_cell!(rng, grid, bc_list, particles[1], pia, 1, species_data, surf_props, Δt)
             @timeit "avg surfprops" avg_props!(surf_props_avg, surf_props, n_avg)
         end
 
         # sort particles
-        @timeit "sort" sort_particles!(gridsorter, grid, particles[1], pia, 1)
+        @timeit "sort" sort_particles!(gridsorter, particles[1], pia, 1)
 
         # count % of particles where indexing is disordered
         if !(do_benchmark)
