@@ -4,10 +4,7 @@
     deposit_charge!(grid::Grid1DUniform, particles::ParticleVector, pia, species, species_data, field_props)
 
 Deposit the charge of the particles of a single species on the nodes of a 1-D uniform grid using
-first-order (cloud-in-cell) weighting: a particle located at a distance ``\\xi \\Delta x`` from the
-left node of its cell contributes a fraction ``1 - \\xi`` of its charge to the left node and a
-fraction ``\\xi`` to the right node.
-
+first-order (cloud-in-cell) weighting.
 The deposited values are accumulated, so the charge density has to be cleared by a call to
 [`clear_charge_density!`](@ref) or [`clear_props!`](@ref) before the first species is deposited,
 and [`normalize_charge_density!`](@ref) has to be called exactly once after the last species has
