@@ -1,6 +1,7 @@
 # Overview of capabilities
 
 This page provides an overview of the main capabilities of the code.
+A more detailed overview is given on the corresponding pages in the "Implemented Algorithms" section.
 
 ## Grids, fixed and variable weight DSMC
 |                        | **0D**                                        | **1D** |
@@ -22,7 +23,8 @@ See [the section on implemented collision algorithms](pic.md) for more details.
 
 ## Fokker-Planck collisions
 As an alternative to DSMC, one can use the stochastic Fokker-Planck algorithm to simulate the particle collisions.
-Currently, the linear Fokker-Planck model of [Gorji, Torrilhon, and Jenny (2011)](https://doi.org/10.1017/jfm.2011.188) is implemented (currently single-species only).
+Currently, the linear Fokker-Planck model of [Gorji, Torrilhon, and Jenny (2011)](https://doi.org/10.1017/jfm.2011.188) is implemented (currently single-species only). 
+For more details, see [Collision algorithms](@ref).
 
 See [the section on implemented collision algorithms](pic.md) for more details.
 
@@ -43,7 +45,7 @@ simulations:
 See [the section on implemented merging algorithms](merging.md) for more details.
 
 ## Cross-sections
-The Variable-Hard Sphere (VHS) model is implemented for collisions of neutral particles.
+The Variable-Hard Sphere (VHS) and Variable-Soft Sphere (VSS) model are implemented for collisions of neutral particles.
 For neutral-electron collisions, [LXCat](http://www.lxcat.net) data in XML format needs to be provided
 for the elastic scattering and electron-impact ionization cross-sections. Currently, only
 isotropic scattering is implemented for neutral-electron collisions.

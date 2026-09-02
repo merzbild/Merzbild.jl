@@ -20,6 +20,9 @@ Product species follow reactant species (same applies to particle arrays).
 
 1. `rng` is to be the first argument in a function signature
 
+1a. If a function is dispatched on an elastic scattering model tag (a subtype of `AbstractScatteringModel`),
+the tag comes directly after `rng`. This is also where `@scattering_barrier` inserts it.
+
 2. This is then followed by any function-specific structs.
 For example, a merging setting struct for particle merging, or collision structs
 for collisions: `collision_factors`, `collision_data`, `interaction`,

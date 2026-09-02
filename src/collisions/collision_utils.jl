@@ -59,6 +59,11 @@ Structure to store interaction parameters for a 2-species interaction.
 The VHS model uses the following power law: ``\\sigma_{VHS} = C g^(1 - 2 \\omega_{VHS})``, where
 ``omega`` is the exponent of the VHS potential, and ``C`` is the pre-computed factor:
 ``C = \\pi D_{VHS}^2 (2 T_{ref,VHS}/m_r)^{(\\omega_{VHS} - 0.5)} \\frac{1}{\\Gamma(2.5 - \\omega_{VHS})}``.
+The VSS model uses the same power law for the total cross-section, but a different scattering law.
+
+The elastic scattering model is fixed for a species pair and is stored in the `model` field
+as a [`Merzbild.ScatteringModel`](@ref) enum value, so that the array of `Interaction` instances
+stays concretely typed.
 
 # Fields
 * `m_r`: collision-reduced mass
@@ -70,6 +75,9 @@ The VHS model uses the following power law: ``\\sigma_{VHS} = C g^(1 - 2 \\omega
 * `vhs_Tref`: reference temperature for the VHS potential
 * `vhs_muref`: reference viscosity for the VHS potential
 * `vhs_factor`: pre-computed factor for calculation of the VHS cross-section
+* `vss_alpha`: exponent of the VSS scattering law (equal to 1.0 for the models with isotropic scattering)
+* `vss_inv_alpha`: pre-computed `1 / vss_alpha`
+* `model`: the `ScatteringModel` enum value of the elastic scattering model of the species pair
 """
 struct Interaction
     m_r::Float64
@@ -81,12 +89,16 @@ struct Interaction
     vhs_Tref::Float64
     vhs_muref::Float64
     vhs_factor::Float64 # = π * vhs_d^2 * (2 * vhs_Tref/m_r)^(vhs_o - 0.5) / gamma(2.5 - vhs_o)
+    vss_alpha::Float64
+    vss_inv_alpha::Float64
+    model::ScatteringModel
 end
 
 """
     Interaction(m1::Float64, m2::Float64, vhs_d::Float64, vhs_o::Float64, vhs_Tref::Float64)
 
-Construct an Interaction instance from the masses of the two species and the VHS parameters.
+Construct an Interaction instance using the VHS model from the masses of the two species
+and the VHS parameters.
 
 # Positional arguments
 * `m1`: molecular mass of the first species
@@ -95,17 +107,86 @@ Construct an Interaction instance from the masses of the two species and the VHS
 * `vhs_o`: VHS exponent (omega)
 * `vhs_Tref`: reference VHS temperature
 """
-function Interaction(m1::Float64, m2::Float64, vhs_d::Float64, vhs_o::Float64, vhs_Tref::Float64)
+Interaction(m1::Float64, m2::Float64, vhs_d::Float64, vhs_o::Float64, vhs_Tref::Float64) =
+    Interaction(VHS(), m1, m2, vhs_d, vhs_o, vhs_Tref)
+
+"""
+    Interaction(::VHS, m1::Float64, m2::Float64, vhs_d::Float64, vhs_o::Float64, vhs_Tref::Float64)
+
+Construct an Interaction instance using the VHS model from the masses of the two species
+and the VHS parameters.
+
+# Positional arguments
+* `m1`: molecular mass of the first species
+* `m2`: molecular mass of the second species
+* `vhs_d`: VHS diameter
+* `vhs_o`: VHS exponent (omega)
+* `vhs_Tref`: reference VHS temperature
+"""
+function Interaction(::VHS, m1::Float64, m2::Float64, vhs_d::Float64, vhs_o::Float64, vhs_Tref::Float64)
     m_r = m1 * m2 / (m1 + m2)
 
-    μ1 = m1 / (m1 + m2) 
-    μ2 = m2 / (m1 + m2) 
+    μ1 = m1 / (m1 + m2)
+    μ2 = m2 / (m1 + m2)
     vhs_exp = 1.0 - 2 * vhs_o
 
     return Interaction(m_r, μ1, μ2, vhs_d, vhs_o, vhs_exp, vhs_Tref,
                        compute_mu_ref(0.5 * (m1 + m2), vhs_o, vhs_Tref, vhs_d),
-                       compute_vhs_factor(vhs_Tref, vhs_d, vhs_o, m_r))
+                       compute_vhs_factor(vhs_Tref, vhs_d, vhs_o, m_r),
+                       1.0, 1.0, ScatteringVHS)
 end
+
+"""
+    Interaction(::VSS, m1::Float64, m2::Float64, vhs_d::Float64, vhs_o::Float64, vhs_Tref::Float64, vss_alpha::Float64)
+
+Construct an Interaction instance using the VSS model from the masses of the two species,
+the VHS parameters (which define the total cross-section), and the VSS exponent (which defines
+the scattering law). The reference viscosity is corrected by the factor
+``(\\alpha + 1)(\\alpha + 2) / (6\\alpha)`` accounting for the anisotropic scattering,
+see [`Merzbild.compute_vss_mu_ref_factor`](@ref).
+
+# Positional arguments
+* `m1`: molecular mass of the first species
+* `m2`: molecular mass of the second species
+* `vhs_d`: VHS diameter
+* `vhs_o`: VHS exponent (omega)
+* `vhs_Tref`: reference VHS temperature
+* `vss_alpha`: VSS exponent (alpha)
+"""
+function Interaction(::VSS, m1::Float64, m2::Float64, vhs_d::Float64, vhs_o::Float64, vhs_Tref::Float64,
+                     vss_alpha::Float64)
+    m_r = m1 * m2 / (m1 + m2)
+
+    μ1 = m1 / (m1 + m2)
+    μ2 = m2 / (m1 + m2)
+    vhs_exp = 1.0 - 2 * vhs_o
+
+    return Interaction(m_r, μ1, μ2, vhs_d, vhs_o, vhs_exp, vhs_Tref,
+                       compute_mu_ref(0.5 * (m1 + m2), vhs_o, vhs_Tref, vhs_d) * compute_vss_mu_ref_factor(vss_alpha),
+                       compute_vhs_factor(vhs_Tref, vhs_d, vhs_o, m_r),
+                       vss_alpha, 1.0 / vss_alpha, ScatteringVSS)
+end
+
+"""
+    compute_vss_mu_ref_factor(vss_alpha)
+
+Compute the factor ``(\\alpha + 1)(\\alpha + 2) / (6\\alpha)`` by which the VHS reference viscosity
+has to be multiplied to obtain the VSS reference viscosity for the same total cross-section.
+It is the inverse of the ratio of the VSS and VHS viscosity cross-sections
+``\\sigma_\\mu = \\sigma_T (1 - \\langle\\cos^2\\chi\\rangle)``, and is equal to 1 for
+``\\alpha = 1`` (isotropic scattering).
+
+# Positional arguments
+* `vss_alpha`: VSS exponent (alpha)
+
+# Returns
+* the reference viscosity correction factor
+
+# References
+* G.A. Bird, Eq. (4.63), Molecular gas dynamics and the direct simulation of gas flows,
+    [Clarendon Press, Oxford, 1994](https://doi.org/10.1093/oso/9780198561958.001.0001).
+"""
+compute_vss_mu_ref_factor(vss_alpha) = (vss_alpha + 1.0) * (vss_alpha + 2.0) / (6.0 * vss_alpha)
 
 """
     compute_vhs_factor(vhs_Tref, vhs_d, vhs_o, m_r)
@@ -162,6 +243,41 @@ CollisionDataFP(n_particles_in_cell) = CollisionDataFP(SVector{3,Float64}(0.0, 0
                                     zeros(n_particles_in_cell))
 
 """
+    interaction_from_toml(m1, m2, interaction_toml)
+
+Construct an `Interaction` instance from the masses of the two species and the dictionary
+of the interaction parameters of the species pair, as read from an interaction data TOML file.
+
+The elastic scattering model is given by the optional `model` key
+(see [`Merzbild.parse_scattering_model`](@ref)); if it is not present, the VHS model is used.
+Both models require the `vhs_d`, `vhs_o`, and `vhs_Tref` keys, with the VSS model
+additionally requiring the `vss_alpha` key.
+
+# Positional arguments
+* `m1`: molecular mass of the first species
+* `m2`: molecular mass of the second species
+* `interaction_toml`: dictionary of the interaction parameters of the species pair
+
+# Returns
+* the constructed `Interaction` instance
+
+# Throws
+`KeyError` if a parameter required by the scattering model is not found in the dictionary,
+`ArgumentError` if the scattering model is not recognized.
+"""
+function interaction_from_toml(m1, m2, interaction_toml)
+    model = haskey(interaction_toml, "model") ? parse_scattering_model(interaction_toml["model"]) : ScatteringVHS
+
+    if model == ScatteringVSS
+        return Interaction(VSS(), m1, m2, interaction_toml["vhs_d"], interaction_toml["vhs_o"],
+                           interaction_toml["vhs_Tref"], interaction_toml["vss_alpha"])
+    else
+        return Interaction(VHS(), m1, m2, interaction_toml["vhs_d"], interaction_toml["vhs_o"],
+                           interaction_toml["vhs_Tref"])
+    end
+end
+
+"""
     load_interaction_data(interactions_filename, species_data)
 
 Load interaction data from a TOML file given a list of species' data (list of `Species` instances).
@@ -171,6 +287,9 @@ The resulting 2-D array has the interaction data for `Species[i]` with `Species[
 It is not symmetric, as the relative collision masses `μ1` and `μ2` are swapped when
 comparing the `Interaction` instances in positions `[i,k]` and `[k,i]`. If no data is found,
 the function throws an error.
+
+The elastic scattering model of a species pair is set by the optional `model` key of the pair's
+entry in the file, defaulting to the VHS model, see [`Merzbild.interaction_from_toml`](@ref).
 
 # Positional arguments
 * `interactions_filename`: the path to the TOML file containing the data
@@ -203,10 +322,8 @@ function load_interaction_data(interactions_filename, species_data)
                     interaction_s1s2 = interactions_data[s2s1]
                 end
 
-                interactions_list[i,k] = Interaction(species_data[i].mass, species_data[k].mass,
-                                                     interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"], interaction_s1s2["vhs_Tref"])
-                interactions_list[k,i] = Interaction(species_data[k].mass, species_data[i].mass,
-                                                     interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"], interaction_s1s2["vhs_Tref"])
+                interactions_list[i,k] = interaction_from_toml(species_data[i].mass, species_data[k].mass, interaction_s1s2)
+                interactions_list[k,i] = interaction_from_toml(species_data[k].mass, species_data[i].mass, interaction_s1s2)
             end
         end
     end
@@ -246,6 +363,10 @@ It will load interaction data for all possible pair-wise interactions of the spe
 The resulting 2-D array has the interaction data for `Species[i]` with `Species[k]` in position `[i,k]`.
 It is not symmetric, as the relative collision masses `μ1` and `μ2` are swapped when
 comparing the `Interaction` instances in positions `[i,k]` and `[k,i]`.
+
+The elastic scattering model of a species pair is set by the optional `model` key of the pair's
+entry in the file, defaulting to the VHS model, see [`Merzbild.interaction_from_toml`](@ref);
+the dummy data is always filled in using the VHS model.
 
 # Positional arguments
 * `interactions_filename`: the path to the TOML file containing the data
@@ -288,10 +409,8 @@ function load_interaction_data(interactions_filename, species_data, dummy_vhs_d,
                 end
                 
                 if interaction_s1s2 !== nothing
-                    interactions_list[i,k] = Interaction(species_data[i].mass, species_data[k].mass,
-                                                         interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"], interaction_s1s2["vhs_Tref"])
-                    interactions_list[k,i] = Interaction(species_data[k].mass, species_data[i].mass,
-                                                         interaction_s1s2["vhs_d"], interaction_s1s2["vhs_o"], interaction_s1s2["vhs_Tref"])
+                    interactions_list[i,k] = interaction_from_toml(species_data[i].mass, species_data[k].mass, interaction_s1s2)
+                    interactions_list[k,i] = interaction_from_toml(species_data[k].mass, species_data[i].mass, interaction_s1s2)
                 else
 
                     interactions_list[i,k] = Interaction(species_data[i].mass, species_data[k].mass,
@@ -398,6 +517,7 @@ where ``T_1`` and ``m_1`` are the temperature and mass of the first species (`sp
 ``T_2`` and ``m_2`` are the temperature and mass of the second species (`species2`).
 This relative velocity estimate is then plugged into the VHS cross-section model to compute ``\\sigma``.
 The result is then multiplied by `Fnum` and an (optional) factor `mult_factor`.
+This is also the correct estimate for the VSS model, as it uses the same total cross-section as the VHS model.
 
 # Positional arguments
 * `interaction`: the `Interaction` instance for the interacting species

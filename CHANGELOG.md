@@ -12,7 +12,16 @@ in the `occ_lo`/`occ_hi` fields of the
 via `NCDataHolderField` and `write_netcdf`
 * Added `debye_length` and `plasma_frequency` functions, and the vacuum permittivity `eps_0`
 * `reduce_field_props!` for reduction after thread-safe charge deposition and 
+* Added support for VSS cross-sections (see new bundled interaction data file `vss.toml`)
+* The elastic scattering model is fixed per species pair and is stored in the `Interaction` instance as a
+`ScatteringModel` enum value (`ScatteringVHS`, `ScatteringVSS`), set by the optional `model` key
+of the species pair's entry in the interaction data TOML file (defaults to `"VHS"`); the VSS model additionally
+requires a `vss_alpha` key
+* `collide_2particles_vhs!` and `collide_2particles_vhs_equal_weight!` renamed to `collide_2particles!` and
+`collide_2particles_equal_weight!`, and now take the scattering model tag as their second argument
 * Improved test coverage
+* Elastic scattering models are no longer hard-coded to VHS: the VSS model (`VSS`) has been added alongside
+VHS (`VHS`), and both are supported by `ntc!`, `ntc_equal_weight!`, and `swpm!`
 
 ## v0.8.2
 * NNLS merging speed-ups

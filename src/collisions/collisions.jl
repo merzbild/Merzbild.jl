@@ -1,3 +1,4 @@
+include("scattering_models.jl")
 include("collision_scattering.jl")
 include("collision_cross_sections.jl")
 include("collision_ntc.jl")
