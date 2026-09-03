@@ -32,7 +32,7 @@ end
     deposit_charge!(grid::Grid1DUniform, particles::ParticleVector, pia, species, species_data, field_props, cell_chunk)
 
 Deposit the charge of the particles of a single species located in a subset of the cells of a 1-D
-uniform grid on the nodes of the grid.
+uniform grid on the nodes of the grid. **Note**: the particles are assumed to be sorted on the grid.
 
 In a multi-threaded simulation, each thread should deposit the particles of the cells it owns into its
 own `ElectrostaticFieldProps` instance; the per-thread instances are then summed into the global one
@@ -70,20 +70,6 @@ function deposit_charge!(grid::Grid1DUniform, particles::ParticleVector, pia, sp
 
             field_props.charge_density[cell] += (1.0 - ξ) * q_w
             field_props.charge_density[cell+1] += ξ * q_w
-        end
-
-        s2 = pia.indexer[cell,species].start2
-        if s2 > 0
-            e2 = pia.indexer[cell,species].end2
-
-            for i in s2:e2
-                p = particles[i]
-                ξ = p.x[1] * inv_Δx - shift
-                q_w = q_s * p.w
-
-                field_props.charge_density[cell] += (1.0 - ξ) * q_w
-                field_props.charge_density[cell+1] += ξ * q_w
-            end
         end
     end
 end
