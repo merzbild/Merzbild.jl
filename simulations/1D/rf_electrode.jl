@@ -72,6 +72,7 @@ function run(seed, L, nx, ppc, ndens, T_e, T_i, V0, f_rf, n_timesteps, output_fr
     # leapfrog: initialize the half-step staggering of the velocities
     deposit_charge!(poisson_solver, grid, particles, pia, species_data, field_props)
     solve_poisson!(poisson_solver, field_props)
+    write_netcdf(ds_field, field_props, 0)
 
     for species in 1:2
         accelerate_electric_field_x!(grid, particles[species], pia, species, species_data, field_props, -0.5 * Δt)

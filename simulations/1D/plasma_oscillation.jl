@@ -76,6 +76,7 @@ function run(L, nx, ppc, ndens, perturbation, n_timesteps, output_freq)
     # which is initialized by a single backward half-kick after the first field solve
     deposit_charge!(poisson_solver, grid, particles, pia, species_data, field_props)
     solve_poisson!(poisson_solver, field_props)
+    write_netcdf(ds_field, field_props, 0)
     accelerate_electric_field_x!(grid, particles[1], pia, 1, species_data, field_props, -0.5 * Δt)
 
     for t in 1:n_timesteps
