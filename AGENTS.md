@@ -29,6 +29,12 @@ collisions, merging, property computation, I/O) and the user writes their own ti
 * Memory allocations are to be avoided at all costs (unless new instances of structs are
   instantiated or completely new particles added); prefer explicit loops and re-using data to
   cleaner-looking operations using vectorized syntax.
+* Mutating (`!`) functions must end with an explicit `return nothing`. A function whose last
+  statement is an assignment (`field_props.net_charge_density = ρ_mean`, `arr[i] = x`) implicitly
+  returns that value instead, and the return value gets boxed whenever the call is not inlined
+  (dynamic dispatch, or an argument with a non-concrete type) — this allocates and shows up as
+  test failures in `test/test_malloc_*.jl` on some Julia versions only (typically the LTS, whose
+  optimizer is weaker than that of the current release).
 * Assume vector indices are never out-of-bounds unless writing debugging functions, use `@inbounds`
   where appropriate.
 * NEVER modify `Project.toml` and `Manifest.toml` by yourself.

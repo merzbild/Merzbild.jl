@@ -281,6 +281,7 @@ function assemble_poisson_rhs!(poisson_solver::PoissonSolver1DUniform, field_pro
     poisson_rhs_right!(poisson_solver, field_props, poisson_solver.bc_right)
 
     field_props.net_charge_density = 0.0
+    return nothing
 end
 
 function assemble_poisson_rhs!(poisson_solver::PoissonSolver1DUniform{PeriodicFieldBC1D, PeriodicFieldBC1D},
@@ -298,6 +299,7 @@ function assemble_poisson_rhs!(poisson_solver::PoissonSolver1DUniform{PeriodicFi
     end
 
     field_props.net_charge_density = ρ_mean
+    return nothing
 end
 
 """
@@ -410,6 +412,7 @@ function finalize_potential!(poisson_solver::PoissonSolver1DUniform{PeriodicFiel
     @inbounds field_props.potential[n_cells] = 0.0
     apply_gauge!(poisson_solver, field_props)
     @inbounds field_props.potential[poisson_solver.n_nodes] = field_props.potential[1]
+    return nothing
 end
 
 """
@@ -491,6 +494,7 @@ function compute_electric_field!(poisson_solver::PoissonSolver1DUniform{Periodic
 
     @inbounds field_props.electric_field[1] = -(field_props.potential[2] - field_props.potential[n_cells]) * half_inv_Δx
     @inbounds field_props.electric_field[N] = field_props.electric_field[1]
+    return nothing
 end
 
 """

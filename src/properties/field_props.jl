@@ -66,6 +66,7 @@ function clear_props!(field_props::ElectrostaticFieldProps)
     fill!(field_props.potential, 0.0)
     fill!(field_props.electric_field, 0.0)
     field_props.net_charge_density = 0.0
+    return nothing
 end
 
 """
@@ -81,6 +82,7 @@ the charge of the particles is deposited on the nodes at a new timestep.
 function clear_charge_density!(field_props::ElectrostaticFieldProps)
     fill!(field_props.charge_density, 0.0)
     field_props.net_charge_density = 0.0
+    return nothing
 end
 
 end
