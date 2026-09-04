@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.8.4
+* Faster NNLS merging via fused scaling of LHS and RHS, and fusing of the dual-vector computation into the Householder sweep
+
 ## v0.8.3
 * `sort_particles!` and `sort_particles_after_exchange!` record the first and last cell holding particles
 in the `occ_lo`/`occ_hi` fields of the
