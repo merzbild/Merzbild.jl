@@ -40,7 +40,7 @@ scales = [1 for _ in args.files]
 
 propname_map = {
     "electric_field": "electric_field",
-    "E": "electric_field",
+    "e": "electric_field",
     "potential": "potential",
     "phi": "potential",
     "charge_density": "charge_density",
@@ -61,7 +61,7 @@ for label, file, sc in zip(labels, args.files, scales):
         nt = np.shape(ds.variables[pn][:].data)[0]
         x_arr = np.linspace(0, nx - 1, nx)
 
-        data_arr = np.asarray(ds.variables[pn][:].data[:, 0, :])
+        data_arr = np.asarray(ds.variables[pn][:].data[:, :])
         for i in range(startt, nt):
             ax.plot(x_arr * sc, data_arr[i, :], label=f"{label}, nt={i}", linewidth=2)
     except KeyError:
