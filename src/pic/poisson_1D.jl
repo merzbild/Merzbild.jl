@@ -83,10 +83,10 @@ boundary condition paired with a non-periodic one).
 # Returns
 Tuple of the number of unknowns and the node offset.
 """
-poisson_unknowns(n_cells, bc_left::DirichletFieldBC1D, bc_right::DirichletFieldBC1D) = (n_cells - 1, 1)
-poisson_unknowns(n_cells, bc_left::NeumannFieldBC1D, bc_right::DirichletFieldBC1D) = (n_cells, 0)
-poisson_unknowns(n_cells, bc_left::DirichletFieldBC1D, bc_right::NeumannFieldBC1D) = (n_cells, 1)
-poisson_unknowns(n_cells, bc_left::PeriodicFieldBC1D, bc_right::PeriodicFieldBC1D) = (n_cells - 1, 0)
+poisson_unknowns(n_cells, bc_left::DirichletFieldBC1D, bc_right::DirichletFieldBC1D) = (n_cells - 1, Int64(1))
+poisson_unknowns(n_cells, bc_left::NeumannFieldBC1D, bc_right::DirichletFieldBC1D) = (n_cells, Int64(0))
+poisson_unknowns(n_cells, bc_left::DirichletFieldBC1D, bc_right::NeumannFieldBC1D) = (n_cells, Int64(1))
+poisson_unknowns(n_cells, bc_left::PeriodicFieldBC1D, bc_right::PeriodicFieldBC1D) = (n_cells - 1, Int64(0))
 
 function poisson_unknowns(n_cells, bc_left::NeumannFieldBC1D, bc_right::NeumannFieldBC1D)
     throw(ErrorException("Neumann boundary conditions on both sides of the domain lead to a singular"
