@@ -112,11 +112,18 @@ Merzbild.ccm_vel
 Merzbild.ccm_pos
 Merzbild.compute_lhs_and_rhs!
 Merzbild.compute_lhs_and_rhs_rate_preserving!
+Merzbild.compute_row_scale_vref!
+Merzbild.compute_row_scale_variance!
+Merzbild.compute_row_scale_spatial_variance!
+Merzbild.compute_row_scale!
+Merzbild.apply_row_scale!
 Merzbild.scale_lhs_rhs_variance!
 Merzbild.scale_lhs_rhs_vref!
 Merzbild.scale_lhs_rhs_spatial_variance!
 Merzbild.scale_lhs_rhs!
+Merzbild.scale_lhs_rhs_columns!
 Merzbild.scale_lhs_rhs_rate_preserving!
+Merzbild.scale_lhs_rhs_columns_rate_preserving!
 Merzbild.compute_post_merge_particles_nnls!
 Merzbild.OctreeCell
 Merzbild.OctreeFullCell
@@ -217,6 +224,7 @@ Merzbild.binary_search
 Merzbild.linear_interpolation
 Merzbild.compute_mixed_moment
 Merzbild.scale_columns!
+Merzbild.scale_rows_and_columns!
 ```
 
 ## NNLS

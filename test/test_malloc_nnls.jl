@@ -140,6 +140,17 @@
         Merzbild.compute_lhs_and_rhs!(nnls, lhs_matrix, vel_pos_matrix, pv, pia, 1, 2)
         bytes_scale_variance = @allocated Merzbild.scale_lhs_rhs!(nnls, lhs_matrix, :variance, lhs_ncols)
         @test bytes_scale_variance == 0
+
+        column_norms = zeros(lhs_ncols)
+        Merzbild.compute_lhs_and_rhs!(nnls, lhs_matrix, vel_pos_matrix, pv, pia, 1, 2)
+        Merzbild.scale_lhs_rhs_columns!(nnls, lhs_matrix, column_norms, :vref)
+        Merzbild.compute_lhs_and_rhs!(nnls, lhs_matrix, vel_pos_matrix, pv, pia, 1, 2)
+        bytes_scale_columns_vref = @allocated Merzbild.scale_lhs_rhs_columns!(nnls, lhs_matrix, column_norms, :vref)
+        @test bytes_scale_columns_vref == 0
+
+        Merzbild.compute_lhs_and_rhs!(nnls, lhs_matrix, vel_pos_matrix, pv, pia, 1, 2)
+        bytes_scale_columns_variance = @allocated Merzbild.scale_lhs_rhs_columns!(nnls, lhs_matrix, column_norms, :variance)
+        @test bytes_scale_columns_variance == 0
     end
 
     @testset "approximate rate-preserving computes" begin
@@ -166,6 +177,12 @@
 
         bytes_scale = @allocated Merzbild.scale_lhs_rhs_rate_preserving!(nnls_rp, lhs_matrix, cs_ref, cs_ref, :variance, lhs_ncols)
         @test bytes_scale == 0
+
+        column_norms = zeros(lhs_ncols)
+        Merzbild.scale_lhs_rhs_columns_rate_preserving!(nnls_rp, lhs_matrix, column_norms, cs_ref, cs_ref, :variance)
+        bytes_scale_columns = @allocated Merzbild.scale_lhs_rhs_columns_rate_preserving!(nnls_rp, lhs_matrix, column_norms,
+                                                                                         cs_ref, cs_ref, :variance)
+        @test bytes_scale_columns == 0
     end
 
     @testset "exact rate-preserving computes" begin

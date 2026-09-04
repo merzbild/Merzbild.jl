@@ -553,4 +553,43 @@
     @test_throws ArgumentError mnnls_wrong = NNLSMerge([[1, 1, 3]], 25; multi_index_moments_pos=[[-1, 1, 1]], matrix_ncol_nprealloc=10)
     @test_throws ArgumentError mnnls_wrong = NNLSMerge([[1, 1, 3]], 25; multi_index_moments_pos=[[1, -1, 1]], matrix_ncol_nprealloc=10)
     @test_throws ArgumentError mnnls_wrong = NNLSMerge([[1, 1, 3]], 25; multi_index_moments_pos=[[1, 1, -1]], matrix_ncol_nprealloc=10)
+
+    # the fused row+column scaling has to reproduce the separate row scaling followed by the column scaling
+    for pos_mim in ([], [[1,0,0],[0,1,0],[2,0,2]])
+        for scaling in (:vref, :variance)
+            particles = [create_particles2(mult=2.0, mult2=2.0)]
+            pia = ParticleIndexerArray(length(particles[1]))
+            lhs_ncols = length(particles[1])
+
+            mnnls_fused = NNLSMerge(add_vel_moments, 30; multi_index_moments_pos=pos_mim)
+            mnnls_split = NNLSMerge(add_vel_moments, 30; multi_index_moments_pos=pos_mim)
+            for mnnls in (mnnls_fused, mnnls_split)
+                mnnls.vref = 2.0
+                mnnls.inv_vref = 0.5
+            end
+
+            lhs_fused = zeros(mnnls_fused.n_total_conserved, lhs_ncols)
+            lhs_split = zeros(mnnls_split.n_total_conserved, lhs_ncols)
+            vel_pos_matrix = zeros(6, lhs_ncols)
+            column_norms_fused = zeros(lhs_ncols)
+            column_norms_split = zeros(lhs_ncols)
+
+            Merzbild.compute_lhs_and_rhs!(mnnls_fused, lhs_fused, vel_pos_matrix, particles[1], pia, 1, 1)
+            Merzbild.compute_lhs_and_rhs!(mnnls_split, lhs_split, vel_pos_matrix, particles[1], pia, 1, 1)
+
+            Merzbild.scale_lhs_rhs_columns!(mnnls_fused, lhs_fused, column_norms_fused, scaling)
+            Merzbild.scale_lhs_rhs!(mnnls_split, lhs_split, scaling, lhs_ncols)
+            Merzbild.scale_columns!(lhs_split, column_norms_split)
+
+            @test maximum(abs.(mnnls_fused.rhs_vector - mnnls_split.rhs_vector)) < 2*eps()
+            @test maximum(abs.(mnnls_fused.scalev - mnnls_split.scalev)) < 2*eps()
+            @test maximum(abs.(mnnls_fused.scalex - mnnls_split.scalex)) < 2*eps()
+            @test maximum(abs.(lhs_fused - lhs_split)) < 4*eps()
+            @test maximum(abs.(column_norms_fused - column_norms_split) ./ column_norms_split) < 4*eps()
+
+            for i in 1:lhs_ncols
+                @test abs(norm(lhs_fused[:,i], 2) - 1.0) < 8*eps()
+            end
+        end
+    end
 end
