@@ -63,7 +63,7 @@
     np_in_cells = [[0,1,1,1], [4,0,0,0]]
     offsets = [[0,1,2,3], [1,0,0,0]]
 
-    function run_exchange(use_bounds)
+    function setup_chunks()
         particles_chunks = [[ParticleVector(8)] for i in 1:n_chunks]
         pia_chunks = [ParticleIndexerArray(n_cells_ex, 1) for i in 1:n_chunks]
         chunk_exchanger = ChunkExchanger(cell_chunks, n_cells_ex)
@@ -90,6 +90,12 @@
             end
         end
 
+        return particles_chunks, pia_chunks, chunk_exchanger
+    end
+
+    function run_exchange(use_bounds)
+        particles_chunks, pia_chunks, chunk_exchanger = setup_chunks()
+
         if use_bounds
             # chunk 1 holds particles in cells 2:4, chunk 2 holds particles in cell 1 only
             chunk_exchanger.occ_lo[1] = 2
@@ -110,4 +116,24 @@
     ce_full, w_full = run_exchange(false)
     @test ce_bounded == ce_full
     @test w_bounded == w_full
+
+    # the re-sort after an exchange has to record the occupancy of the chunk's own cells,
+    # so that the bounds are correct at the next exchange without an intervening sort_particles!
+    particles_chunks, pia_chunks, chunk_exchanger = setup_chunks()
+    gridsorter_chunks = [GridSortInPlace(n_cells_ex, 8) for i in 1:n_chunks]
+
+    exchange_particles!(chunk_exchanger, particles_chunks, pia_chunks, cell_chunks, 1)
+
+    for chunk_id in 1:n_chunks
+        sort_particles_after_exchange!(chunk_exchanger, gridsorter_chunks[chunk_id],
+                                       particles_chunks[chunk_id][1], pia_chunks[chunk_id],
+                                       cell_chunks[chunk_id], 1)
+        update_occupancy_bounds!(chunk_exchanger, gridsorter_chunks[chunk_id],
+                                 pia_chunks[chunk_id], chunk_id, 1)
+
+        occupied = [cell for cell in 1:n_cells_ex
+                    if pia_chunks[chunk_id].indexer[cell,1].n_group1 > 0]
+        @test chunk_exchanger.occ_lo[chunk_id] == minimum(occupied)
+        @test chunk_exchanger.occ_hi[chunk_id] == maximum(occupied)
+    end
 end

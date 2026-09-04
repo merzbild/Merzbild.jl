@@ -1,4 +1,26 @@
-# Coding conventions
+# Contribution guidelines and coding conventions
+
+## Use of AI
+
+Use of AI tools (AI-assisted autocomplete does not count) is allowed, but has to be disclosed.
+AI-generated documentation needs to be human-edited, please make sure it stays concise and to the point.
+
+It is strongly suggested to use the [https://www.visidata.org/blog/2026/ai/](Visidata self-assessment guidelines)
+and to mention to which level the AI use corresponds.
+
+The brief guidelines are as follows:
+
+- Level 0: Human did not use AI at all
+- Level 1: Human asked chatbot for ideas
+- Level 2: Human coded with minor assists
+- Level 3: Human coded, bots assisted non-trivially
+- Level 4: Human coded, bots helped significantly
+- Level 5: Bots coded, human understands completely
+- Level 6: Bots coded, human understands mostly
+- Level 7: Human specced, bots coded
+- Level 8: Bots planned, human approved
+- Level 9: Human fired-and-forgot
+- Level 10: Rogue bots, zero human attention
 
 ## Naming conventions
 
@@ -19,6 +41,9 @@ pair used in a function.
 Product species follow reactant species (same applies to particle arrays).
 
 1. `rng` is to be the first argument in a function signature
+
+1a. If a function is dispatched on an elastic scattering model tag (a subtype of `AbstractScatteringModel`),
+the tag comes directly after `rng`. This is also where `@scattering_barrier` inserts it.
 
 2. This is then followed by any function-specific structs.
 For example, a merging setting struct for particle merging, or collision structs

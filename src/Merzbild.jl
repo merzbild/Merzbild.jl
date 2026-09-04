@@ -14,11 +14,11 @@ include("properties/flux_props.jl")
 include("properties/collisional_props.jl")
 include("collisions/collisions.jl")
 include("grids/grids.jl")
+include("properties/field_props.jl")
 include("merging/merging.jl")
 include("pic/pic.jl")
 include("properties/surface_props.jl")
-include("io.jl")
-include("io_moments.jl")
+include("io/io.jl")
 include("convection/convection.jl")
 include("parallel/parallel.jl")
 
@@ -29,7 +29,7 @@ const DELTA_PARTICLES::Int64 = 256
     MERZBILD_DATA_PATH
 
 Absolute path to the `data` directory bundled with Merzbild.jl, holding the built-in species
-(`particles.toml`) and interaction (`vhs.toml`, `pseudo_maxwell.toml`) data files. Use it to load
+(`particles.toml`) and interaction (`vhs.toml`, `pseudo_maxwell.toml`, `vss.toml`) data files. Use it to load
 bundled data independently of the current working directory, e.g.
 `load_species_data(joinpath(MERZBILD_DATA_PATH, "particles.toml"), "Ar")`.
 """
@@ -65,6 +65,8 @@ export sample_maxwellian_on_grid!, sample_on_grid!, bkw, maxwellian
 export load_species_data, Particle, sample_particles_equal_weight!
 export sample_particles_phase_box_weighted!
 export Species, Interaction
+export AbstractScatteringModel, VHS, VSS
+export ScatteringVHS, ScatteringVSS
 export compute_props!, compute_props_sorted!
 export compute_moment_scaling!, compute_moments!
 export clear_props!, avg_props!
@@ -75,6 +77,7 @@ export CollisionData, CollisionDataFP
 export SurfProps, reduce_surf_props!
 export squash_pia!
 export NCDataHolder, NCDataHolderSurf, IOSkipList, IOSkipListSurf, NCDataHolderFlux, IOSkipListFlux, NCDataHolderMoments
+export NCDataHolderField, IOSkipListField
 export write_netcdf
 export close_netcdf
 export load_interaction_data, load_interaction_data_with_dummy, load_species_and_interaction_data
@@ -96,7 +99,12 @@ export create_computed_crosssections, DataMissingException
 export ScatteringIsotropic, ScatteringOkhrimovskyy
 export ElectronEnergySplitEqual, ElectronEnergySplitZeroE
 export CSExtendZero, CSExtendConstant
-export accelerate_constant_field_x!
+export accelerate_constant_field_x!, accelerate_electric_field_x!
+export ElectrostaticFieldProps, clear_charge_density!
+export DirichletFieldBC1D, NeumannFieldBC1D, PeriodicFieldBC1D
+export PoissonSolver1DUniform, deposit_charge!, normalize_charge_density!, solve_poisson!
+export reduce_field_props!
+export eps_0, debye_length, plasma_frequency
 export estimate_sigma_g_w_max_ntc_n_e!, ntc_n_e!, ntc_n_e_es!
 export ParticleVector
 export AbstractGrid, Grid1DUniform, write_grid

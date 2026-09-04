@@ -27,6 +27,8 @@ Merzbild.find_index_last_after_group2_delete!
 ## Loading species and interaction data
 ```@docs
 Merzbild.compute_mu_ref
+Merzbild.compute_vss_mu_ref_factor
+Merzbild.interaction_from_toml
 ```
 
 ## Sampling
@@ -44,16 +46,22 @@ Merzbild.sample_maxwellian!
 Merzbild.norm3
 Merzbild.compute_n_coll_single_species
 Merzbild.compute_n_coll_two_species
-Merzbild.collide_2particles_vhs!
-Merzbild.collide_2particles_vhs_equal_weight!
+Merzbild.collide_2particles!
+Merzbild.collide_2particles_equal_weight!
 Merzbild.compute_vhs_factor
 Merzbild.compute_com!
 Merzbild.compute_g!
 Merzbild.compute_g_new_ionization!
+Merzbild.scatter!
 Merzbild.scatter_vhs!
+Merzbild.scatter_vss!
 Merzbild.scatter_electron_vhs!
 Merzbild.scatter_ionization_electrons_and_ion!
+Merzbild.sigma
 Merzbild.sigma_vhs
+Merzbild.@scattering_barrier
+Merzbild.SCATTERING_MODEL_TAGS
+Merzbild.parse_scattering_model
 Merzbild.compute_tabulated_cs_constant_continuation
 Merzbild.compute_tabulated_cs_zero_continuation
 Merzbild.compute_cross_sections_only!
@@ -141,6 +149,26 @@ Merzbild.get_cell
 Merzbild.convect_single_particle!
 Merzbild.convect_single_particle_periodic!
 Merzbild.set_x
+```
+
+## Particle-in-Cell
+```@docs
+Merzbild.AbstractFieldBC1D
+Merzbild.poisson_unknowns
+Merzbild.set_neumann_diagonal_left!
+Merzbild.set_neumann_diagonal_right!
+Merzbild.factorize_poisson!
+Merzbild.poisson_rhs_left!
+Merzbild.poisson_rhs_right!
+Merzbild.assemble_poisson_rhs!
+Merzbild.solve_tridiagonal!
+Merzbild.apply_gauge!
+Merzbild.finalize_potential_left!
+Merzbild.finalize_potential_right!
+Merzbild.finalize_potential!
+Merzbild.electric_field_left!
+Merzbild.electric_field_right!
+Merzbild.compute_electric_field!
 ```
 
 ## Particle-surface interactions

@@ -176,8 +176,8 @@ end
     swpm!(rng, collision_factors_swpm, collision_data, interaction, particles::ParticleVector{D}, pia,
           cell, species, G, Δt, V)
 
-Perform elastic collisions between variable-weight particles of same species using the SWPM algorithm
-and the VHS cross-section model.
+Perform elastic collisions between variable-weight particles of same species using the SWPM algorithm.
+The elastic scattering model is taken from the `Interaction` instance of the species pair.
 During a collision of particles with weights ``w_i``, ``w_j``, the weights are depleted by
 ``\\min(w_i, w_j) / (1+G)``, where ``G \\geq 0`` is a user-defined parameter.
 
@@ -199,6 +199,43 @@ During a collision of particles with weights ``w_i``, ``w_j``, the weights are d
     [Springer Berlin, Heidelberg, 2005](https://doi.org/10.1007/3-540-27689-0).
 """
 function swpm!(rng, collision_factors_swpm, collision_data, interaction, particles::ParticleVector{D}, pia,
+               cell, species, G, Δt, V) where D
+    @inbounds model = interaction[species, species].model
+
+    @scattering_barrier model swpm!(rng, collision_factors_swpm, collision_data, interaction, particles, pia,
+                                     cell, species, G, Δt, V)
+end
+
+"""
+    swpm!(rng, model::AbstractScatteringModel, collision_factors_swpm, collision_data, interaction,
+          particles::ParticleVector{D}, pia, cell, species, G, Δt, V)
+
+Perform elastic collisions between variable-weight particles of same species using the SWPM algorithm
+and the elastic scattering model `model`, overriding the model stored in the `Interaction` instance
+of the species pair.
+During a collision of particles with weights ``w_i``, ``w_j``, the weights are depleted by
+``\\min(w_i, w_j) / (1+G)``, where ``G \\geq 0`` is a user-defined parameter.
+
+# Positional arguments
+* `rng`: the random number generator
+* `model`: the `AbstractScatteringModel` singleton tag of the scattering model
+* `collision_factors_swpm`: the `CollisionFactorsSWPM` for the species in question in the cell
+* `collision_data`: `CollisionData` instance used for storing collisional quantities
+* `interaction`: 2-dimensional array of `Interaction` instances for all possible species pairs
+* `particles`: `ParticleVector` of the particles being collided
+* `pia`: the `ParticleIndexerArray`
+* `cell`: the index of the cell in which collisions are performed
+* `species`: the index of the species for which collisions are performed
+* `G`: non-negative value defining the weight transfer function
+* `Δt`: timestep
+* `V`: cell volume
+
+# References
+* S. Rjasanow, W.Wagner, Stochastic numerics for the Boltzmann equation.
+    [Springer Berlin, Heidelberg, 2005](https://doi.org/10.1007/3-540-27689-0).
+"""
+function swpm!(rng, model::AbstractScatteringModel, collision_factors_swpm, collision_data, interaction,
+               particles::ParticleVector{D}, pia,
                cell, species, G, Δt, V) where D
     # single-species swpm
     # find w_max
@@ -252,8 +289,8 @@ function swpm!(rng, collision_factors_swpm, collision_data, interaction, particl
         # println("NTC: ", particle_indexer.n_total, ", ", length(particles))
         if (collision_data.g > eps())
 
-            sigma = sigma_vhs(interaction[species, species], collision_data.g)
-            sigma_g_max = sigma * collision_data.g
+            sigma_coll = sigma(model, interaction[species, species], collision_data.g)
+            sigma_g_max = sigma_coll * collision_data.g
 
             # update (σ g)_max if needed
             collision_factors_swpm.sigma_g_max = max(sigma_g_max, collision_factors_swpm.sigma_g_max)
@@ -279,8 +316,8 @@ function swpm!(rng, collision_factors_swpm, collision_data, interaction, particl
                 particles[pia.n_total[species]].w = Δw
                 particles[pia.n_total[species]].v = particles[k].v
                 particles[pia.n_total[species]].x = particles[k].x
-                scatter_vhs!(rng, collision_data, interaction[species, species],
-                             particles[pia.n_total[species]-1], particles[pia.n_total[species]])
+                scatter!(rng, model, collision_data, interaction[species, species],
+                         particles[pia.n_total[species]-1], particles[pia.n_total[species]])
             end
         end
     end

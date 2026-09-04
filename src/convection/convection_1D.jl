@@ -253,8 +253,9 @@ function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, bc_list, 
     @inbounds if pia.contiguous[species]
         @inbounds n_tot = pia.n_total[species]
         @inbounds for i in 1:n_tot
-            convect_single_particle!(rng, grid, bc_list, particles[i], species, Δt)
-            particles.cell[i] = get_cell(grid, particles[i].x)
+            p = particles[i]
+            convect_single_particle!(rng, grid, bc_list, p, species, Δt)
+            particles.cell[i] = get_cell(grid, p.x)
         end
     else
         n_cells = grid.n_cells
@@ -263,8 +264,9 @@ function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, bc_list, 
             e = pia.indexer[cell, species].end1
             
             for i in s:e
-                convect_single_particle!(rng, grid, bc_list, particles[i], species, Δt)
-                particles.cell[i] = get_cell(grid, particles[i].x)
+                p = particles[i]
+                convect_single_particle!(rng, grid, bc_list, p, species, Δt)
+                particles.cell[i] = get_cell(grid, p.x)
             end
 
             if pia.indexer[cell, species].n_group2 > 0
@@ -272,8 +274,9 @@ function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, bc_list, 
                 e = pia.indexer[cell, species].end2
             
                 for i in s:e
-                    convect_single_particle!(rng, grid, bc_list, particles[i], species, Δt)
-                    particles.cell[i] = get_cell(grid, particles[i].x)
+                    p = particles[i]
+                    convect_single_particle!(rng, grid, bc_list, p, species, Δt)
+                    particles.cell[i] = get_cell(grid, p.x)
                 end
             end
         end

@@ -2,7 +2,9 @@
 # runtests_threading.jl, these only exercise anything when the process has >1 thread,
 # so when the suite runs single-threaded each file is relaunched in a subprocess that
 # has threads. Base.julia_cmd() propagates --check-bounds and --code-coverage.
-const MULTITHREADED_TESTS = ["test_couette_chunked_threaded.jl"]
+const MULTITHREADED_TESTS = ["test_couette_chunked_threaded.jl",
+                             "test_pic_deposition_threaded.jl",
+                             "test_pic_plasma_oscillation_threaded.jl"]
 const MULTITHREADED_NTHREADS = min(4, Sys.CPU_THREADS)
 
 if Threads.nthreads() > 1

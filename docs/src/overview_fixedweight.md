@@ -6,7 +6,7 @@ is implemented for fixed-weight DSMC simulations.
 
 ## Loading interaction data: Interaction
 First, we need to load interaction data for the species the collisions of which we want to model.
-This data includes things like the collision-reduced mass and VHS parameters. The VHS
+This data includes things like the collision-reduced mass and VHS/VSS parameters. The VHS/VSS
 parameters are collision species pair-specific. These data are stored in an `Interaction` instance.
 These `Interaction` instances are stored in a `n_species x n_species` matrix, where
 the `(i,j)`-th element contains the interaction data for collisions of particles of species `i` with 
@@ -19,7 +19,9 @@ One can also use [`load_interaction_data_with_dummy`](@ref) function, which will
 in case data for a specific interaction
 is missing in the TOML file, but will just create an interaction using the passed dummy
 parameters. This is relevant for electron-neutral interactions, for example, since 
-VHS collision parameters don't really make sense for such interactions, but are required to fill in the fields.
+VHS/VSS collision parameters don't really make sense for such interactions, but are required to fill in the fields.
+The choice between VHS and VSS models is given by the `model` keyword for an interaction pair in the TOML
+file (defaulting to the VHS model if the keyword is not specified).
 
 An additional utility function `load_species_and_interaction_data` is also available, which loads both
 the species' and interaction data for those species at the same time.
@@ -45,7 +47,7 @@ Version of the `create_collision_factors_array` function that automatically esti
 available.
 
 This will pre-compute  ``(\sigma g w)_{max}`` based on a list of temperatures for each species by computing the
-average thermal velocities and calculating the value of the VHS collision cross-section:
+average thermal velocities and calculating the value of the collision cross-section (in this case, VHS):
 ```julia
 g_thermal1 = sqrt(2 * T1 * k_B / species1.mass)
 g_thermal2 = sqrt(2 * T2 * k_B / species2.mass)
@@ -61,7 +63,7 @@ Now that the interaction data has been loaded, the `CollisionData` instance to s
 has been instantiated, the 3-dimensional array of `CollisionFactors` has been created, and the ``(\sigma g w)_{max}``
 values precomputed, one can perform collisions.
 
-Single-species elastic VHS collisions for fixed-weight particles can be performed by calling
+Single-species elastic collisions for fixed-weight particles can be performed by calling
 [`ntc_equal_weight!`](@ref).
 A more generic function [`ntc!`](@ref)
 is available, which checks whether particles have equal or non-equal weights (see [Variable-weight DSMC simulations](@ref)); for
@@ -70,8 +72,11 @@ Here `collision_factors` is the specific instance of `CollisionFactors`, i.e. a 
 3-dimensional array of `CollisionFactors`. `Δt` is the timestep, and `V` is the volume of the physical cell
 (for spatially homogeneous simulations this can be set to 1.0).
 
-Multi-species elastic VHS collisions are performed in a similar fashion, by calling
+Multi-species elastic collisions are performed in a similar fashion, by calling
 `ntc!(rng, collision_factors, collision_data, interaction, particles_1, particles_2, pia, cell, species1, species2, Δt, V)`.
+
+The function will use the specific (VHS/VSS) scattering model stored in the `interaction` and specialize on that model
+for efficiency (i.e., the check for which scattering to use will not be done for every particle-particle collision).
 
 ## Example: bringing it all together
 An example of computation of collisions for a two-species mixture is presented here.

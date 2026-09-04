@@ -19,6 +19,7 @@ include("test_2species_equal_weight0Dparticles.jl")  # test fixed-weight collisi
 include("test_bkw_varweight_octree_0Dparticle.jl")  # test variable weight BKW + octree merging with 0D particles"
 include("test_1D_couette_varweight_1DParticle.jl")  # test variable weight Couette + octree merging with 1D particles
 include("test_1D_couette_varweight_last_index.jl")  # test variable weight Couette with last_index and less squashing
+include("test_pic_plasma_oscillation.jl")  # test the frequency of a cold plasma oscillation against the plasma frequency
 
 
 # tests assume that VHS data for Ar, He is

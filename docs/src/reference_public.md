@@ -37,10 +37,20 @@ MERZBILD_DATA_PATH
 Species
 Interaction
 Interaction(m1::Float64, m2::Float64, vhs_d::Float64, vhs_o::Float64, vhs_Tref::Float64)
+Interaction(::VHS, m1::Float64, m2::Float64, vhs_d::Float64, vhs_o::Float64, vhs_Tref::Float64)
+Interaction(::VSS, m1::Float64, m2::Float64, vhs_d::Float64, vhs_o::Float64, vhs_Tref::Float64, vss_alpha::Float64)
 load_species_data
 load_interaction_data
 load_interaction_data_with_dummy
 load_species_and_interaction_data
+```
+
+## Elastic scattering models
+```@docs
+AbstractScatteringModel
+VHS
+VSS
+Merzbild.ScatteringModel
 ```
 
 ## Sampling
@@ -64,6 +74,10 @@ SurfProps(pia, grid::Grid1DUniform)
 FluxProps
 FluxProps(n_cells, n_species)
 FluxProps(pia)
+ElectrostaticFieldProps
+ElectrostaticFieldProps(n_nodes::Integer)
+ElectrostaticFieldProps(grid::Grid1DUniform)
+clear_charge_density!
 compute_props!
 compute_props_sorted!
 compute_flux_props!
@@ -78,6 +92,8 @@ compute_moments!
 ```@docs
 mean_free_path
 mean_collision_frequency
+debye_length
+plasma_frequency
 ```
 
 ## Collision computations
@@ -203,6 +219,9 @@ IOSkipListSurf()
 IOSkipListFlux
 IOSkipListFlux(list_of_variables_to_skip)
 IOSkipListFlux()
+IOSkipListField
+IOSkipListField(list_of_variables_to_skip)
+IOSkipListField()
 NCDataHolder
 NCDataHolder(nc_filename, names_skip_list, species_data, phys_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
 NCDataHolder(nc_filename, species_data, phys_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
@@ -214,6 +233,9 @@ NCDataHolderFlux(nc_filename, names_skip_list, species_data, flux_props; global_
 NCDataHolderFlux(nc_filename, species_data, flux_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
 NCDataHolderMoments
 NCDataHolderMoments(nc_filename, species_data, n_cells, n_species, moment_powers; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
+NCDataHolderField
+NCDataHolderField(nc_filename, names_skip_list, field_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
+NCDataHolderField(nc_filename, field_props; global_attributes=Dict{Any,Any}(), mode=NC_64BIT_OFFSET)
 write_netcdf
 close_netcdf
 ```
@@ -227,6 +249,7 @@ exchange_particles!
 sort_particles_after_exchange!
 reset!
 reduce_surf_props!
+reduce_field_props!
 generate_1_factorization
 LoadBalancerCellQ
 LoadBalancerCellQ(n_cells, n_chunks)
@@ -238,11 +261,21 @@ reset_lb!
 ## Particle-in-Cell
 ```@docs
 accelerate_constant_field_x!
+DirichletFieldBC1D
+NeumannFieldBC1D
+PeriodicFieldBC1D
+PoissonSolver1DUniform
+PoissonSolver1DUniform(grid::Grid1DUniform, bc_left::Merzbild.AbstractFieldBC1D, bc_right::Merzbild.AbstractFieldBC1D)
+deposit_charge!
+normalize_charge_density!
+solve_poisson!
+accelerate_electric_field_x!
 ```
 
 ## Constants
 ```@docs
 k_B
+eps_0
 ```
 
 ## Misc

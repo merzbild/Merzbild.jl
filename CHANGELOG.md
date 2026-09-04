@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.8.3
+* `sort_particles!` and `sort_particles_after_exchange!` record the first and last cell holding particles
+in the `occ_lo`/`occ_hi` fields of the
+`GridSortInPlace` instance, for use by `update_occupancy_bounds!`
+* Added electrostatic Particle-in-Cell on a 1-D uniform grid: charge deposition (`deposit_charge!`,
+`normalize_charge_density!`), a Poisson solve (`PoissonSolver1DUniform`, `solve_poisson!`), and the gather + push
+(`accelerate_electric_field_x!`); `ElectrostaticFieldProps` struct to hold nodal charge density, potential, and electric field
+* Field boundary conditions `DirichletFieldBC1D`, `NeumannFieldBC1D`, and `PeriodicFieldBC1D`
+* NetCDF output of the electrostatic field quantities stored in an `ElectrostaticFieldProps` instance
+via `NCDataHolderField` and `write_netcdf`
+* Added `debye_length` and `plasma_frequency` functions, and the vacuum permittivity `eps_0`
+* `reduce_field_props!` for reduction after thread-safe charge deposition and 
+* Elastic scattering models are no longer hard-coded to VHS: the VSS model (`VSS`) has been added alongside
+VHS (`VHS`), and both are supported by `ntc!`, `ntc_equal_weight!`, and `swpm!` (see new bundled interaction data file `vss.toml`)
+* The elastic scattering model is fixed per species pair and is stored in the `Interaction` instance as a
+`ScatteringModel` enum value (`ScatteringVHS`, `ScatteringVSS`), set by the optional `model` key
+of the species pair's entry in the interaction data TOML file (defaults to `"VHS"`); the VSS model additionally
+requires a `vss_alpha` key
+* `collide_2particles_vhs!` and `collide_2particles_vhs_equal_weight!` renamed to `collide_2particles!` and
+`collide_2particles_equal_weight!`, and now take the scattering model tag as their second argument
+* Improved test coverage
+
 ## v0.8.2
 * NNLS merging speed-ups
 * Batched particle deletion for more efficient deletion of particles in merging routines

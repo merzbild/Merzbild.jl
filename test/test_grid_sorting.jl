@@ -163,6 +163,8 @@
 
     sort_particles!(gridsorter_fine, grid_fine, particles[1], pia_fine, 1)
     @test particles[1].index == [6, 7, 8, 5, 1, 2, 3, 4]
+    @test gridsorter_fine.occ_lo == 1
+    @test gridsorter_fine.occ_hi == 4
     counts = [3, 1, 0, 4]
     starts = [1, 4, 0, 5]
     ends = [3, 4, -1, 8]
@@ -211,6 +213,8 @@
 
     sort_particles!(gridsorter_fine, particles[1], pia_fine, 1)
     @test particles[1].index == [6, 7, 8, 5, 1, 2, 3, 4]
+    @test gridsorter_fine.occ_lo == 1
+    @test gridsorter_fine.occ_hi == 4
     counts = [3, 1, 0, 4]
     starts = [1, 4, 0, 5]
     ends = [3, 4, -1, 8]
@@ -234,3 +238,103 @@
         @test phys_props.np[i, 1] == counts[i]
     end
 end 
+@testset "grid sorting occupancy tracking" begin
+    n_cells = 6
+    np = 8
+
+    particles = [ParticleVector(np)]
+    pia = ParticleIndexerArray(n_cells, 1)
+
+    # the sorting routine taking pre-computed cells is used, so only the cell of each
+    # particle matters here, not its position. The per-cell indexing is left exactly as the
+    # previous sort produced it, which is the state convection leaves the pia in
+    function sort_in_cells!(gridsorter, cells)
+        particles[1].index = collect(1:np)
+        particles[1].cell = copy(cells)
+
+        pia.n_total[1] = length(cells)
+        pia.index_last[1] = length(cells)
+        pia.contiguous[1] = true
+
+        sort_particles!(gridsorter, particles[1], pia, 1)
+    end
+
+    # the cells in which the pia actually indexes particles
+    function occupied(pia)
+        return [cell for cell in 1:pia.n_cells if pia.indexer[cell,1].n_group1 > 0]
+    end
+
+    # every cell not holding particles has to be indexed as empty
+    function test_empty_cells(pia)
+        for cell in 1:pia.n_cells
+            if pia.indexer[cell,1].n_group1 == 0
+                @test pia.indexer[cell,1].start1 == 0
+                @test pia.indexer[cell,1].end1 == -1
+                @test pia.indexer[cell,1].n_local == 0
+                @test pia.indexer[cell,1].start2 == 0
+                @test pia.indexer[cell,1].end2 == -1
+                @test pia.indexer[cell,1].n_group2 == 0
+            end
+        end
+    end
+
+    gridsorter = GridSortInPlace(n_cells, np)
+    @test gridsorter.occ_lo == 1
+    @test gridsorter.occ_hi == n_cells
+
+    sort_in_cells!(gridsorter, [2, 2, 3, 3, 4, 4, 5, 5])
+    @test gridsorter.occ_lo == 2
+    @test gridsorter.occ_hi == 5
+    @test occupied(pia) == [2, 3, 4, 5]
+    test_empty_cells(pia)
+
+    # the occupancy range shrinks to a single cell: the indexing of the cells occupied
+    # during the previous sort has to be cleared even though they are outside of the new range
+    sort_in_cells!(gridsorter, [3, 3, 3, 3, 3, 3, 3, 3])
+    @test gridsorter.occ_lo == 3
+    @test gridsorter.occ_hi == 3
+    @test occupied(pia) == [3]
+    @test pia.indexer[3,1].start1 == 1
+    @test pia.indexer[3,1].end1 == 8
+    test_empty_cells(pia)
+
+    # and now it widens in both directions, with an empty cell inside the range
+    sort_in_cells!(gridsorter, [1, 1, 2, 2, 4, 4, 6, 6])
+    @test gridsorter.occ_lo == 1
+    @test gridsorter.occ_hi == 6
+    @test occupied(pia) == [1, 2, 4, 6]
+    test_empty_cells(pia)
+
+    # sorting an empty pia clears everything and records an empty range
+    sort_in_cells!(gridsorter, Int64[])
+    @test gridsorter.occ_lo == n_cells + 1
+    @test gridsorter.occ_hi == 0
+    @test occupied(pia) == []
+    test_empty_cells(pia)
+
+    # sorting an empty pia twice in a row is a no-op
+    sort_in_cells!(gridsorter, Int64[])
+    @test gridsorter.occ_lo == n_cells + 1
+    @test gridsorter.occ_hi == 0
+    test_empty_cells(pia)
+
+    # and particles can be sorted again afterwards
+    sort_in_cells!(gridsorter, [5, 5, 5, 5, 6, 6, 6, 6])
+    @test gridsorter.occ_lo == 5
+    @test gridsorter.occ_hi == 6
+    @test occupied(pia) == [5, 6]
+    test_empty_cells(pia)
+
+    # indexing written by other means than the sorting routines is cleared as well
+    stale = pia.indexer[1,1]
+    stale.n_local = 1
+    stale.n_group1 = 1
+    stale.start1 = 1
+    stale.end1 = 1
+
+    sort_in_cells!(gridsorter, [4, 4, 4, 4, 4, 4, 4, 4])
+    @test gridsorter.occ_lo == 4
+    @test gridsorter.occ_hi == 4
+    @test occupied(pia) == [4]
+    test_empty_cells(pia)
+end

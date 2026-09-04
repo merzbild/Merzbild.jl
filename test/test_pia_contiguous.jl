@@ -680,6 +680,27 @@
 
     @test pia.contiguous[1] == true
 
+    # check that the single-species squash_pia! also does nothing if .contiguous is already true
+    # (the multi-species wrapper above never reaches this early-return branch, since it only
+    # calls the single-species version for non-contiguous species)
+    Merzbild.squash_pia!(particles[1], pia, 1)
+
+    @test pia.indexer[1,1].n_local == 6
+    @test pia.indexer[1,1].start1 == 1
+    @test pia.indexer[1,1].end1 == 4
+    @test pia.indexer[1,1].n_group1 == 4
+
+    @test pia.indexer[1,1].start2 == 9
+    @test pia.indexer[1,1].end2 == 10
+    @test pia.indexer[1,1].n_group2 == 2
+
+    @test pia.indexer[2,1].n_local == 2
+    @test pia.indexer[2,1].start1 == 5
+    @test pia.indexer[2,1].end1 == 6
+    @test pia.indexer[2,1].n_group1 == 2
+
+    @test pia.contiguous[1] == true
+
     # check that realistically it should've been squashed
     pia.contiguous[1] = false
     squash_pia!(particles, pia)

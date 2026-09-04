@@ -11,6 +11,18 @@ function test_chunk_exchanger_empty(chunk_exchanger)
     end
 end
 
+# sort_particles_after_exchange! records the occupancy bounds of the chunk, so that
+# update_occupancy_bounds! can be called after it as well as after sort_particles!
+function test_gridsort_bounds(gridsorter, pia, n_cells)
+    occupied = [cell for cell in 1:n_cells if pia.indexer[cell,1].n_group1 > 0]
+    if length(occupied) > 0
+        @test gridsorter.occ_lo == minimum(occupied)
+        @test gridsorter.occ_hi == maximum(occupied)
+    else
+        @test gridsorter.occ_lo > gridsorter.occ_hi
+    end
+end
+
 @testset "particle re-sorting after exchange between chunks" begin
 
     # case 1
@@ -59,6 +71,7 @@ end
         sort_particles_after_exchange!(chunk_exchanger, gridsorter_chunks[chunk_id],
                                        particles_chunks[chunk_id][1], pia_chunks[chunk_id],
                                        cell_chunks[chunk_id], 1)
+        test_gridsort_bounds(gridsorter_chunks[chunk_id], pia_chunks[chunk_id], n_cells)
     end
 
     test_chunk_exchanger_empty(chunk_exchanger)
@@ -216,6 +229,7 @@ end
         sort_particles_after_exchange!(chunk_exchanger, gridsorter_chunks[chunk_id],
                                        particles_chunks[chunk_id][1], pia_chunks[chunk_id],
                                        cell_chunks[chunk_id], 1)
+        test_gridsort_bounds(gridsorter_chunks[chunk_id], pia_chunks[chunk_id], n_cells)
     end
 
     test_chunk_exchanger_empty(chunk_exchanger)
@@ -359,6 +373,7 @@ end
         sort_particles_after_exchange!(chunk_exchanger, gridsorter_chunks[chunk_id],
                                        particles_chunks[chunk_id][1], pia_chunks[chunk_id],
                                        cell_chunks[chunk_id], 1)
+        test_gridsort_bounds(gridsorter_chunks[chunk_id], pia_chunks[chunk_id], n_cells)
     end
 
     @test pia_chunks[1].n_total[1] == 4

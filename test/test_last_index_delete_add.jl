@@ -371,4 +371,36 @@
     @test pia.indexer[3,1].end1 == -1
     @test pia.indexer[3,1].start2 == 0
     @test pia.indexer[3,1].end2 == -1
+
+    # test that index_last correctly falls back to 0 in find_index_last_after_group2_delete!
+    # when the deleted group2 held the last index and no group1 particles exist anywhere
+    pia, particles = generate_pia_and_particles(5, [0], [2])
+    @test pia.index_last[1] == 2
+    @test pia.n_total[1] == 2
+
+    Merzbild.delete_particle_end_group2!(particles, pia, 1, 1)
+    @test pia.index_last[1] == 1
+    @test pia.n_total[1] == 1
+
+    Merzbild.delete_particle_end_group2!(particles, pia, 1, 1)
+    @test pia.index_last[1] == 0
+    @test pia.n_total[1] == 0
+
+    @test check_pia_is_correct(pia, 1) == (true, 0)
+
+    # test that delete_batch_end_group1! and delete_batch_end_group2! are no-ops when n == 0
+    # (delete_batch_end! itself never calls them with n == 0, so this exercises the guard directly)
+    particles_zero = ParticleVector{0}(5)
+    indexer_zero = ParticleIndexer(5)
+    nbuffer_before = particles_zero.nbuffer
+
+    Merzbild.delete_batch_end_group1!(particles_zero, indexer_zero, 0)
+    @test indexer_zero.n_group1 == 5
+    @test indexer_zero.n_local == 5
+    @test particles_zero.nbuffer == nbuffer_before
+
+    Merzbild.delete_batch_end_group2!(particles_zero, indexer_zero, 0)
+    @test indexer_zero.n_group2 == 0
+    @test indexer_zero.n_local == 5
+    @test particles_zero.nbuffer == nbuffer_before
 end

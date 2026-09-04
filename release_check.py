@@ -2,6 +2,7 @@
 # if executed as `release_check.py publish [remote name]` will push the latest git tag
 # to the specified remote
 
+import os
 import subprocess
 import sys
 
@@ -44,6 +45,19 @@ def get_release_gittag():
     valid_tags.sort(key=lambda x: x[1])
     return [int(x) for x in valid_tags[-1][0].split('.')]
 
+def find_docs_todos():
+    todos = []
+    for root, _, files in os.walk(os.path.join("docs", "src")):
+        for fname in files:
+            if not fname.endswith(".md"):
+                continue
+            fpath = os.path.join(root, fname)
+            with open(fpath, "r") as f:
+                for lineno, line in enumerate(f, start=1):
+                    if "TODO" in line:
+                        todos.append((fpath, lineno, line.strip()))
+    return todos
+
 v_projecttoml = get_release_projecttoml()
 v_changelog = get_release_changelog()
 v_gittag = get_release_gittag()
@@ -65,6 +79,13 @@ if v_gittag != v_projecttoml:
 if v_gittag != v_changelog:
     agree = False
     print(f"Version numbers in last git tag ({str_v_gt}) and CHANGELOG.md ({str_v_cl}) are different!!!")
+
+docs_todos = find_docs_todos()
+if docs_todos:
+    agree = False
+    print("Found hanging TODOs in docs/src:")
+    for fpath, lineno, line in docs_todos:
+        print(f"  {fpath}:{lineno}: {line}")
 
 publish = False
 remote_name = "unknown"

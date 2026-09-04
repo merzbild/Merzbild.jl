@@ -93,11 +93,16 @@ The physical properties are also computed in multithreaded mode.
 Inside the time loop, collisions, convection, and sorting are performed inside a `@threads` block.
 Once the block finishes, the particles are moved between chunks.
 To improve the speed of this procedure, first the [`update_occupancy_bounds!`](@ref) is called, which takes in
-the grid sorting structure from the sorting step and determines the upper and lower bounds of the cells
-outside of the range pointed by the current chunk to which particles have moved during the convection step.
+the grid sorting structure from the sorting step and reads the upper and lower bounds of the cells
+in which the chunk holds particles, including those outside of the range of cells owned by the chunk,
+to which particles have moved during the convection step. The bounds are recorded by the sorting step itself,
+so this is a constant-time operation.
 Therefore, one can avoid scanning across all cells in the grid in the exchange step, but one can also set
-the lower bound to 1 and upper bound to `n_cells` if the occupancy bound computation step is note performed.
+the lower bound to 1 and upper bound to `n_cells` if the occupancy bound computation step is not performed.
 Next, a serial call to [`exchange_particles!`](@ref) is used.
+**Note** that the occupancy bounds computed in the sorting step are not species-specific, i.e.
+first sorting multiple species and only then updating occupancy bounds will lead to errors,
+as the occupancy data will be overwritten by the data corresponding to the last species.
 
 After the particles have been exchanged, they are sorted via a threaded call to [`sort_particles_after_exchange!`](@ref).
 Finally, the indexing is reset, and physical grid properties are computed, again inside a `@threads` block.

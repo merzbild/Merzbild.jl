@@ -1,0 +1,23 @@
+["Ar,Ar"]
+model = "VSS"
+vhs_d = 4.11e-10
+vhs_o = 0.81
+vhs_Tref = 273.0
+vss_alpha = 1.40
+comment = "VSS parameters from Bird (1994), Appendix A"
+
+["Ar,He"]
+model = "VSS"
+vhs_d = 3.25e-10
+vhs_o = 0.735
+vhs_Tref = 273.0
+vss_alpha = 1.33
+comment = "Created via (1/2) mixing rule"
+
+["He,He"]
+model = "VSS"
+vhs_d = 2.33e-10
+vhs_o = 0.66
+vhs_Tref = 273.0
+vss_alpha = 1.26
+comment = "VSS parameters from Bird (1994), Appendix A"
