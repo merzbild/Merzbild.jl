@@ -79,6 +79,18 @@ struct FullySpecularBC1D <: AbstractBC
 end
 
 """
+    OutflowBC <: AbstractBC
+
+A struct denoting an outflow surface: particles reaching it leave the domain and are deleted.
+No data is stored in the struct, and it is not dimension-specific.
+
+The deletion itself is performed by the convection routines, not by [`apply_bc!`](@ref), as it
+requires access to the particle indexing structures.
+"""
+struct OutflowBC <: AbstractBC
+end
+
+"""
     specular_reflection_x!(particle, Δt)
 
 Perform specular reflection of a particle in the x direction.
@@ -196,6 +208,26 @@ Unchanged value of `Δt`.
 end
 
 """
+    apply_bc!(rng, particle::Particle{D}, wallbc::OutflowBC, surface_normal::SVector{3,Float64}, Δt) where D
+
+Apply an outflow boundary condition. The particle velocity is left untouched: deletion of the particle is
+performed by the convection routines and the function adds as a placeholder.
+
+# Positional arguments
+* `rng`: the random number generator
+* `particle`: the `Particle` instance to which the boundary condition is applied
+* `wallbc`: the `OutflowBC` instance
+* `surface_normal`: the vector of the surface normal
+* `Δt`: the time left for the particle to move
+
+# Returns
+Unchanged value of `Δt`.
+"""
+@inline function apply_bc!(rng, particle::Particle{D}, wallbc::OutflowBC, surface_normal::SVector{3,Float64}, Δt) where D
+    return Δt
+end
+
+"""
     apply_bc_dispatched!(rng, particle::Particle{D}, bcs::Tuple, i::Int, surface_normal::SVector{3,Float64}, Δt::Float64) where D
 
 Generates a function that dispatches to the correct boundary condition function based on the index `i`. For use in a particle
@@ -225,6 +257,52 @@ Potentially changed value of `Δt`.
         end))
     end
     return ex
+end
+
+"""
+    bc_is_outflow(bcs::Tuple, i::Int)
+
+Generates a function that checks whether the boundary condition with index `i` is an [`OutflowBC`](@ref).
+Each branch of the generated if-chain returns a compile-time constant, so for a `bcs` tuple containing no
+outflow boundaries the check is eliminated entirely.
+
+# Positional arguments:
+* `bcs`: Tuple of boundary conditions
+* `i`: index of the boundary condition to check
+
+# Returns
+Whether the boundary condition is an outflow boundary condition.
+"""
+@generated function bc_is_outflow(bcs::Tuple, i::Int)
+    N_bcs = length(bcs.parameters)
+    ex = quote end
+
+    for j in 1:N_bcs
+        is_outflow = bcs.parameters[j] <: OutflowBC
+        push!(ex.args, :(if i == $j
+            return $is_outflow
+        end))
+    end
+    push!(ex.args, :(return false))
+    return ex
+end
+
+"""
+    has_outflow_bc(bcs::Tuple)
+
+Generates a function that checks whether a tuple of boundary conditions contains an [`OutflowBC`](@ref).
+The result is a compile-time constant, used to select between the convection routines' default path and
+the path that deletes particles leaving the domain.
+
+# Positional arguments:
+* `bcs`: Tuple of boundary conditions
+
+# Returns
+Whether the tuple contains an outflow boundary condition.
+"""
+@generated function has_outflow_bc(bcs::Tuple)
+    result = any(bc -> bc <: OutflowBC, bcs.parameters)
+    return :($result)
 end
 
 end

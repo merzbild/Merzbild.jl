@@ -1,6 +1,11 @@
 # Changelog
 
 ## v0.8.4
+* Added `OutflowBC`: particles reaching a surface with this boundary condition are deleted
+* 1-D convection routines now allow for outflow boundaries
+* The non-periodic 1-D convection routines (`convect_particles!`, `convect_particles_and_compute_cell!`)
+now return the number of particles deleted at outflow boundaries
+* `delete_particle_and_cell!` utility function added that deletes particles and re-orders cell indexing to ensure consistency
 * Faster NNLS merging via fused scaling of LHS and RHS, and fusing of the dual-vector computation into the Householder sweep
 
 ## v0.8.3

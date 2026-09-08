@@ -14,6 +14,7 @@ Merzbild.add_particle!
 Merzbild.update_particle_buffer_new_particle!
 Merzbild.update_buffer_index_new_particle!
 Merzbild.delete_particle!
+Merzbild.delete_particle_and_cell!
 Merzbild.delete_particle_end!
 Merzbild.delete_particle_end_group1!
 Merzbild.delete_particle_end_group2!
@@ -188,6 +189,8 @@ Merzbild.update_surface_reflected!
 Merzbild.surface_props_scale!
 Merzbild.apply_bc!
 Merzbild.apply_bc_dispatched!
+Merzbild.bc_is_outflow
+Merzbild.has_outflow_bc
 ```
 
 ## I/O
