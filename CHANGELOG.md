@@ -20,6 +20,7 @@ of the species pair's entry in the interaction data TOML file (defaults to `"VHS
 requires a `vss_alpha` key
 * `collide_2particles_vhs!` and `collide_2particles_vhs_equal_weight!` renamed to `collide_2particles!` and
 `collide_2particles_equal_weight!`, and now take the scattering model tag as their second argument
+* Utility simulation `simulations/1D/compute_Prandtl.jl` to compute Prandtl number on the basis of Fourier and Couette flow simulation
 * Improved test coverage
 
 ## v0.8.2
