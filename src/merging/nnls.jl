@@ -29,7 +29,23 @@ function construct_householder!(u::AbstractVector{T}, up::T)::T where T
         return up
     end
 
-    cl = maximum(abs, u)
+    # four independent maxima so that the reduction is not latency-bound (the maximum is exact in any order)
+    cl1 = zero(T); cl2 = zero(T); cl3 = zero(T); cl4 = zero(T)
+    i = 1
+    @inbounds while i + 3 <= m
+        a1 = abs(u[i]); a2 = abs(u[i + 1]); a3 = abs(u[i + 2]); a4 = abs(u[i + 3])
+        cl1 = ifelse(a1 > cl1, a1, cl1)
+        cl2 = ifelse(a2 > cl2, a2, cl2)
+        cl3 = ifelse(a3 > cl3, a3, cl3)
+        cl4 = ifelse(a4 > cl4, a4, cl4)
+        i += 4
+    end
+    @inbounds while i <= m
+        a1 = abs(u[i])
+        cl1 = ifelse(a1 > cl1, a1, cl1)
+        i += 1
+    end
+    cl = max(max(cl1, cl2), max(cl3, cl4))
     # @assert cl > 0
     clinv = one(T) / cl
     sm = zero(T)
@@ -156,7 +172,7 @@ function apply_householder_sweep!(A::Matrix{T}, up::T, ju, nsetp, m, idx, iz1, i
         A[o4] = A[o4] + s4 * up
         w1 = zero(T); w2 = zero(T)
         w3 = zero(T); w4 = zero(T)
-        @simd for i in 1:len-1
+        @simd ivdep for i in 1:len-1
             ui = A[ou + i]
             bi = b[nsetp + i]
             a1 = A[o1 + i] + s1 * ui
@@ -201,7 +217,7 @@ function apply_householder_sweep!(A::Matrix{T}, up::T, ju, nsetp, m, idx, iz1, i
         sm *= binv
         A[oc] = A[oc] + sm * up
         wc = zero(T)
-        @simd for i in 1:len-1
+        @simd ivdep for i in 1:len-1
             ac = A[oc + i] + sm * A[ou + i]
             A[oc + i] = ac
             wc = wc + ac * b[nsetp + i]
@@ -256,21 +272,55 @@ Charles L. Lawson and Richard J. Hanson at Jet Propulsion Laboratory
 1973 JUN 15, and published in the book
 "SOLVING LEAST SQUARES PROBLEMS", Prentice-HalL, 1974.
 Revised FEB 1995 to accompany reprinting of the book by SIAM.
+
+Column-oriented back substitution processing four columns per pass over `zz`, every entry of `zz`
+receives the same sequence of operations as in the one-column-at-a-time substitution.
 """
 function solve_triangular_system!(zz, A, idx, nsetp, jj)
-    ip = nsetp
-    @inbounds jj = idx[ip]
-    @inbounds zz[ip] /= A[ip, jj]
+    q = nsetp
+    @inbounds while q >= 4
+        c1 = idx[q]
+        c2 = idx[q - 1]
+        c3 = idx[q - 2]
+        c4 = idx[q - 3]
 
-    # Process the remaining iterations
-    @inbounds for l in 2:nsetp
-        ip = nsetp + 1 - l
-        zm = zz[ip + 1]
-        @simd for ii in 1:ip
+        z1 = zz[q] / A[q, c1]
+        t2 = zz[q - 1] - A[q - 1, c1] * z1
+        z2 = t2 / A[q - 1, c2]
+        t3 = zz[q - 2] - A[q - 2, c1] * z1
+        t3 = t3 - A[q - 2, c2] * z2
+        z3 = t3 / A[q - 2, c3]
+        t4 = zz[q - 3] - A[q - 3, c1] * z1
+        t4 = t4 - A[q - 3, c2] * z2
+        t4 = t4 - A[q - 3, c3] * z3
+        z4 = t4 / A[q - 3, c4]
+
+        zz[q] = z1
+        zz[q - 1] = z2
+        zz[q - 2] = z3
+        zz[q - 3] = z4
+
+        @simd ivdep for ii in 1:q-4
+            t = zz[ii] - A[ii, c1] * z1
+            t = t - A[ii, c2] * z2
+            t = t - A[ii, c3] * z3
+            zz[ii] = t - A[ii, c4] * z4
+        end
+        q -= 4
+    end
+
+    @inbounds while q >= 1
+        jj = idx[q]
+        zm = zz[q] / A[q, jj]
+        zz[q] = zm
+        for ii in 1:q-1
             zz[ii] = zz[ii] - A[ii, jj] * zm
         end
-        jj = idx[ip]
-        zz[ip] /= A[ip, jj]
+        q -= 1
+    end
+
+    if nsetp >= 1
+        @inbounds jj = idx[1]
     end
     return jj
 end
@@ -396,6 +446,8 @@ end
 
 
 """
+    solve!(work::NNLSWorkspace{T, TI}, ncols::Integer, max_iter::Integer, kkt_tol) where {T, TI}
+
 Algorithm NNLS: NONNEGATIVE LEAST SQUARES
 
 The original version of this code was developed by
@@ -407,8 +459,10 @@ Revised FEB 1995 to accompany reprinting of the book by SIAM.
 GIVEN AN M BY N MATRIX, A, AND AN M-VECTOR, B,  COMPUTE AN
 N-VECTOR, X, THAT SOLVES THE LEAST SQUARES PROBLEM
                  A * X = B  SUBJECT TO X .GE. 0
+
+Only the first `ncols` columns of `work.QA` are used, the workspace may hold more columns.
 """
-function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA, 2)), kkt_tol=1e-16) where {T, TI}
+function solve!(work::NNLSWorkspace{T, TI}, ncols::Integer, max_iter::Integer, kkt_tol) where {T, TI}
     # checkargs(work)
 
     A = work.QA
@@ -421,7 +475,7 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
     work.mode = 1
 
     m = convert(TI, size(A, 1))
-    n = convert(TI, size(A, 2))
+    n = convert(TI, ncols)
 
     iter = 0
     
@@ -493,15 +547,15 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
             # BEGIN THE TRANSFORMATION AND CHECK NEW DIAGONAL ELEMENT TO AVOID
             # NEAR LINEAR DEPENDENCE.
             Asave = A[nsetp + 1, j]
-            up = construct_householder!(
-                # fastview(A, LinearIndices(A)[nsetp + 1, j], m - nsetp),
-                fastview(A, nsetp + 1 + (j-1)*m, m - nsetp),
-                up)
             unorm::T = zero(T)
             @inbounds for l in 1:nsetp
                 unorm += A[l, j]^2
             end
             unorm = sqrt(unorm)
+            up = construct_householder!(
+                # fastview(A, LinearIndices(A)[nsetp + 1, j], m - nsetp),
+                fastview(A, nsetp + 1 + (j-1)*m, m - nsetp),
+                up)
 
             @inbounds if ((unorm + abs(A[nsetp + 1, j]) * factor) - unorm) > zero(T)
                 # COL J IS SUFFICIENTLY INDEPENDENT.  COPY B INTO ZZ, UPDATE ZZ
@@ -616,37 +670,50 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
 
                 if jj != nsetp
                     jj += one(TI)
+                    @inbounds ii = idx[jj]
+                    @inbounds cc, ss, sig = orthogonal_rotmat(A[jj - 1, ii], A[jj, ii])
                     @inbounds for j in jj:nsetp
                         ii = idx[j]
                         idx[j - 1] = ii
-                        cc, ss, sig = orthogonal_rotmat(A[j - 1, ii], A[j, ii])
                         A[j - 1, ii] = sig
                         A[j, ii] = zero(T)
 
-                        # equivalent to 
-                        # for l in Base.OneTo(n)
-                        #     if l != ii
-                        # but split into two loops for SIMD
-                        @simd for l in 1:ii-1
-                            # Apply procedure G2 (CC,SS,A(J-1,L),A(J,L))
+                        # Apply procedure G2 (CC,SS,A(J-1,L),A(J,L)) to the columns other than II. The set-P columns at
+                        # positions below J - 1 are zero in rows J - 1 and J and are skipped. The column at position J + 1
+                        # is rotated first and the next rotation computed from it, to overlap its latency with the rest
+                        p_start = j + 1
+                        cc_next = cc
+                        ss_next = ss
+                        sig_next = sig
+                        if j < nsetp
+                            l = idx[j + 1]
+                            temp = A[j - 1, l]
+                            t2 = A[j, l]
+                            A[j - 1, l] = cc * temp + ss * t2
+                            A[j, l] = -ss * temp + cc * t2
+                            cc_next, ss_next, sig_next = orthogonal_rotmat(A[j, l], A[j + 1, l])
+                            p_start = j + 2
+                        end
+                        for p in p_start:n
+                            l = idx[p]
                             temp = A[j - 1, l]
                             t2 = A[j, l]
                             A[j - 1, l] = cc * temp + ss * t2
                             A[j, l] = -ss * temp + cc * t2
                         end
-
-                        @simd for l in ii+1:n
-                            # Apply procedure G2 (CC,SS,A(J-1,L),A(J,L))
-                            temp = A[j - 1, l]
-                            t2 = A[j, l]
-                            A[j - 1, l] = cc * temp + ss * t2
-                            A[j, l] = -ss * temp + cc * t2
-                        end
+                        temp = A[j - 1, i]
+                        t2 = A[j, i]
+                        A[j - 1, i] = cc * temp + ss * t2
+                        A[j, i] = -ss * temp + cc * t2
 
                         # Apply procedure G2 (CC,SS,B(J-1),B(J))
                         temp = b[j - 1]
                         b[j - 1] = cc * temp + ss * b[j]
                         b[j] = -ss * temp + cc * b[j]
+
+                        cc = cc_next
+                        ss = ss_next
+                        sig = sig_next
                     end
                 end
 
@@ -661,10 +728,10 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
                 # AND MOVED FROM SET P TO SET Z.
                 allfeasible = true
                 @inbounds for jji in Base.OneTo(nsetp)
-                    # jj = jji
                     i = idx[jji]
                     if x[i] <= zero(T)
                         allfeasible = false
+                        jj = jji
                         break
                     end
                 end
@@ -708,6 +775,13 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
     work.nsetp = nsetp
     return work.x
 end
+
+"""
+    solve!(work::NNLSWorkspace, max_iter::Integer=(3 * size(work.QA, 2)), kkt_tol=1e-16)
+
+Solve the NNLS problem posed by all columns of `work.QA`.
+"""
+solve!(work::NNLSWorkspace, max_iter::Integer=(3 * size(work.QA, 2)), kkt_tol=1e-16) = solve!(work, size(work.QA, 2), max_iter, kkt_tol)
 
 function solve!(work::NNLSWorkspace{T}, A::AbstractMatrix{T}, b::AbstractVector{T}, max_iter=(3 * size(A, 2))) where T
     load!(work, A, b)

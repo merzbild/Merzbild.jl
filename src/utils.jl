@@ -174,19 +174,19 @@ function scale_columns!(matrix, column_norms)
 end
 
 """
-    scale_rows_and_columns!(matrix, row_scale, column_norms)
+    scale_rows_and_columns!(matrix, row_scale, column_norms, n=size(matrix, 2))
 
-Scale the rows of the matrix by `row_scale` and the resulting columns to have unit L2 norm,
+Scale the rows of the first `n` columns of the matrix by `row_scale` and the resulting columns to have unit L2 norm,
 in a single pass over the matrix, storing the inverse of the column norms in a vector.
 
 # Positional arguments
 * `matrix`: the matrix of the LHS
 * `row_scale`: the vector of the row-wise scaling factors to apply
 * `column_norms`: the vector in which to store the computed inverses of the row-scaled column-wise norms
+* `n`: the number of columns to scale
 """
-function scale_rows_and_columns!(matrix, row_scale, column_norms)
+function scale_rows_and_columns!(matrix, row_scale, column_norms, n=size(matrix, 2))
     m = size(matrix, 1)
-    n = size(matrix, 2)
     @inbounds for i in 1:n
         nn = 0.0
         @simd for j in 1:m
