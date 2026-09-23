@@ -306,14 +306,18 @@ function run(nx, n_timesteps;
     return Pr
 end
 
-const n_t = 4500000
-const n_cells = 600
-run(n_cells, n_t; ppc=300)
-
-# const n_t = 1000000
-# const n_cells = 200
-# run(n_cells, n_t)
+const n_t = 1000000
+const n_cells = 200
+run(n_cells, n_t)
 # this setup gives
 # μ = 2.212562e-05 ± 3.60e-07 Pa s (VHS: 2.177627e-05, +1.60%)
 # κ = 1.733018e-02 ± 1.13e-03 W/(m K) (Chapman-Enskog: 1.700531e-02, +1.91%)
 # Pr = 0.664664 (Chapman-Enskog: 0.666667, -0.30%)
+
+# const n_t = 4500000
+# const n_cells = 600
+# run(n_cells, n_t; ppc=300)
+# this setup gives
+# μ = 2.217103e-05 ± 2.43e-07 Pa s (VHS: 2.177627e-05, +1.81%)
+# κ = 1.728503e-02 ± 7.95e-04 W/(m K) (Chapman-Enskog: 1.700531e-02, +1.64%)
+# Pr = 0.667768 (Chapman-Enskog: 0.666667, +0.17%)
