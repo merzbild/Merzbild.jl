@@ -7,6 +7,7 @@
 now return the number of particles deleted at outflow boundaries
 * `delete_particle_and_cell!` utility function added that deletes particles and re-orders cell indexing to ensure consistency
 * Faster NNLS merging via fused scaling of LHS and RHS, and fusing of the dual-vector computation into the Householder sweep
+* Utility simulation `simulations/1D/compute_Prandtl.jl` to compute Prandtl number on the basis of Fourier and Couette flow simulation
 
 ## v0.8.3
 * `sort_particles!` and `sort_particles_after_exchange!` record the first and last cell holding particles
