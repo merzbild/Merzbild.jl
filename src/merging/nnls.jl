@@ -82,17 +82,21 @@ function apply_householder!(u::AbstractVector{T}, up::T, c::AbstractVector{T}) w
 end
 
 """
-    apply_householder_sweep!(A::Matrix{T}, up::T, ju, nsetp, m, idx, iz1, iz2) where T
+    apply_householder_sweep!(A::Matrix{T}, up::T, ju, nsetp, m, idx, iz1, iz2, b, w) where T
 
 Apply the Householder transformation held in rows `nsetp:m` of column `ju` of `A` to
-rows `nsetp:m` of every column in set Z, i.e. the columns `idx[iz1], ..., idx[iz2]`.
+rows `nsetp:m` of every column in set Z, i.e. the columns `idx[iz1], ..., idx[iz2]`,
+and compute the dual vector entries `w[idx[jz]] = A[nsetp+1:m, idx[jz]] ⋅ b[nsetp+1:m]`
+of those columns from the transformed values.
 
-This is a batched replacement for calling [`apply_householder!`](@ref) once per column.
-It is equivalent to that loop, but the reflector scalars (the `up * u[1]` sign test and
+This is a batched replacement for calling [`apply_householder!`](@ref) once per column
+followed by the dual vector computation of the next NNLS main-loop iteration.
+It is equivalent to that, but the reflector scalars (the `up * u[1]` sign test and
 the reciprocal `1 / (up * u[1])`) are the same for every column, so they are computed
-once outside the column loop instead of once per column, and the columns are processed
+once outside the column loop instead of once per column, the columns are processed
 four at a time so that the reflector stays in registers and the four dot products
-overlap.
+overlap, and the dual entries are accumulated while the transformed column values are
+still in registers.
 
 # Positional arguments
 * `A`: the matrix being triangularized
@@ -102,20 +106,30 @@ overlap.
 * `m`: number of rows of `A`
 * `idx`: the index vector of the NNLS workspace
 * `iz1`, `iz2`: the range of positions in `idx` holding the set-Z columns
+* `b`: the (already transformed) right-hand side vector
+* `w`: the dual vector
+
+# Returns
+Tuple `(computed, wmax, izmax)`: `computed` is `true` if the dual vector entries of the set-Z columns
+were computed and `false` if the transformation is trivial and nothing was done; `wmax` and `izmax`
+are the largest positive dual entry and its position in `idx`, as returned by [`largest_positive_dual`](@ref)
+(both zero if not computed or no positive entry exists).
 """
-function apply_householder_sweep!(A::Matrix{T}, up::T, ju, nsetp, m, idx, iz1, iz2) where T
+function apply_householder_sweep!(A::Matrix{T}, up::T, ju, nsetp, m, idx, iz1, iz2, b, w) where T
     len = m - nsetp + 1
+    wmax = zero(T)
+    izmax = zero(iz1)
     if len <= 1
-        return
+        return false, wmax, izmax
     end
 
     # linear index of A[nsetp, ju]; the Householder vector is A[ou], A[ou+1], ..., A[ou+len-1]
     ou = nsetp + (ju - 1) * m
-    @inbounds b = up * A[ou]
-    if b >= zero(T)
-        return
+    @inbounds bb = up * A[ou]
+    if bb >= zero(T)
+        return false, wmax, izmax
     end
-    binv = one(T) / b
+    binv = one(T) / bb
 
     jz = iz1
     @inbounds while jz + 3 <= iz2
@@ -140,12 +154,39 @@ function apply_householder_sweep!(A::Matrix{T}, up::T, ju, nsetp, m, idx, iz1, i
         A[o2] = A[o2] + s2 * up
         A[o3] = A[o3] + s3 * up
         A[o4] = A[o4] + s4 * up
+        w1 = zero(T); w2 = zero(T)
+        w3 = zero(T); w4 = zero(T)
         @simd for i in 1:len-1
             ui = A[ou + i]
-            A[o1 + i] = A[o1 + i] + s1 * ui
-            A[o2 + i] = A[o2 + i] + s2 * ui
-            A[o3 + i] = A[o3 + i] + s3 * ui
-            A[o4 + i] = A[o4 + i] + s4 * ui
+            bi = b[nsetp + i]
+            a1 = A[o1 + i] + s1 * ui
+            a2 = A[o2 + i] + s2 * ui
+            a3 = A[o3 + i] + s3 * ui
+            a4 = A[o4 + i] + s4 * ui
+            A[o1 + i] = a1
+            A[o2 + i] = a2
+            A[o3 + i] = a3
+            A[o4 + i] = a4
+            w1 = w1 + a1 * bi
+            w2 = w2 + a2 * bi
+            w3 = w3 + a3 * bi
+            w4 = w4 + a4 * bi
+        end
+        w[idx[jz]] = w1
+        w[idx[jz + 1]] = w2
+        w[idx[jz + 2]] = w3
+        w[idx[jz + 3]] = w4
+        if w1 > wmax
+            wmax = w1; izmax = jz
+        end
+        if w2 > wmax
+            wmax = w2; izmax = jz + 1
+        end
+        if w3 > wmax
+            wmax = w3; izmax = jz + 2
+        end
+        if w4 > wmax
+            wmax = w4; izmax = jz + 3
         end
         jz += 4
     end
@@ -159,12 +200,19 @@ function apply_householder_sweep!(A::Matrix{T}, up::T, ju, nsetp, m, idx, iz1, i
         end
         sm *= binv
         A[oc] = A[oc] + sm * up
+        wc = zero(T)
         @simd for i in 1:len-1
-            A[oc + i] = A[oc + i] + sm * A[ou + i]
+            ac = A[oc + i] + sm * A[ou + i]
+            A[oc + i] = ac
+            wc = wc + ac * b[nsetp + i]
+        end
+        w[idx[jz]] = wc
+        if wc > wmax
+            wmax = wc; izmax = jz
         end
         jz += 1
     end
-    return
+    return true, wmax, izmax
 end
 
 """
@@ -395,6 +443,12 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
     up = zero(T)
 
     terminated = false
+    # the Householder sweep computes the dual vector entries of the set-Z columns
+    # and their maximum from the transformed values, so they need not be recomputed
+    # unless the secondary loop modified A and b
+    w_valid = false
+    wmax = zero(T)
+    izmax = zero(TI)
 
     # ******  MAIN LOOP BEGINS HERE  ******
     while true
@@ -407,18 +461,23 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
         end
 
         # COMPUTE COMPONENTS OF THE DUAL (NEGATIVE GRADIENT) VECTOR W().
-        @inbounds for i in iz1:iz2
-            idxi = idx[i]
-            sm = zero(T)
-            @simd for l in (nsetp + 1):m
-                sm = sm + A[l, idxi] * b[l]
+        if !w_valid
+            @inbounds for i in iz1:iz2
+                idxi = idx[i]
+                sm = zero(T)
+                @simd for l in (nsetp + 1):m
+                    sm = sm + A[l, idxi] * b[l]
+                end
+                w[idxi] = sm
             end
-            w[idxi] = sm
         end
 
         @inbounds while true
             # FIND LARGEST POSITIVE W(J).
-            wmax, izmax = largest_positive_dual(w, idx, iz1, iz2)
+            if !w_valid
+                wmax, izmax = largest_positive_dual(w, idx, iz1, iz2)
+            end
+            w_valid = false
 
             # IF WMAX .LE. 0. GO TO TERMINATION.
             # THIS INDICATES SATISFACTION OF THE KUHN-TUCKER CONDITIONS.
@@ -491,7 +550,7 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
         nsetp += one(TI)
 
         if iz1 <= iz2
-            apply_householder_sweep!(A, up, j, nsetp, m, idx, iz1, iz2)
+            w_valid, wmax, izmax = apply_householder_sweep!(A, up, j, nsetp, m, idx, iz1, iz2, b, w)
         end
 
         if nsetp != m
@@ -537,6 +596,9 @@ function solve!(work::NNLSWorkspace{T, TI}, max_iter::Integer=(3 * size(work.QA,
             if alpha == 2
                 break
             end
+
+            # A AND B ARE ABOUT TO BE MODIFIED, THE DUAL VECTOR MUST BE RECOMPUTED
+            w_valid = false
 
             # OTHERWISE USE ALPHA WHICH WILL BE BETWEEN 0 AND 1 TO
             # INTERPOLATE BETWEEN THE OLD X AND THE NEW ZZ.

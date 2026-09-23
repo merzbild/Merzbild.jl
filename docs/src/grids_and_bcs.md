@@ -38,6 +38,11 @@ All wall types subtype `AbstractBC`.
 | Fully specular wall | Reflects the particle by flipping its normal velocity component | [`FullySpecularBC1D`](@ref) |
 | Fully diffuse wall | Re-emits the particle from a Maxwellian at the wall temperature | [`FullyDiffuseBC1D`](@ref) |
 | Maxwell wall | Mixture of specular and diffuse reflection set by an accommodation coefficient | [`MaxwellWallBC1D`](@ref) |
+| Outflow | Deletes the particle: it leaves the domain | [`OutflowBC`](@ref) |
+
+[`OutflowBC`](@ref) is neither species-specific nor dimension-specific and simply deletes particles
+reaching the surface. Deletion makes `pia` non-contiguous so a sort is required before any per-cell
+operation runs. Outflowing particles are recorded in [`SurfProps`](@ref) as incident only.
 
 Both [`FullyDiffuseBC1D`](@ref) and [`MaxwellWallBC1D`](@ref) are species-specific, since the
 thermal reflection velocity depends on the species mass; [`MaxwellWallBC1D`](@ref) reduces to
@@ -70,3 +75,7 @@ pass over all particles during sorting), plus periodic convection versions:
 The surface-property-computing variants take an additional [`SurfProps`](@ref) argument, into which
 per-wall incident and reflected fluxes of mass, momentum, and energy are accumulated as particles
 strike the walls.
+
+The convection routines return the number of particles deleted at
+outflow boundaries (0 if the boundary condition tuple holds no [`OutflowBC`](@ref));
+the periodic convection routine always returns 0 to be consistent with non-periodic convection functions.

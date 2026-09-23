@@ -445,6 +445,49 @@ and update the particle indexers and buffers accordingly. This changes the order
 end
 
 """
+    delete_particle_and_cell!(pv::ParticleVector{D}, pia, cell, species, i) where D
+
+Delete particle with index i of species `species` in cell `cell`, as [`delete_particle!`](@ref) does,
+additionally swapping the `pv.cell` entries along with the `pv.index` entries, so that `pv.cell` stays
+paired with the particle occupying each index.
+
+Intended for functions that iterate over a cell's particles in reverse order and maintain `pv.cell`
+themselves, such as convection with an outflow boundary.
+Functions for which `pv.cell` (for example, merging functions) holds no meaningful data should use [`delete_particle!`](@ref) instead
+and avoid the extra swap.
+
+# Positional arguments
+* `pv`: `ParticleVector` instance
+* `pia`: the `ParticleIndexerArray` instance
+* `cell`: the index of the cell in which the particle is deleted
+* `species`: the index of the species of which the particle is deleted
+* `i`: the index of the particle to delete
+"""
+@inline function delete_particle_and_cell!(pv::ParticleVector{D}, pia, cell, species, i) where D
+    # check in which group we are in
+    @inbounds indexer = pia.indexer[cell, species]
+
+    if (indexer.n_group2 > 0) && (i >= indexer.start2) && (i <= indexer.end2)
+        @inbounds last_index_group2 = pv.index[indexer.end2]
+        @inbounds last_cell_group2 = pv.cell[indexer.end2]
+        @inbounds pv.index[indexer.end2] = pv.index[i]
+        @inbounds pv.cell[indexer.end2] = pv.cell[i]
+        @inbounds pv.index[i] = last_index_group2
+        @inbounds pv.cell[i] = last_cell_group2
+        delete_particle_end_group2!(pv, pia, cell, species)
+    else
+        @inbounds last_index_group1 = pv.index[indexer.end1]
+        @inbounds last_cell_group1 = pv.cell[indexer.end1]
+        @inbounds pv.index[indexer.end1] = pv.index[i]
+        @inbounds pv.cell[indexer.end1] = pv.cell[i]
+        @inbounds pv.index[i] = last_index_group1
+        @inbounds pv.cell[i] = last_cell_group1
+        delete_particle_end_group1!(pv, pia, cell, species)
+    end
+    return nothing
+end
+
+"""
     delete_particle_end!(pv::ParticleVector{D}, pia, cell, species) where D
 
 Delete the last particle of species `species` in cell `cell`: if particles are present in the 2nd

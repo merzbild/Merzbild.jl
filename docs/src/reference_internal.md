@@ -14,6 +14,7 @@ Merzbild.add_particle!
 Merzbild.update_particle_buffer_new_particle!
 Merzbild.update_buffer_index_new_particle!
 Merzbild.delete_particle!
+Merzbild.delete_particle_and_cell!
 Merzbild.delete_particle_end!
 Merzbild.delete_particle_end_group1!
 Merzbild.delete_particle_end_group2!
@@ -112,11 +113,18 @@ Merzbild.ccm_vel
 Merzbild.ccm_pos
 Merzbild.compute_lhs_and_rhs!
 Merzbild.compute_lhs_and_rhs_rate_preserving!
+Merzbild.compute_row_scale_vref!
+Merzbild.compute_row_scale_variance!
+Merzbild.compute_row_scale_spatial_variance!
+Merzbild.compute_row_scale!
+Merzbild.apply_row_scale!
 Merzbild.scale_lhs_rhs_variance!
 Merzbild.scale_lhs_rhs_vref!
 Merzbild.scale_lhs_rhs_spatial_variance!
 Merzbild.scale_lhs_rhs!
+Merzbild.scale_lhs_rhs_columns!
 Merzbild.scale_lhs_rhs_rate_preserving!
+Merzbild.scale_lhs_rhs_columns_rate_preserving!
 Merzbild.compute_post_merge_particles_nnls!
 Merzbild.OctreeCell
 Merzbild.OctreeFullCell
@@ -181,6 +189,8 @@ Merzbild.update_surface_reflected!
 Merzbild.surface_props_scale!
 Merzbild.apply_bc!
 Merzbild.apply_bc_dispatched!
+Merzbild.bc_is_outflow
+Merzbild.has_outflow_bc
 ```
 
 ## I/O
@@ -217,6 +227,7 @@ Merzbild.binary_search
 Merzbild.linear_interpolation
 Merzbild.compute_mixed_moment
 Merzbild.scale_columns!
+Merzbild.scale_rows_and_columns!
 ```
 
 ## NNLS

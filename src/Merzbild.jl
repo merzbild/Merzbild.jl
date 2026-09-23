@@ -109,7 +109,7 @@ export estimate_sigma_g_w_max_ntc_n_e!, ntc_n_e!, ntc_n_e_es!
 export ParticleVector
 export AbstractGrid, Grid1DUniform, write_grid
 export GridSortInPlace, sort_particles!
-export FullyDiffuseBC1D, MaxwellWallBC1D, FullySpecularBC1D, convect_particles!, convect_particles_and_compute_cell!
+export FullyDiffuseBC1D, MaxwellWallBC1D, FullySpecularBC1D, OutflowBC, convect_particles!, convect_particles_and_compute_cell!
 export convect_particles_periodic!, convect_particles_and_compute_cell_periodic!
 export pretty_print_pia
 export ChunkExchanger, exchange_particles!, reset!, sort_particles_after_exchange!, update_occupancy_bounds!

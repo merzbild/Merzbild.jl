@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.8.4
+* Added `OutflowBC`: particles reaching a surface with this boundary condition are deleted
+* 1-D convection routines now allow for outflow boundaries
+* The non-periodic 1-D convection routines (`convect_particles!`, `convect_particles_and_compute_cell!`)
+now return the number of particles deleted at outflow boundaries
+* `delete_particle_and_cell!` utility function added that deletes particles and re-orders cell indexing to ensure consistency
+* Faster NNLS merging via fused scaling of LHS and RHS, and fusing of the dual-vector computation into the Householder sweep
+
 ## v0.8.3
 * `sort_particles!` and `sort_particles_after_exchange!` record the first and last cell holding particles
 in the `occ_lo`/`occ_hi` fields of the
@@ -20,7 +28,6 @@ of the species pair's entry in the interaction data TOML file (defaults to `"VHS
 requires a `vss_alpha` key
 * `collide_2particles_vhs!` and `collide_2particles_vhs_equal_weight!` renamed to `collide_2particles!` and
 `collide_2particles_equal_weight!`, and now take the scattering model tag as their second argument
-* Utility simulation `simulations/1D/compute_Prandtl.jl` to compute Prandtl number on the basis of Fourier and Couette flow simulation
 * Improved test coverage
 
 ## v0.8.2

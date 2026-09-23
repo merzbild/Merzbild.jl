@@ -123,6 +123,8 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
     for t in 1:n_timesteps
         if t % 1000 == 0 && debug
             println("$t, # of particles=$(pia.n_total[1])")
+        elseif t % 1000 == 0
+            println("$t")
         end
 
         for cell in 1:grid.n_cells
