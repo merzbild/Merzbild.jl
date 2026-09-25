@@ -21,6 +21,8 @@ Struct for keeping track of merging-related quantities for NNLS-based merging of
 * `mim`: vector of 3-tuples of multi-indices for the velocity moments to preserve
 * `tot_order`: vector of total orders of the velocity moments to preserve
 * `vel_powers`: scratch table of powers of the centered velocity components of a particle
+    (or of the inverse velocity scaling factors when the row-wise scaling factors are computed)
+* `mim_offsets`: matrix of linear indices into `vel_powers` of the powers making up each velocity moment
 * `n_moments_pos`: number of spatial moments to preserve
 * `mim_pos`: vector of 3-tuples of multi-indices for the spatial moments to preserve
 * `tot_order_pos`: vector of total orders of the spatial moments to preserve
@@ -55,6 +57,7 @@ mutable struct NNLSMerge{D}
     mim::Vector{SVector{3,Int64}}  # mult-index moments
     tot_order::Vector{Int64}
     vel_powers::Matrix{Float64}
+    mim_offsets::Matrix{Int64}
     n_moments_pos::Int64
     mim_pos::Vector{SVector{3,Int64}}  # mult-index moments
     tot_order_pos::Vector{Int64}
@@ -158,6 +161,8 @@ mutable struct NNLSMerge{D}
         mim_pos_svec = SVector{3,Int64}[SVector{3,Int64}(m[1], m[2], m[3]) for m in mimpos]
 
         max_pow_vel = maximum(maximum(m) for m in mim_svec)
+        # vel_powers[d, e+1] has the linear index d + 3 * e
+        mim_offsets = Int64[d + 3 * m[d] for d in 1:3, m in mim_svec]
         max_pow_pos = length(mim_pos_svec) > 0 ? maximum(maximum(m) for m in mim_pos_svec) : 0
 
         column_norms = Vector{Vector{Float64}}([])
@@ -189,7 +194,7 @@ mutable struct NNLSMerge{D}
                       length(base_moments),
                       zeros(n_total_conserved),  # rhs_vector
                       zeros(n_total_conserved),  # row_scale
-                      mim_svec, tot_order, zeros(3, max_pow_vel+1),
+                      mim_svec, tot_order, zeros(3, max_pow_vel+1), mim_offsets,
                       length(mim_pos_svec), mim_pos_svec, tot_order_pos, zeros(D, max_pow_pos+1),
                       pos_i_x, pos_i_y, pos_i_z,
                       init_np, init_np+matrix_ncol_nprealloc,
@@ -365,19 +370,20 @@ the cost of building the LHS matrix.
 end
 
 """
-    ccm_vel(vel_powers, mim)
+    ccm_vel(vel_powers, mim_offsets, n_mom)
 
 Compute an unweighted central velocity moment from a table of powers filled by [`fill_powers!`](@ref).
 
 # Positional arguments
 * `vel_powers`: the table of powers of the centered velocity components
-* `mim`: the 3-dimensional multi-index
+* `mim_offsets`: the matrix of linear indices into `vel_powers` of the powers making up each moment
+* `n_mom`: the index of the moment
 
 # Returns
 Computed unweighted central moment.
 """
-@inline function ccm_vel(vel_powers, mim)
-    @inbounds return vel_powers[1, mim[1]+1] * vel_powers[2, mim[2]+1] * vel_powers[3, mim[3]+1]
+@inline function ccm_vel(vel_powers, mim_offsets, n_mom)
+    @inbounds return vel_powers[mim_offsets[1, n_mom]] * vel_powers[mim_offsets[2, n_mom]] * vel_powers[mim_offsets[3, n_mom]]
 end
 
 """
@@ -434,7 +440,7 @@ function compute_lhs_and_rhs!(nnls_merging::NNLSMerge{D}, lhs_matrix, vel_pos_ma
     compute_w_total_v0!(nnls_merging, particles, pia, cell, species)
 
     rhs_vector = nnls_merging.rhs_vector
-    mim = nnls_merging.mim
+    mim_offsets = nnls_merging.mim_offsets
     mim_pos = nnls_merging.mim_pos
     vel_powers = nnls_merging.vel_powers
     pos_powers = nnls_merging.pos_powers
@@ -467,7 +473,7 @@ function compute_lhs_and_rhs!(nnls_merging::NNLSMerge{D}, lhs_matrix, vel_pos_ma
 
         fill_powers!(vel_powers, v, v0)
         for n_mom in 1:n_moms
-            tmp_ccm = ccm_vel(vel_powers, mim[n_mom])
+            tmp_ccm = ccm_vel(vel_powers, mim_offsets, n_mom)
             rhs_vector[n_mom] = rhs_vector[n_mom] + w * tmp_ccm
             lhs_matrix[n_mom, col_index] = tmp_ccm
         end
@@ -507,7 +513,7 @@ function compute_lhs_and_rhs!(nnls_merging::NNLSMerge{D}, lhs_matrix, vel_pos_ma
 
             fill_powers!(vel_powers, v, v0)
             for n_mom in 1:n_moms
-                tmp_ccm = ccm_vel(vel_powers, mim[n_mom])
+                tmp_ccm = ccm_vel(vel_powers, mim_offsets, n_mom)
                 rhs_vector[n_mom] = rhs_vector[n_mom] + w * tmp_ccm
                 lhs_matrix[n_mom, col_index] = tmp_ccm
             end
@@ -574,7 +580,7 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
     compute_w_total_v0!(nnls_merging, particles, pia, cell, species)
 
     rhs_vector = nnls_merging.rhs_vector
-    mim = nnls_merging.mim
+    mim_offsets = nnls_merging.mim_offsets
     vel_powers = nnls_merging.vel_powers
     v0 = nnls_merging.v0
     x0 = nnls_merging.x0
@@ -605,7 +611,7 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
 
         fill_powers!(vel_powers, v, v0)
         for n_mom in 1:n_moms
-            tmp_ccm = ccm_vel(vel_powers, mim[n_mom])
+            tmp_ccm = ccm_vel(vel_powers, mim_offsets, n_mom)
             rhs_vector[n_mom] = rhs_vector[n_mom] + w * tmp_ccm
             lhs_matrix[n_mom, col_index] = tmp_ccm
         end
@@ -646,7 +652,7 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
             # w_total += particles[i].w
             fill_powers!(vel_powers, v, v0)
             for n_mom in 1:n_moms
-                tmp_ccm = ccm_vel(vel_powers, mim[n_mom])
+                tmp_ccm = ccm_vel(vel_powers, mim_offsets, n_mom)
                 rhs_vector[n_mom] = rhs_vector[n_mom] + w * tmp_ccm
                 lhs_matrix[n_mom, col_index] = tmp_ccm
             end
@@ -715,7 +721,7 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
     compute_w_total_v0!(nnls_merging, particles, pia, cell, species)
 
     rhs_vector = nnls_merging.rhs_vector
-    mim = nnls_merging.mim
+    mim_offsets = nnls_merging.mim_offsets
     vel_powers = nnls_merging.vel_powers
     v0 = nnls_merging.v0
     x0 = nnls_merging.x0
@@ -749,7 +755,7 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
 
         fill_powers!(vel_powers, v, v0)
         for n_mom in 1:n_moms
-            tmp_ccm = ccm_vel(vel_powers, mim[n_mom])
+            tmp_ccm = ccm_vel(vel_powers, mim_offsets, n_mom)
             rhs_vector[n_mom] = rhs_vector[n_mom] + w * tmp_ccm
             lhs_matrix[n_mom, col_index] = tmp_ccm
         end
@@ -815,7 +821,7 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
 
             fill_powers!(vel_powers, v, v0)
             for n_mom in 1:n_moms
-                tmp_ccm = ccm_vel(vel_powers, mim[n_mom])
+                tmp_ccm = ccm_vel(vel_powers, mim_offsets, n_mom)
                 rhs_vector[n_mom] = rhs_vector[n_mom] + w * tmp_ccm
                 lhs_matrix[n_mom, col_index] = tmp_ccm
             end
@@ -909,8 +915,15 @@ function compute_row_scale_variance!(nnls_merging)
     n_moms = nnls_merging.n_moments_vel
     row_scale = nnls_merging.row_scale
     inv_ev = ifelse.(nnls_merging.Ev .> 1e-6, 1.0 ./ nnls_merging.Ev, nnls_merging.inv_vref)
+    powers = nnls_merging.vel_powers
+    mim_offsets = nnls_merging.mim_offsets
+    @inbounds for e in 1:size(powers, 2)
+        for d in 1:3
+            powers[d, e] = inv_ev[d]^(e - 1)
+        end
+    end
     @inbounds for n_mom in 1:n_moms
-        ref_val = (inv_ev[1]^nnls_merging.mim[n_mom][1]) * (inv_ev[2]^nnls_merging.mim[n_mom][2]) * (inv_ev[3]^nnls_merging.mim[n_mom][3])
+        ref_val = powers[mim_offsets[1, n_mom]] * powers[mim_offsets[2, n_mom]] * powers[mim_offsets[3, n_mom]]
         row_scale[n_mom] = ref_val
         nnls_merging.rhs_vector[n_mom] *= ref_val
     end
