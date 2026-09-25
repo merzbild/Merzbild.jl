@@ -29,6 +29,16 @@ const eV_J_inv::Float64 = 1.0 / eV_J # 1 J = eV_J_inv [eV]
 const twopi::Float64 = 2 * π
 
 """
+``\\sqrt{\\pi}``
+"""
+const sqrt_pi::Float64 = sqrt(π)
+
+"""
+``1/\\sqrt{2}``
+"""
+const inv_sqrt_2::Float64 = 1.0 / sqrt(2.0)
+
+"""
 Electron mass divided by 1 eV, kg/J
 """
 const e_mass_div_electron_volt = 5.685630060187e-12  # m_e / eV, kg/J

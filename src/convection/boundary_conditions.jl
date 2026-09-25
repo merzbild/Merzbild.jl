@@ -208,22 +208,30 @@ Unchanged value of `Δt`.
 end
 
 """
-    apply_bc!(rng, particle::Particle{D}, wallbc::OutflowBC, surface_normal::SVector{3,Float64}, Δt) where D
+Union of the boundary condition types across which particles leave the domain and are deleted by the
+convection routines: [`OutflowBC`](@ref) and [`InflowBC1D`](@ref) (an inflow surface is a reservoir
+boundary, so it acts as an outlet as well as an inlet).
+"""
+const ParticleDeletingBC = Union{OutflowBC, InflowBC1D}
 
-Apply an outflow boundary condition. The particle velocity is left untouched: deletion of the particle is
-performed by the convection routines and the function adds as a placeholder.
+"""
+    apply_bc!(rng, particle::Particle{D}, wallbc::ParticleDeletingBC, surface_normal::SVector{3,Float64}, Δt) where D
+
+Apply a boundary condition across which particles leave the domain ([`Merzbild.ParticleDeletingBC`](@ref)).
+The particle velocity is left untouched: deletion of the particle is performed by the convection routines
+and the function acts as a placeholder.
 
 # Positional arguments
 * `rng`: the random number generator
 * `particle`: the `Particle` instance to which the boundary condition is applied
-* `wallbc`: the `OutflowBC` instance
+* `wallbc`: the `OutflowBC` or `InflowBC1D` instance
 * `surface_normal`: the vector of the surface normal
 * `Δt`: the time left for the particle to move
 
 # Returns
 Unchanged value of `Δt`.
 """
-@inline function apply_bc!(rng, particle::Particle{D}, wallbc::OutflowBC, surface_normal::SVector{3,Float64}, Δt) where D
+@inline function apply_bc!(rng, particle::Particle{D}, wallbc::ParticleDeletingBC, surface_normal::SVector{3,Float64}, Δt) where D
     return Δt
 end
 
@@ -260,27 +268,28 @@ Potentially changed value of `Δt`.
 end
 
 """
-    bc_is_outflow(bcs::Tuple, i::Int)
+    bc_deletes_particles(bcs::Tuple, i::Int)
 
-Generates a function that checks whether the boundary condition with index `i` is an [`OutflowBC`](@ref).
+Generates a function that checks whether particles reaching the boundary with index `i` leave the domain,
+that is, whether the boundary condition is a [`Merzbild.ParticleDeletingBC`](@ref).
 Each branch of the generated if-chain returns a compile-time constant, so for a `bcs` tuple containing no
-outflow boundaries the check is eliminated entirely.
+such boundaries the check is eliminated entirely.
 
 # Positional arguments:
 * `bcs`: Tuple of boundary conditions
 * `i`: index of the boundary condition to check
 
 # Returns
-Whether the boundary condition is an outflow boundary condition.
+Whether particles reaching the boundary are deleted.
 """
-@generated function bc_is_outflow(bcs::Tuple, i::Int)
+@generated function bc_deletes_particles(bcs::Tuple, i::Int)
     N_bcs = length(bcs.parameters)
     ex = quote end
 
     for j in 1:N_bcs
-        is_outflow = bcs.parameters[j] <: OutflowBC
+        deletes = bcs.parameters[j] <: ParticleDeletingBC
         push!(ex.args, :(if i == $j
-            return $is_outflow
+            return $deletes
         end))
     end
     push!(ex.args, :(return false))
@@ -288,9 +297,10 @@ Whether the boundary condition is an outflow boundary condition.
 end
 
 """
-    has_outflow_bc(bcs::Tuple)
+    has_particle_deleting_bc(bcs::Tuple)
 
-Generates a function that checks whether a tuple of boundary conditions contains an [`OutflowBC`](@ref).
+Generates a function that checks whether a tuple of boundary conditions contains a boundary across which
+particles leave the domain, that is, a [`Merzbild.ParticleDeletingBC`](@ref).
 The result is a compile-time constant, used to select between the convection routines' default path and
 the path that deletes particles leaving the domain.
 
@@ -298,10 +308,10 @@ the path that deletes particles leaving the domain.
 * `bcs`: Tuple of boundary conditions
 
 # Returns
-Whether the tuple contains an outflow boundary condition.
+Whether the tuple contains a boundary condition across which particles are deleted.
 """
-@generated function has_outflow_bc(bcs::Tuple)
-    result = any(bc -> bc <: OutflowBC, bcs.parameters)
+@generated function has_particle_deleting_bc(bcs::Tuple)
+    result = any(bc -> bc <: ParticleDeletingBC, bcs.parameters)
     return :($result)
 end
 

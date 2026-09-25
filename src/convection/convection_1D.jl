@@ -16,7 +16,7 @@ Convect a singe particle on a 1-D uniform grid.
 * `Δt`: the convection timestep
 
 # Returns
-Whether the particle left the domain through an outflow boundary and is to be deleted.
+Whether the particle left the domain and is to be deleted.
 """
 @inline function convect_single_particle!(rng, grid::Grid1DUniform, bc_list, particle::Particle{D}, species, Δt) where D
     t_rest = Δt
@@ -34,7 +34,7 @@ Whether the particle left the domain through an outflow boundary and is to be de
             x_old = 0.0
         end
 
-        if bc_is_outflow(bc_list, bc_id)
+        if bc_deletes_particles(bc_list, bc_id)
             return true
         end
 
@@ -86,8 +86,8 @@ Convect a singe particle on a 1-D uniform grid, updating surface properties if i
 * `Δt`: the convection timestep
 
 # Returns
-Whether the particle left the domain through an outflow boundary and is to be deleted.
-A particle leaving through an outflow boundary is counted as incident on the surface,
+Whether the particle left the domain and is to be deleted.
+A particle leaving the domain is counted as incident on the surface,
 but produces no reflected contribution.
 """
 @inline function convect_single_particle!(rng, grid::Grid1DUniform, bc_list, particle::Particle{D}, species, surf_props::SurfProps, mass, Δt) where D
@@ -108,7 +108,7 @@ but produces no reflected contribution.
 
         update_surface_incident!(particle, species, surf_props, bc_id)
 
-        if bc_is_outflow(bc_list, bc_id)
+        if bc_deletes_particles(bc_list, bc_id)
             return true
         end
 
@@ -141,10 +141,10 @@ Convect particles on a 1-D uniform grid.
 * `Δt`: the convection timestep
 
 # Returns
-The number of particles deleted at outflow boundaries (0 if `bc_list` contains no [`OutflowBC`](@ref)).
+The number of particles that left the domain and were deleted (0 if `bc_list` contains no [`Merzbild.ParticleDeletingBC`](@ref)).
 """
 function convect_particles!(rng, grid::Grid1DUniform, bc_list, particles::ParticleVector{D}, pia, species, species_data, Δt) where D
-    if has_outflow_bc(bc_list)
+    if has_particle_deleting_bc(bc_list)
         n_deleted = 0
 
         @inbounds for cell in 1:grid.n_cells
@@ -218,7 +218,7 @@ Convect particles on a 1-D uniform grid assuming a periodic grid.
 * `Δt`: the convection timestep
 
 # Returns
-0 (the number of particles deleted at outflow boundaries, to be consistent with other convection routines).
+0 (the number of deleted particles, to be consistent with other convection routines).
 """
 function convect_particles_periodic!(grid::Grid1DUniform, particles::ParticleVector{D}, pia, species, Δt) where D
     @inbounds if pia.contiguous[species]
@@ -265,13 +265,13 @@ Convect particles on a 1-D uniform grid, computing surface properties if particl
 * `Δt`: the convection timestep
 
 # Returns
-The number of particles deleted at outflow boundaries (0 if `bc_list` contains no [`OutflowBC`](@ref)).
+The number of particles that left the domain and were deleted (0 if `bc_list` contains no [`Merzbild.ParticleDeletingBC`](@ref)).
 """
 function convect_particles!(rng, grid::Grid1DUniform, bc_list, particles::ParticleVector{D}, pia, species, species_data, surf_props::SurfProps, Δt) where D
     @inbounds mass = species_data[species].mass
     clear_props!(surf_props)
 
-    if has_outflow_bc(bc_list)
+    if has_particle_deleting_bc(bc_list)
         n_deleted = 0
 
         @inbounds for cell in 1:grid.n_cells
@@ -351,10 +351,10 @@ Convect particles on a 1-D uniform grid and write post-convection cell index to 
 * `Δt`: the convection timestep
 
 # Returns
-The number of particles deleted at outflow boundaries (0 if `bc_list` contains no [`OutflowBC`](@ref)).
+The number of particles that left the domain and were deleted (0 if `bc_list` contains no [`Merzbild.ParticleDeletingBC`](@ref)).
 """
 function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, bc_list, particles::ParticleVector{D}, pia, species, species_data, Δt) where D
-    if has_outflow_bc(bc_list)
+    if has_particle_deleting_bc(bc_list)
         n_deleted = 0
 
         @inbounds for cell in 1:grid.n_cells
@@ -440,7 +440,7 @@ assuming a periodic grid.
 * `Δt`: the convection timestep
 
 # Returns
-0 (the number of particles deleted at outflow boundaries, to be consistent with other convection routines).
+0 (the number of deleted particles, to be consistent with other convection routines).
 """
 function convect_particles_and_compute_cell_periodic!(grid::Grid1DUniform, particles::ParticleVector{D}, pia, species, Δt) where D
     @inbounds if pia.contiguous[species]
@@ -491,13 +491,13 @@ Convect particles on a 1-D uniform grid and write post-convection cell index to 
 * `Δt`: the convection timestep
 
 # Returns
-The number of particles deleted at outflow boundaries (0 if `bc_list` contains no [`OutflowBC`](@ref)).
+The number of particles that left the domain and were deleted (0 if `bc_list` contains no [`Merzbild.ParticleDeletingBC`](@ref)).
 """
 function convect_particles_and_compute_cell!(rng, grid::Grid1DUniform, bc_list, particles::ParticleVector{D}, pia, species, species_data, surf_props::SurfProps, Δt) where D
     @inbounds mass = species_data[species].mass
     clear_props!(surf_props)
 
-    if has_outflow_bc(bc_list)
+    if has_particle_deleting_bc(bc_list)
         n_deleted = 0
 
         @inbounds for cell in 1:grid.n_cells

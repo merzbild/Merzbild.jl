@@ -6,8 +6,13 @@
 * The non-periodic 1-D convection routines (`convect_particles!`, `convect_particles_and_compute_cell!`)
 now return the number of particles deleted at outflow boundaries
 * `delete_particle_and_cell!` utility function added that deletes particles and re-orders cell indexing to ensure consistency
-* Faster NNLS merging via 1) fused scaling of LHS and RHS 2) fusing of the dual-vector computation into the Householder sweep 3) workspace re-used without allocation for varying particle counts 4) optimized Givens rotations and triangular solves
+* Added `InflowBC1D`, a 1-D reservoir boundary condition; particles of the domain
+reaching such a boundary leave it and are deleted, as for an `OutflowBC`. Streaming velocities
+pointing out of the domain are not yet supported
+* `compute_inflow_number_flux` to compute the number flux across a surface from the number density,
+temperature and streaming velocity of the reservoir
 * Utility simulation `simulations/1D/compute_Prandtl.jl` to compute Prandtl number on the basis of Fourier and Couette flow simulation
+* Faster NNLS merging via 1) fused scaling of LHS and RHS 2) fusing of the dual-vector computation into the Householder sweep 3) workspace re-used without allocation for varying particle counts 4) optimized Givens rotations and triangular solves 5) other minor improvements
 
 ## v0.8.3
 * `sort_particles!` and `sort_particles_after_exchange!` record the first and last cell holding particles

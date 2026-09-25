@@ -189,8 +189,13 @@ Merzbild.update_surface_reflected!
 Merzbild.surface_props_scale!
 Merzbild.apply_bc!
 Merzbild.apply_bc_dispatched!
-Merzbild.bc_is_outflow
-Merzbild.has_outflow_bc
+Merzbild.bc_deletes_particles
+Merzbild.has_particle_deleting_bc
+Merzbild.ParticleDeletingBC
+Merzbild.maxwellian_inflow_normalization
+Merzbild.compute_inflow_speed_ratio
+Merzbild.check_inflow_sampler
+Merzbild.sample_inflow_z
 ```
 
 ## I/O
@@ -214,6 +219,8 @@ Merzbild.eV
 Merzbild.eV_J
 Merzbild.eV_J_inv
 Merzbild.twopi
+Merzbild.sqrt_pi
+Merzbild.inv_sqrt_2
 Merzbild.e_mass_div_electron_volt
 Merzbild.direction_signs
 Merzbild.q_e
