@@ -73,8 +73,10 @@ end
 
     # both reservoirs are in equilibrium with the domain, so the number of particles stays close to
     # the initial one, and the particle vector does not have to be resized
-    bc_list = (InflowBC1D(1, species_data, T, [0.0, 0.0, 0.0], [1.0, 0.0, 0.0], ndens),
-               InflowBC1D(1, species_data, T, [0.0, 0.0, 0.0], [-1.0, 0.0, 0.0], ndens))
+    # the sampler is passed explicitly, as the constructor choosing it is not type-stable, which would
+    # make the type of bc_list unknown at the testset level and box the arguments of the calls on Julia LTS
+    bc_list = (InflowBC1D(InflowNoDrift(), 1, species_data, T, [0.0, 0.0, 0.0], [1.0, 0.0, 0.0], ndens),
+               InflowBC1D(InflowNoDrift(), 1, species_data, T, [0.0, 0.0, 0.0], [-1.0, 0.0, 0.0], ndens))
 
     n_particles = 4 * ppc * nx
     particles = ParticleVector(n_particles)
