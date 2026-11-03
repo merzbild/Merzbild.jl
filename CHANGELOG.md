@@ -7,7 +7,8 @@
 reaching such a boundary leave it and are deleted, as for an `OutflowBC`. Streaming velocities
 pointing out of the domain are not yet supported
 * `emit_particles!` to emit particles across `InflowBC1D` boundaries; optionally, the properties of the emitted particles
-are recorded in `SurfProps` as reflected from the boundary
+are recorded in `SurfProps` as reflected from the boundary; see
+`simulations/1D/inflow_into_vacuum_outflow.jl` for usage example
 * The non-periodic 1-D convection routines (`convect_particles!`, `convect_particles_and_compute_cell!`)
 now return the number of particles deleted at outflow boundaries
 * `compute_inflow_number_flux` to compute the number flux across a surface from the number density,
