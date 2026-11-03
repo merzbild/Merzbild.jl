@@ -149,9 +149,9 @@ end
     @test threaded.n_total == serial.n_total
 
     # in case props computation order, etc. affects things
-    @test abs(threaded.phys_props.n - serial.phys_props.n) < 4*eps()
-    @test abs(threaded.phys_props.v - serial.phys_props.v) < 4*eps()
-    @test abs(threaded.phys_props.T - serial.phys_props.T) < 4*eps()
+    @test maximum(abs.(threaded.phys_props.n - serial.phys_props.n)) < 4*eps()
+    @test maximum(abs.(threaded.phys_props.v - serial.phys_props.v)) < 4*eps()
+    @test maximum(abs.(threaded.phys_props.T - serial.phys_props.T)) < 4*eps()
 
     for chunk_id in 1:n_chunks
         @test threaded.pia_correct[chunk_id] == (true, 0)
