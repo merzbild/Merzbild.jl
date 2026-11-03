@@ -196,6 +196,7 @@ convect_particles!
 convect_particles_periodic!
 convect_particles_and_compute_cell!
 convect_particles_and_compute_cell_periodic!
+emit_particles!
 ```
 
 ## Particle-surface interactions
@@ -205,6 +206,15 @@ MaxwellWallBC1D(species, species_data,T::Float64, v, accommodation::Float64)
 FullyDiffuseBC1D
 FullyDiffuseBC1D(species, species_data, T::Float64, v)
 FullySpecularBC1D
+OutflowBC
+AbstractInflowSampler
+InflowNoDrift
+InflowEnvelope4
+InflowBC1D
+InflowBC1D(species, species_data, T::Float64, v, normal, ndens::Float64)
+InflowBC1D(sampler::AbstractInflowSampler, species, species_data, T::Float64, v, normal, ndens::Float64)
+compute_inflow_number_flux
+sample_inflow_velocity
 ```
 
 ## I/O

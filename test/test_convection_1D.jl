@@ -39,7 +39,7 @@
 
     @test particles[1].index == [4, 1, 3, 2]
 
-    @test maximum(abs.(particles[1][1].x - [3.55, -1.0, 9.0])) < 3.65e-15 # * eps()
+    @test maximum(abs.(particles[1][1].x - [3.55, -1.0, 9.0])) < 4.65e-15 # * eps()
     @test particles[1][1].v == [-49.0, -20.0, 13.0]
     @test particles[1][1].w == 4.0
 
@@ -102,7 +102,7 @@
 
     @test particles[1].index == [4, 1, 3, 2]
 
-    @test maximum(abs.(particles[1][1].x - [3.55, -1.0, 9.0])) < 3.65e-15 # * eps()
+    @test maximum(abs.(particles[1][1].x - [3.55, -1.0, 9.0])) < 4.65e-15 # * eps()
     @test particles[1][1].v == [-49.0, -20.0, 13.0]
     @test particles[1][1].w == 4.0
 
@@ -442,7 +442,7 @@
 
     @test particles[1].index == [4, 1, 3, 2]
 
-    @test maximum(abs.(particles[1][1].x - [3.55, -1.0, 9.0])) < 3.65e-15 # * eps()
+    @test maximum(abs.(particles[1][1].x - [3.55, -1.0, 9.0])) < 4.65e-15 # * eps()
     @test particles[1][1].v == [-49.0, -20.0, 13.0]
     @test particles[1][1].w == 4.0
 

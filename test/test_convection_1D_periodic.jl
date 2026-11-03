@@ -31,8 +31,9 @@
     # will wrap around twice: 1.55 - 49.0*2 = -96.45 -> -96.45 + 50.0*2 = 3.55
     particles[1][4] = Particle(4.0, [-49.0, -20.0, 13.0], [1.55, -1.0, 9.0])
 
-    convect_particles_periodic!(grid, particles[1], pia, 1, 2.0)
+    ndel = convect_particles_periodic!(grid, particles[1], pia, 1, 2.0)
     sort_particles!(gridsorter, grid, particles[1], pia, 1)
+    @test ndel == 0
 
     @test particles[1].index == [4, 1, 2, 3]
 
@@ -99,8 +100,10 @@
     # will wrap around twice: 1.55 - 49.0*2 = -96.45 -> -96.45 + 50.0*2 = 3.55
     particles[1][5] = Particle(4.0, [-49.0, -20.0, 13.0], [1.55, -1.0, 9.0])
 
-    convect_particles_periodic!(grid, particles[1], pia, 1, 2.0)
+    ndel = convect_particles_periodic!(grid, particles[1], pia, 1, 2.0)
     sort_particles!(gridsorter, grid, particles[1], pia, 1)
+
+    @test ndel == 0
 
     @test particles[1].index[1:4] == [5, 1, 2, 4]
 
@@ -161,7 +164,8 @@
     # will wrap around twice: 1.55 - 49.0*2 = -96.45 -> -96.45 + 50.0*2 = 3.55
     particles[1][4] = Particle(4.0, [-49.0, -20.0, 13.0], [1.55, -1.0, 9.0])
 
-    convect_particles_and_compute_cell_periodic!(grid, particles[1], pia, 1, 2.0)
+    ndel = convect_particles_and_compute_cell_periodic!(grid, particles[1], pia, 1, 2.0)
+    @test ndel == 0
 
     # cells computed correctly in routine
     @test particles[1].cell[1:4] == [42, 43, 55, 8]
@@ -233,7 +237,8 @@
     # will wrap around twice: 1.55 - 49.0*2 = -96.45 -> -96.45 + 50.0*2 = 3.55
     particles[1][5] = Particle(4.0, [-49.0, -20.0, 13.0], [1.55, -1.0, 9.0])
 
-    convect_particles_and_compute_cell_periodic!(grid, particles[1], pia, 1, 2.0)
+    ndel = convect_particles_and_compute_cell_periodic!(grid, particles[1], pia, 1, 2.0)
+    @test ndel == 0
 
     # cells computed correctly in routine: 3rd cell is 0 as particle is skipped
     @test particles[1].cell[1:5] == [42, 43, 0, 55, 8]

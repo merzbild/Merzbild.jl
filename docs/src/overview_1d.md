@@ -138,7 +138,7 @@ convect_particles!(rng, grid, bc_list, particles[species_id], pia, species_id, s
 
 ## Convection and sorting with precomputed particle/cell indices
 The approach described above assumes that during the convection process, the indices of the cells the particles find themselves in
-are not computed; therefore the call to `sort_particles!` requires passing in the `grid` instance, and the `sort_particles!`
+are not computed; therefore the call to [`sort_particles!`](@ref) requires passing in the `grid` instance, and the `sort_particles!`
 calls a `get_cell` function internally. For 1-D uniform grids, this is an efficient operation, but for other grid types,
 the computation of the cell index given only the particle position can be more expensive than keeping track of the cell index inside the convection routine.
 
@@ -149,6 +149,11 @@ to sort the particles:
 ```
 sort_particles!(gridsorter, particles[species_id], pia, species_id)
 ```
+
+Note that the [`convect_particles_and_compute_cell!`](@ref) and the 4-parameter version of [`sort_particles!`](@ref)
+are expected to be noticeably more efficient for larger grids. In addition, particle inflow BCs also compute the post-movement
+cells of the emitted particles, and therefore directly benefit from using the 4-parameter version of [`sort_particles!`](@ref),
+which then it turn requires using [`convect_particles_and_compute_cell!`](@ref).
 
 ## Bringing it all together
 Now we can combine all the pieces to set up a simulation of a single-species Couette flow in a channel

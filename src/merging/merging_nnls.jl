@@ -21,6 +21,8 @@ Struct for keeping track of merging-related quantities for NNLS-based merging of
 * `mim`: vector of 3-tuples of multi-indices for the velocity moments to preserve
 * `tot_order`: vector of total orders of the velocity moments to preserve
 * `vel_powers`: scratch table of powers of the centered velocity components of a particle
+    (or of the inverse velocity scaling factors when the row-wise scaling factors are computed)
+* `mim_offsets`: matrix of linear indices into `vel_powers` of the powers making up each velocity moment
 * `n_moments_pos`: number of spatial moments to preserve
 * `mim_pos`: vector of 3-tuples of multi-indices for the spatial moments to preserve
 * `tot_order_pos`: vector of total orders of the spatial moments to preserve
@@ -55,6 +57,7 @@ mutable struct NNLSMerge{D}
     mim::Vector{SVector{3,Int64}}  # mult-index moments
     tot_order::Vector{Int64}
     vel_powers::Matrix{Float64}
+    mim_offsets::Matrix{Int64}
     n_moments_pos::Int64
     mim_pos::Vector{SVector{3,Int64}}  # mult-index moments
     tot_order_pos::Vector{Int64}
@@ -90,7 +93,7 @@ mutable struct NNLSMerge{D}
     spanning `[init_np, init_np+matrix_ncol_nprealloc]`.
     In this case, `matrix_ncol_nprealloc+2` `NNLSWorkspace` instances are pre-allocated, with the last one being used
     in case the number of columns is not in the range (its LHS matrix is then re-allocated on the fly, but only
-    when the number of columns differs from the previous call).
+    when the number of columns exceeds the number of columns it currently holds).
     Vectors `column_norms` and `vel_pos_matrices` are also then pre-allocated, holding respectively the inverses of the
     column-wise norms of the LHS matrices used for their scaling, and the particle velocities and positions.
     Outside the pre-allocated range the `column_norms_scratch` / `vel_pos_matrix_scratch` buffers are used instead;
@@ -158,6 +161,8 @@ mutable struct NNLSMerge{D}
         mim_pos_svec = SVector{3,Int64}[SVector{3,Int64}(m[1], m[2], m[3]) for m in mimpos]
 
         max_pow_vel = maximum(maximum(m) for m in mim_svec)
+        # vel_powers[d, e+1] has the linear index d + 3 * e
+        mim_offsets = Int64[d + 3 * m[d] for d in 1:3, m in mim_svec]
         max_pow_pos = length(mim_pos_svec) > 0 ? maximum(maximum(m) for m in mim_pos_svec) : 0
 
         column_norms = Vector{Vector{Float64}}([])
@@ -189,7 +194,7 @@ mutable struct NNLSMerge{D}
                       length(base_moments),
                       zeros(n_total_conserved),  # rhs_vector
                       zeros(n_total_conserved),  # row_scale
-                      mim_svec, tot_order, zeros(3, max_pow_vel+1),
+                      mim_svec, tot_order, zeros(3, max_pow_vel+1), mim_offsets,
                       length(mim_pos_svec), mim_pos_svec, tot_order_pos, zeros(D, max_pow_pos+1),
                       pos_i_x, pos_i_y, pos_i_z,
                       init_np, init_np+matrix_ncol_nprealloc,
@@ -218,7 +223,7 @@ mutable struct NNLSMerge{D}
     spanning `[init_np, init_np+matrix_ncol_nprealloc]`.
     In this case, `matrix_ncol_nprealloc+2` `NNLSWorkspace` instances are pre-allocated, with the last one being used
     in case the number of columns is not in the range (its LHS matrix is then re-allocated on the fly, but only
-    when the number of columns differs from the previous call).
+    when the number of columns exceeds the number of columns it currently holds).
     Vectors `column_norms` and `vel_pos_matrices` are also then pre-allocated, holding respectively the inverses of the
     column-wise norms of the LHS matrices used for their scaling, and the particle velocities and positions.
     Outside the pre-allocated range the `column_norms_scratch` / `vel_pos_matrix_scratch` buffers are used instead;
@@ -365,19 +370,20 @@ the cost of building the LHS matrix.
 end
 
 """
-    ccm_vel(vel_powers, mim)
+    ccm_vel(vel_powers, mim_offsets, n_mom)
 
 Compute an unweighted central velocity moment from a table of powers filled by [`fill_powers!`](@ref).
 
 # Positional arguments
 * `vel_powers`: the table of powers of the centered velocity components
-* `mim`: the 3-dimensional multi-index
+* `mim_offsets`: the matrix of linear indices into `vel_powers` of the powers making up each moment
+* `n_mom`: the index of the moment
 
 # Returns
 Computed unweighted central moment.
 """
-@inline function ccm_vel(vel_powers, mim)
-    @inbounds return vel_powers[1, mim[1]+1] * vel_powers[2, mim[2]+1] * vel_powers[3, mim[3]+1]
+@inline function ccm_vel(vel_powers, mim_offsets, n_mom)
+    @inbounds return vel_powers[mim_offsets[1, n_mom]] * vel_powers[mim_offsets[2, n_mom]] * vel_powers[mim_offsets[3, n_mom]]
 end
 
 """
@@ -434,7 +440,7 @@ function compute_lhs_and_rhs!(nnls_merging::NNLSMerge{D}, lhs_matrix, vel_pos_ma
     compute_w_total_v0!(nnls_merging, particles, pia, cell, species)
 
     rhs_vector = nnls_merging.rhs_vector
-    mim = nnls_merging.mim
+    mim_offsets = nnls_merging.mim_offsets
     mim_pos = nnls_merging.mim_pos
     vel_powers = nnls_merging.vel_powers
     pos_powers = nnls_merging.pos_powers
@@ -467,7 +473,7 @@ function compute_lhs_and_rhs!(nnls_merging::NNLSMerge{D}, lhs_matrix, vel_pos_ma
 
         fill_powers!(vel_powers, v, v0)
         for n_mom in 1:n_moms
-            tmp_ccm = ccm_vel(vel_powers, mim[n_mom])
+            tmp_ccm = ccm_vel(vel_powers, mim_offsets, n_mom)
             rhs_vector[n_mom] = rhs_vector[n_mom] + w * tmp_ccm
             lhs_matrix[n_mom, col_index] = tmp_ccm
         end
@@ -507,7 +513,7 @@ function compute_lhs_and_rhs!(nnls_merging::NNLSMerge{D}, lhs_matrix, vel_pos_ma
 
             fill_powers!(vel_powers, v, v0)
             for n_mom in 1:n_moms
-                tmp_ccm = ccm_vel(vel_powers, mim[n_mom])
+                tmp_ccm = ccm_vel(vel_powers, mim_offsets, n_mom)
                 rhs_vector[n_mom] = rhs_vector[n_mom] + w * tmp_ccm
                 lhs_matrix[n_mom, col_index] = tmp_ccm
             end
@@ -574,7 +580,7 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
     compute_w_total_v0!(nnls_merging, particles, pia, cell, species)
 
     rhs_vector = nnls_merging.rhs_vector
-    mim = nnls_merging.mim
+    mim_offsets = nnls_merging.mim_offsets
     vel_powers = nnls_merging.vel_powers
     v0 = nnls_merging.v0
     x0 = nnls_merging.x0
@@ -605,7 +611,7 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
 
         fill_powers!(vel_powers, v, v0)
         for n_mom in 1:n_moms
-            tmp_ccm = ccm_vel(vel_powers, mim[n_mom])
+            tmp_ccm = ccm_vel(vel_powers, mim_offsets, n_mom)
             rhs_vector[n_mom] = rhs_vector[n_mom] + w * tmp_ccm
             lhs_matrix[n_mom, col_index] = tmp_ccm
         end
@@ -646,7 +652,7 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
             # w_total += particles[i].w
             fill_powers!(vel_powers, v, v0)
             for n_mom in 1:n_moms
-                tmp_ccm = ccm_vel(vel_powers, mim[n_mom])
+                tmp_ccm = ccm_vel(vel_powers, mim_offsets, n_mom)
                 rhs_vector[n_mom] = rhs_vector[n_mom] + w * tmp_ccm
                 lhs_matrix[n_mom, col_index] = tmp_ccm
             end
@@ -715,7 +721,7 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
     compute_w_total_v0!(nnls_merging, particles, pia, cell, species)
 
     rhs_vector = nnls_merging.rhs_vector
-    mim = nnls_merging.mim
+    mim_offsets = nnls_merging.mim_offsets
     vel_powers = nnls_merging.vel_powers
     v0 = nnls_merging.v0
     x0 = nnls_merging.x0
@@ -749,7 +755,7 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
 
         fill_powers!(vel_powers, v, v0)
         for n_mom in 1:n_moms
-            tmp_ccm = ccm_vel(vel_powers, mim[n_mom])
+            tmp_ccm = ccm_vel(vel_powers, mim_offsets, n_mom)
             rhs_vector[n_mom] = rhs_vector[n_mom] + w * tmp_ccm
             lhs_matrix[n_mom, col_index] = tmp_ccm
         end
@@ -815,7 +821,7 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
 
             fill_powers!(vel_powers, v, v0)
             for n_mom in 1:n_moms
-                tmp_ccm = ccm_vel(vel_powers, mim[n_mom])
+                tmp_ccm = ccm_vel(vel_powers, mim_offsets, n_mom)
                 rhs_vector[n_mom] = rhs_vector[n_mom] + w * tmp_ccm
                 lhs_matrix[n_mom, col_index] = tmp_ccm
             end
@@ -872,6 +878,131 @@ function compute_lhs_and_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_ma
 end
 
 """
+    compute_row_scale_vref!(nnls_merging)
+
+Compute the row-wise scaling factors of the velocity moments using the reference velocity ``v_{ref}``
+and scale the RHS with them. Each moment is scaled
+by ``(1/v_{ref})^{n_{tot}}``, where ``n_{tot}`` is the total order of the moment (i.e. for
+a moment with multi-index `(i,j,k)` the total order is `i+j+k`).
+
+# Positional arguments
+* `nnls_merging`: the `NNLSMerge` instance
+"""
+function compute_row_scale_vref!(nnls_merging)
+    n_moms = nnls_merging.n_moments_vel
+    row_scale = nnls_merging.row_scale
+    @inbounds for n_mom in 1:n_moms
+        ref_val = nnls_merging.inv_vref^nnls_merging.tot_order[n_mom]
+        row_scale[n_mom] = ref_val
+        nnls_merging.rhs_vector[n_mom] *= ref_val
+    end
+    nnls_merging.scalev = SVector{3,Float64}(nnls_merging.vref, nnls_merging.vref, nnls_merging.vref)
+    return nothing
+end
+
+"""
+    compute_row_scale_variance!(nnls_merging)
+
+Compute the row-wise scaling factors of the velocity moments using the computed variances of the particle velocities
+in the ``x``, ``y``, ``z`` directions and scale the RHS with them. If any of the variances is smaller than 1e-6, then
+``v_{ref}`` is used. Each moment with multi-index `(i,j,k)` is scaled
+by ``(1/Ev[1])^{i}(1/Ev[2])^{j}(1/Ev[3])^{k}``.
+
+# Positional arguments
+* `nnls_merging`: the `NNLSMerge` instance
+"""
+function compute_row_scale_variance!(nnls_merging)
+    n_moms = nnls_merging.n_moments_vel
+    row_scale = nnls_merging.row_scale
+    inv_ev = ifelse.(nnls_merging.Ev .> 1e-6, 1.0 ./ nnls_merging.Ev, nnls_merging.inv_vref)
+    powers = nnls_merging.vel_powers
+    mim_offsets = nnls_merging.mim_offsets
+    @inbounds for e in 1:size(powers, 2)
+        for d in 1:3
+            powers[d, e] = inv_ev[d]^(e - 1)
+        end
+    end
+    @inbounds for n_mom in 1:n_moms
+        ref_val = powers[mim_offsets[1, n_mom]] * powers[mim_offsets[2, n_mom]] * powers[mim_offsets[3, n_mom]]
+        row_scale[n_mom] = ref_val
+        nnls_merging.rhs_vector[n_mom] *= ref_val
+    end
+    nnls_merging.scalev = 1.0 ./ inv_ev
+    return nothing
+end
+
+"""
+    compute_row_scale_spatial_variance!(nnls_merging::NNLSMerge{D}) where D
+
+Compute the row-wise scaling factors of the spatial moments using the computed variances of the particle positions
+in the ``x``, ``y``, ``z`` directions and scale the RHS with them. If any of the variances is smaller than 1e-6, then
+no scaling is done. Each spatial moment with multi-index `(i,j,k)` is scaled
+by ``(1/Ex[1])^{i}(1/Ex[2])^{j}(1/Ex[3])^{k}``, for non-3-dimensional particle vectors only the first D components are considered and scaled.
+
+# Positional arguments
+* `nnls_merging`: the `NNLSMerge` instance
+"""
+function compute_row_scale_spatial_variance!(nnls_merging::NNLSMerge{D}) where D
+    n_moms = nnls_merging.n_moments_vel
+    row_scale = nnls_merging.row_scale
+
+    inv_ex = ifelse.(nnls_merging.Ex .> 1e-6, 1.0 ./ nnls_merging.Ex, 1.0)
+    @inbounds for n_mom in 1:nnls_merging.n_moments_pos
+        ref_val = 1.0
+        for j in 1:D
+            ref_val *= inv_ex[j]^nnls_merging.mim_pos[n_mom][j]
+        end
+        row_scale[n_moms + n_mom] = ref_val
+        nnls_merging.rhs_vector[n_moms + n_mom] *= ref_val
+    end
+    nnls_merging.scalex = 1.0 ./ inv_ex
+    return nothing
+end
+
+"""
+    compute_row_scale!(nnls_merging, scaling)
+
+Compute the row-wise scaling factors of all the moments and scale the RHS with them; rows for which
+no scaling is defined (and all rows if `scaling` is not one of the supported values) get a factor of 1.
+
+# Positional arguments
+* `nnls_merging`: the `NNLSMerge` instance
+* `scaling`: how to scale entries (`:vref` or `:variance`)
+"""
+function compute_row_scale!(nnls_merging, scaling)
+    fill!(nnls_merging.row_scale, 1.0)
+    if scaling == :variance
+        compute_row_scale_variance!(nnls_merging)
+        compute_row_scale_spatial_variance!(nnls_merging)
+    elseif scaling == :vref
+        compute_row_scale_vref!(nnls_merging)
+        compute_row_scale_spatial_variance!(nnls_merging)
+    end
+    return nothing
+end
+
+"""
+    apply_row_scale!(lhs_matrix, row_scale, row_start, row_end, lhs_ncols)
+
+Scale rows `row_start:row_end` of the LHS matrix by the corresponding entries of `row_scale`.
+
+# Positional arguments
+* `lhs_matrix`: the matrix of the LHS
+* `row_scale`: the vector of the row-wise scaling factors
+* `row_start`: index of the first row to scale
+* `row_end`: index of the last row to scale
+* `lhs_ncols`: number of columns in the LHS matrix
+"""
+function apply_row_scale!(lhs_matrix, row_scale, row_start, row_end, lhs_ncols)
+    @inbounds for col in 1:lhs_ncols
+        @simd for n_mom in row_start:row_end
+            lhs_matrix[n_mom, col] *= row_scale[n_mom]
+        end
+    end
+    return nothing
+end
+
+"""
     scale_lhs_rhs_vref!(nnls_merging::NNLSMerge{D}, lhs_matrix, lhs_ncols) where D
 
 Scale the LHS and RHS of the NNLS system using the reference velocity ``v_{ref}``. Each moment is scaled
@@ -884,19 +1015,8 @@ a moment with multi-index `(i,j,k)` the total order is `i+j+k`).
 * `lhs_ncols`: number of columns in the LHS matrix
 """
 function scale_lhs_rhs_vref!(nnls_merging::NNLSMerge{D}, lhs_matrix, lhs_ncols) where D
-    n_moms = nnls_merging.n_moments_vel
-    row_scale = nnls_merging.row_scale
-    @inbounds for n_mom in 1:n_moms
-        ref_val = nnls_merging.inv_vref^nnls_merging.tot_order[n_mom]
-        row_scale[n_mom] = ref_val
-        nnls_merging.rhs_vector[n_mom] *= ref_val
-    end
-    @inbounds for col in 1:lhs_ncols
-        @simd for n_mom in 1:n_moms
-            lhs_matrix[n_mom, col] *= row_scale[n_mom]
-        end
-    end
-    nnls_merging.scalev = SVector{3,Float64}(nnls_merging.vref, nnls_merging.vref, nnls_merging.vref)
+    compute_row_scale_vref!(nnls_merging)
+    apply_row_scale!(lhs_matrix, nnls_merging.row_scale, 1, nnls_merging.n_moments_vel, lhs_ncols)
     return nothing
 end
 
@@ -915,20 +1035,8 @@ by ``(1/Ev[1])^{i}(1/Ev[2])^{j}(1/Ev[3])^{k}``.
 * `lhs_ncols`: number of columns in the LHS matrix
 """
 function scale_lhs_rhs_variance!(nnls_merging::NNLSMerge{D}, lhs_matrix, lhs_ncols) where D
-    n_moms = nnls_merging.n_moments_vel
-    row_scale = nnls_merging.row_scale
-    inv_ev = ifelse.(nnls_merging.Ev .> 1e-6, 1.0 ./ nnls_merging.Ev, nnls_merging.inv_vref)
-    @inbounds for n_mom in 1:n_moms
-        ref_val = (inv_ev[1]^nnls_merging.mim[n_mom][1]) * (inv_ev[2]^nnls_merging.mim[n_mom][2]) * (inv_ev[3]^nnls_merging.mim[n_mom][3])
-        row_scale[n_mom] = ref_val
-        nnls_merging.rhs_vector[n_mom] *= ref_val
-    end
-    @inbounds for col in 1:lhs_ncols
-        @simd for n_mom in 1:n_moms
-            lhs_matrix[n_mom, col] *= row_scale[n_mom]
-        end
-    end
-    nnls_merging.scalev = 1.0 ./ inv_ev
+    compute_row_scale_variance!(nnls_merging)
+    apply_row_scale!(lhs_matrix, nnls_merging.row_scale, 1, nnls_merging.n_moments_vel, lhs_ncols)
     return nothing
 end
 
@@ -947,25 +1055,11 @@ by ``(1/Ex[1])^{i}(1/Ex[2])^{j}(1/Ex[3])^{k}``, for non-3-dimensional particle v
 * `lhs_ncols`: number of columns in the LHS matrix
 """
 function scale_lhs_rhs_spatial_variance!(nnls_merging::NNLSMerge{D}, lhs_matrix, lhs_ncols) where D
+    compute_row_scale_spatial_variance!(nnls_merging)
     n_moms = nnls_merging.n_moments_vel
-    n_moms_pos = nnls_merging.n_moments_pos
-    row_scale = nnls_merging.row_scale
-
-    inv_ex = ifelse.(nnls_merging.Ex .> 1e-6, 1.0 ./ nnls_merging.Ex, 1.0)
-    @inbounds for n_mom in 1:n_moms_pos
-        ref_val = 1.0
-        for j in 1:D
-            ref_val *= inv_ex[j]^nnls_merging.mim_pos[n_mom][j]
-        end
-        row_scale[n_moms + n_mom] = ref_val
-        nnls_merging.rhs_vector[n_moms + n_mom] *= ref_val
+    if nnls_merging.n_moments_pos > 0
+        apply_row_scale!(lhs_matrix, nnls_merging.row_scale, n_moms + 1, n_moms + nnls_merging.n_moments_pos, lhs_ncols)
     end
-    @inbounds for col in 1:lhs_ncols
-        @simd for n_mom in 1:n_moms_pos
-            lhs_matrix[n_moms + n_mom, col] *= row_scale[n_moms + n_mom]
-        end
-    end
-    nnls_merging.scalex = 1.0 ./ inv_ex
     return nothing
 end
 
@@ -989,6 +1083,27 @@ function scale_lhs_rhs!(nnls_merging::NNLSMerge{D}, lhs_matrix, scaling, lhs_nco
         scale_lhs_rhs_vref!(nnls_merging, lhs_matrix, lhs_ncols)
         scale_lhs_rhs_spatial_variance!(nnls_merging, lhs_matrix, lhs_ncols)
     end
+    return nothing
+end
+
+"""
+    scale_lhs_rhs_columns!(nnls_merging::NNLSMerge{D}, lhs_matrix, column_norms, scaling,
+                           lhs_ncols=size(lhs_matrix, 2)) where D
+
+Scale the LHS and RHS of the NNLS system as `scale_lhs_rhs!` does, and additionally scale the columns
+of the LHS matrix to have unit L2 norm, in a single pass over the matrix.
+
+# Positional arguments
+* `nnls_merging`: the `NNLSMerge` instance
+* `lhs_matrix`: the matrix of the LHS
+* `column_norms`: the vector in which to store the computed inverses of the column-wise norms
+* `scaling`: how to scale entries (`:vref` or `:variance`)
+* `lhs_ncols`: number of columns in the LHS matrix
+"""
+function scale_lhs_rhs_columns!(nnls_merging::NNLSMerge{D}, lhs_matrix, column_norms, scaling,
+                                lhs_ncols=size(lhs_matrix, 2)) where D
+    compute_row_scale!(nnls_merging, scaling)
+    scale_rows_and_columns!(lhs_matrix, nnls_merging.row_scale, column_norms, lhs_ncols)
     return nothing
 end
 
@@ -1024,6 +1139,39 @@ function scale_lhs_rhs_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_matrix, 
 
     @inbounds nnls_merging.rhs_vector[nnls_merging.n_moments_vel+1] *= scaler_el
     @inbounds nnls_merging.rhs_vector[nnls_merging.n_moments_vel+2] *= scaler_ion
+    return nothing
+end
+
+"""
+    scale_lhs_rhs_columns_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_matrix, column_norms,
+                                           ref_k_elastic, ref_k_ion, scaling, lhs_ncols=size(lhs_matrix, 2)) where D
+
+Scale the LHS and RHS of the NNLS system as `scale_lhs_rhs_rate_preserving!` does, and additionally scale
+the columns of the LHS matrix to have unit L2 norm, in a single pass over the matrix.
+
+# Positional arguments
+* `nnls_merging`: the `NNLSMerge` instance
+* `lhs_matrix`: the matrix of the LHS
+* `column_norms`: the vector in which to store the computed inverses of the column-wise norms
+* `ref_k_elastic`: the reference elastic collision rate coefficient
+* `ref_k_ion`: the reference ionization rate coefficient
+* `scaling`: how to scale entries (`:vref` or `:variance`)
+* `lhs_ncols`: number of columns in the LHS matrix
+"""
+function scale_lhs_rhs_columns_rate_preserving!(nnls_merging::NNLSMerge{D}, lhs_matrix, column_norms,
+                                                ref_k_elastic, ref_k_ion, scaling, lhs_ncols=size(lhs_matrix, 2)) where D
+    compute_row_scale!(nnls_merging, scaling)
+
+    n_moms = nnls_merging.n_moments_vel
+    scaler_el = 1.0/ref_k_elastic
+    scaler_ion = 1.0/ref_k_ion
+
+    @inbounds nnls_merging.row_scale[n_moms+1] *= scaler_el
+    @inbounds nnls_merging.row_scale[n_moms+2] *= scaler_ion
+    @inbounds nnls_merging.rhs_vector[n_moms+1] *= scaler_el
+    @inbounds nnls_merging.rhs_vector[n_moms+2] *= scaler_ion
+
+    scale_rows_and_columns!(lhs_matrix, nnls_merging.row_scale, column_norms, lhs_ncols)
     return nothing
 end
 
@@ -1468,7 +1616,7 @@ function merge_nnls_based!(rng, nnls_merging::NNLSMerge{D}, particles::ParticleV
         end
          
         @inbounds nnls_ws = nnls_merging.work[indexer]
-        if (size(nnls_ws.QA, 1) != nnls_merging.n_total_conserved) || (size(nnls_ws.QA, 2) != lhs_ncols)
+        if (size(nnls_ws.QA, 1) != nnls_merging.n_total_conserved) || (size(nnls_ws.QA, 2) < lhs_ncols)
             nnls_ws.QA = zeros(nnls_merging.n_total_conserved, lhs_ncols)
             resize!(nnls_ws.x, lhs_ncols)
             resize!(nnls_ws.w, lhs_ncols)
@@ -1495,12 +1643,10 @@ function merge_nnls_based!(rng, nnls_merging::NNLSMerge{D}, particles::ParticleV
                                      vel_pos_matrix, particles, pia, cell, species)
 
 
-    @inbounds scale_lhs_rhs!(nnls_merging, nnls_merging.work[indexer].QA, scaling, lhs_ncols)
-
-    @inbounds scale_columns!(nnls_merging.work[indexer].QA, column_norms)
+    @inbounds scale_lhs_rhs_columns!(nnls_merging, nnls_merging.work[indexer].QA, column_norms, scaling, lhs_ncols)
     
     nnls_merging.work[indexer].Qb .= nnls_merging.rhs_vector
-    @inbounds solve!(nnls_merging.work[indexer], iteration_mult * size(nnls_merging.work[indexer].QA, 2), 1e-14)
+    @inbounds solve!(nnls_merging.work[indexer], lhs_ncols, iteration_mult * lhs_ncols, 1e-14)
     @inbounds return compute_post_merge_particles_nnls!(nnls_merging, nnls_merging.work[indexer].x, particles, pia, cell, species,
                                               lhs_ncols, vel_pos_matrix,
                                               max_err, w_threshold, indexer, column_norms)
@@ -1583,7 +1729,7 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging::NNLSMerge{D},
         end
 
         @inbounds nnls_ws = nnls_merging.work[indexer]
-        if (size(nnls_ws.QA, 1) != nnls_merging.n_total_conserved) || (size(nnls_ws.QA, 2) != lhs_ncols)
+        if (size(nnls_ws.QA, 1) != nnls_merging.n_total_conserved) || (size(nnls_ws.QA, 2) < lhs_ncols)
             nnls_ws.QA = zeros(nnls_merging.n_total_conserved, lhs_ncols)
             resize!(nnls_ws.x, lhs_ncols)
             resize!(nnls_ws.w, lhs_ncols)
@@ -1621,12 +1767,11 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging::NNLSMerge{D},
         ref_k_ion = ref_cs_ion * vref
     end
 
-    @inbounds scale_lhs_rhs_rate_preserving!(nnls_merging, nnls_merging.work[indexer].QA, ref_k_elastic, ref_k_ion, scaling, lhs_ncols)
-
-    @inbounds scale_columns!(nnls_merging.work[indexer].QA, column_norms)
+    @inbounds scale_lhs_rhs_columns_rate_preserving!(nnls_merging, nnls_merging.work[indexer].QA, column_norms,
+                                                     ref_k_elastic, ref_k_ion, scaling, lhs_ncols)
 
     @inbounds nnls_merging.work[indexer].Qb .= nnls_merging.rhs_vector
-    @inbounds solve!(nnls_merging.work[indexer], iteration_mult * size(nnls_merging.work[indexer].QA, 2), 1e-14)
+    @inbounds solve!(nnls_merging.work[indexer], lhs_ncols, iteration_mult * lhs_ncols, 1e-14)
     @inbounds return compute_post_merge_particles_nnls!(nnls_merging, nnls_merging.work[indexer].x, particles, pia, cell, species,
                                               lhs_ncols, vel_pos_matrix,
                                               max_err, w_threshold, indexer, column_norms)
@@ -1711,7 +1856,7 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging::NNLSMerge{D},
         end
 
         @inbounds nnls_ws = nnls_merging.work[indexer]
-        if (size(nnls_ws.QA, 1) != nnls_merging.n_total_conserved) || (size(nnls_ws.QA, 2) != lhs_ncols)
+        if (size(nnls_ws.QA, 1) != nnls_merging.n_total_conserved) || (size(nnls_ws.QA, 2) < lhs_ncols)
             nnls_ws.QA = zeros(nnls_merging.n_total_conserved, lhs_ncols)
             resize!(nnls_ws.x, lhs_ncols)
             resize!(nnls_ws.w, lhs_ncols)
@@ -1749,12 +1894,11 @@ function merge_nnls_based_rate_preserving!(rng, nnls_merging::NNLSMerge{D},
         ref_k_ion = ref_cs_ion * vref
     end
 
-    @inbounds scale_lhs_rhs_rate_preserving!(nnls_merging, nnls_merging.work[indexer].QA, ref_k_elastic, ref_k_ion, scaling, lhs_ncols)
+    @inbounds scale_lhs_rhs_columns_rate_preserving!(nnls_merging, nnls_merging.work[indexer].QA, column_norms,
+                                                     ref_k_elastic, ref_k_ion, scaling, lhs_ncols)
 
-    @inbounds scale_columns!(nnls_merging.work[indexer].QA, column_norms)
-
-    @inbounds @inbounds nnls_merging.work[indexer].Qb .= nnls_merging.rhs_vector
-    solve!(nnls_merging.work[indexer], iteration_mult * size(nnls_merging.work[indexer].QA, 2), 1e-14)
+    @inbounds nnls_merging.work[indexer].Qb .= nnls_merging.rhs_vector
+    @inbounds solve!(nnls_merging.work[indexer], lhs_ncols, iteration_mult * lhs_ncols, 1e-14)
     @inbounds return compute_post_merge_particles_nnls!(nnls_merging, nnls_merging.work[indexer].x, particles, pia, cell, species,
                                               lhs_ncols, vel_pos_matrix,
                                               max_err, w_threshold, indexer, column_norms)

@@ -141,4 +141,67 @@
     # but we skip the first particle of the cell in the offset-based approach
     # so it's only 2 particles out-of-place
     @test count_disordered_particles(particles[1], pia, 1; use_offset=true) == 2
+
+
+    # delete_particle_and_cell! swaps pv.cell along with pv.index, so that the cell index
+    # stays paired with the particle occupying each index
+    particles = [ParticleVector(6)]
+    for i in 1:6
+        Merzbild.add_particle!(particles[1], i, i*1.0, SVector{3, Float64}(0.0, 0.0, 0.0), SVector{3, Float64}(0.0, 0.0, 0.0))
+        particles[1].cell[i] = 10 + i
+    end
+
+    pia = ParticleIndexerArray(1, 1)
+    pia.n_total[1] = 6
+    pia.index_last[1] = 6
+    pia.indexer[1,1].n_local = 6
+    pia.indexer[1,1].n_group1 = 4
+    pia.indexer[1,1].start1 = 1
+    pia.indexer[1,1].end1 = 4
+    pia.indexer[1,1].n_group2 = 2
+    pia.indexer[1,1].start2 = 5
+    pia.indexer[1,1].end2 = 6
+
+    # delete from group 1: index 4 (the group end) is swapped into index 2
+    Merzbild.delete_particle_and_cell!(particles[1], pia, 1, 1, 2)
+
+    @test pia.n_total[1] == 5
+    @test pia.indexer[1,1].n_group1 == 3
+    @test pia.indexer[1,1].end1 == 3
+    @test particles[1].nbuffer == 1
+    @test particles[1].buffer[1] == 2  # the deleted particle's slot was freed
+
+    # particle 4 now sits at index 2 and brought its cell index (14) with it
+    @test particles[1][2].w == 4.0
+    @test particles[1].cell[2] == 14
+    # the untouched entries are unchanged
+    @test particles[1].cell[1] == 11
+    @test particles[1].cell[3] == 13
+    @test particles[1].cell[5] == 15
+    @test particles[1].cell[6] == 16
+
+    # delete from group 2: index 6 (the group end) is swapped into index 5
+    Merzbild.delete_particle_and_cell!(particles[1], pia, 1, 1, 5)
+
+    @test pia.n_total[1] == 4
+    @test pia.indexer[1,1].n_group2 == 1
+    @test pia.indexer[1,1].end2 == 5
+    @test particles[1].nbuffer == 2
+    @test particles[1].buffer[2] == 5
+
+    @test particles[1][5].w == 6.0
+    @test particles[1].cell[5] == 16
+
+    # deleting the group end itself is a self-swap, so the cell index is left alone
+    Merzbild.delete_particle_and_cell!(particles[1], pia, 1, 1, 3)
+
+    @test pia.n_total[1] == 3
+    @test pia.indexer[1,1].n_group1 == 2
+    @test pia.indexer[1,1].end1 == 2
+    @test particles[1][2].w == 4.0
+    @test particles[1].cell[2] == 14
+    @test particles[1].cell[1] == 11
+
+    @test check_unique_index(particles[1], pia, 1) == (true, 0)
+    @test check_unique_buffer(particles[1]) == (true, 0)
 end

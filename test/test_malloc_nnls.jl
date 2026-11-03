@@ -140,6 +140,17 @@
         Merzbild.compute_lhs_and_rhs!(nnls, lhs_matrix, vel_pos_matrix, pv, pia, 1, 2)
         bytes_scale_variance = @allocated Merzbild.scale_lhs_rhs!(nnls, lhs_matrix, :variance, lhs_ncols)
         @test bytes_scale_variance == 0
+
+        column_norms = zeros(lhs_ncols)
+        Merzbild.compute_lhs_and_rhs!(nnls, lhs_matrix, vel_pos_matrix, pv, pia, 1, 2)
+        Merzbild.scale_lhs_rhs_columns!(nnls, lhs_matrix, column_norms, :vref)
+        Merzbild.compute_lhs_and_rhs!(nnls, lhs_matrix, vel_pos_matrix, pv, pia, 1, 2)
+        bytes_scale_columns_vref = @allocated Merzbild.scale_lhs_rhs_columns!(nnls, lhs_matrix, column_norms, :vref)
+        @test bytes_scale_columns_vref == 0
+
+        Merzbild.compute_lhs_and_rhs!(nnls, lhs_matrix, vel_pos_matrix, pv, pia, 1, 2)
+        bytes_scale_columns_variance = @allocated Merzbild.scale_lhs_rhs_columns!(nnls, lhs_matrix, column_norms, :variance)
+        @test bytes_scale_columns_variance == 0
     end
 
     @testset "approximate rate-preserving computes" begin
@@ -166,6 +177,12 @@
 
         bytes_scale = @allocated Merzbild.scale_lhs_rhs_rate_preserving!(nnls_rp, lhs_matrix, cs_ref, cs_ref, :variance, lhs_ncols)
         @test bytes_scale == 0
+
+        column_norms = zeros(lhs_ncols)
+        Merzbild.scale_lhs_rhs_columns_rate_preserving!(nnls_rp, lhs_matrix, column_norms, cs_ref, cs_ref, :variance)
+        bytes_scale_columns = @allocated Merzbild.scale_lhs_rhs_columns_rate_preserving!(nnls_rp, lhs_matrix, column_norms,
+                                                                                         cs_ref, cs_ref, :variance)
+        @test bytes_scale_columns == 0
     end
 
     @testset "exact rate-preserving computes" begin
@@ -189,5 +206,32 @@
                                               interaction_data[1,2], n_e_interactions, computed_cs,
                                               pv, pv_neutral, pia, CSExtendConstant)
         @test bytes_lhs == 0
+    end
+
+    @testset "full merge" begin
+        alloc_merge(rng_, nnls, pv, pia_, vref_) = @allocated merge_nnls_based!(rng_, nnls, pv, pia_, 1, 2; vref=vref_)
+
+        # no pre-allocated workspaces, the scratch workspace (20 columns) has to grow to 24 columns
+        nnls = NNLSMerge(mim, 20)
+
+        # warmup (compile)
+        particles, pia = create_particles(ndens)
+        @test merge_nnls_based!(rng, nnls, particles[2], pia, 1, 2; vref=vref) == 1
+        @test size(nnls.work[1].QA, 2) == 24
+
+        # merging fewer particles than the scratch workspace holds re-uses it
+        particles, pia = create_particles(ndens)
+        pia.indexer[1,2].n_local = 22
+        pia.indexer[1,2].n_group2 = 18
+        pia.indexer[1,2].end2 = 22
+        pia.n_total[2] = 22
+        pia.index_last[2] = 22
+        @test alloc_merge(rng, nnls, particles[2], pia, vref) == 0
+        @test pia.indexer[1,2].n_local < 22
+
+        particles, pia = create_particles(ndens)
+        @test alloc_merge(rng, nnls, particles[2], pia, vref) == 0
+        @test pia.indexer[1,2].n_local < 24
+        @test size(nnls.work[1].QA, 2) == 24
     end
 end

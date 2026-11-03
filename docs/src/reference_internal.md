@@ -13,7 +13,9 @@ Base.resize!
 Merzbild.add_particle!
 Merzbild.update_particle_buffer_new_particle!
 Merzbild.update_buffer_index_new_particle!
+Merzbild.get_group2_append_cell
 Merzbild.delete_particle!
+Merzbild.delete_particle_and_cell!
 Merzbild.delete_particle_end!
 Merzbild.delete_particle_end_group1!
 Merzbild.delete_particle_end_group2!
@@ -112,11 +114,18 @@ Merzbild.ccm_vel
 Merzbild.ccm_pos
 Merzbild.compute_lhs_and_rhs!
 Merzbild.compute_lhs_and_rhs_rate_preserving!
+Merzbild.compute_row_scale_vref!
+Merzbild.compute_row_scale_variance!
+Merzbild.compute_row_scale_spatial_variance!
+Merzbild.compute_row_scale!
+Merzbild.apply_row_scale!
 Merzbild.scale_lhs_rhs_variance!
 Merzbild.scale_lhs_rhs_vref!
 Merzbild.scale_lhs_rhs_spatial_variance!
 Merzbild.scale_lhs_rhs!
+Merzbild.scale_lhs_rhs_columns!
 Merzbild.scale_lhs_rhs_rate_preserving!
+Merzbild.scale_lhs_rhs_columns_rate_preserving!
 Merzbild.compute_post_merge_particles_nnls!
 Merzbild.OctreeCell
 Merzbild.OctreeFullCell
@@ -181,6 +190,15 @@ Merzbild.update_surface_reflected!
 Merzbild.surface_props_scale!
 Merzbild.apply_bc!
 Merzbild.apply_bc_dispatched!
+Merzbild.bc_deletes_particles
+Merzbild.has_particle_deleting_bc
+Merzbild.ParticleDeletingBC
+Merzbild.maxwellian_inflow_normalization
+Merzbild.compute_inflow_speed_ratio
+Merzbild.check_inflow_sampler
+Merzbild.sample_inflow_z
+Merzbild.emit_particles_bc!
+Merzbild.convect_emitted_particle!
 ```
 
 ## I/O
@@ -204,6 +222,8 @@ Merzbild.eV
 Merzbild.eV_J
 Merzbild.eV_J_inv
 Merzbild.twopi
+Merzbild.sqrt_pi
+Merzbild.inv_sqrt_2
 Merzbild.e_mass_div_electron_volt
 Merzbild.direction_signs
 Merzbild.q_e
@@ -217,6 +237,7 @@ Merzbild.binary_search
 Merzbild.linear_interpolation
 Merzbild.compute_mixed_moment
 Merzbild.scale_columns!
+Merzbild.scale_rows_and_columns!
 ```
 
 ## NNLS

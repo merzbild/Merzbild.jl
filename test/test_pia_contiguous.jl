@@ -707,4 +707,114 @@
 
     @test pia.indexer[1,1].start2 != 9
     @test pia.indexer[1,1].end2 != 10
+
+    # get_group2_append_cell: 4 cells, 2 species
+    # species 1: cells 2 and 3 have non-empty 2nd groups
+    # species 2: only cell 4 has a non-empty 2nd group
+    pia = ParticleIndexerArray(4, 2)
+    pia.indexer[2,1].n_group2 = 1
+    pia.indexer[3,1].n_group2 = 2
+    pia.indexer[4,2].n_group2 = 3
+
+    @test Merzbild.get_group2_append_cell(pia, 1, 1) == 3
+    @test Merzbild.get_group2_append_cell(pia, 2, 1) == 3
+    @test Merzbild.get_group2_append_cell(pia, 3, 1) == 3
+    @test Merzbild.get_group2_append_cell(pia, 4, 1) == 4
+
+    @test Merzbild.get_group2_append_cell(pia, 1, 2) == 4
+    @test Merzbild.get_group2_append_cell(pia, 4, 2) == 4
+
+    pia.indexer[4,2].n_group2 = 0
+    for cell in 1:4
+        @test Merzbild.get_group2_append_cell(pia, cell, 2) == cell
+    end
+
+    # appending to the cell returned by get_group2_append_cell and squashing
+    # 3-cell case that looks like this, with 2 free slots at the end
+    # 111 2 333 222 **
+    particles = [ParticleVector(12)]
+    cell_positions = [1.0, 1.0, 1.0, 2.0, 3.0, 3.0, 3.0, 2.0, 2.0, 2.0]
+    for i in 1:10
+        particles[1].particles[i] = Particle(Float64(i), [0.0, 0.0, 0.0], [cell_positions[i], 0.0, 1.0])
+    end
+    particles[1].nbuffer = 2
+
+    pia = ParticleIndexerArray(3, 1)
+    pia.indexer[1,1].n_local = 3
+    pia.indexer[1,1].start1 = 1
+    pia.indexer[1,1].end1 = 3
+    pia.indexer[1,1].n_group1 = 3
+
+    pia.indexer[2,1].n_local = 4
+    pia.indexer[2,1].start1 = 4
+    pia.indexer[2,1].end1 = 4
+    pia.indexer[2,1].n_group1 = 1
+
+    pia.indexer[2,1].start2 = 8
+    pia.indexer[2,1].end2 = 10
+    pia.indexer[2,1].n_group2 = 3
+
+    pia.indexer[3,1].n_local = 3
+    pia.indexer[3,1].start1 = 5
+    pia.indexer[3,1].end1 = 7
+    pia.indexer[3,1].n_group1 = 3
+
+    pia.n_total[1] = 10
+    pia.index_last[1] = 10
+
+    # 11* 2 333 222 **
+    Merzbild.delete_particle_end!(particles[1], pia, 1, 1)
+    pia.contiguous[1] = false
+
+    @test Merzbild.get_group2_append_cell(pia, 1, 1) == 2
+    @test Merzbild.get_group2_append_cell(pia, 2, 1) == 2
+    @test Merzbild.get_group2_append_cell(pia, 3, 1) == 3
+
+    # 11* 2 333 22222
+    append_cell = Merzbild.get_group2_append_cell(pia, 1, 1)
+    for w in [100.0, 200.0]
+        Merzbild.update_buffer_index_new_particle!(particles[1], pia, append_cell, 1)
+        particles[1][pia.index_last[1]] = Particle(w, [0.0, 0.0, 0.0], [2.0, 0.0, 1.0])
+    end
+
+    @test pia.index_last[1] == 12
+    @test pia.indexer[2,1].start2 == 8
+    @test pia.indexer[2,1].end2 == 12
+    @test pia.indexer[2,1].n_group2 == 5
+
+    squash_pia!(particles, pia)
+    # 11 2 333 22222
+    @test pia.indexer[1,1].n_local == 2
+    @test pia.indexer[1,1].start1 == 1
+    @test pia.indexer[1,1].end1 == 2
+    @test pia.indexer[1,1].n_group2 == 0
+
+    @test pia.indexer[2,1].n_local == 6
+    @test pia.indexer[2,1].start1 == 3
+    @test pia.indexer[2,1].end1 == 3
+    @test pia.indexer[2,1].start2 == 7
+    @test pia.indexer[2,1].end2 == 11
+    @test pia.indexer[2,1].n_group2 == 5
+
+    @test pia.indexer[3,1].n_local == 3
+    @test pia.indexer[3,1].start1 == 4
+    @test pia.indexer[3,1].end1 == 6
+    @test pia.indexer[3,1].n_group2 == 0
+
+    @test pia.n_total[1] == 11
+    @test pia.index_last[1] == pia.n_total[1]
+
+    for i in 1:pia.n_total[1]
+        @test (particles[1].index[i] in particles[1].buffer[1:particles[1].nbuffer]) == false
+    end
+
+    phys_props = PhysProps(pia)
+    compute_props!(particles, pia, species_data, phys_props)
+    @test phys_props.np[1,1] == 2.0
+    @test phys_props.np[2,1] == 6.0
+    @test phys_props.np[3,1] == 3.0
+
+    @test phys_props.n[1,1] == 3.0
+    @test phys_props.n[2,1] == 331.0
+    @test phys_props.n[3,1] == 18.0
 end
