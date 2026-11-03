@@ -165,62 +165,110 @@
 
     # non-contiguous pia: particles are deleted from both index groups, and the particles
     # the pia does not point to must be left alone
-    particles = [ParticleVector(30)]
-    pia = ParticleIndexerArray(grid.n_cells, 1)
+    function setup_noncontiguous()
+        pv = ParticleVector(30)
+        pia_local = ParticleIndexerArray(grid.n_cells, 1)
 
-    for i in 1:30
-        if i in 11:25
-            # particles the pia does not point to
-            Merzbild.add_particle!(particles[1], i, 10000.0, SVector{3,Float64}(-1000.0, 0.0, 0.0),
-                                   SVector{3,Float64}(0.75, 0.0, 0.0))
-        else
-            # even-indexed tracked particles are fast enough to reach the outflow boundary
-            vx = i % 2 == 0 ? 100.0 : 1.0
-            Merzbild.add_particle!(particles[1], i, 1.0, SVector{3,Float64}(vx, 0.0, 0.0),
-                                   SVector{3,Float64}(0.75, 0.0, 0.0))
+        for i in 1:30
+            if i in 11:25
+                # particles the pia does not point to
+                Merzbild.add_particle!(pv, i, 10000.0, SVector{3,Float64}(-1000.0, 0.0, 0.0),
+                                       SVector{3,Float64}(0.75, 0.0, 0.0))
+            else
+                # even-indexed tracked particles are fast enough to reach the outflow boundary
+                vx = i % 2 == 0 ? 100.0 : 1.0
+                Merzbild.add_particle!(pv, i, 1.0, SVector{3,Float64}(vx, 0.0, 0.0),
+                                       SVector{3,Float64}(0.75, 0.0, 0.0))
+            end
+        end
+
+        pia_local.n_total[1] = 15
+        pia_local.index_last[1] = 30
+        pia_local.indexer[2,1].n_local = 15
+        pia_local.indexer[2,1].n_group1 = 10
+        pia_local.indexer[2,1].start1 = 1
+        pia_local.indexer[2,1].end1 = 10
+        pia_local.indexer[2,1].n_group2 = 5
+        pia_local.indexer[2,1].start2 = 26
+        pia_local.indexer[2,1].end2 = 30
+        pia_local.contiguous[1] = false
+
+        return [pv], pia_local
+    end
+
+    # deleted: 5 from group1 (indices 2, 4, 6, 8, 10) and 3 from group2 (indices 26, 28, 30)
+    function test_noncontiguous_deletion(particles, pia, n_deleted)
+        @test n_deleted == 8
+        @test pia.n_total[1] == 7
+        @test pia.indexer[2,1].n_group1 == 5
+        @test pia.indexer[2,1].n_group2 == 2
+        @test particles[1].nbuffer == 8
+        @test check_pia_is_correct(pia, 1) == (true, 0)
+        @test check_unique_index(particles[1], pia, 1) == (true, 0)
+        @test check_unique_buffer(particles[1]) == (true, 0)
+
+        # the untracked particles have not been convected
+        for i in 11:25
+            @test particles[1].particles[i].v[1] == -1000.0
+            @test particles[1].particles[i].x[1] == 0.75
         end
     end
 
-    pia.n_total[1] = 15
-    pia.index_last[1] = 30
-    pia.indexer[2,1].n_local = 15
-    pia.indexer[2,1].n_group1 = 10
-    pia.indexer[2,1].start1 = 1
-    pia.indexer[2,1].end1 = 10
-    pia.indexer[2,1].n_group2 = 5
-    pia.indexer[2,1].start2 = 26
-    pia.indexer[2,1].end2 = 30
-    pia.contiguous[1] = false
+    # the 7 remaining tracked particles have all moved from x=0.75 to x=1.75, i.e. cell 4
+    function test_noncontiguous_sorted(particles, pia)
+        @test check_pia_is_correct(pia, 1) == (true, 0)
+        @test check_unique_index(particles[1], pia, 1) == (true, 0)
 
+        compute_props!(particles, pia, species_data, phys_props)
+        @test abs(phys_props.n[4, 1] - 7.0) < eps()
+        @test abs(sum(phys_props.n[:, 1]) - 7.0) < eps()
+    end
+
+    # the cell indices of the remaining particles, including those swapped into the slot of a
+    # deleted particle, have to be the post-convection ones
+    function test_noncontiguous_cells(particles, pia)
+        indexer = pia.indexer[2,1]
+        for i in indexer.start1:indexer.end1
+            @test particles[1].cell[i] == 4
+        end
+        for i in indexer.start2:indexer.end2
+            @test particles[1].cell[i] == 4
+        end
+    end
+
+    particles, pia = setup_noncontiguous()
     @test check_pia_is_correct(pia, 1) == (true, 0)
 
     n_deleted = convect_particles!(rng, grid, bc_list, particles[1], pia, 1, species_data, 1.0)
-
-    # deleted: 5 from group1 (indices 2, 4, 6, 8, 10) and 3 from group2 (indices 26, 28, 30)
-    @test n_deleted == 8
-    @test pia.n_total[1] == 7
-    @test pia.indexer[2,1].n_group1 == 5
-    @test pia.indexer[2,1].n_group2 == 2
-    @test particles[1].nbuffer == 8
-    @test check_pia_is_correct(pia, 1) == (true, 0)
-    @test check_unique_index(particles[1], pia, 1) == (true, 0)
-    @test check_unique_buffer(particles[1]) == (true, 0)
-
-    # the untracked particles have not been convected
-    for i in 11:25
-        @test particles[1].particles[i].v[1] == -1000.0
-        @test particles[1].particles[i].x[1] == 0.75
-    end
+    test_noncontiguous_deletion(particles, pia, n_deleted)
 
     sort_particles!(gridsorter, grid, particles[1], pia, 1)
+    test_noncontiguous_sorted(particles, pia)
 
-    @test check_pia_is_correct(pia, 1) == (true, 0)
-    @test check_unique_index(particles[1], pia, 1) == (true, 0)
+    particles, pia = setup_noncontiguous()
+    n_deleted = convect_particles_and_compute_cell!(rng, grid, bc_list, particles[1], pia, 1, species_data, 1.0)
+    test_noncontiguous_deletion(particles, pia, n_deleted)
+    test_noncontiguous_cells(particles, pia)
 
-    # the 7 remaining tracked particles have all moved from x=0.75 to x=1.75, i.e. cell 4
-    compute_props!(particles, pia, species_data, phys_props)
-    @test abs(phys_props.n[4, 1] - 7.0) < eps()
-    @test abs(sum(phys_props.n[:, 1]) - 7.0) < eps()
+    sort_particles!(gridsorter, particles[1], pia, 1)
+    test_noncontiguous_sorted(particles, pia)
+
+    particles, pia = setup_noncontiguous()
+    surf_props = SurfProps(pia, grid)
+    n_deleted = convect_particles_and_compute_cell!(rng, grid, bc_list, particles[1], pia, 1, species_data,
+                                                    surf_props, 1.0)
+    test_noncontiguous_deletion(particles, pia, n_deleted)
+    test_noncontiguous_cells(particles, pia)
+
+    # all 8 deleted particles (w=1, vx=100) leave through the right wall, none reach the left one
+    @test surf_props.np[1, 1] == 0
+    @test surf_props.np[2, 1] == 8
+    @test surf_props.flux_reflected[2, 1] == 0.0
+    @test abs(surf_props.flux_incident[2, 1] - 8.0 * mass) < eps(8.0 * mass)
+    @test abs(surf_props.force[1, 2, 1] - 800.0 * mass) < 1e-8 * mass
+
+    sort_particles!(gridsorter, particles[1], pia, 1)
+    test_noncontiguous_sorted(particles, pia)
 
     # free-molecular effusion: the mass leaving a domain with one outflow boundary over a
     # single timestep must match the analytic number flux n * v_mean / 4

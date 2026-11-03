@@ -220,5 +220,24 @@
 
         # boundary condition tuples without inflow/outflow boundaries are unaffected
         @test !Merzbild.has_particle_deleting_bc((FullySpecularBC1D(), FullySpecularBC1D()))
+
+        # applying a particle-deleting boundary condition leaves the particle and the remaining time unchanged
+        rng_bc = Xoshiro(1234)
+        v0 = SVector{3,Float64}(-150.0, 20.0, -5.0)
+        x0 = SVector{3,Float64}(0.0, 1.0, 2.0)
+        for (bc_id, bc_list) in ((1, (bc_inflow, FullySpecularBC1D())), (2, (FullySpecularBC1D(), OutflowBC())))
+            normal = bc_id == 1 ? normal_left : normal_right
+
+            particle = Particle(2.5, v0, x0)
+            @test Merzbild.apply_bc!(rng_bc, particle, bc_list[bc_id], normal, 0.75) == 0.75
+            @test particle.v == v0
+            @test particle.x == x0
+            @test particle.w == 2.5
+
+            @test Merzbild.apply_bc_dispatched!(rng_bc, particle, bc_list, bc_id, normal, 0.75) == 0.75
+            @test particle.v == v0
+            @test particle.x == x0
+            @test particle.w == 2.5
+        end
     end
 end
