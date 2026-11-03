@@ -30,18 +30,28 @@
         return v
     end
 
-    for bc in (bc_no_drift, bc_envelope4, bc_envelope4_right)
-        sample_many(rng, bc, 100)
+    # The BCs in the tuple have different types, so a BC taken from it is abstractly typed and the
+    # returned velocity gets boxed - on Julia LTS that shows up as spurious allocations. Measuring
+    # inside a function gives the BC a concrete type, which is also how it is used in a simulation.
+    function check_sampling_allocations(rng, inflowbc, n)
+        sample_many(rng, inflowbc, 100)
 
         # the acceptance-rejection loop must not allocate over many samples either
-        bytes = @allocated sample_many(rng, bc, 10000)
+        bytes = @allocated sample_many(rng, inflowbc, n)
         @test bytes == 0
     end
 
-    compute_inflow_number_flux(1, species_data, T, SVector{3,Float64}(v_wall, 0.0, 0.0), normal_left, ndens)
-    bytes = @allocated compute_inflow_number_flux(1, species_data, T, SVector{3,Float64}(v_wall, 0.0, 0.0),
-                                                  normal_left, ndens)
-    @test bytes == 0
+    function check_flux_allocations(species_data, T, v, normal, ndens)
+        compute_inflow_number_flux(1, species_data, T, v, normal, ndens)
+        bytes = @allocated compute_inflow_number_flux(1, species_data, T, v, normal, ndens)
+        @test bytes == 0
+    end
+
+    for bc in (bc_no_drift, bc_envelope4, bc_envelope4_right)
+        check_sampling_allocations(rng, bc, 10000)
+    end
+
+    check_flux_allocations(species_data, T, SVector{3,Float64}(v_wall, 0.0, 0.0), normal_left, ndens)
 end
 
 @testset "malloc tests: emission across inflow boundaries" begin
