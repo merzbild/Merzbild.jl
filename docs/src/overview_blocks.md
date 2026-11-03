@@ -248,6 +248,17 @@ Finally, at the end of the simulation we need to close the file, so we call
 close_netcdf(ds)
 ```
 
+## Writing particle data
+We can also write particle data to a NetCDF file. This is done
+by calling [`write_netcdf`](@ref) and passing the Vector of `ParticleVector`s, the `ParticleIndexerArray` instance used
+for the indexing, the species data, and the list of species' IDs (containing the IDs of the species for which to write the particle
+data to disk).
+
+Example usage is
+```julia
+write_netcdf("particles.nc", particles, pia, species_data, species_ids)
+```
+
 ## Computing surface properties due to particle-surface interactions: SurfProps
 Details on calculation of surface properties due to particle-surface interactions can be found in the section on [1D DSMC simulations](@ref "1D DSMC simulations").
 Time-averaging works exactly the same as for `PhysProps`, via use of the [`avg_props!`](@ref) function. Output is performed similarly,

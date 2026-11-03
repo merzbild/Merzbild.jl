@@ -82,8 +82,6 @@ function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, m
 
     index_inv_map = zeros(Int64, n_particles)
 
-    index_inv_map = zeros(Int64, n_particles)
-
     for t in 1:n_timesteps
         if t % 1000 == 0
             println(t)

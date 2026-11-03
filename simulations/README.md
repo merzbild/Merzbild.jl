@@ -39,6 +39,9 @@ accelerated by a constant electric field. Can optionally use Event Splitting. Us
 moment-and-approximate-rate-preserving, or moment-and-exact-rate-preserving).
 
 ## 1D simulations
+* `1D/compute_Prandtl.jl` - computes the Prandtl number from two fixed-weight simulations: the viscosity is
+extracted from a Couette flow, the thermal conductivity from a Fourier flow, both from the flux properties
+computed outside of the Knudsen layers
 * `1D/couette_benchmarking.jl` - Couette flow simulation with fixed-weight particles; uses `TimerOutputs.jl` for
 timing of various parts of the simulation
 * `1D/couette_fp.jl` - Couette flow simulation with fixed-weight particles; uses the linear Fokker-Planck model for particle collisions
@@ -48,9 +51,11 @@ timing of various parts of the simulation
 * `1D/couette_varweight_octree_swpm.jl` - Couette flow simulation with variable weight particles and octree N:2 merging; uses the SWPM collision algorithm
 * `1D/couette_varweight_octree.jl` -  Couette flow simulation with variable weight particles and octree N:2 merging
 * `1D/couette_with_surface_quantities.jl` - Couette flow simulation with fixed-weight particles and surface properties output
-* `1D/fourier_varweight_fw.jl` - Fourier flow simulation with fixed-weight particles
+* `1D/fourier_fw.jl` - Fourier flow simulation with fixed-weight particles
 * `1D/fourier_varweight_nnls.jl` - Fourier flow simulation with variable weight particles and NNLS merging
 * `1D/fourier_varweight_octree.jl` - Fourier flow simulation with variable weight particles and octree N:2 merging
+* `1D/inflow_into_vacuum_outflow.jl` - flow from an equilibrium reservoir (an evaporating surface if the reservoir is at rest)
+into vacuum with fixed-weight particles
 
 # External data
 Some external data is not provided directly with the code, either due to data licensing requirements or data size.

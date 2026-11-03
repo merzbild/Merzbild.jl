@@ -125,4 +125,82 @@
 
     bytes = @allocated compute_flux_props!(particles, pia, species_data, phys_props, flux_props, grid)
     @test bytes == 0
+
+    # the same, but with an outflow boundary, so that particles are deleted during convection
+    bc_list_outflow = (MaxwellWallBC1D(1, species_data, T_wall, [0.0, -v_wall, 0.0], 1.0),
+                       OutflowBC())
+
+
+    for t in 1:2
+        convect_particles!(rng, grid, bc_list_outflow, particles[1], pia, 1, species_data, Δt)
+        sort_particles!(gridsorter, grid, particles[1], pia, 1)
+    end
+
+    n_p_new = pia.n_total[1]
+
+    for t in 1:2
+        bytes = @allocated convect_particles!(rng, grid, bc_list_outflow, particles[1], pia, 1, species_data, Δt)
+        @test bytes == 0
+
+        bytes = @allocated sort_particles!(gridsorter, grid, particles[1], pia, 1)
+        @test bytes == 0
+    end
+
+    @test pia.n_total[1] < n_p_new
+
+    for t in 1:2
+        convect_particles!(rng, grid, bc_list_outflow, particles[1], pia, 1, species_data, surf_props, Δt)
+        sort_particles!(gridsorter, grid, particles[1], pia, 1)
+    end
+
+    n_p_new = pia.n_total[1]
+
+    for t in 1:2
+        bytes = @allocated convect_particles!(rng, grid, bc_list_outflow, particles[1], pia, 1, species_data, surf_props, Δt)
+        @test bytes == 0
+
+        bytes = @allocated sort_particles!(gridsorter, grid, particles[1], pia, 1)
+        @test bytes == 0
+    end
+
+    @test pia.n_total[1] < n_p_new
+
+    for t in 1:2
+        convect_particles_and_compute_cell!(rng, grid, bc_list_outflow, particles[1], pia, 1, species_data, Δt)
+        sort_particles!(gridsorter, particles[1], pia, 1)
+    end
+
+    n_p_new = pia.n_total[1]
+
+    for t in 1:2
+        bytes = @allocated convect_particles_and_compute_cell!(rng, grid, bc_list_outflow, particles[1], pia, 1, species_data, Δt)
+        @test bytes == 0
+
+        bytes = @allocated sort_particles!(gridsorter, particles[1], pia, 1)
+        @test bytes == 0
+    end
+
+    @test pia.n_total[1] < n_p_new
+
+    for t in 1:2
+        convect_particles_and_compute_cell!(rng, grid, bc_list_outflow, particles[1], pia, 1, species_data, surf_props, Δt)
+        sort_particles!(gridsorter, particles[1], pia, 1)
+    end
+    
+    n_p_new = pia.n_total[1]
+
+    for t in 1:2
+        bytes = @allocated convect_particles_and_compute_cell!(rng, grid, bc_list_outflow, particles[1], pia, 1, species_data, surf_props, Δt)
+        @test bytes == 0
+
+        bytes = @allocated sort_particles!(gridsorter, particles[1], pia, 1)
+        @test bytes == 0
+    end
+
+    @test pia.n_total[1] < n_p_new
+
+    # particles really were deleted over the course of the outflow runs
+    @test check_pia_is_correct(pia, 1) == (true, 0)
+    @test check_unique_index(particles[1], pia, 1) == (true, 0)
+    @test check_unique_buffer(particles[1]) == (true, 0)
 end

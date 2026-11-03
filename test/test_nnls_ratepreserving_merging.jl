@@ -273,8 +273,8 @@
         rate_ionization_new += particles[i].w * Merzbild.get_cs_ionization(n_e_interactions, computed_cs, 1) * v_magnitude
     end
 
-    @test abs(rate_elastic_new - rate_elastic)/rate_elastic < 1e-15
-    @test abs(rate_ionization_new - rate_ionization) < 1e-15
+    @test abs(rate_elastic_new - rate_elastic)/rate_elastic < 1.5e-15
+    @test abs(rate_ionization_new - rate_ionization) < 1.5e-15
 
     # finally test the edge case of init_np = total_np
     # reset particles

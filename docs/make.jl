@@ -17,6 +17,7 @@ makedocs(
             "Variable-weight DSMC simulations" => "overview_varweight.md",
             "1D DSMC simulations" => "overview_1d.md",
             "Fokker-Planck simulations" => "overview_fp.md",
+            "Inflow and outflow BCs" => "inflow_outflow.md",
         ],
         "Tutorials" => [
             "Contiguous indexing" => "contiguous_indexing.md",

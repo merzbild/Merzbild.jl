@@ -38,6 +38,21 @@ All wall types subtype `AbstractBC`.
 | Fully specular wall | Reflects the particle by flipping its normal velocity component | [`FullySpecularBC1D`](@ref) |
 | Fully diffuse wall | Re-emits the particle from a Maxwellian at the wall temperature | [`FullyDiffuseBC1D`](@ref) |
 | Maxwell wall | Mixture of specular and diffuse reflection set by an accommodation coefficient | [`MaxwellWallBC1D`](@ref) |
+| Outflow | Deletes the particle: it leaves the domain | [`OutflowBC`](@ref) |
+| Inflow | Reservoir boundary: emits particles into the domain, deletes those reaching it | [`InflowBC1D`](@ref) |
+
+[`OutflowBC`](@ref) is neither species-specific nor dimension-specific and simply deletes particles
+reaching the surface. Deletion makes `pia` non-contiguous so a sort is required before any per-cell
+operation runs. Outflowing particles are recorded in [`SurfProps`](@ref) as incident only.
+
+[`InflowBC1D`](@ref) describes an equilibrium reservoir of a given number density, temperature and
+streaming velocity adjacent to the surface. It is species-specific, and particles of the domain
+reaching it are deleted exactly as for an [`OutflowBC`](@ref). The velocity of an entering particle
+is sampled with [`sample_inflow_velocity`](@ref) using the method described in [Garcia and Wagner (2006)](https://doi.org/10.1016/j.jcp.2006.01.025), and the number flux across the surface is given by
+[`compute_inflow_number_flux`](@ref).
+
+TODO: describe the emission routine that injects the particles into the domain once it is
+implemented, including the per-particle residual flight time within a timestep.
 
 Both [`FullyDiffuseBC1D`](@ref) and [`MaxwellWallBC1D`](@ref) are species-specific, since the
 thermal reflection velocity depends on the species mass; [`MaxwellWallBC1D`](@ref) reduces to
@@ -70,3 +85,7 @@ pass over all particles during sorting), plus periodic convection versions:
 The surface-property-computing variants take an additional [`SurfProps`](@ref) argument, into which
 per-wall incident and reflected fluxes of mass, momentum, and energy are accumulated as particles
 strike the walls.
+
+The convection routines return the number of particles deleted at
+[`OutflowBC`](@ref) and [`InflowBC1D`](@ref) boundaries (particles reaching an inflow/reservoir boundary are deleted);
+the periodic convection routine always returns 0 to be consistent with non-periodic convection functions.
