@@ -8,7 +8,7 @@ include("test_malloc_N1_octree_1Dgrid.jl")  # malloc with N:1 octree merging on 
 include("test_malloc_bkw_varweight_gridmerge.jl")  # malloc with grid merging and variable-weight collisions
 include("test_malloc_gridmerge_1Dgrid.jl")  # malloc with grid merging on 1D grid
 include("test_malloc_convection_1D.jl")  # malloc with convection on 1D grid
-include("test_malloc_inflow.jl")  # malloc for sampling of the Maxwellian inflow distribution
+include("test_malloc_inflow.jl")  # malloc for sampling of the Maxwellian inflow distribution and emission
 include("test_malloc_accelerate_ionize.jl")  # malloc with ionization reactions and acceleration
 include("test_malloc_pic.jl")  # malloc for electrostatic PIC: deposition, Poisson solve, push
 include("test_malloc_nnls.jl")  # malloc for NNLS merging internal computes

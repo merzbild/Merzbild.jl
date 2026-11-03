@@ -54,6 +54,8 @@ timing of various parts of the simulation
 * `1D/fourier_fw.jl` - Fourier flow simulation with fixed-weight particles
 * `1D/fourier_varweight_nnls.jl` - Fourier flow simulation with variable weight particles and NNLS merging
 * `1D/fourier_varweight_octree.jl` - Fourier flow simulation with variable weight particles and octree N:2 merging
+* `1D/inflow_into_vacuum_outflow.jl` - flow from an equilibrium reservoir (an evaporating surface if the reservoir is at rest)
+into vacuum with fixed-weight particles
 
 # External data
 Some external data is not provided directly with the code, either due to data licensing requirements or data size.

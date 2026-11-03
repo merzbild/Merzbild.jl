@@ -1018,6 +1018,31 @@ and [`update_particle_buffer_new_particle!`](@ref update_particle_buffer_new_par
 end
 
 """
+    get_group2_append_cell(pia, cell, species)
+
+Find a cell to the 2nd group of which new particles of a given species can be appended
+(at `pia.index_last[species] + 1`) without breaking the ordering of the 2nd groups by cell index
+assumed by [`squash_pia!`](@ref). This is `cell` itself, unless a cell with a higher index has a
+non-empty 2nd group, in which case the highest such cell is returned.
+
+# Positional arguments
+* `pia`: the `ParticleIndexerArray` instance
+* `cell`: the index of the preferred cell
+* `species`: the index of the species
+
+# Returns
+The index of the cell.
+"""
+function get_group2_append_cell(pia, cell, species)
+    @inbounds for c in pia.n_cells:-1:cell+1
+        if pia.indexer[c, species].n_group2 > 0
+            return c
+        end
+    end
+    return cell
+end
+
+"""
     add_particle!(pv::ParticleVector{D1}, position, w, v::SVector{3,Float64}, x::SVector{D2,Float64}) where {D1,D2}
 
 Create a new particle in a `ParticleVector` instance at position `position`.

@@ -46,7 +46,7 @@ Compute the normalization factor ``m(a) = \\exp(-a^2) + a \\sqrt{\\pi} [1 + \\ma
 of the Maxwellian inflow distribution.
 
 # Positional arguments
-* `a`: the speed ratio
+* `a`: the speed ratio (normal streaming velocity divided by thermal velocity)
 
 # Returns
 The value of ``m(a)``.
@@ -83,7 +83,7 @@ Compute the number flux (number of particles crossing a unit surface area per un
 equilibrium reservoir into the domain,
 ``\\Gamma = n \\sqrt{2kT/m} \\, m(a) / (2\\sqrt{\\pi})``,
 where ``m(a)`` is given by [`Merzbild.maxwellian_inflow_normalization`](@ref) and ``a`` is the
-speed ratio of the streaming velocity along the inward surface normal.
+speed ratio of the streaming velocity along the inward surface normal (i.e., normal streaming velocity divided by thermal velocity).
 For a reservoir at rest this reduces to the effusion flux ``n \\sqrt{kT/(2 \\pi m)}``.
 
 # Positional arguments
@@ -223,6 +223,9 @@ struct InflowBC1D{S<:AbstractInflowSampler} <: AbstractBC
     Construct an `InflowBC1D` instance for a given species, choosing the sampler of the Maxwellian
     inflow distribution based on the speed ratio: [`InflowNoDrift`](@ref) if the streaming velocity has
     no component along the surface normal, [`InflowEnvelope4`](@ref) otherwise.
+    Since the type of the returned instance depends on the value of `v`, this constructor is not type-stable:
+    in performance-critical code, either use the constructor with an explicitly specified sampler,
+    or pass the instance (or the `Tuple` of boundary conditions containing it) through a function barrier.
 
     # Positional arguments
     * `species`: index of the species for which to create the BC

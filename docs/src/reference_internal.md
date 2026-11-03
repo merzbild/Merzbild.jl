@@ -13,6 +13,7 @@ Base.resize!
 Merzbild.add_particle!
 Merzbild.update_particle_buffer_new_particle!
 Merzbild.update_buffer_index_new_particle!
+Merzbild.get_group2_append_cell
 Merzbild.delete_particle!
 Merzbild.delete_particle_and_cell!
 Merzbild.delete_particle_end!
@@ -196,6 +197,8 @@ Merzbild.maxwellian_inflow_normalization
 Merzbild.compute_inflow_speed_ratio
 Merzbild.check_inflow_sampler
 Merzbild.sample_inflow_z
+Merzbild.emit_particles_bc!
+Merzbild.convect_emitted_particle!
 ```
 
 ## I/O

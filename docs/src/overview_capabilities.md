@@ -11,7 +11,7 @@ A more detailed overview is given on the corresponding pages in the "Implemented
 
 Currently, simulations are either 0D (spatially homogeneous) or on a uniform 1D grid.
 For 1D simulations, specular and diffuse reflection models are available (along with a mixture of the two
-via an accommodation coefficient).
+via an accommodation coefficient), as well as inflow and outflow boundary conditions.
 
 ## Collisions
 The No-Time-Counter (NTC) approach of [Bird (1994)](https://doi.org/10.1093/oso/9780198561958.001.0001) is implemented for fixed-weight DSMC.

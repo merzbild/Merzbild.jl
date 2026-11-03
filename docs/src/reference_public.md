@@ -196,6 +196,7 @@ convect_particles!
 convect_particles_periodic!
 convect_particles_and_compute_cell!
 convect_particles_and_compute_cell_periodic!
+emit_particles!
 ```
 
 ## Particle-surface interactions

@@ -128,7 +128,7 @@ still in registers.
 # Returns
 Tuple `(computed, wmax, izmax)`: `computed` is `true` if the dual vector entries of the set-Z columns
 were computed and `false` if the transformation is trivial and nothing was done; `wmax` and `izmax`
-are the largest positive dual entry and its position in `idx`, as returned by [`largest_positive_dual`](@ref)
+are the largest positive dual entry and its position in `idx`, as returned by `largest_positive_dual`
 (both zero if not computed or no positive entry exists).
 """
 function apply_householder_sweep!(A::Matrix{T}, up::T, ju, nsetp, m, idx, iz1, iz2, b, w) where T
