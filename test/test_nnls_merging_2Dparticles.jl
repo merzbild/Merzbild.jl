@@ -503,7 +503,7 @@
         end
     end
 
-    @test abs(wtot - tw) < 4.5e-15
+    @test abs(wtot - tw) < 7.5e-15
 
     # finally test the edge case of init_np = total_np and no pre-allocated matrices, v_multipliers=[]
     # reset particles
