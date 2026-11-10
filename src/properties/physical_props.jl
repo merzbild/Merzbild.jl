@@ -59,7 +59,28 @@ Construct physical properties given a `ParticleIndexerArray` instance,.
 PhysProps(pia::ParticleIndexerArray; ndens_not_Np=false) = PhysProps(pia.n_cells, pia.n_species, ndens_not_Np=ndens_not_Np)
 
 """
-    compute_props!(particles, pia, species_data, phys_props)
+    temperature_normalization(n, w2, np, bias_correction)
+
+Normalization factor ``N`` of the temperature estimator ``\\sum_i w_i (\\mathbf{v}_i - \\bar{\\mathbf{v}})^2 / N``.
+If `bias_correction` is `false`, ``N = \\sum_i w_i``; otherwise
+``N = \\sum_i w_i - \\sum_i w_i^2 / \\sum_i w_i`` (equal to ``w (N_p - 1)`` for equal weights),
+and 0 is returned if `np < 2`.
+
+# Positional arguments
+* `n`: sum of particle weights
+* `w2`: sum of squared particle weights
+* `np`: number of particles
+* `bias_correction`: whether to apply bias correction
+"""
+@inline function temperature_normalization(n, w2, np, bias_correction)
+    if !bias_correction
+        return n
+    end
+    return np > 1 ? n - w2 / n : 0.0
+end
+
+"""
+    compute_props!(particles, pia, species_data, phys_props; bias_correction=false)
 
 Compute the physical properties of all species in all cells and store the result in a `PhysProps` instance.
 This function does not compute the total moments, even if `phys_props.n_moments > 0`.
@@ -69,18 +90,24 @@ This function does not compute the total moments, even if `phys_props.n_moments 
 * `pia`: the `ParticleIndexerArray` instance
 * `species_data`: the `Vector` of `SpeciesData`
 * `phys_props`: the `PhysProps` instance in which the computed physical properties are stored
+
+# Keyword arguments
+* `bias_correction`: if `true`, the temperature is normalized by ``\\sum_i w_i - \\sum_i w_i^2 / \\sum_i w_i``
+    instead of ``\\sum_i w_i`` (i.e. by ``N_p - 1`` instead of ``N_p`` for equal weights) to remove the estimator bias
 """
-function compute_props!(particles, pia, species_data, phys_props)
+function compute_props!(particles, pia, species_data, phys_props; bias_correction=false)
     @inbounds for species in 1:phys_props.n_species
         for cell in 1:phys_props.n_cells
             np = 0
             n = 0.0
+            w2 = 0.0
             E = 0.0
             T = 0.0
             v = SVector{3,Float64}(0.0, 0.0, 0.0)
 
             for i in pia.indexer[cell,species].start1:pia.indexer[cell,species].end1
                 n += particles[species][i].w
+                w2 += particles[species][i].w^2
                 v = v + particles[species][i].v * particles[species][i].w
                 np += 1
             end
@@ -88,6 +115,7 @@ function compute_props!(particles, pia, species_data, phys_props)
             if pia.indexer[cell,species].n_group2 > 0
                 for i in pia.indexer[cell,species].start2:pia.indexer[cell,species].end2
                     n += particles[species][i].w
+                    w2 += particles[species][i].w^2
                     v = v + particles[species][i].v * particles[species][i].w
                     np += 1
                 end
@@ -108,9 +136,12 @@ function compute_props!(particles, pia, species_data, phys_props)
                                                       + (particles[species][i].v[3] - v[3])^2)
                     end
                 end
-                
-                E *= 0.5 * species_data[species].mass / (n * k_B)
-                T = (2.0/3.0) * E
+
+                norm = temperature_normalization(n, w2, np, bias_correction)
+                if norm > 0.0
+                    E *= 0.5 * species_data[species].mass / (norm * k_B)
+                    T = (2.0/3.0) * E
+                end
             end
 
             phys_props.lpa[species] = length(particles[species])
@@ -122,6 +153,7 @@ function compute_props!(particles, pia, species_data, phys_props)
             phys_props.T[cell,species] = T
         end
     end
+    return nothing
 end
 
 """
@@ -199,7 +231,7 @@ function avg_props!(phys_props_avg::PhysProps, phys_props::PhysProps, n_avg_time
 end
 
 """
-    compute_props_sorted!(particles, pia, species_data, phys_props, cell_chunk)
+    compute_props_sorted!(particles, pia, species_data, phys_props, cell_chunk; bias_correction=false)
 
 Compute the physical properties of all species in a
 subset of cells and store the result in a `PhysProps` instance,
@@ -213,8 +245,12 @@ compute the length of the particle array.
 * `species_data`: the `Vector` of `SpeciesData`
 * `phys_props`: the `PhysProps` instance in which the computed physical properties are stored
 * `cell_chunk`: the list of cell indices or range of cell indices in which to compute the properties
+
+# Keyword arguments
+* `bias_correction`: if `true`, the temperature is normalized by ``\\sum_i w_i - \\sum_i w_i^2 / \\sum_i w_i``
+    instead of ``\\sum_i w_i`` (i.e. by ``N_p - 1`` instead of ``N_p`` for equal weights) to remove the estimator bias
 """
-function compute_props_sorted!(particles, pia, species_data, phys_props, cell_chunk)
+function compute_props_sorted!(particles, pia, species_data, phys_props, cell_chunk; bias_correction=false)
     indexer = pia.indexer
     pp_np = phys_props.np
     pp_n  = phys_props.n
@@ -227,6 +263,7 @@ function compute_props_sorted!(particles, pia, species_data, phys_props, cell_ch
 
         for cell in cell_chunk
             n = 0.0
+            w2 = 0.0
             np = 0.0
             E = 0.0
             T = 0.0
@@ -239,6 +276,7 @@ function compute_props_sorted!(particles, pia, species_data, phys_props, cell_ch
                 particle = species_particles[i]
 
                 n += particle.w
+                w2 += particle.w^2
                 v = v + particle.v * particle.w
             end
 
@@ -253,8 +291,11 @@ function compute_props_sorted!(particles, pia, species_data, phys_props, cell_ch
                                             + (particle.v[2] - v[2])^2
                                             + (particle.v[3] - v[3])^2)
                 end
-                E *= 0.5 * species_mass / (n * k_B)
-                T = (2.0/3.0) * E
+                norm = temperature_normalization(n, w2, np, bias_correction)
+                if norm > 0.0
+                    E *= 0.5 * species_mass / (norm * k_B)
+                    T = (2.0/3.0) * E
+                end
             end
             
             pp_np[cell, species] = np
@@ -265,10 +306,11 @@ function compute_props_sorted!(particles, pia, species_data, phys_props, cell_ch
             pp_T[cell, species] = T
         end
     end
+    return nothing
 end
 
 """
-    compute_props_sorted!(particles, pia, species_data, phys_props)
+    compute_props_sorted!(particles, pia, species_data, phys_props; bias_correction=false)
 
 Compute the physical properties of all species in all cells and store the result in a `PhysProps` instance,
 assuming the particles are sorted.
@@ -280,13 +322,18 @@ compute the length of the particle array.
 * `pia`: the `ParticleIndexerArray` instance
 * `species_data`: the `Vector` of `SpeciesData`
 * `phys_props`: the `PhysProps` instance in which the computed physical properties are stored
+
+# Keyword arguments
+* `bias_correction`: if `true`, the temperature is normalized by ``\\sum_i w_i - \\sum_i w_i^2 / \\sum_i w_i``
+    instead of ``\\sum_i w_i`` (i.e. by ``N_p - 1`` instead of ``N_p`` for equal weights) to remove the estimator bias
 """
-@inline function compute_props_sorted!(particles, pia, species_data, phys_props)
-    compute_props_sorted!(particles, pia, species_data, phys_props, 1:phys_props.n_cells)
+@inline function compute_props_sorted!(particles, pia, species_data, phys_props; bias_correction=false)
+    compute_props_sorted!(particles, pia, species_data, phys_props, 1:phys_props.n_cells; bias_correction=bias_correction)
 end
 
 """
-    compute_props_sorted!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props, grid::G, cell_chunk) where {G<:AbstractGrid,D}
+    compute_props_sorted!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props, grid::G, cell_chunk;
+                          bias_correction=false) where {G<:AbstractGrid,D}
 
 Compute the physical properties of all species in a
 subset of cells and store the result in a `PhysProps` instance,
@@ -303,14 +350,20 @@ compute the length of the particle array.
 * `phys_props`: the `PhysProps` instance in which the computed physical properties are stored
 * `grid`: the physical grid
 * `cell_chunk`: the list of cell indices or range of cell indices in which to compute the properties
+
+# Keyword arguments
+* `bias_correction`: if `true`, the temperature is normalized by ``\\sum_i w_i - \\sum_i w_i^2 / \\sum_i w_i``
+    instead of ``\\sum_i w_i`` (i.e. by ``N_p - 1`` instead of ``N_p`` for equal weights) to remove the estimator bias
 """
-function compute_props_sorted!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props, grid::G, cell_chunk) where {G<:AbstractGrid,D}
+function compute_props_sorted!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props, grid::G, cell_chunk;
+                               bias_correction=false) where {G<:AbstractGrid,D}
     if !phys_props.ndens_not_Np
-        compute_props_sorted!(particles, pia, species_data, phys_props)
+        compute_props_sorted!(particles, pia, species_data, phys_props, cell_chunk; bias_correction=bias_correction)
     else
         @inbounds for species in 1:phys_props.n_species
             for cell in cell_chunk
                 n = 0.0
+                w2 = 0.0
                 np = 0.0
                 E = 0.0
                 T = 0.0
@@ -322,6 +375,7 @@ function compute_props_sorted!(particles::Vector{ParticleVector{D}}, pia, specie
                     particle = particles[species][i]
 
                     n += particle.w
+                    w2 += particle.w^2
                     v = v + particle.v * particle.w
                     np += 1.0
                 end
@@ -335,8 +389,11 @@ function compute_props_sorted!(particles::Vector{ParticleVector{D}}, pia, specie
                                               + (particle.v[2] - v[2])^2
                                               + (particle.v[3] - v[3])^2)
                     end
-                    E *= 0.5 * species_data[species].mass / (n * k_B)
-                    T = (2.0/3.0) * E
+                    norm = temperature_normalization(n, w2, np, bias_correction)
+                    if norm > 0.0
+                        E *= 0.5 * species_data[species].mass / (norm * k_B)
+                        T = (2.0/3.0) * E
+                    end
                 end
         
                 phys_props.np[cell,species] = np
@@ -348,10 +405,12 @@ function compute_props_sorted!(particles::Vector{ParticleVector{D}}, pia, specie
             end
         end
     end
+    return nothing
 end
 
 """
-    compute_props_sorted!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props, grid::G) where {G<:AbstractGrid,D}
+    compute_props_sorted!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props, grid::G;
+                          bias_correction=false) where {G<:AbstractGrid,D}
 
 Compute the physical properties of all species in all cells and store the result in a `PhysProps` instance,
 assuming the particles are sorted.
@@ -366,9 +425,14 @@ compute the length of the particle array.
 * `species_data`: the `Vector` of `SpeciesData`
 * `phys_props`: the `PhysProps` instance in which the computed physical properties are stored
 * `grid`: the physical grid
+
+# Keyword arguments
+* `bias_correction`: if `true`, the temperature is normalized by ``\\sum_i w_i - \\sum_i w_i^2 / \\sum_i w_i``
+    instead of ``\\sum_i w_i`` (i.e. by ``N_p - 1`` instead of ``N_p`` for equal weights) to remove the estimator bias
 """
-@inline function compute_props_sorted!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props, grid::G) where {G<:AbstractGrid,D}
-    compute_props_sorted!(particles, pia, species_data, phys_props, grid, 1:phys_props.n_cells)
+@inline function compute_props_sorted!(particles::Vector{ParticleVector{D}}, pia, species_data, phys_props, grid::G;
+                                       bias_correction=false) where {G<:AbstractGrid,D}
+    compute_props_sorted!(particles, pia, species_data, phys_props, grid, 1:phys_props.n_cells; bias_correction=bias_correction)
 end
 
 """
