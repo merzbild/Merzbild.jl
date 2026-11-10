@@ -49,11 +49,17 @@
 
     for ts in 1:2
         compute_props_sorted!(particles, pia, species_data, phys_props)
+        compute_props_sorted!(particles, pia, species_data, phys_props; bias_correction=true)
+        compute_props!(particles, pia, species_data, phys_props; bias_correction=true)
     end
 
     for ts in 1:5
         bytes_props = @allocated compute_props_sorted!(particles, pia, species_data, phys_props)
         @test bytes_props == 0
+        bytes_props_bc = @allocated compute_props_sorted!(particles, pia, species_data, phys_props; bias_correction=true)
+        @test bytes_props_bc == 0
+        bytes_props_unsorted = @allocated compute_props!(particles, pia, species_data, phys_props; bias_correction=true)
+        @test bytes_props_unsorted == 0
         bytes_props_avg = @allocated avg_props!(phys_props_avg, phys_props, 8)
         @test bytes_props_avg == 0
     end
