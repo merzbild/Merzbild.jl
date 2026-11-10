@@ -3,8 +3,8 @@
 ## v0.8.5
 * Added multi-species plasma property computations (Debye length, plasma frequency)
 * `compute_props!` and `compute_props_sorted!` now accept a `bias_correction` keyword
-to correct for the bias in computing the standard deviation of velocity, i.e. energy
-(default value is `false`)
+to correct for the bias in computing the standard deviation of velocity, which is used
+to define the temperature (default value is `false`)
 * Fixed chunked version of `compute_props_sorted!` with `ndens_not_Np=false`
 
 ## v0.8.4
