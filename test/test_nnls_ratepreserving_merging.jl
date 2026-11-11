@@ -104,7 +104,7 @@
     w0 = sum([particles[i].w for i in 1:24])
     @test abs(w0 - ndens)/ndens < 2*eps()
 
-    v0 = sum([particles[i].w * particles[i].v for i in 1:24])/w0
+    v0 = sum([(particles[i].w/w0) * particles[i].v for i in 1:24])
     @test maximum(abs.(v0)) < 2*eps()
 
     # mean velocity is 0, so we can just sum up 0.5 v^2 and get energy (per unit mass)
