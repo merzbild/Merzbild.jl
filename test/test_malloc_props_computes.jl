@@ -49,12 +49,37 @@
 
     for ts in 1:2
         compute_props_sorted!(particles, pia, species_data, phys_props)
+        compute_props_sorted!(particles, pia, species_data, phys_props; bias_correction=true)
+        compute_props!(particles, pia, species_data, phys_props; bias_correction=true)
     end
 
     for ts in 1:5
         bytes_props = @allocated compute_props_sorted!(particles, pia, species_data, phys_props)
         @test bytes_props == 0
+        bytes_props_bc = @allocated compute_props_sorted!(particles, pia, species_data, phys_props; bias_correction=true)
+        @test bytes_props_bc == 0
+        bytes_props_unsorted = @allocated compute_props!(particles, pia, species_data, phys_props; bias_correction=true)
+        @test bytes_props_unsorted == 0
         bytes_props_avg = @allocated avg_props!(phys_props_avg, phys_props, 8)
         @test bytes_props_avg == 0
+    end
+end
+
+@testset "malloc: multi-species plasma properties" begin
+    particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
+    species_data::Vector{Species} = load_species_data(particles_data_path, ["e-", "He+", "Ar"])
+
+    phys_props = PhysProps(1, 3; ndens_not_Np=true)
+    phys_props.n[1, :] = [1e16, 1e16, 1e20]
+    phys_props.T[1, :] = [11604.0, 300.0, 300.0]
+
+    debye_length(1, species_data, phys_props)
+    plasma_frequency(1, species_data, phys_props)
+
+    for ts in 1:5
+        bytes_λ_D = @allocated debye_length(1, species_data, phys_props)
+        @test bytes_λ_D == 0
+        bytes_ω_p = @allocated plasma_frequency(1, species_data, phys_props)
+        @test bytes_ω_p == 0
     end
 end

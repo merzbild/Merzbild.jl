@@ -66,6 +66,40 @@ function debye_length(n, T)
 end
 
 """
+    debye_length(cell, species_data, phys_props::PhysProps)
+
+Compute the Debye length of a multi-species plasma in a cell,
+``\\1/lambda_D^{2} = \\sum_s n_s Z_s^2 q_e^2 / (\\varepsilon_0 k_B T_s)``, where the sum is over all species
+with non-zero charge ``Z_s`` and non-zero number density ``n_s``.
+
+# Positional arguments
+* `cell`: the index of the cell
+* `species_data`: the vector of `Species` instances of the species in the flow
+* `phys_props`: the `PhysProps` instance storing number densities and temperatures of all species
+
+# Returns
+Debye length (`Inf` if there are no charged particles in the cell).
+
+# Throws
+`ErrorException` if `phys_props` stores the number of physical particles and not the number density.
+"""
+function debye_length(cell, species_data, phys_props::PhysProps)
+    if !phys_props.ndens_not_Np
+        throw(ErrorException("phys_props does not store number densities"))
+    end
+
+    inv_λ_sq = 0.0
+    @inbounds for species in 1:phys_props.n_species
+        Z = species_data[species].charge
+        n = phys_props.n[cell, species]
+        if Z != 0.0 && n > 0.0
+            inv_λ_sq += n * Z * Z / phys_props.T[cell, species]
+        end
+    end
+    return sqrt(eps_0 * k_B / (inv_λ_sq * q_e * q_e))
+end
+
+"""
     plasma_frequency(species, species_data, n)
 
 Compute the plasma frequency ``\\omega_p = \\sqrt{n q^2 / (\\varepsilon_0 m)}`` of a species
@@ -82,4 +116,34 @@ Plasma frequency in rad/s.
 function plasma_frequency(species, species_data, n)
     @inbounds q = q_e * species_data[species].charge
     @inbounds return sqrt(n * q * q / (eps_0 * species_data[species].mass))
+end
+
+"""
+    plasma_frequency(cell, species_data, phys_props::PhysProps)
+
+Compute the plasma frequency of a multi-species plasma in a cell,
+``\\omega_p^2 = \\sum_s n_s Z_s^2 q_e^2 / (\\varepsilon_0 m_s)``, where the sum is over all species.
+
+# Positional arguments
+* `cell`: the index of the cell
+* `species_data`: the vector of `Species` instances of the species in the flow
+* `phys_props`: the `PhysProps` instance storing number densities of all species
+
+# Returns
+Plasma frequency in rad/s.
+
+# Throws
+`ErrorException` if `phys_props` stores the number of physical particles and not the number density.
+"""
+function plasma_frequency(cell, species_data, phys_props::PhysProps)
+    if !phys_props.ndens_not_Np
+        throw(ErrorException("phys_props does not store number densities"))
+    end
+
+    ω_p_sq = 0.0
+    @inbounds for species in 1:phys_props.n_species
+        Z = species_data[species].charge
+        ω_p_sq += phys_props.n[cell, species] * Z * Z / species_data[species].mass
+    end
+    return q_e * sqrt(ω_p_sq / eps_0)
 end

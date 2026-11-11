@@ -59,4 +59,42 @@ end
 
     # a neutral species has a zero plasma frequency
     @test plasma_frequency(3, species_data, n) == 0.0
+
+    # multi-species: cell 1 is a quasineutral e-/He+ plasma with background Ar,
+    # cell 2 has electrons only (and zero ion temperature, which has to be skipped)
+    phys_props = PhysProps(2, 3; ndens_not_Np=true)
+    phys_props.n[1, :] = [n, n, 1e20]
+    phys_props.T[1, :] = [T, T, 300.0]
+    phys_props.n[2, :] = [n, 0.0, 1e20]
+    phys_props.T[2, :] = [T, 0.0, 300.0]
+
+    λ_D_multi = debye_length(1, species_data, phys_props)
+    @test abs(λ_D_multi - λ_D / sqrt(2.0)) <= 2*eps(λ_D_multi)
+    @test abs(debye_length(2, species_data, phys_props) - λ_D) <= 2*eps(λ_D)
+
+    ω_p_multi = plasma_frequency(1, species_data, phys_props)
+    ω_p_ion = plasma_frequency(2, species_data, n)
+    @test abs(ω_p_multi - sqrt(ω_p^2 + ω_p_ion^2)) <= 2*eps(ω_p_multi)
+    @test abs(plasma_frequency(2, species_data, phys_props) - ω_p) <= 2*eps(ω_p)
+
+    # cold ions: the ion contribution to the Debye length is weighted by 1/T_s
+    phys_props.T[1, 2] = T / 3.0
+    @test abs(debye_length(1, species_data, phys_props) - λ_D / 2.0) <= 2*eps(λ_D)
+
+    # the contribution of a species scales with Z^2
+    species_data_Z2 = [species_data[1], Species("He2+", species_data[2].mass, 2.0, 2.0 * species_data[2].charge_div_mass),
+                       species_data[3]]
+    phys_props.T[1, 2] = T
+    phys_props.n[1, 2] = n / 2.0
+    @test abs(debye_length(1, species_data_Z2, phys_props) - λ_D / sqrt(3.0)) <= 2*eps(λ_D)
+    @test abs(plasma_frequency(1, species_data_Z2, phys_props) - sqrt(ω_p^2 + 2.0 * ω_p_ion^2)) <= 2*eps(ω_p_multi)
+
+    # no charged particles in the cell
+    phys_props.n[2, 1] = 0.0
+    @test debye_length(2, species_data, phys_props) == Inf
+    @test plasma_frequency(2, species_data, phys_props) == 0.0
+
+    phys_props_Np = PhysProps(1, 3)
+    @test_throws ErrorException debye_length(1, species_data, phys_props_Np)
+    @test_throws ErrorException plasma_frequency(1, species_data, phys_props_Np)
 end

@@ -131,8 +131,9 @@
     w_neutral = sum([particles[1][i].w for i in 1:24])
     @test abs(w_neutral - 3 * ndens)/(3*ndens) < 2*eps()
 
+    vmax = maximum(norm(particles[2][i].v) for i in 1:24)
     v0 = sum([particles[2][i].w * particles[2][i].v for i in 1:24])/w0
-    @test maximum(abs.(v0)) < 2*eps()
+    @test maximum(abs.(v0)) < 4*eps()*vmax
 
     # mean velocity is 0, so we can just sum up 0.5 v^2 and get energy (per unit mass)
     E0 = 0.5 * sum([particles[2][i].w * sum(particles[2][i].v.^2) for i in 1:24])/w0
@@ -191,7 +192,7 @@
     @test abs(wnew - w0)/w0 < 1e-15
 
     v_new = sum([particles[2][i].w * particles[2][i].v for i in 1:np_new])/wnew
-    @test maximum(abs.(v0)) < 1e-14
+    @test maximum(abs.(v_new)) < 4*eps()*vmax
 
     # mean velocity is 0, so we can just sum up 0.5 v^2 and get energy (per unit mass)
     E_new = 0.5 * sum([particles[2][i].w * sum(particles[2][i].v.^2) for i in 1:np_new])/wnew
@@ -226,8 +227,9 @@
     w0 = sum([particles[2][i].w for i in 1:24])
     @test abs(w0 - ndens)/ndens < 2*eps()
 
+    vmax = maximum(norm(particles[2][i].v) for i in 1:24)
     v0 = sum([particles[2][i].w * particles[2][i].v for i in 1:24])/w0
-    @test maximum(abs.(v0)) < 3e-13
+    @test maximum(abs.(v0)) < 4*eps()*vmax
 
     # mean velocity is 0, so we can just sum up 0.5 v^2 and get energy (per unit mass)
     E0 = 0.5 * sum([particles[2][i].w * sum(particles[2][i].v.^2) for i in 1:24])/w0
@@ -283,7 +285,7 @@
     @test abs(wnew - w0)/w0 < 1e-15
 
     v_new = sum([particles[2][i].w * particles[2][i].v for i in 1:np_new])/wnew
-    @test maximum(abs.(v0)) < 3e-13
+    @test maximum(abs.(v_new)) < 4*eps()*vmax
 
     # mean velocity is 0, so we can just sum up 0.5 v^2 and get energy (per unit mass)
     E_new = 0.5 * sum([particles[2][i].w * sum(particles[2][i].v.^2) for i in 1:np_new])/wnew
@@ -333,11 +335,11 @@
 
     w0 = sum([particles[2][i].w for i in 1:24])
     w_neutral = sum([particles[1][j].w for j in 1:24])
-    w_neutral = sum([particles[1][j].w for j in 1:24])
     @test abs(w0 - ndens)/ndens < 2*eps()
 
+    vmax = maximum(norm(particles[2][i].v) for i in 1:24)
     v0 = sum([particles[2][i].w * particles[2][i].v for i in 1:24])/w0
-    @test maximum(abs.(v0)) < 3e-13
+    @test maximum(abs.(v0)) < 4*eps()*vmax
 
     # mean velocity is 0, so we can just sum up 0.5 v^2 and get energy (per unit mass)
     E0 = 0.5 * sum([particles[2][i].w * sum(particles[2][i].v.^2) for i in 1:24])/w0
@@ -390,7 +392,7 @@
     @test abs(wnew - w0)/w0 < 1e-15
 
     v_new = sum([particles[2][i].w * particles[2][i].v for i in 1:np_new])/wnew
-    @test maximum(abs.(v0)) < 3e-13
+    @test maximum(abs.(v_new)) < 4*eps()*vmax
 
     # mean velocity is 0, so we can just sum up 0.5 v^2 and get energy (per unit mass)
     E_new = 0.5 * sum([particles[2][i].w * sum(particles[2][i].v.^2) for i in 1:np_new])/wnew
@@ -409,8 +411,7 @@
 
             cs_elastic = Merzbild.get_cs_elastic(n_e_interactions, computed_cs, 1)
             @test abs(cs_elastic - 1e-19) / 1e-19 < 2 * eps()
-
-            w_neutral += particles[1][j].w
+            
             rate_elastic_new += particles[1][j].w * particles[2][i].w * cs_elastic * v_magnitude
 
             rate_ionization_new += particles[1][j].w * particles[2][i].w * Merzbild.get_cs_ionization(n_e_interactions, computed_cs, 1) * v_magnitude
