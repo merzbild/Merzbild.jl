@@ -6,6 +6,7 @@
 to correct for the bias in computing the standard deviation of velocity, which is used
 to define the temperature (default value is `false`)
 * Fixed chunked version of `compute_props_sorted!` with `ndens_not_Np=false`
+* Fixed some tests that did not check the things they were supposed to check
 
 ## v0.8.4
 * 1-D convection routines now allow for inflow and outflow boundaries
