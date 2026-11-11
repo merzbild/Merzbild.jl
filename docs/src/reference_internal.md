@@ -236,6 +236,7 @@ Merzbild.compute_thermal_velocity
 Merzbild.binary_search
 Merzbild.linear_interpolation
 Merzbild.compute_mixed_moment
+Merzbild.temperature_normalization
 Merzbild.scale_columns!
 Merzbild.scale_rows_and_columns!
 ```

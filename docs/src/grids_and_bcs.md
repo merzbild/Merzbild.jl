@@ -51,9 +51,6 @@ reaching it are deleted exactly as for an [`OutflowBC`](@ref). The velocity of a
 is sampled with [`sample_inflow_velocity`](@ref) using the method described in [Garcia and Wagner (2006)](https://doi.org/10.1016/j.jcp.2006.01.025), and the number flux across the surface is given by
 [`compute_inflow_number_flux`](@ref).
 
-TODO: describe the emission routine that injects the particles into the domain once it is
-implemented, including the per-particle residual flight time within a timestep.
-
 Both [`FullyDiffuseBC1D`](@ref) and [`MaxwellWallBC1D`](@ref) are species-specific, since the
 thermal reflection velocity depends on the species mass; [`MaxwellWallBC1D`](@ref) reduces to
 specular reflection at an accommodation coefficient of 0 and to fully diffuse reflection at a value
@@ -62,6 +59,9 @@ of 1. These specular/diffuse gas–surface interaction models are the standard D
 
 Periodic BCs for 1D grids are implemented via convection functions that wrap the particle positions,
 see below.
+
+For outflow and inflow BCs and the associated particle
+emission routine, see the [Section on "Inflow and outflow BCs"](@ref "Inflow and outflow BCs").
 
 ## Convection
 

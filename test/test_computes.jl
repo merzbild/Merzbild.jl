@@ -111,3 +111,98 @@
     phys_props_ndens = PhysProps(pia; ndens_not_Np=true)
     @test_throws ErrorException avg_props!(phys_props_avg, phys_props_ndens, 2)
 end
+
+@testset "phys_props compute bias correction" begin
+    rng = StableRNG(1234)
+
+    particles_data_path = joinpath(@__DIR__, "..", "data", "particles.toml")
+    species_data::Vector{Species} = load_species_data(particles_data_path, "Ar")
+
+    T0 = 500.0
+    Fnum = 1e10
+    vscale = sqrt(k_B * T0 / species_data[1].mass)
+
+    ppc = 3
+    n_cells = 20000
+    n_particles = ppc * n_cells
+    particles = [ParticleVector(n_particles)]
+    pia = ParticleIndexerArray(n_cells, 1)
+    for cell in 1:n_cells
+        pia.indexer[cell, 1] = ParticleIndexer(ppc, ppc * (cell - 1) + 1, ppc * cell, ppc, 0, -1, 0)
+        for i in ppc * (cell - 1) + 1:ppc * cell
+            particles[1][i] = Particle(Fnum * (1.0 + 4.0 * rand(rng)),
+                                       [100.0 + vscale * randn(rng), -50.0 + vscale * randn(rng), vscale * randn(rng)],
+                                       [0.0, 0.0, 0.0])
+        end
+    end
+    pia.n_total[1] = n_particles
+
+    pp_biased = PhysProps(pia)
+    pp_corr = PhysProps(pia)
+    compute_props!(particles, pia, species_data, pp_biased)
+    compute_props!(particles, pia, species_data, pp_corr; bias_correction=true)
+
+    max_ratio_err = 0.0
+    for cell in 1:n_cells
+        n = 0.0
+        w2 = 0.0
+        for i in ppc * (cell - 1) + 1:ppc * cell
+            n += particles[1][i].w
+            w2 += particles[1][i].w^2
+        end
+        ratio = pp_corr.T[cell, 1] / pp_biased.T[cell, 1]
+        max_ratio_err = max(max_ratio_err, abs(ratio - n / (n - w2 / n)))
+    end
+    @test max_ratio_err < 1e-12
+    @test maximum(abs.(pp_corr.n .- pp_biased.n)) == 0.0
+    @test maximum(abs.(pp_corr.v .- pp_biased.v)) == 0.0
+    @test maximum(abs.(pp_corr.np .- pp_biased.np)) == 0.0
+
+    @test abs(sum(pp_corr.T) / n_cells - T0) / T0 < 0.02
+    @test sum(pp_biased.T) / n_cells < 0.8 * T0
+
+    pp_sorted = PhysProps(pia)
+    compute_props_sorted!(particles, pia, species_data, pp_sorted; bias_correction=true)
+    @test maximum(abs.(pp_sorted.T .- pp_corr.T)) < 1e-10
+
+    pp_chunk = PhysProps(pia)
+    compute_props_sorted!(particles, pia, species_data, pp_chunk, 1:2; bias_correction=true)
+    @test maximum(abs.(pp_chunk.T[1:2, 1] .- pp_corr.T[1:2, 1])) < 1e-10
+    @test maximum(abs.(pp_chunk.T[3:end, 1])) == 0.0
+
+    grid = Grid1DUniform(2.0, n_cells)
+    pp_grid = PhysProps(pia)
+    compute_props_sorted!(particles, pia, species_data, pp_grid, grid; bias_correction=true)
+    @test maximum(abs.(pp_grid.T .- pp_corr.T)) < 1e-10
+
+    pp_grid_chunk = PhysProps(pia)
+    compute_props_sorted!(particles, pia, species_data, pp_grid_chunk, grid, 1:2; bias_correction=true)
+    @test maximum(abs.(pp_grid_chunk.T[1:2, 1] .- pp_corr.T[1:2, 1])) < 1e-10
+    @test maximum(abs.(pp_grid_chunk.T[3:end, 1])) == 0.0
+
+    pp_grid_ndens = PhysProps(pia; ndens_not_Np=true)
+    compute_props_sorted!(particles, pia, species_data, pp_grid_ndens, grid; bias_correction=true)
+    @test maximum(abs.(pp_grid_ndens.T .- pp_corr.T)) < 1e-10
+
+    # equal weights: correction factor is Np / (Np - 1)
+    n_eq = 10
+    particles_eq = [ParticleVector(n_eq)]
+    for i in 1:n_eq
+        particles_eq[1][i] = Particle(Fnum, [vscale * randn(rng), vscale * randn(rng), vscale * randn(rng)], [0.0, 0.0, 0.0])
+    end
+    pia_eq = ParticleIndexerArray(n_eq)
+    pp_eq_biased = PhysProps(pia_eq)
+    pp_eq_corr = PhysProps(pia_eq)
+    compute_props!(particles_eq, pia_eq, species_data, pp_eq_biased)
+    compute_props!(particles_eq, pia_eq, species_data, pp_eq_corr; bias_correction=true)
+    @test abs(pp_eq_corr.T[1, 1] / pp_eq_biased.T[1, 1] - n_eq / (n_eq - 1)) < 1e-12
+
+    # single particle: temperature is not defined, set to 0
+    pia_single = ParticleIndexerArray(1)
+    pp_single = PhysProps(pia_single)
+    compute_props!(particles_eq, pia_single, species_data, pp_single; bias_correction=true)
+    @test pp_single.T[1, 1] == 0.0
+    @test pp_single.n[1, 1] == Fnum
+    compute_props_sorted!(particles_eq, pia_single, species_data, pp_single; bias_correction=true)
+    @test pp_single.T[1, 1] == 0.0
+end
