@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.8.6
+* Simulation examples now throw error if netCDF output requires the `scratch/data` directory and it does not exist (netCDF errors were not very informative)
+
 ## v0.8.5
 * Added multi-species plasma property computations (Debye length, plasma frequency)
 * `compute_props!` and `compute_props_sorted!` now accept a `bias_correction` keyword
