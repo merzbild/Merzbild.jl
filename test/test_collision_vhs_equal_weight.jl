@@ -60,7 +60,7 @@
         
         # Check energy conservation
         ke_final = 0.5 * m * (sum(particles[1].v.^2) + sum(particles[2].v.^2))
-        @test isapprox(ke_initial, ke_final, atol=1e-14)
+        @test isapprox(ke_initial, ke_final, rtol=4*eps())
         
         # Check that no particles were split (equal weight)
         @test collision_factors.n_eq_w_coll_performed > 0
@@ -110,7 +110,7 @@
         # Check energy conservation (weighted)
         ke_final = 0.5 * m * (particles[1].w * sum(particles[1].v.^2) + 
                             particles[2].w * sum(particles[2].v.^2))
-        @test isapprox(ke_initial, ke_final, atol=1e-14)
+        @test isapprox(ke_initial, ke_final, rtol=4*eps())
     end
 
     # Test case 3: Unequal weight particles (no splitting should occur)
@@ -151,7 +151,7 @@
         # Check energy conservation (weighted)
         ke_final = 0.5 * m * (particles[1].w * sum(particles[1].v.^2) + 
                             particles[2].w * sum(particles[2].v.^2))
-        @test isapprox(ke_initial, ke_final, atol=1e-14)
+        @test isapprox(ke_initial, ke_final, rtol=4*eps())
     end
 
     # Test case 4: Different species collision
@@ -207,7 +207,7 @@
         
         # Check energy conservation
         ke_final = 0.5 * (m_ar * sum(particles_ar[1].v.^2) + m_he * sum(particles_he[1].v.^2))
-        @test isapprox(ke_initial, ke_final, atol=1e-14)
+        @test isapprox(ke_initial, ke_final, rtol=4*eps())
     end
 
     # Test case 5: Unequal weight particles with different species (no splitting should occur)
@@ -268,6 +268,6 @@
         # Check energy conservation (weighted)
         ke_final = 0.5 * (m_ar * particles_ar[1].w * sum(particles_ar[1].v.^2) + 
                         m_he * particles_he[1].w * sum(particles_he[1].v.^2))
-        @test isapprox(ke_initial, ke_final, atol=1e-14)
+        @test isapprox(ke_initial, ke_final, rtol=4*eps())
     end
 end
