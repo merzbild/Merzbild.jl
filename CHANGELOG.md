@@ -2,6 +2,7 @@
 
 ## v0.8.6
 * Simulation examples now throw error if netCDF output requires the `scratch/data` directory and it does not exist (netCDF errors were not very informative)
+* Multiple correctness fixes in tests
 
 ## v0.8.5
 * Added multi-species plasma property computations (Debye length, plasma frequency)
