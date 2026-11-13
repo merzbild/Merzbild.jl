@@ -293,8 +293,7 @@
     pia = ParticleIndexerArray(24)
 
     # symmetric octree with split at v0 = (0.0, 0.0, 0.0)
-    octree = OctreeMerge{2,2}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC, bin_bounds_compute=OctreeBinBoundsInherit)
-    merge_octree!(rng, octree, particles24[1], pia, 1, 1, 16)
+    octree = OctreeMerge{2,2}(OctreeBinMidSplit; init_bin_bounds=OctreeInitBinC, bin_bounds_compute=OctreeBinBoundsRecompute)
     compute_props!(particles24, pia, species_data, phys_props)
 
     n0_computed = phys_props.n[1,1]
@@ -302,8 +301,10 @@
     T0_computed = phys_props.T[1,1]
     v0_computed = phys_props.v[:,1,1]
 
+    merge_octree!(rng, octree, particles24[1], pia, 1, 1, 16)
     compute_props!(particles24, pia, species_data, phys_props)
 
+    @test pia.n_total[1] < 24
     @test pia.n_total[1] == phys_props.np[1,1]
     @test abs(phys_props.n[1,1] - n0_computed) < eps()
     @test abs(phys_props.T[1,1] - T0_computed) < 1e-14
