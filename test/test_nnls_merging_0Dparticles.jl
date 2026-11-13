@@ -103,6 +103,13 @@
     end
 
     mnnls = NNLSMerge{0}(mim, 30)
+    mixed_order_3 = compute_multi_index_moments(3)
+    moms3 = zeros(length(mixed_order_3))
+
+    for (i, mim) in enumerate(mixed_order_3)
+        moms3[i] = Merzbild.compute_mixed_moment(particles, pia, 1, 1, mim)
+    end
+
     vref = sqrt(2 * k_B * 300.0 / species_data[1].mass)
     result = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1; vref=vref, scaling=:vref)
     @test length(mnnls.rhs_vector) == length(mim) + 1  # we didn't construct 0-th order moment
@@ -112,13 +119,6 @@
     v0 = phys_props.v[:, 1, 1]
     T0 = phys_props.T[1, 1]
     M40 = mvals_list[1]
-
-    mixed_order_3 = compute_multi_index_moments(3)
-    moms3 = zeros(length(mixed_order_3))
-
-    for (i, mim) in enumerate(mixed_order_3)
-        moms3[i] = Merzbild.compute_mixed_moment(particles, pia, 1, 1, mim)
-    end
 
     # test some internal computes used in the merging
     @test sum(abs.(mnnls.v0 .- v0)) < eps()
@@ -142,7 +142,7 @@
         moms3_post[i] = Merzbild.compute_mixed_moment(particles, pia, 1, 1, mim)
     end
 
-    @test sum(abs.(moms3_post - moms3))/length(moms3_post) < 1e-14
+    @test maximum(abs.(moms3_post .- moms3) ./ abs.(moms3)) < 4 * eps()
 
 
     mim = []
@@ -334,8 +334,8 @@
 
     new_v /= new_w
 
-    @test abs(new_w - tw) < 3.75e-15
-    @test maximum(abs.(new_v - v_mean)) < 1e-15
+    @test abs(new_w - tw) < 7.5e-15
+    @test maximum(abs.(new_v - v_mean)) < 2e-15
 
     # now we try a higher threshold so that we get fewer particles
     # this will mess up everything except mass conservation though

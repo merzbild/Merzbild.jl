@@ -114,6 +114,7 @@
                 nnls_success_flag = merge_nnls_based!(rng, mnnls, particles[1], pia, cell, 1; w_threshold=1e-12)
     
                 if nnls_success_flag == -1
+                    fails += 1
                     merge_octree!(rng, oc, particles[1], pia, cell, 1, merge_target, grid)
                 end
                 squash_pia!(particles, pia)

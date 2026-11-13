@@ -76,7 +76,7 @@
 
         for cell in 1:nx
             if pia.indexer[cell,1].n_local > target2
-                bytes_merge = @allocated merge_octree!(rng, oc3, particles3[1], pia, nx, 1, target2, grid)
+                bytes_merge = @allocated merge_octree!(rng, oc3, particles3[1], pia, cell, 1, target2, grid)
                 merges = true
                 @test bytes_merge == 0
             end
@@ -113,7 +113,7 @@
 
         for cell in 1:nx
             if pia.indexer[cell,1].n_local > target2
-                bytes_merge = @allocated merge_octree!(rng, oc3, particles3[1], pia, nx, 1, target2, grid)
+                bytes_merge = @allocated merge_octree!(rng, oc3, particles3[1], pia, cell, 1, target2, grid)
                 merges = true
                 @test bytes_merge == 0
             end
@@ -150,7 +150,7 @@
 
         for cell in 1:nx
             if pia.indexer[cell,1].n_local > target2
-                bytes_merge = @allocated merge_octree!(rng, oc3, particles3[1], pia, nx, 1, target2, grid)
+                bytes_merge = @allocated merge_octree!(rng, oc3, particles3[1], pia, cell, 1, target2, grid)
                 merges = true
                 @test bytes_merge == 0
             end

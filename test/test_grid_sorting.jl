@@ -55,7 +55,7 @@
 
     # underlying particles did not change
     for i in 1:8
-        particles[1].particles[i].x[1] == 0.99 * 8.0 * (9.0 - i) / 8
+        @test particles[1].particles[i].x[1] == 0.99 * 8.0 * (9.0 - i) / 8
     end
 
     # but when we access them through the ParticleVector we get the expected result
@@ -84,7 +84,7 @@
 
     # underlying particles did not change
     for i in 1:8
-        particles2[1].particles[i].x[1] == 0.99 * 8.0 * (9.0 - i) / 8
+        @test particles2[1].particles[i].x[1] == 0.99 * 8.0 * (9.0 - i) / 8
     end
 
     # but when we access them through the ParticleVector we get the expected result
@@ -126,7 +126,7 @@
 
     # underlying particles did not change
     for i in 1:8
-        particles[1].particles[i].x[1] == 0.99 * 8.0 * (9.0 - i) / 8
+        @test particles[1].particles[i].x[1] == 0.99 * 8.0 * (9.0 - i) / 8
     end
 
     for i in 1:2

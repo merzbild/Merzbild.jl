@@ -2,6 +2,8 @@ using Merzbild
 using Random
 using TimerOutputs
 
+isdir("scratch/data") || error("Output directory `scratch/data` does not exist (the path is relative to the working directory). Create it, e.g. with `mkdir -p scratch/data`.")
+
 """
     run(seed, T_R, n_R, L, n_cells, n_emit_per_timestep,
         Δt, output_freq, n_timesteps, avg_start,

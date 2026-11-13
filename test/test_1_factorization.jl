@@ -45,7 +45,7 @@
                     found = false
                     for row in fac_long
                         for tp in row
-                            if ((i,i) == tp || (i,i) == tp)
+                            if (i,i) == tp
                                 found = true
                                 break
                             end

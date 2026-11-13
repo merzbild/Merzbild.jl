@@ -11,6 +11,8 @@ using Merzbild
 using Random
 using TimerOutputs
 
+isdir("scratch/data") || error("Output directory `scratch/data` does not exist (the path is relative to the working directory). Create it, e.g. with `mkdir -p scratch/data`.")
+
 """
     run(seed, E_Tn, n_t, threshold_electrons, np_target_electrons;
         merging_bin_split=OctreeBinMidSplit, adds=0, do_es=true)

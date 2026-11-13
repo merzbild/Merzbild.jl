@@ -46,9 +46,9 @@
         @test abs(mvals_list[2] - 1.0) < 0.05  # test 6th moment
         @test abs(mvals_list[3] - 1.0) < 0.12  # test 8th moment
 
-        @inbounds pia.indexer[1, 1].start2 == 0
-        @inbounds pia.indexer[1, 1].end2 == -1
-        @inbounds pia.indexer[1, 1].n_group2 == 0
+        @test pia.indexer[1, 1].start2 == 0
+        @test pia.indexer[1, 1].end2 == -1
+        @test pia.indexer[1, 1].n_group2 == 0
 
         oob = false
 

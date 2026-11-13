@@ -214,8 +214,7 @@
     close(sol)
     rm(sol_path)
 
-    # now we test with higher T0_e and E_tn and should get ionization
-    E_Tn = 600
+    # now we test with higher T0_e and should get ionization
     T0_e = Merzbild.eV * 8.5  # T_e(t=0) = 4.5eV
 
     particles = [ParticleVector(np_base_heavy),
@@ -366,9 +365,8 @@
     close(sol)
     rm(sol_path)
 
-    # now we test with higher T0_e and E_tn and should get ionization
+    # now we test with higher T0_e and should get ionization
     # and have inverse ratio of densities to check splitting
-    E_Tn = 500
     T0_e = Merzbild.eV * 10.0  # T_e(t=0) = 4.5eV
 
     n_dens_e = 1e23

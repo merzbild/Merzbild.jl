@@ -1,5 +1,7 @@
 using Merzbild
 
+isdir("scratch/data") || error("Output directory `scratch/data` does not exist (the path is relative to the working directory). Create it, e.g. with `mkdir -p scratch/data`.")
+
 """
     run(L, nx, ppc, ndens, perturbation, n_timesteps, output_freq)
 

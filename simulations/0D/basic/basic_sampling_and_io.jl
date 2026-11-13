@@ -5,6 +5,8 @@
 using Merzbild
 using Random
 
+isdir("scratch/data") || error("Output directory `scratch/data` does not exist (the path is relative to the working directory). Create it, e.g. with `mkdir -p scratch/data`.")
+
 function run(seed)
     species_data = load_species_data(joinpath(MERZBILD_DATA_PATH, "particles.toml"), "Ar")
     println([species.name for species in species_data])

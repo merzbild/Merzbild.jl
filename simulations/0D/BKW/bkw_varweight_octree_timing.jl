@@ -25,6 +25,8 @@ using Merzbild
 using Random
 using TimerOutputs
 
+isdir("scratch/data") || error("Output directory `scratch/data` does not exist (the path is relative to the working directory). Create it, e.g. with `mkdir -p scratch/data`.")
+
 function run(seed)
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)

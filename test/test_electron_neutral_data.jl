@@ -36,7 +36,7 @@
         Merzbild.compute_cross_sections!(n_e_cs, interaction_data[1,2], g, n_e_interactions, 1)
 
         # linear interpolation of linear data is exact
-        @test abs(n_e_cs[1].cs_elastic * 1e20 - (4 + E_coll / 100.0)) / 1e20 < eps()
+        @test abs(n_e_cs[1].cs_elastic * 1e20 - (4 + E_coll / 100.0)) / (4 + E_coll / 100.0) < 2 * eps()
         @test n_e_cs[1].cs_total == n_e_cs[1].cs_elastic
         @test n_e_cs[1].cs_ionization == 0.0
         @test n_e_cs[1].prob_vec[1] == 1.0
@@ -49,10 +49,11 @@
         # now we have a non-zero ionization cross-section
         g = sqrt(2 * E_coll * Merzbild.eV_J / interaction_data[1,2].m_r)
         Merzbild.compute_cross_sections!(n_e_cs, interaction_data[1,2], g, n_e_interactions, 1)
-        @test abs(n_e_cs[1].cs_elastic * 1e20 - (4 + E_coll / 100.0)) / 1e20 < eps()
+        @test abs(n_e_cs[1].cs_elastic * 1e20 - (4 + E_coll / 100.0)) / (4 + E_coll / 100.0) < 2 * eps()
 
-        @test abs(n_e_cs[1].cs_total - (n_e_cs[1].cs_elastic + n_e_cs[1].cs_ionization)) < eps()
-        @test abs(n_e_cs[1].cs_ionization * 1e25 - (1 * (100.0 - E_coll) / 70.0 + 10 * (E_coll - 30) / 70)) / 1e25 < eps()
+        @test abs(n_e_cs[1].cs_total - (n_e_cs[1].cs_elastic + n_e_cs[1].cs_ionization)) / n_e_cs[1].cs_total < 2 * eps()
+        cs_ion_ref = 1 * (100.0 - E_coll) / 70.0 + 10 * (E_coll - 30) / 70
+        @test abs(n_e_cs[1].cs_ionization * 1e25 - cs_ion_ref) / cs_ion_ref < 2 * eps()
         @test n_e_cs[1].prob_vec[1] < 1.0
         @test n_e_cs[1].prob_vec[2] > 0.0
         @test abs(sum(n_e_cs[1].prob_vec) - 1.0) < eps()
@@ -66,19 +67,19 @@
         # (continued by a constant)
         g = sqrt(2 * E_coll * Merzbild.eV_J / interaction_data[1,2].m_r)
         Merzbild.compute_cross_sections!(n_e_cs, interaction_data[1,2], g, n_e_interactions, 1)
-        @test abs(n_e_cs[1].cs_elastic * 1e20 - (4 + E_coll / 100.0)) / 1e20 < eps()
+        @test abs(n_e_cs[1].cs_elastic * 1e20 - (4 + E_coll / 100.0)) / (4 + E_coll / 100.0) < 2 * eps()
 
 
-        @test abs(n_e_cs[1].cs_total - (n_e_cs[1].cs_elastic + n_e_cs[1].cs_ionization)) < eps()
-        @test abs(n_e_cs[1].cs_ionization * 1e25 - n_e_interactions.ionization[1].data.sigma[end] * 1e25) / 1e25 < eps()
+        @test abs(n_e_cs[1].cs_total - (n_e_cs[1].cs_elastic + n_e_cs[1].cs_ionization)) / n_e_cs[1].cs_total < 2 * eps()
+        @test n_e_cs[1].cs_ionization == n_e_interactions.ionization[1].data.sigma[end]
 
         @test n_e_cs[1].prob_vec[1] < 1.0
         @test n_e_cs[1].prob_vec[2] > 0.0
         @test abs(sum(n_e_cs[1].prob_vec) - 1.0) < eps()
 
-        @test abs(Merzbild.get_cs_total(n_e_interactions, n_e_cs, 1) - n_e_cs[1].cs_total) < eps()
-        @test abs(Merzbild.get_cs_elastic(n_e_interactions, n_e_cs, 1) - n_e_cs[1].cs_elastic) < eps()
-        @test abs(Merzbild.get_cs_ionization(n_e_interactions, n_e_cs, 1) - n_e_cs[1].cs_ionization) < eps()
+        @test Merzbild.get_cs_total(n_e_interactions, n_e_cs, 1) == n_e_cs[1].cs_total
+        @test Merzbild.get_cs_elastic(n_e_interactions, n_e_cs, 1) == n_e_cs[1].cs_elastic
+        @test Merzbild.get_cs_ionization(n_e_interactions, n_e_cs, 1) == n_e_cs[1].cs_ionization
         @test abs(Merzbild.get_ionization_threshold(n_e_interactions, 1) - 2.458740e+1) < eps()
         @test Merzbild.get_electron_energy_split(n_e_interactions, 1) == ElectronEnergySplitEqual
     end
@@ -88,7 +89,7 @@
         # now we're out of bounds for the ionization cross-section and the value should 0.0
         g = sqrt(2 * E_coll * Merzbild.eV_J / interaction_data[1,2].m_r)
         Merzbild.compute_cross_sections!(n_e_cs, interaction_data[1,2], g, n_e_interactions, 1; extend=CSExtendZero)
-        @test abs(n_e_cs[1].cs_elastic * 1e20 - (4 + E_coll / 100.0)) / 1e20 < eps()
+        @test abs(n_e_cs[1].cs_elastic * 1e20 - (4 + E_coll / 100.0)) / (4 + E_coll / 100.0) < 2 * eps()
 
         @test n_e_cs[1].cs_ionization  == 0.0
 
@@ -101,11 +102,11 @@
     coll_data.E_coll_eV = 107.5
     Merzbild.compute_g_new_ionization!(coll_data, interaction_data[1,2], 7.5, ElectronEnergySplitEqual)
     @test abs(coll_data.g_new_1 - coll_data.g_new_2) < eps()
-    @test (Merzbild.e_mass_div_electron_volt * coll_data.g_new_1^2 + 7.5 - coll_data.E_coll_eV) < 1e-14
+    @test abs(Merzbild.e_mass_div_electron_volt * coll_data.g_new_1^2 + 7.5 - coll_data.E_coll_eV) / coll_data.E_coll_eV < 2 * eps()
 
     Merzbild.compute_g_new_ionization!(coll_data, interaction_data[1,2], 7.5, ElectronEnergySplitZeroE)
     @test coll_data.g_new_2 == 0.0
-    @test (0.5 * Merzbild.e_mass_div_electron_volt * coll_data.g_new_1^2 + 7.5 - coll_data.E_coll_eV) < 1e-14
+    @test abs(0.5 * Merzbild.e_mass_div_electron_volt * coll_data.g_new_1^2 + 7.5 - coll_data.E_coll_eV) / coll_data.E_coll_eV < 2 * eps()
 
     dme = DataMissingException("Data not found")
     @test dme.msg == "Data not found"

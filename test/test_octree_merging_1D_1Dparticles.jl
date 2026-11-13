@@ -1,4 +1,4 @@
-@testset "octree_merging 1D, 2D particles" begin
+@testset "octree_merging 1D, 1D particles" begin
     
     function create_particles_in_2cells()
     # create 4 particles in 2 cells

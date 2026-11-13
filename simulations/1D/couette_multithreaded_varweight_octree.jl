@@ -4,6 +4,8 @@ using TimerOutputs
 using Base.Threads
 using ChunkSplitters
 
+isdir("scratch/data") || error("Output directory `scratch/data` does not exist (the path is relative to the working directory). Create it, e.g. with `mkdir -p scratch/data`.")
+
 function run(seed, T_wall, v_wall, L, ndens, nx, ppc_sampled, merge_threshold, merge_target, Δt, output_freq, n_timesteps, avg_start;
     chunk_count_multiplier=1, preallocation_margin_multiplier=1.0, parallel_exchange=true, final_debug=false)
     reset_timer!()

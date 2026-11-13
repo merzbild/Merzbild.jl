@@ -159,8 +159,8 @@
                                                    particles_electron[2], particles_ion[1], 1e-5)
 
     # since v_com = (0,0,0) we don't need to subtract it
-    @test (sqrt(sum(particles_electron[1].v.^2)) - collision_data.g_new_1) / collision_data.g_new_1 < 2*eps()
-    @test (sqrt(sum(particles_electron[2].v.^2)) - collision_data.g_new_2) / collision_data.g_new_2 < 2*eps()
+    @test abs(sqrt(sum(particles_electron[1].v.^2)) - collision_data.g_new_1) / collision_data.g_new_1 < 2*eps()
+    @test abs(sqrt(sum(particles_electron[2].v.^2)) - collision_data.g_new_2) / collision_data.g_new_2 < 2*eps()
 
     @test maximum(abs.(particles_electron[1].x .- [0.0, 0.0, 0.0])) < 2*eps()
     @test maximum(abs.(particles_electron[2].x .- [100.0, 200.0, 400.0])) < 2*eps()

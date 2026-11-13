@@ -60,7 +60,7 @@
     for i1 in 1:size(collision_factors_swpm)[1]
         for i2 in 1:size(collision_factors_swpm)[2]
             for i3 in 1:size(collision_factors_swpm)[3]
-                if abs(collision_factors_swpm[i1, i2, i3].sigma_g_max - collision_factors_ntc[i1, i2, i3].sigma_g_w_max) > 2 * eps()
+                if abs(collision_factors_swpm[i1, i2, i3].sigma_g_max - collision_factors_ntc[i1, i2, i3].sigma_g_w_max) > 2 * eps() * collision_factors_ntc[i1, i2, i3].sigma_g_w_max
                     flag = true
                 end
             end
@@ -77,7 +77,7 @@
     for i1 in 1:size(collision_factors_swpm)[1]
         for i2 in 1:size(collision_factors_swpm)[2]
             for i3 in 1:size(collision_factors_swpm)[3]
-                if abs(collision_factors_swpm[i1, i2, i3].sigma_g_max - collision_factors_ntc[i1, i2, i3].sigma_g_w_max) > 2 * eps()
+                if abs(collision_factors_swpm[i1, i2, i3].sigma_g_max - collision_factors_ntc[i1, i2, i3].sigma_g_w_max) > 2 * eps() * collision_factors_ntc[i1, i2, i3].sigma_g_w_max
                     flag = true
                 end
             end
