@@ -62,7 +62,7 @@
         if cell == 2
             @test collision_factors[1, 1, cell].n_coll > 0
         else
-            collision_factors[1, 1, cell].n_coll == 0
+            @test collision_factors[1, 1, cell].n_coll == 0
         end
     end
 
