@@ -45,6 +45,8 @@
 
         # reset sigma_g_w_max estimate
         collision_factors.sigma_g_w_max = 0.0
+        collision_factors.n_coll_performed = 0
+        collision_factors.n_eq_w_coll_performed = 0
         
         # Store initial velocities for energy conservation check
         v1_initial = particles[1].v
@@ -80,6 +82,8 @@
 
         # reset sigma_g_w_max estimate
         collision_factors.sigma_g_w_max = 0.0
+        collision_factors.n_coll_performed = 0
+        collision_factors.n_eq_w_coll_performed = 0
         
         # Store initial state
         v1_initial = particles[1].v
@@ -135,6 +139,8 @@
 
         # reset sigma_g_w_max estimate
         collision_factors.sigma_g_w_max = 0.0
+        collision_factors.n_coll_performed = 0
+        collision_factors.n_eq_w_coll_performed = 0
         
         # Store initial state
         v1_initial = particles[1].v
@@ -190,6 +196,8 @@
 
         # reset sigma_g_w_max estimate
         collision_factors.sigma_g_w_max = 0.0
+        collision_factors.n_coll_performed = 0
+        collision_factors.n_eq_w_coll_performed = 0
         
         # Store initial state
         v1_initial = particles[1].v
@@ -240,6 +248,8 @@
 
         # reset sigma_g_w_max estimate
         collision_factors.sigma_g_w_max = 0.0
+        collision_factors.n_coll_performed = 0
+        collision_factors.n_eq_w_coll_performed = 0
         
         # Initialize particles for both species
         particles_ar = ParticleVector(1)

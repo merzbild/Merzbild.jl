@@ -57,11 +57,11 @@
     mlist = [4,6,8]
     mscaling = zeros(3)
     mvals_list = zeros((3,3))
-    compute_moment_scaling!(mscaling, mlist, 1, species_data, 273.0)
-    
+
     for i in 1:3
         mvals_tmp = zeros(3)
-        compute_moments!(mvals_tmp, mscaling, mlist, particles, pia, 1, 1, species_data, phys_props)
+        compute_moment_scaling!(mscaling, mlist, i, species_data, T0_arr[i])
+        compute_moments!(mvals_tmp, mscaling, mlist, particles, pia, 1, i, species_data, phys_props)
         mvals_list[i,:] .= mvals_tmp
     end
 
@@ -83,7 +83,8 @@
 
     for i in 1:3
         mvals_tmp = zeros(3)
-        compute_moments!(mvals_tmp, mscaling, mlist, particles, pia, 1, 1, species_data, phys_props)
+        compute_moment_scaling!(mscaling, mlist, i, species_data, T0_arr[i])
+        compute_moments!(mvals_tmp, mscaling, mlist, particles, pia, 1, i, species_data, phys_props)
         mvals_list[i,:] .= mvals_tmp
     end
     
@@ -116,7 +117,8 @@
 
     for i in 1:3
         mvals_tmp = zeros(3)
-        compute_moments!(mvals_tmp, mscaling, mlist, particles, pia, 1, 1, species_data, phys_props)
+        compute_moment_scaling!(mscaling, mlist, i, species_data, T0_arr[i])
+        compute_moments!(mvals_tmp, mscaling, mlist, particles, pia, 1, i, species_data, phys_props)
         mvals_list[i,:] .= mvals_tmp
     end
     

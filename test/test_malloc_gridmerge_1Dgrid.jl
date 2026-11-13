@@ -58,11 +58,11 @@
         sample_particles_equal_weight!(rng, grid, particles1[1], pia, 1,
                                        species_data, ndens, T, Fnum)
 
-        merges = false
         compute_props!(particles1, pia, species_data, phys_props)
+        merges = false
         for cell in 1:nx
             if pia.indexer[cell,1].n_local > target
-                merge_grid_based!(rng, mg1, particles1[1], pia, 1, 1, species_data, phys_props, grid)
+                merge_grid_based!(rng, mg1, particles1[1], pia, cell, 1, species_data, phys_props, grid)
                 merges = true
             end
         end
@@ -75,9 +75,10 @@
         sample_particles_equal_weight!(rng, grid, particles1[1], pia, 1,
                                        species_data, ndens, T, Fnum)
 
+        merges = false
         for cell in 1:nx
             if pia.indexer[cell,1].n_local > target
-                bytes_merge = @allocated merge_grid_based!(rng, mg1, particles1[1], pia, 1, 1, species_data, phys_props, grid)
+                bytes_merge = @allocated merge_grid_based!(rng, mg1, particles1[1], pia, cell, 1, species_data, phys_props, grid)
                 merges = true
                 @test bytes_merge <= 80
             end
@@ -94,9 +95,10 @@
                                        species_data, ndens, T, Fnum)
 
         vlim = SVector{2,Float64}(-1000.0, 1000.0)
+        merges = false
         for cell in 1:nx
             if pia.indexer[cell,1].n_local > target
-                merge_grid_based!(rng, mg1, particles1[1], pia, 1, 1, species_data, vlim,
+                merge_grid_based!(rng, mg1, particles1[1], pia, cell, 1, species_data, vlim,
                                   vlim, vlim, grid)
                 merges = true
             end
@@ -110,9 +112,10 @@
         sample_particles_equal_weight!(rng, grid, particles1[1], pia, 1,
                                        species_data, ndens, T, Fnum)
 
+        merges = false
         for cell in 1:nx
             if pia.indexer[cell,1].n_local > target
-                bytes_merge = @allocated merge_grid_based!(rng, mg1, particles1[1], pia, 1, 1, species_data, vlim,
+                bytes_merge = @allocated merge_grid_based!(rng, mg1, particles1[1], pia, cell, 1, species_data, vlim,
                                                            vlim, vlim, grid)
                 @test bytes_merge <= 180
                 merges = true
@@ -133,11 +136,11 @@
         sample_particles_equal_weight!(rng, grid, particles2[1], pia, 1,
                                        species_data, ndens, T, Fnum)
 
-        merges = false
         compute_props!(particles2, pia, species_data, phys_props)
+        merges = false
         for cell in 1:nx
             if pia.indexer[cell,1].n_local > target
-                merge_grid_based!(rng, mg2, particles2[1], pia, 1, 1, species_data, phys_props, grid)
+                merge_grid_based!(rng, mg2, particles2[1], pia, cell, 1, species_data, phys_props, grid)
                 merges = true
             end
         end
@@ -150,9 +153,10 @@
         sample_particles_equal_weight!(rng, grid, particles2[1], pia, 1,
                                        species_data, ndens, T, Fnum)
 
+        merges = false
         for cell in 1:nx
             if pia.indexer[cell,1].n_local > target
-                bytes_merge = @allocated merge_grid_based!(rng, mg2, particles2[1], pia, 1, 1, species_data, phys_props, grid)
+                bytes_merge = @allocated merge_grid_based!(rng, mg2, particles2[1], pia, cell, 1, species_data, phys_props, grid)
                 merges = true
                 @test bytes_merge <= 80
             end
@@ -169,9 +173,10 @@
                                        species_data, ndens, T, Fnum)
 
         vlim = SVector{2,Float64}(-1000.0, 1000.0)
+        merges = false
         for cell in 1:nx
             if pia.indexer[cell,1].n_local > target
-                merge_grid_based!(rng, mg2, particles2[1], pia, 1, 1, species_data, vlim,
+                merge_grid_based!(rng, mg2, particles2[1], pia, cell, 1, species_data, vlim,
                                   vlim, vlim, grid)
                 merges = true
             end
@@ -185,9 +190,10 @@
         sample_particles_equal_weight!(rng, grid, particles2[1], pia, 1,
                                        species_data, ndens, T, Fnum)
 
+        merges = false
         for cell in 1:nx
             if pia.indexer[cell,1].n_local > target
-                bytes_merge = @allocated merge_grid_based!(rng, mg2, particles2[1], pia, 1, 1, species_data, vlim,
+                bytes_merge = @allocated merge_grid_based!(rng, mg2, particles2[1], pia, cell, 1, species_data, vlim,
                                                            vlim, vlim, grid)
                 @test bytes_merge <= 180
                 merges = true
@@ -208,11 +214,11 @@
         sample_particles_equal_weight!(rng, grid, particles3[1], pia, 1,
                                        species_data, ndens, T, Fnum)
 
-        merges = false
         compute_props!(particles3, pia, species_data, phys_props)
+        merges = false
         for cell in 1:nx
             if pia.indexer[cell,1].n_local > target
-                merge_grid_based!(rng, mg3, particles3[1], pia, 1, 1, species_data, phys_props, grid)
+                merge_grid_based!(rng, mg3, particles3[1], pia, cell, 1, species_data, phys_props, grid)
                 merges = true
             end
         end
@@ -225,9 +231,10 @@
         sample_particles_equal_weight!(rng, grid, particles3[1], pia, 1,
                                        species_data, ndens, T, Fnum)
 
+        merges = false
         for cell in 1:nx
             if pia.indexer[cell,1].n_local > target
-                bytes_merge = @allocated merge_grid_based!(rng, mg3, particles3[1], pia, 1, 1, species_data, phys_props, grid)
+                bytes_merge = @allocated merge_grid_based!(rng, mg3, particles3[1], pia, cell, 1, species_data, phys_props, grid)
                 merges = true
                 @test bytes_merge <= 80
             end
@@ -244,9 +251,10 @@
                                        species_data, ndens, T, Fnum)
 
         vlim = SVector{2,Float64}(-1000.0, 1000.0)
+        merges = false
         for cell in 1:nx
             if pia.indexer[cell,1].n_local > target
-                merge_grid_based!(rng, mg3, particles3[1], pia, 1, 1, species_data, vlim,
+                merge_grid_based!(rng, mg3, particles3[1], pia, cell, 1, species_data, vlim,
                                   vlim, vlim, grid)
                 merges = true
             end
@@ -260,9 +268,10 @@
         sample_particles_equal_weight!(rng, grid, particles3[1], pia, 1,
                                        species_data, ndens, T, Fnum)
 
+        merges = false
         for cell in 1:nx
             if pia.indexer[cell,1].n_local > target
-                bytes_merge = @allocated merge_grid_based!(rng, mg3, particles3[1], pia, 1, 1, species_data, vlim,
+                bytes_merge = @allocated merge_grid_based!(rng, mg3, particles3[1], pia, cell, 1, species_data, vlim,
                                                            vlim, vlim, grid)
                 @test bytes_merge <= 180
                 merges = true

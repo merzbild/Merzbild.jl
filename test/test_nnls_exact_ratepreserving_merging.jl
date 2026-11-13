@@ -117,10 +117,10 @@
     cs_ref = 1e-19
 
     # we use the non-RP version to test moments of RP version (since non-RP is assumed to be tested by now)
-    result = merge_nnls_based!(rng, nnls, particles[2], pia, 1, 1; vref=vref, scaling=:variance)
+    result = merge_nnls_based!(rng, nnls, particles[2], pia, 1, 2; vref=vref, scaling=:variance)
 
     @test result == 1
-    @test pia.n_total[1] < 24
+    @test pia.n_total[2] < 24
 
     # reset particles
     particles, pia = create_particles(ndens)

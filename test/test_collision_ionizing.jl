@@ -88,7 +88,8 @@
     # test energy conservation; this is the simplest case with a stationary neutral
     # error on the order of 1e-5 since we assume mass(ion) = mass(electron) to simplify collision mechanics
     # for argon this leads to an error on the order of 1.25e-5
-    @test abs(E_total_post_eV - E_total_pre_eV) / E_total_pre_eV < 1e-5
+    error_non_corrected = abs(E_total_post_eV - E_total_pre_eV) / E_total_pre_eV
+    @test error_non_corrected < 1e-5
 
     # now we shift to v_com frame of reference and neet to check equal energies
     E_electron1_post_eV = Merzbild.eV_J_inv * 0.5 * species_data[2].mass * norm(particles_electron[1].v - collision_data.v_com)^2
@@ -261,6 +262,7 @@
 
     collision_data = CollisionData()
 
+    vy_neutral = 0.0
     particles_neutral = create_n(0.0, vy_neutral)
     particles_electron = create_e(3e6, 0.0)
     particles_ion = create_ion()
@@ -303,6 +305,7 @@
     E_i_eV = Merzbild.eV_J_inv * 0.5 * species_data[1].mass * norm(particles_ion[1].v)^2
 
     E_total_post_eV = E_i_eV + E_ion_eV + E_electron1_post_eV + E_electron2_post_eV
-    # test energy conservation with the heavier neutral, should work better
+    # test energy conservation with the heavier neutral, should work better (see error on line 91)
     @test abs(E_total_post_eV - E_total_pre_eV) / E_total_pre_eV < 1.4e-9
+    @test abs(E_total_post_eV - E_total_pre_eV) / E_total_pre_eV < error_non_corrected * 1e-3
 end

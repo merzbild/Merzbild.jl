@@ -225,6 +225,7 @@
     @test maximum(abs.(mg.extent_multiplier .- [3.0, 2.0, 1.0])) < 2 * eps()
 
     particles24 = [create_24_3particles_in_octant(weights=weights_arr)]
+    pia = ParticleIndexerArray(24)
     compute_props!(particles24, pia, species_data, phys_props)
     n0_computed = phys_props.n[1,1]
     np0_computed = phys_props.np[1,1]
