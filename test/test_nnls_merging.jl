@@ -109,6 +109,13 @@
 
     @test typeof(mnnls) == NNLSMerge{3}
 
+    mixed_order_3 = compute_multi_index_moments(3)
+    moms3 = zeros(length(mixed_order_3))
+
+    for (i, mim) in enumerate(mixed_order_3)
+        moms3[i] = Merzbild.compute_mixed_moment(particles, pia, 1, 1, mim)
+    end
+
     vref = sqrt(2 * k_B * 300.0 / species_data[1].mass)
     result = merge_nnls_based!(rng, mnnls, particles[1], pia, 1, 1; vref=vref, scaling=:vref)
     @test length(mnnls.rhs_vector) == length(mim) + 1  # we didn't construct 0-th order moment
@@ -118,13 +125,6 @@
     v0 = phys_props.v[:, 1, 1]
     T0 = phys_props.T[1, 1]
     M40 = mvals_list[1]
-
-    mixed_order_3 = compute_multi_index_moments(3)
-    moms3 = zeros(length(mixed_order_3))
-
-    for (i, mim) in enumerate(mixed_order_3)
-        moms3[i] = Merzbild.compute_mixed_moment(particles, pia, 1, 1, mim)
-    end
 
     # test some internal computes used in the merging
     @test sum(abs.(mnnls.v0 .- v0)) < eps()
