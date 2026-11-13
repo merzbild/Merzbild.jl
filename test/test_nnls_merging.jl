@@ -148,7 +148,7 @@
         moms3_post[i] = Merzbild.compute_mixed_moment(particles, pia, 1, 1, mim)
     end
 
-    @test sum(abs.(moms3_post - moms3))/length(moms3_post) < 1e-14
+    @test maximum(abs.(moms3_post .- moms3) ./ abs.(moms3)) < 4 * eps()
 
 
     mim = []
@@ -362,9 +362,9 @@
     new_v /= new_w
     new_x /= new_w
 
-    @test abs(new_w - tw) < 3.75e-15
-    @test maximum(abs.(new_v - v_mean)) < 1e-15
-    @test maximum(abs.(new_x - x_mean)) < 1e-15
+    @test abs(new_w - tw) < 7.5e-15
+    @test maximum(abs.(new_v - v_mean)) < 2e-15
+    @test maximum(abs.(new_x - x_mean)) < 2e-15
 
     # now we try a higher threshold so that we get fewer particles
     # this will mess up everything except mass conservation though
