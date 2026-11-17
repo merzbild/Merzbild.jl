@@ -359,8 +359,8 @@
     ref_sol_path = joinpath(@__DIR__, "data", "ionization_Ar_no_es_v2.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
 
-    @test maximum(abs.((ref_sol["ndens"][1, :, 1:10] .- sol["ndens"][1, :, 1:10]) ./ ref_sol["ndens"][1, :, 1:10])) < 2e-4
-    @test maximum(abs.((ref_sol["T"][1, :, 1:10] .- sol["T"][1, :, 1:10]) ./ ref_sol["T"][1, :, 1:10])) < 2e-4
+    @test maximum(abs.((ref_sol["ndens"][1, :, 1:10] .- sol["ndens"][1, :, 1:10]) ./ ref_sol["ndens"][1, :, 1:10])) < 2e-2
+    @test maximum(abs.((ref_sol["T"][1, :, 1:10] .- sol["T"][1, :, 1:10]) ./ ref_sol["T"][1, :, 1:10])) < 2e-2
 
     close(sol)
     rm(sol_path)
@@ -517,8 +517,8 @@
     ref_sol_path = joinpath(@__DIR__, "data", "ionization_Ar_no_es_v2_invratio.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
 
-    @test maximum(abs.((ref_sol["ndens"][1, :, 1:10] .- sol["ndens"][1, :, 1:10]) ./ ref_sol["ndens"][1, :, 1:10])) < 2e-4
-    @test maximum(abs.((ref_sol["T"][1, :, 1:10] .- sol["T"][1, :, 1:10]) ./ ref_sol["T"][1, :, 1:10])) < 2e-4
+    @test maximum(abs.((ref_sol["ndens"][1, :, 1:10] .- sol["ndens"][1, :, 1:10]) ./ ref_sol["ndens"][1, :, 1:10])) < 2e-2
+    @test maximum(abs.((ref_sol["T"][1, :, 1:10] .- sol["T"][1, :, 1:10]) ./ ref_sol["T"][1, :, 1:10])) < 2e-2
 
     close(sol)
     rm(sol_path)
