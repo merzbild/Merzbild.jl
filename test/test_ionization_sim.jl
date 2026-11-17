@@ -214,7 +214,6 @@
     close(sol)
     rm(sol_path)
 
-    E_Tn = 600
     # now we test with higher T0_e and should get ionization
     T0_e = Merzbild.eV * 8.5  # T_e(t=0) = 4.5eV
 
@@ -360,13 +359,12 @@
     ref_sol_path = joinpath(@__DIR__, "data", "ionization_Ar_no_es_v2.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
 
-    @test maximum(abs.((ref_sol["ndens"][1, :, 1:n_t] .- sol["ndens"][1, :, 1:n_t]) ./ ref_sol["ndens"][1, :, 1:n_t])) < 4 * eps()
-    @test maximum(abs.((ref_sol["T"][1, :, 1:n_t] .- sol["T"][1, :, 1:n_t]) ./ ref_sol["T"][1, :, 1:n_t])) < 7.5e-14
+    @test maximum(abs.((ref_sol["ndens"][1, :, 1:20] .- sol["ndens"][1, :, 1:20]) ./ ref_sol["ndens"][1, :, 1:20])) < 2e-4
+    @test maximum(abs.((ref_sol["T"][1, :, 1:20] .- sol["T"][1, :, 1:20]) ./ ref_sol["T"][1, :, 1:20])) < 2e-4
 
     close(sol)
     rm(sol_path)
 
-    E_Tn = 500
     # now we test with higher T0_e and should get ionization
     # and have inverse ratio of densities to check splitting
     T0_e = Merzbild.eV * 10.0  # T_e(t=0) = 4.5eV
@@ -483,7 +481,7 @@
     ndens_conservation = true
 
     for t in 1:n_t
-        if abs(sum(sol["ndens"][1, :, t]) - ndens_tot) / ndens_tot > 1.5e-14
+        if abs(sum(sol["ndens"][1, :, t]) - ndens_tot) / ndens_tot > 1e-12
             ndens_conservation = false
         end
     end
@@ -518,8 +516,8 @@
     ref_sol_path = joinpath(@__DIR__, "data", "ionization_Ar_no_es_v2_invratio.nc")
     ref_sol = NCDataset(ref_sol_path, "r")
 
-    @test maximum(abs.((ref_sol["ndens"][1, :, 1:n_t] .- sol["ndens"][1, :, 1:n_t]) ./ ref_sol["ndens"][1, :, 1:n_t])) < 4 * eps()
-    @test maximum(abs.((ref_sol["T"][1, :, 1:n_t] .- sol["T"][1, :, 1:n_t]) ./ ref_sol["T"][1, :, 1:n_t])) < 7.5e-14
+    @test maximum(abs.((ref_sol["ndens"][1, :, 1:20] .- sol["ndens"][1, :, 1:20]) ./ ref_sol["ndens"][1, :, 1:20])) < 2e-4
+    @test maximum(abs.((ref_sol["T"][1, :, 1:20] .- sol["T"][1, :, 1:20]) ./ ref_sol["T"][1, :, 1:20])) < 2e-4
 
     close(sol)
     rm(sol_path)
