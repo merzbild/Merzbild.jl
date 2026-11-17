@@ -214,6 +214,7 @@
     close(sol)
     rm(sol_path)
 
+    E_Tn = 600
     # now we test with higher T0_e and should get ionization
     T0_e = Merzbild.eV * 8.5  # T_e(t=0) = 4.5eV
 
@@ -365,6 +366,7 @@
     close(sol)
     rm(sol_path)
 
+    E_Tn = 500
     # now we test with higher T0_e and should get ionization
     # and have inverse ratio of densities to check splitting
     T0_e = Merzbild.eV * 10.0  # T_e(t=0) = 4.5eV
