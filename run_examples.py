@@ -69,7 +69,7 @@ def restore_nt(file_path, original_nt):
 def ensure_path_exists(path):
     path = Path(path)
     if not path.exists():
-        answer = input(f"Path '{path}' does not exist. Create it (scratch directory is already in gitignore)? (y/n) ")
+        answer = input(f"Path '{path}' does not exist. Create it (scratch directory is already in gitignore, if running from cloned copy of Merzbild.jl repository)? (y/n) ")
         if answer.lower() == 'y':
             path.mkdir(parents=True, exist_ok=True)
             print(f"Created path: {path}")

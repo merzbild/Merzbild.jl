@@ -25,6 +25,8 @@ using Merzbild
 using Random
 using InteractiveUtils
 
+isdir("scratch/data") || error("Output directory `scratch/data` does not exist (the path is relative to the working directory). Create it, e.g. with `mkdir -p scratch/data`.")
+
 function run(seed::Int64, threshold::Int64, Ntarget::Int64, G)
     Random.seed!(seed)
     rng::Xoshiro = Xoshiro(seed)

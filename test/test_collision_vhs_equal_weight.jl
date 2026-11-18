@@ -33,6 +33,10 @@
 
     # Test case 1: Equal weight particles
     @testset "Equal weight particles" begin
+        collision_factors.sigma_g_w_max = 0.0
+        collision_factors.n_coll_performed = 0
+        collision_factors.n_eq_w_coll_performed = 0
+
         # Reset particles to equal weight
         particles[1].w = 1.0
         particles[2].w = 1.0
@@ -60,7 +64,7 @@
         
         # Check energy conservation
         ke_final = 0.5 * m * (sum(particles[1].v.^2) + sum(particles[2].v.^2))
-        @test isapprox(ke_initial, ke_final, atol=1e-14)
+        @test isapprox(ke_initial, ke_final, rtol=4*eps())
         
         # Check that no particles were split (equal weight)
         @test collision_factors.n_eq_w_coll_performed > 0
@@ -74,6 +78,10 @@
 
     # Test case 2: Unequal weight particles (no splitting should occur)
     @testset "Unequal weight particles (w1>w2)" begin
+        collision_factors.sigma_g_w_max = 0.0
+        collision_factors.n_coll_performed = 0
+        collision_factors.n_eq_w_coll_performed = 0
+
         # Reset particles with unequal weights
         particles[1].w = 2.0
         particles[2].w = 1.0
@@ -110,11 +118,15 @@
         # Check energy conservation (weighted)
         ke_final = 0.5 * m * (particles[1].w * sum(particles[1].v.^2) + 
                             particles[2].w * sum(particles[2].v.^2))
-        @test isapprox(ke_initial, ke_final, atol=1e-14)
+        @test isapprox(ke_initial, ke_final, rtol=4*eps())
     end
 
     # Test case 3: Unequal weight particles (no splitting should occur)
     @testset "Unequal weight particles (w1<w2)" begin
+        collision_factors.sigma_g_w_max = 0.0
+        collision_factors.n_coll_performed = 0
+        collision_factors.n_eq_w_coll_performed = 0
+
         # Reset particles with unequal weights
         particles[1].w = 1.0
         particles[2].w = 2.0
@@ -151,11 +163,15 @@
         # Check energy conservation (weighted)
         ke_final = 0.5 * m * (particles[1].w * sum(particles[1].v.^2) + 
                             particles[2].w * sum(particles[2].v.^2))
-        @test isapprox(ke_initial, ke_final, atol=1e-14)
+        @test isapprox(ke_initial, ke_final, rtol=4*eps())
     end
 
     # Test case 4: Different species collision
     @testset "Different species collision" begin
+        collision_factors.sigma_g_w_max = 0.0
+        collision_factors.n_coll_performed = 0
+        collision_factors.n_eq_w_coll_performed = 0
+
         # Load two species
         species_data_2 = load_species_data(particles_data_path, ["Ar", "He"])
         interaction_data_2 = load_interaction_data(interaction_data_path, species_data_2)
@@ -187,7 +203,7 @@
 
         # compute relative velocity and center-of-mass velocity
         Merzbild.compute_g!(collision_data, particles_ar[1], particles_he[1])
-        Merzbild.compute_com!(collision_data, interaction_data_2[1,2], particles[1], particles[2])
+        Merzbild.compute_com!(collision_data, interaction_data_2[1,2], particles_ar[1], particles_he[1])
         
         # Perform collision
         Merzbild.collide_2particles_equal_weight!(rng, VHS(), collision_data, collision_factors, 
@@ -207,11 +223,15 @@
         
         # Check energy conservation
         ke_final = 0.5 * (m_ar * sum(particles_ar[1].v.^2) + m_he * sum(particles_he[1].v.^2))
-        @test isapprox(ke_initial, ke_final, atol=1e-14)
+        @test isapprox(ke_initial, ke_final, rtol=4*eps())
     end
 
     # Test case 5: Unequal weight particles with different species (no splitting should occur)
     @testset "Unequal weight particles with different species" begin
+        collision_factors.sigma_g_w_max = 0.0
+        collision_factors.n_coll_performed = 0
+        collision_factors.n_eq_w_coll_performed = 0
+
         # Load two species
         species_data_2 = load_species_data(particles_data_path, ["Ar", "He"])
         interaction_data_2 = load_interaction_data(interaction_data_path, species_data_2)
@@ -240,10 +260,10 @@
         w_ar_initial = particles_ar[1].w
         w_he_initial = particles_he[1].w
         
-        # Compute initial kinetic energy (weighted)
+        # Compute initial kinetic energy (unweighted: equal-weight collisions conserve per-particle energy)
         m_ar = species_data_2[1].mass
         m_he = species_data_2[2].mass
-        ke_initial = 0.5 * (m_ar * w_ar_initial * sum(v_ar_initial.^2) + m_he * w_he_initial * sum(v_he_initial.^2))
+        ke_initial = 0.5 * (m_ar * sum(v_ar_initial.^2) + m_he * sum(v_he_initial.^2))
 
         # compute relative velocity and center-of-mass velocity
         Merzbild.compute_g!(collision_data, particles_ar[1], particles_he[1])
@@ -265,9 +285,8 @@
         @test particles_ar[1].w == w_ar_initial
         @test particles_he[1].w == w_he_initial
         
-        # Check energy conservation (weighted)
-        ke_final = 0.5 * (m_ar * particles_ar[1].w * sum(particles_ar[1].v.^2) + 
-                        m_he * particles_he[1].w * sum(particles_he[1].v.^2))
-        @test isapprox(ke_initial, ke_final, atol=1e-14)
+        # Check energy conservation (unweighted)
+        ke_final = 0.5 * (m_ar * sum(particles_ar[1].v.^2) + m_he * sum(particles_he[1].v.^2))
+        @test isapprox(ke_initial, ke_final, rtol=4*eps())
     end
 end

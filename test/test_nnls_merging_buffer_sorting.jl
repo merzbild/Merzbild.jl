@@ -101,7 +101,7 @@
     buffer_part2 = true
     for i in 41:83
         if particles[1].buffer[i] != 50-i+41
-            buffer_part1 = false
+            buffer_part2 = false
         end
     end
     @test buffer_part2 == true

@@ -40,7 +40,7 @@
     compute_props!(particles, pia, species_data, phys_props)
 
     @test abs(phys_props.n[1,1] - n0_c) / n0_c < 1e-15
-    @test abs(maximum((phys_props.v[:,1,1] - v0_c) ./ v0_c)) < 1e-14
+    @test maximum(abs.((phys_props.v[:,1,1] - v0_c) ./ v0_c)) < 1e-14
     @test abs(phys_props.T[1,1] - T0_c) / T0_c < 1e-15
 
     # we will use this in next step
@@ -67,11 +67,11 @@
     compute_props!(particles, pia, species_data, phys_props)
 
     @test abs(phys_props.n[1,1] - n0_c) / n0_c < 1e-15
-    @test abs(maximum((phys_props.v[:,1,1] - v0_c) ./ v0_c)) < 1e-14
+    @test maximum(abs.((phys_props.v[:,1,1] - v0_c) ./ v0_c)) < 1e-14
     @test abs(phys_props.T[1,1] - T0_c) / T0_c < 1e-15
 
-    @test abs(maximum(particles[1][20].v - v_20_stored)) < 1e-10
-    @test abs(maximum(particles[1][60].v - v_60_stored)) < 1e-10
+    @test maximum(abs.(particles[1][20].v - v_20_stored)) < 1e-10
+    @test maximum(abs.(particles[1][60].v - v_60_stored)) < 1e-10
 
 
     # now variable-weight
@@ -93,7 +93,7 @@
     compute_props!(particles, pia, species_data, phys_props)
 
     @test abs(phys_props.n[1,1] - n0_c) / n0_c < 1e-15
-    @test abs(maximum((phys_props.v[:,1,1] - v0_c) ./ v0_c)) < 1e-14
+    @test maximum(abs.((phys_props.v[:,1,1] - v0_c) ./ v0_c)) < 1e-14
     @test abs(phys_props.T[1,1] - T0_c) / T0_c < 1e-14
 
     # we will use this in next step
@@ -120,11 +120,11 @@
     compute_props!(particles, pia, species_data, phys_props)
 
     @test abs(phys_props.n[1,1] - n0_c) / n0_c < 1e-15
-    @test abs(maximum((phys_props.v[:,1,1] - v0_c) ./ v0_c)) < 1e-14
+    @test maximum(abs.((phys_props.v[:,1,1] - v0_c) ./ v0_c)) < 1e-14
     @test abs(phys_props.T[1,1] - T0_c) / T0_c < 1e-14
 
-    @test abs(maximum(particles[1][20].v - v_20_stored)) < 1e-10
-    @test abs(maximum(particles[1][60].v - v_60_stored)) < 1e-10
+    @test maximum(abs.(particles[1][20].v - v_20_stored)) < 1e-10
+    @test maximum(abs.(particles[1][60].v - v_60_stored)) < 1e-10
 
     # now we will split particle indexing into group1, group2
     # and use particles with dim=2
@@ -154,7 +154,7 @@
     compute_props!(particles, pia, species_data, phys_props)
 
     @test abs(phys_props.n[1,1] - n0_c) / n0_c < 1e-15
-    @test abs(maximum((phys_props.v[:,1,1] - v0_c) ./ v0_c)) < 1e-14
+    @test maximum(abs.((phys_props.v[:,1,1] - v0_c) ./ v0_c)) < 1e-14
     @test abs(phys_props.T[1,1] - T0_c) / T0_c < 1e-14
 
 
@@ -186,6 +186,6 @@
     compute_props!(particles, pia, species_data, phys_props)
 
     @test abs(phys_props.n[1,1] - n0_c) / n0_c < 1e-15
-    @test abs(maximum((phys_props.v[:,1,1] - v0_c) ./ v0_c)) < 1e-14
+    @test maximum(abs.((phys_props.v[:,1,1] - v0_c) ./ v0_c)) < 1e-14
     @test abs(phys_props.T[1,1] - T0_c) / T0_c < 1e-14
 end

@@ -174,7 +174,7 @@
     @test abs(surf_props.shear_pressure[2,2,1] - f[2]*(0 * 10.5 - -2 * 10.0)) < 2*eps()
     @test abs(surf_props.shear_pressure[3,2,1] - f[2]*(3 * 10.5 - -4 * 10.0)) < 2*eps()
 
-    @test abs(surf_props.kinetic_energy_flux[1,1] * f[1]) < 2*eps()
+    @test abs(surf_props.kinetic_energy_flux[1,1]) < 2*eps()
     @test abs(surf_props.kinetic_energy_flux[2,1] - f[2]*(0.5 * 10.5 * (10^2 + 3^2) - 0.5 * 10.0 * (1^2 + 2^2 + 4^2))) < 2*eps()
 
     # reset back

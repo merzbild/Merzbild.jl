@@ -4,6 +4,8 @@ using Merzbild
 using Printf
 using Random
 
+isdir("scratch/data") || error("Output directory `scratch/data` does not exist (the path is relative to the working directory). Create it, e.g. with `mkdir -p scratch/data`.")
+
 """
     run_flow(seed, T_bg0, T_wall1, T_wall2, v_wall, L, ndens, nx,
              ppc,

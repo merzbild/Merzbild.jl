@@ -189,7 +189,7 @@
             @test bytes_coll == 0
 
             if phys_props.np[1,1] > threshold
-                bytes_merge = @allocated merge_grid_based!(rng, mg0, particles[1], pia, 1, 1, species_data, phys_props)
+                bytes_merge = @allocated merge_grid_based!(rng, mg0, particles[1], pia, 1, 1, species_data, vlim, vlim, vlim)
                 merges = true
                 @test bytes_merge == 0
             end
@@ -346,7 +346,7 @@
             @test bytes_coll == 0
 
             if phys_props.np[1,1] > threshold
-                bytes_merge = @allocated merge_grid_based!(rng, mg1, particles[1], pia, 1, 1, species_data, phys_props)
+                bytes_merge = @allocated merge_grid_based!(rng, mg1, particles[1], pia, 1, 1, species_data, vlim, vlim, vlim)
                 merges = true
                 @test bytes_merge == 0
             end
@@ -503,7 +503,7 @@
             @test bytes_coll == 0
 
             if phys_props.np[1,1] > threshold
-                bytes_merge = @allocated merge_grid_based!(rng, mg2, particles[1], pia, 1, 1, species_data, phys_props)
+                bytes_merge = @allocated merge_grid_based!(rng, mg2, particles[1], pia, 1, 1, species_data, vlim, vlim, vlim)
                 merges = true
                 @test bytes_merge == 0
             end
@@ -660,7 +660,7 @@
             @test bytes_coll == 0
 
             if phys_props.np[1,1] > threshold
-                bytes_merge = @allocated merge_grid_based!(rng, mg3, particles[1], pia, 1, 1, species_data, phys_props)
+                bytes_merge = @allocated merge_grid_based!(rng, mg3, particles[1], pia, 1, 1, species_data, vlim, vlim, vlim)
                 merges = true
                 @test bytes_merge == 0
             end

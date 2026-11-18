@@ -45,6 +45,8 @@
 
         # reset sigma_g_w_max estimate
         collision_factors.sigma_g_w_max = 0.0
+        collision_factors.n_coll_performed = 0
+        collision_factors.n_eq_w_coll_performed = 0
         
         # Store initial velocities for energy conservation check
         v1_initial = particles[1].v
@@ -64,7 +66,7 @@
         
         # Check energy conservation
         ke_final = 0.5 * m * (sum(particles[1].v.^2) + sum(particles[2].v.^2))
-        @test isapprox(ke_initial, ke_final, atol=1e-14)
+        @test isapprox(ke_initial, ke_final, rtol=4*eps())
         
         # Check that no particles were split (equal weight)
         @test collision_factors.n_eq_w_coll_performed > 0
@@ -80,6 +82,8 @@
 
         # reset sigma_g_w_max estimate
         collision_factors.sigma_g_w_max = 0.0
+        collision_factors.n_coll_performed = 0
+        collision_factors.n_eq_w_coll_performed = 0
         
         # Store initial state
         v1_initial = particles[1].v
@@ -124,7 +128,7 @@
         ke_final = 0.5 * m * (particles[1].w * sum(particles[1].v.^2) + 
                             particles[2].w * sum(particles[2].v.^2) + 
                             particles[3].w * sum(particles[3].v.^2))
-        @test isapprox(ke_initial, ke_final, atol=1e-14)
+        @test isapprox(ke_initial, ke_final, rtol=4*eps())
     end
 
     # Test case 3: Unequal weight particles (additional particle created)
@@ -135,6 +139,8 @@
 
         # reset sigma_g_w_max estimate
         collision_factors.sigma_g_w_max = 0.0
+        collision_factors.n_coll_performed = 0
+        collision_factors.n_eq_w_coll_performed = 0
         
         # Store initial state
         v1_initial = particles[1].v
@@ -179,7 +185,7 @@
         ke_final = 0.5 * m * (particles[1].w * sum(particles[1].v.^2) + 
                             particles[2].w * sum(particles[2].v.^2) + 
                             particles[3].w * sum(particles[3].v.^2))
-        @test isapprox(ke_initial, ke_final, atol=1e-14)
+        @test isapprox(ke_initial, ke_final, rtol=4*eps())
     end
 
     # Test case 4: Unequal weight but dw_tol treats as equal
@@ -190,6 +196,8 @@
 
         # reset sigma_g_w_max estimate
         collision_factors.sigma_g_w_max = 0.0
+        collision_factors.n_coll_performed = 0
+        collision_factors.n_eq_w_coll_performed = 0
         
         # Store initial state
         v1_initial = particles[1].v
@@ -222,7 +230,7 @@
         
         # Check energy conservation
         ke_final = 0.5 * m * (sum(particles[1].v.^2) + sum(particles[2].v.^2))
-        @test isapprox(ke_initial, ke_final, atol=1e-14)
+        @test isapprox(ke_initial, ke_final, rtol=4*eps())
     end
 
     # Test case 5: Different species collision
@@ -240,6 +248,8 @@
 
         # reset sigma_g_w_max estimate
         collision_factors.sigma_g_w_max = 0.0
+        collision_factors.n_coll_performed = 0
+        collision_factors.n_eq_w_coll_performed = 0
         
         # Initialize particles for both species
         particles_ar = ParticleVector(1)
@@ -273,6 +283,6 @@
         
         # Check energy conservation
         ke_final = 0.5 * (m_ar * sum(particles_ar[1].v.^2) + m_he * sum(particles_he[1].v.^2))
-        @test isapprox(ke_initial, ke_final, atol=1e-14)
+        @test isapprox(ke_initial, ke_final, rtol=4*eps())
     end
 end

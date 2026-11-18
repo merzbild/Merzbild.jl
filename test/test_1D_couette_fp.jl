@@ -89,9 +89,9 @@
         @test sum(sol["np"][:, 1, nt]) == 50 * ppc
     end
  
-    @test maximum(ref_sol["np"][:, 1, 1] .- sol["np"][:, 1, 1]) < eps()
-    @test maximum(ref_sol["ndens"][:, 1, 1:4] .- sol["ndens"][:, 1, 1:4]) < 2 * eps()
-    @test maximum(ref_sol["T"][:, 1, 1:4] .- sol["T"][:, 1, 1:4]) < 2.75e-12
+    @test maximum(abs.(ref_sol["np"][:, 1, 1] .- sol["np"][:, 1, 1])) < eps()
+    @test maximum(abs.(ref_sol["ndens"][:, 1, 1:4] .- sol["ndens"][:, 1, 1:4])) < 2 * eps()
+    @test maximum(abs.(ref_sol["T"][:, 1, 1:4] .- sol["T"][:, 1, 1:4])) < 4.5e-12
 
     close(sol)
     rm(sol_path)

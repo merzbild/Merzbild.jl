@@ -44,7 +44,7 @@
     bufferindex = particles[1].buffer[1]
 
     squash_pia!(particles, pia)
-    @test pia.contiguous[1] = true
+    @test pia.contiguous[1] == true
     
     @test pia.indexer[1,1].n_group1 == 9
     @test pia.indexer[1,1].end1 == 9 
@@ -105,7 +105,7 @@
 
     @test particles[1].cell[1:8] == [11, 12, 13, 14, 16, 17, 18, 19]
 
-    @test pia.contiguous[1] = true
+    @test pia.contiguous[1] == true
     
     @test pia.indexer[1,1].n_group1 == 4
     @test pia.indexer[1,1].end1 == 4 

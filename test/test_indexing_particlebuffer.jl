@@ -29,7 +29,7 @@
         @test particles[1][i].w == 1e10
     end
     for i in 7:10
-        @test isdefined(particles[1], i) == false
+        @test particles[1][i].w == 0.0
     end
 
     @test particles[1].nbuffer == 10 - nparticles
@@ -60,7 +60,7 @@
         @test particles[1][i].w == 1e6
     end
     for i in 10:14
-        isdefined(particles[1], i) == false
+        @test particles[1][i].w == 0.0
     end
 
     # fix particle indexer manually

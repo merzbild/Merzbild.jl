@@ -65,19 +65,25 @@
         @test flux_props.off_diagonal_momentum_flux[:,cell,1] == [0.0, 0.0, 0.0]
     end
 
-    kef = 0.5 * [38.0, 0.0, 0.0] * species_data[1].mass / 0.5
-    @test maximum(abs.(flux_props.kinetic_energy_flux[:,1,1] - kef)) <= eps()
-    dmf = [9.5, 12.5, 0.0] * species_data[1].mass / 0.5
-    @test maximum(abs.(flux_props.diagonal_momentum_flux[:,1,1] - dmf)) <= eps()
-    odmf = [4.75, 0.0, 0.0] * species_data[1].mass / 0.5
-    @test maximum(abs.(flux_props.off_diagonal_momentum_flux[:,1,1] - odmf)) <= eps()
+    rel_err(computed, ref) = maximum(abs.(computed .- ref)) / maximum(abs.(ref))
+    m_div_V = species_data[1].mass / 0.5
 
-    kef2 = 0.5 * [960.0, 0.0, 7.68] * species_data[1].mass / 0.5
-    @test maximum(abs.(flux_props.kinetic_energy_flux[:,6,1] - kef2)) <= eps()
-    dmf2 = [160.0, 0.0, 6.4] * species_data[1].mass / 0.5
-    @test maximum(abs.(flux_props.diagonal_momentum_flux[:,1,1] - dmf2)) <= eps()
-    odmf2 = [0.0, 32.0, 0.0] * species_data[1].mass / 0.5
-    @test maximum(abs.(flux_props.off_diagonal_momentum_flux[:,1,1] - odmf2)) <= eps()
+    # cell 1: v_mean = (1, 0, 0), sum c_x^2 = 38, sum c_y^2 = 50, sum c_x c_y = 19, sum c c^2 = (111, 111, 0)
+    kef = 0.5 * [111.0, 111.0, 0.0] * m_div_V
+    @test rel_err(flux_props.kinetic_energy_flux[:,1,1], kef) < 4 * eps()
+    dmf = [38.0, 50.0, 0.0] * m_div_V
+    @test rel_err(flux_props.diagonal_momentum_flux[:,1,1], dmf) < 4 * eps()
+    odmf = [19.0, 0.0, 0.0] * m_div_V
+    @test rel_err(flux_props.off_diagonal_momentum_flux[:,1,1], odmf) < 4 * eps()
+
+    # cell 6: v_mean = (0, 0, -1.2), sum w c_x^2 = 160, sum w c_z^2 = 25.6, sum w c_x c_z = 64,
+    # sum w c c^2 = (1113.6, 0, 445.44)
+    kef2 = 0.5 * [1113.6, 0.0, 445.44] * m_div_V
+    @test rel_err(flux_props.kinetic_energy_flux[:,6,1], kef2) < 4 * eps()
+    dmf2 = [160.0, 0.0, 25.6] * m_div_V
+    @test rel_err(flux_props.diagonal_momentum_flux[:,6,1], dmf2) < 4 * eps()
+    odmf2 = [0.0, 64.0, 0.0] * m_div_V
+    @test rel_err(flux_props.off_diagonal_momentum_flux[:,6,1], odmf2) < 4 * eps()
 
     clear_props!(flux_props)
     for cell in 1:8
@@ -121,13 +127,13 @@
         @test flux_props.off_diagonal_momentum_flux[:,cell,1] == [0.0, 0.0, 0.0]
     end
 
-    @test maximum(abs.(flux_props.kinetic_energy_flux[:,1,1] - kef)) <= eps()
-    @test maximum(abs.(flux_props.diagonal_momentum_flux[:,1,1] - dmf)) <= eps()
-    @test maximum(abs.(flux_props.off_diagonal_momentum_flux[:,1,1] - odmf)) <= eps()
+    @test rel_err(flux_props.kinetic_energy_flux[:,1,1], kef) < 4 * eps()
+    @test rel_err(flux_props.diagonal_momentum_flux[:,1,1], dmf) < 4 * eps()
+    @test rel_err(flux_props.off_diagonal_momentum_flux[:,1,1], odmf) < 4 * eps()
 
-    @test maximum(abs.(flux_props.kinetic_energy_flux[:,6,1] - kef2)) <= eps()
-    @test maximum(abs.(flux_props.diagonal_momentum_flux[:,1,1] - dmf2)) <= eps()
-    @test maximum(abs.(flux_props.off_diagonal_momentum_flux[:,1,1] - odmf2)) <= eps()
+    @test rel_err(flux_props.kinetic_energy_flux[:,6,1], kef2) < 4 * eps()
+    @test rel_err(flux_props.diagonal_momentum_flux[:,6,1], dmf2) < 4 * eps()
+    @test rel_err(flux_props.off_diagonal_momentum_flux[:,6,1], odmf2) < 4 * eps()
 
     # finally, compute in chunk 3:7, so cell is skipped
     clear_props!(flux_props)
@@ -139,7 +145,7 @@
         @test flux_props.off_diagonal_momentum_flux[:,cell,1] == [0.0, 0.0, 0.0]
     end
 
-    @test maximum(abs.(flux_props.kinetic_energy_flux[:,6,1] - kef2)) <= eps()
-    @test maximum(abs.(flux_props.diagonal_momentum_flux[:,1,1] - dmf2)) <= eps()
-    @test maximum(abs.(flux_props.off_diagonal_momentum_flux[:,1,1] - odmf2)) <= eps()
+    @test rel_err(flux_props.kinetic_energy_flux[:,6,1], kef2) < 4 * eps()
+    @test rel_err(flux_props.diagonal_momentum_flux[:,6,1], dmf2) < 4 * eps()
+    @test rel_err(flux_props.off_diagonal_momentum_flux[:,6,1], odmf2) < 4 * eps()
 end
